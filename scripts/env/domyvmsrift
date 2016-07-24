@@ -1,0 +1,12 @@
+#!/bin/bash
+
+vms=`getmyvms 2>/dev/null`
+if [ -z "$vms" ]; then
+    echo "getmyvms returned no VMs"
+    exit 1
+fi
+for vm in $vms
+do
+    echo $vm >&2
+    ssh_rift $vm "$@"
+done

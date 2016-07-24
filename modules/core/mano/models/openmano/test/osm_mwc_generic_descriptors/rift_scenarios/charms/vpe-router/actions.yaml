@@ -1,0 +1,96 @@
+configure-interface:
+  description: Configure an ethernet interface.
+  params:
+    iface-name:
+      type: string
+      description: Device name, e.g. eth1
+    cidr:
+      type: string
+      description: Network range to assign to the interface
+  required: [iface-name]
+add-corporation:
+  description: Add a new corporation to the router
+  params:
+    domain-name:
+      type: string
+      description: Name of the vlan corporation
+    iface-name:
+      type: string
+      description: Device name. eg eth1
+    vlan-id:
+      type: integer
+      description: The name of the vlan?
+    cidr:
+      type: string
+      description: Network range to assign to the tagged vlan-id
+    area:
+      type: string
+      description: Link State Advertisements (LSA) type
+    subnet-cidr:
+      type: string
+      description: Network range
+    subnet-area:
+      type: string
+      description: Link State Advertisements (LSA) type
+  required: [domain-name, iface-name, vlan-id, cidr, area, subnet-cidr, subnet-area]
+delete-corporation:
+  description: Remove the corporation from the router completely
+  params:
+    domain-name:
+      type: string
+      description: The domain of the corporation to remove
+    cidr:
+      type: string
+      description: Network range to assign to the tagged vlan-id
+    area:
+      type: string
+      description: Link State Advertisements (LSA) type
+    subnet-cidr:
+      type: string
+      description: Network range
+    subnet-area:
+      type: string
+      description: Link State Advertisements (LSA) type
+  required: [domain-name, cidr, area, subnet-cidr, subnet-area]
+connect-domains:
+  description: Connect the router to another router, where the same domain is present
+  params:
+    domain-name:
+      type: string
+      description: The domain of the coproration to connect
+    iface-name:
+      type: string
+      description: Device name. eg eth1
+    tunnel-name:
+      type: string
+      description: Name of the tunnel ?
+    local-ip:
+      type: string
+      description: local ip ?
+    remote-ip:
+      type: string
+      description: remote ip ?
+    tunnel-key:
+      type: string
+      description: tunnel key?
+    internal-local-ip:
+      type: string
+      description: internal local ip?
+    internal-remote-ip:
+      type: string
+      description: internal remote ip?
+    tunnel-type:
+      type: string
+      default: gre
+      description: The type of tunnel to establish.
+  required: [domain-name, iface-name, tunnel-name, local-ip, remote-ip, tunnel-key, internal-local-ip, internal-remote-ip]
+delete-domain-connection:
+  description: Remove the tunnel to another router where the domain is present.
+  params:
+    domain-name:
+      type: string
+      description: The domain of the corporation to unlink
+    tunnel-name:
+      type: string
+      description: The name of the tunnel to unlink that the domain-name is attached to
+  required: [domain-name, tunnel-name]

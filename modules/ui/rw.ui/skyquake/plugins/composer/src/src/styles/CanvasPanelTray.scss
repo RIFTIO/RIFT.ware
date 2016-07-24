@@ -1,0 +1,51 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import 'variables';
+@import 'DataOpenCloseIcon';
+
+$tray-body-height: 250px;
+$tray-head-height: 25px;
+
+.CanvasPanelTray {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 25px;
+	min-width: 300px;
+	background-color: white;
+	&.-with-transitions {
+		transition: height 300ms cubic-bezier(0.230, 1.000, 0.320, 1.000);
+	}
+	h1 {
+		border-bottom: 1px solid rgba(143, 143, 143, 0.05);
+		cursor: pointer;
+		color: #666;
+		font-size: 12px;
+		font-style: normal;
+		line-height: 16px;
+		height: 25px;
+		margin: 0;
+		padding-left: 0;
+		padding-right: 0;
+		text-align: center;
+		text-transform: uppercase;
+		background-color: $panel-bg-color-contrast;
+	}
+	> .tray-body {
+		position: absolute;
+		top: 25px;
+		right: 0;
+		left: 0;
+		bottom: 0;
+		overflow: hidden;
+		&:hover {
+			overflow: auto;
+		}
+	}
+
+}

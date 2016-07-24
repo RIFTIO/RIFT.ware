@@ -1,0 +1,7 @@
+
+package pkg3;
+
+message foo {
+  required string aaa = 1 [default = "aaa" ];
+  optional string bbb = 2 [default = "bbb" ];
+}

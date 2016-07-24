@@ -1,0 +1,15 @@
+.forwarding-graph-paths {
+	&.-is-highlighting {
+		path.rsp-path {
+			stroke-opacity: 0.5;
+		}
+	}
+	path.rsp-path {
+		fill: transparent;
+		shape-rendering: geometricPrecision;
+	}
+	path.-is-highlighted {
+		stroke-width: 4px;
+		stroke-opacity: 1 !important;
+	}
+}

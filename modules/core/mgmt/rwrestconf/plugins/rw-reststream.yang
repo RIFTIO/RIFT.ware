@@ -1,0 +1,31 @@
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ * Author(s): Max Beckett
+ * Creation Date: 8/29/2015
+ * 
+ */
+
+module rw-reststream
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-reststream";
+  prefix "rw-reststream";
+
+  import rw-base {
+    prefix "rw-base";
+  }
+
+  import rw-manifest {
+    prefix "rw-manifest";
+  }
+
+  import rw-vcs {
+    prefix "rw-vcs";
+  }
+
+  description "RWRest Stream";
+  revision 2015-08-29 {
+    description "Initial version"; 
+  }
+}

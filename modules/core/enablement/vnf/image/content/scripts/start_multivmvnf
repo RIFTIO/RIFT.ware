@@ -1,0 +1,44 @@
+#!/bin/bash
+if [[ $2 == *IPSEC* ]] ; then
+    echo "Matched IPSec Rift-flavor"
+    yum install -y qat_guest
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev16.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev17.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev18.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev19.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev20.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev21.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev22.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev23.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev24.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev25.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev26.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev27.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev28.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev29.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev30.conf
+    cp /etc/dh895xcc_qa_dev0.conf  /etc/dh895xcc_qa_dev31.conf
+    sleep 2
+    service qat_service restart
+fi
+
+modprobe ixgbevf
+insmod /opt/rift/i40evf.ko
+modprobe i40evf
+sleep 30
+ifup eth1
+ifup eth2
+ifup eth3
+ulimit -c unlimited 
+echo /home/rift/.install/core-%e-%s-%u-%g-%p-%t > /proc/sys/kernel/core_pattern
+cd /home/rift/
+sudo su
+/usr/rift/bin/pip3-install dicttoxml
+/usr/rift/bin/pip3-install xmltodict
+myaddr=`hostname -I | awk '{ print $1 }'`
+if [ -z "$3" ]
+then
+./rift-shell -- ./.install/demos/vnfcontents/start_multi_vm_vnf.sh -n $1 -d $2 -i $myaddr 2>&1 | logger 
+else
+./rift-shell -- ./.install/demos/vnfcontents/start_multi_vm_vnf.sh -n $1 -d $2 -i $myaddr -l $3 2>&1 | logger 
+fi

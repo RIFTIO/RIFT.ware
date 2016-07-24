@@ -1,0 +1,35 @@
+#!/bin/bash -e
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+
+# This script recursively shows the status of each submodule that is changed
+# check that you are a top level
+if [ ! -f .gitmodules ] ; then
+    echo "$(basename $0) can only be executed from top (supermodule) level"
+    echo "this does a recursive diff"
+    exit 1
+fi
+
+export _DIFF_ARGS="$@"
+echo "Diffs in supermodule"
+git diff ${_DIFF_ARGS:-.}
+echo ""
+
+# Get the diff in each submodule
+do_submodule_diff() {
+		# echo "$1 $2 $3 ${_DIFF_ARGS:-.}"
+        name="$1"
+        path="$2"
+        toplevel="$3"
+        cd "$toplevel/$path"
+        echo "Diffs in submodule $name"
+        git diff ${_DIFF_ARGS:-.}
+        echo ""
+}
+
+export -f do_submodule_diff
+
+git submodule foreach --quiet --recursive 'echo "$name $path $toplevel"' |
+xargs -r -n3 -P20 bash -c 'do_submodule_diff "$@"' do_submodule_diff

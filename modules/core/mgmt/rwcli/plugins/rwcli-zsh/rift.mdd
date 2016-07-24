@@ -1,0 +1,9 @@
+name=zsh/rift
+link=dynamic
+load=no
+
+moddpes="zsh/zle"
+
+autofeatures="b:rift"
+
+objects="rift.o"

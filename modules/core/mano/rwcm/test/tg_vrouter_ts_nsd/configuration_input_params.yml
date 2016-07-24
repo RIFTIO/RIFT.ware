@@ -1,0 +1,23 @@
+
+# This is input parameters file for Network Service configuration.
+# This file is formatted as below:
+
+# configuration_delay : 120           # Number of seconds to wait before applying configuration after NS is up
+# number_of_vnfs_to_be_configured : 1 # Total number of VNFs in this NS to be configured by Service Orchestrator
+# 1 :                                 # Configuration Priority, order in which each VNF will be configured
+#   name : vnfd_name                  # Name of the VNF
+#   member_vnf_index : 11             # member index of the VNF that makes it unique (in case of multiple instances of same VNF)
+#   configuration_type : scriptconf   # Type of configuration (Currently supported values : scriptconf, netconf)
+#
+# Repeat VNF block for as many VNFs
+
+configuration_delay : 120
+number_of_vnfs_to_be_configured : 2
+1 :
+  name : trafsink_vnfd
+  member_vnf_index : 3
+  configuration_type : netconf
+2 :
+  name : trafgen_vnfd
+  member_vnf_index : 1
+  configuration_type : netconf

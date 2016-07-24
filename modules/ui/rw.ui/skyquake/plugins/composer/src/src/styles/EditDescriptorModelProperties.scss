@@ -1,0 +1,297 @@
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+@import "main";
+@import "ColorGroups";
+
+.EditDescriptorModelProperties {
+
+	$field-border-radius: 3px;
+	$field-background-color: white;
+	$child-indent-left-right-margin: 5px;
+
+	font-size: smaller;
+
+	h1 {
+		text-align: left;
+		span:last-child {
+			i {
+				display: none;
+			}
+		}
+	}
+
+	h2 {
+		@extend h1;
+
+	}
+
+	.basic-properties-group {
+		> h1 {
+			display: none;
+		}
+	}
+
+	.advanced-properties-group {
+	}
+
+	/* label is used as list item headers */
+	h3 {
+		@extend h2;
+		display: inline-block;
+		.name {
+			color: #586e75;
+		}
+		.value {
+			display: none;
+			color: #002b36;
+		}
+		.info {
+			margin: 4px;
+		}
+	}
+
+	val {
+		display: inline-block;
+		color: #073642;
+	}
+
+	a {
+		&.simple-list-item {
+			display: inline-block;
+			width: 230px;
+			padding: 4px 16px 4px 4px;
+			white-space: nowrap;
+		}
+		&.vld-list-item,
+		&.internal-vld-list-item{
+			border: 1px solid $vld-primary-color;
+			border-radius: 24px;
+			background: white linear-gradient(to right, $vld-primary-color 34px, white 34px);;
+		}
+		&.vnfd-list-item,
+		&.constituent-vnfd-list-item{
+			border: 1px solid $vnfd-primary-color;
+			border-radius: 11px;
+			background: white linear-gradient(to right, $vnfd-primary-color 34px, white 34px);;
+		}
+		&.vdu-list-item {
+			border: 1px solid $vdu-primary-color;
+			border-radius: 11px;
+			background: white linear-gradient(to right, $vdu-primary-color 34px, white 34px);;
+		}
+		&.vnffgd-list-item {
+			border: 1px solid $vnffgd-primary-color;
+			border-radius: 11px;
+			background: white linear-gradient(to right, $vnffgd-primary-color 34px, white 34px);;
+		}
+	}
+
+	&.-is-tree-view {
+		.property {
+
+			position: relative;
+			overflow: hidden;
+
+			margin: 8px 8px;
+
+			background-color: rgba(147, 161, 161, 0.5);
+			border-radius: $field-border-radius;
+
+			> h3 {
+				position: absolute;
+				top: 2px;
+				right: 18px;
+				height: 21px;
+				pointer-events: none;
+				border-radius: $field-border-radius;
+				padding: 3px 0;
+			}
+
+			> val {
+				width: 100%;
+				> .property-content {
+					width: 100%;
+				}
+
+			}
+
+			&.-is-focused {
+				> h3 {
+					//z-index: -1;
+				}
+			}
+
+			&.leaf-property {
+				overflow: hidden;
+				min-height: 25px;
+				> h3 {
+					background: linear-gradient(to right, transparent, $field-background-color 21px);
+					padding-left: 25px;
+				}
+				> val {
+					border-radius: $field-border-radius;
+					> .property-content {
+						border-radius: $field-border-radius;
+					}
+				}
+			}
+
+			&.property:not(.leaf-property) {
+
+				padding: 7px $child-indent-left-right-margin 0 $child-indent-left-right-margin;
+
+				&.list-property {
+					> h3 {
+						padding: 4px 8px;
+					}
+				}
+
+				> h3 {
+					right: auto;
+					top: 0;
+					left: 0;
+					width: 100%;
+					height: 25px;
+					z-index: 1;
+					padding: 8px;
+					//background: red;
+					pointer-events: all;
+				}
+				> val {
+					margin: 28px 0 8px 0;
+					> .property-content {
+						position: relative;
+						border-radius: $field-border-radius;
+						margin-top: 4px;
+						padding: 4px;
+						&:first-of-type {
+							margin-top: 0;
+						}
+						&.simple-list {
+							min-height: 15px;
+							margin: 11px;
+							.simple-list-item {
+								img,
+								span {
+									margin: 0 5px;
+									vertical-align: middle;
+								}
+							}
+						}
+					}
+					> .property-content:not(.simple-list) {
+						&:nth-of-type(odd) {
+							background-color: rgba(238, 232, 213, 0.33);
+						}
+						&:nth-of-type(even) {
+							background-color: rgba(147, 161, 161, 0.33);
+						}
+					}
+					.tip {
+						font-style: italic;
+						font-size: small;
+						color: #93a1a1;
+					}
+				}
+			}
+
+			.actions {
+				span {
+					vertical-align: middle;
+					padding: 0 5px;
+				}
+			}
+
+		}
+
+	}
+
+	.description {
+		display: none;
+	}
+
+	input,
+	select,
+	textarea {
+		height: 25px;
+		line-height: 25px;
+		max-width: 100%;
+		min-width: 100%;
+		margin: 0;
+		padding: 0 0px 4px 8px;
+		border: 1px solid $field-background-color;
+		border-radius: $field-border-radius;
+		color: #002b36;
+		background-color: $field-background-color;
+		vertical-align: top;
+		&:focus {
+			color: #002b36;
+			background-color: white !important;
+		}
+		&::-webkit-input-placeholder {
+			color: #eee8d5 !important;
+		}
+
+		&:-moz-placeholder { /* Firefox 18- */
+			color: #eee8d5 !important;
+		}
+
+		&::-moz-placeholder {  /* Firefox 19+ */
+			color: #eee8d5 !important;
+		}
+
+		&:-ms-input-placeholder {
+			color: #eee8d5 !important;
+		}
+	}
+
+	select {
+		padding-right: 0;
+		margin-right: 0;
+		-webkit-appearance: none;
+		-webkit-border-radius: $field-border-radius;
+		&.-value-not-set {
+			color: #eee8d5;
+		}
+	}
+
+	select {
+		appearance: none; // using -prefix-free http://leaverou.github.io/prefixfree/
+        background: $field-background-color url(../../../node_modules/open-iconic/svg/caret-bottom.svg) no-repeat right 8px center;
+		background-size: 10px;
+		border: {
+			color: $field-background-color;
+			radius: $field-border-radius;
+			style: solid;
+			width: 1px;
+		}
+	}
+
+	// Removes default arrow for IE10+
+	// IE 8/9 get dafault arrow which covers caret image
+	// as long as caret image is small than and positioned
+	// behind default arrow
+	select::-ms-expand {
+		display: none;
+	}
+
+	textarea {
+		height: 50px;
+	}
+
+	input {
+		padding: 0 20px 0 8px;
+		line-height: 25px;
+	}
+
+	input[name$="id"],
+	input.-is-guid {
+		font-size: 10px;
+		font-family: monospace;
+	}
+
+}

@@ -1,0 +1,170 @@
+#!/bin/sh
+
+#
+# File: rmmod-pax
+#
+# Description: script to unload PAX driver
+#
+# Version: 1.4
+#
+#     Copyright (C) 2009-2012 Intel Corporation.  All Rights Reserved.
+# 
+#     This file is part of SEP Development Kit
+# 
+#     SEP Development Kit is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     version 2 as published by the Free Software Foundation.
+# 
+#     SEP Development Kit is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with SEP Development Kit; if not, write to the Free Software
+#     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# 
+#     As a special exception, you may use this file as part of a free software
+#     library without restriction.  Specifically, if other files instantiate
+#     templates or use macros or inline functions from this file, or you compile
+#     this file and link it with other files to produce an executable, this
+#     file does not by itself cause the resulting executable to be covered by
+#     the GNU General Public License.  This exception does not however
+#     invalidate any other reasons why the executable file might be covered by
+#     the GNU General Public License.
+#
+
+# ------------------------------ CONSTANTS -----------------------------------
+
+DRIVER_NAME=pax
+
+# ------------------------------- OUTPUT -------------------------------------
+
+print_msg()
+{
+  MSG="$*"
+  echo "$MSG"
+}
+
+print_nnl()
+{
+  MSG="$*"
+  echo -n "$MSG"
+}
+
+print_err()
+{
+  MSG="$*"
+  if [ -w /dev/stderr ] ; then
+    echo "$MSG" >> /dev/stderr
+  else
+    echo "$MSG"
+  fi
+}
+
+# set the path to include "standard" locations so commands below can be found
+PATH="/sbin:/usr/sbin:/bin:/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/local/gnu/bin:"${PATH}":."
+export PATH
+
+# ------------------------------ COMMANDS ------------------------------------
+
+CUT="cut"
+GREP="grep"
+INSMOD="insmod"
+LSMOD="lsmod"
+RM="rm"
+RMMOD="rmmod"
+SED="sed"
+SU="su"
+TR="tr"
+UNAME="uname"
+WHICH="which"
+
+COMMANDS_TO_CHECK="${CUT} ${GREP} ${INSMOD} ${LSMOD} ${RM} ${RMMOD} ${SED} ${TR} ${UNAME}"
+
+#
+# Note: Busybox has a restricted shell environment, and 
+#       conventional system utilities may not be present;
+#       so need to account for this ...
+#
+
+# busybox binary check
+BUSYBOX_SHELL=` ${GREP} --help 2>&1 | ${GREP} BusyBox`
+
+if [ -z "${BUSYBOX_SHELL}" ] ; then
+  COMMANDS_TO_CHECK="${SU} ${COMMANDS_TO_CHECK}"
+fi
+
+# if any of the COMMANDS_TO_CHECK are not executable, then exit script
+OK="true"
+for c in ${COMMANDS_TO_CHECK} ; do
+  CMD=`${WHICH} $c 2>&1` ;
+  if [ -z "${CMD}" ] ; then
+    OK="false"
+    print_err "ERROR: unable to find command \"$c\" !"
+  fi
+done
+if [ ${OK} != "true" ] ; then
+  print_err "Please add the above commands to your PATH and re-run the script ... exiting."
+  exit 255
+fi
+
+# ------------------------------ VARIABLES -----------------------------------
+
+SCRIPT=$0
+PLATFORM=`${UNAME} -m`
+KERNEL_VERSION=`${UNAME} -r`
+
+# --------------------------------- MAIN -------------------------------------
+
+# check if a driver is currently loaded ...
+DRIVER_LOADED=`${LSMOD} | ${GREP} ${DRIVER_NAME} | ${CUT} -d ' ' -f 1`
+if [ -z "${DRIVER_LOADED}" ] ; then
+  print_msg "Warning:  no ${DRIVER_NAME} driver was found loaded in the kernel."
+  exit 0
+fi
+
+# check if USER is root
+if [ -z "${BUSYBOX_SHELL}" ] ; then
+    if [ "${USER}x" != "rootx" ] ; then
+      if [ ! -w /dev ] ; then
+        print_msg "NOTE:  super-user or \"root\" privileges are required in order to continue."
+        print_nnl "Please enter \"root\" "
+        exec ${SU} -c "/bin/sh ${SCRIPT} $*"
+        print_msg ""
+        exit 0
+      fi
+    fi
+fi
+
+# remove any currently loaded driver (should be only one)
+if [ -n "${DRIVER_LOADED}" ] ; then
+  print_nnl "Removing ${DRIVER_NAME} driver from the kernel ... "
+  sleep 2
+  ${RMMOD} ${DRIVER_NAME}
+  RMMOD_RESULT=$?
+  if [ ${RMMOD_RESULT} -ne 0 ] ; then
+    print_err ""
+    print_err "Error:  unable to remove ${DRIVER_NAME} driver from the kernel ... exiting."
+    print_err ""
+    exit 246
+  fi
+  print_msg "done."
+fi
+
+# check if driver is still active
+DRIVER_EXISTS=`${GREP} ${DRIVER_NAME} /proc/devices | ${TR} -s ' ' | ${CUT} -d ' ' -f 1`
+if [ -z "${DRIVER_EXISTS}" ] ; then
+  # remove driver devices that were previously created by the insmod script
+  if [ -e /dev/${DRIVER_NAME} ] ; then
+    print_nnl "Deleting previously created /dev/${DRIVER_NAME} device ... "
+    sleep 1
+    ${RM} -f /dev/${DRIVER_NAME}
+    print_msg "done."
+  fi
+fi
+
+# show which driver was loaded
+print_msg "The ${DRIVER_NAME} driver has been successfully unloaded."
+
+exit 0

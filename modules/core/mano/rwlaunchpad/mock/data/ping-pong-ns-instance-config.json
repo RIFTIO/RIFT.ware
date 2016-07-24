@@ -1,0 +1,10 @@
+{
+    "nsr": [
+        {
+            "id": "f5f41f36-78f6-11e5-b9ba-6cb3113b406f",
+            "nsd-ref": "da1dfbcc-626b-11e5-998d-6cb3113b406f",
+            "admin-status": "ENABLED"
+        }
+    ]
+}
+

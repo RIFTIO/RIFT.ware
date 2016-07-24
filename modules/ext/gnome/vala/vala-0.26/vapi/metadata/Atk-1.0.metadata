@@ -1,0 +1,60 @@
+* cheader_filename="atk/atk.h"
+
+// Handle AttributeSet properly
+attribute_set_free skip
+
+KeyEventStruct.string name="str"
+Rectangle struct
+
+Document
+	.get_attribute_value vfunc_name="get_document_attribute_value"
+	.get_attributes vfunc_name="get_document_attributes"
+	.get_document_locale skip
+	.get_locale vfunc_name="get_document_locale"
+	.set_attribute_value vfunc_name="set_document_attribute"
+
+// Move static methods into classes (mostly Util)
+add_focus_tracker parent="Atk.Util"
+add_global_event_listener parent="Atk.Util"
+  .listener type="Atk.SignalEmissionHook"
+add_key_event_listener parent="Atk.Util"
+focus_tracker_init parent="Atk.Util"
+focus_tracker_notify parent="Atk.Util"
+get_default_registry parent="Atk.Registry" name="get_default"
+get_focus_object parent="Atk.Util"
+get_version parent="Atk.Util"
+get_root parent="Atk.Util"
+get_toolkit_name parent="Atk.Util"
+get_toolkit_version parent="Atk.Util"
+remove_focus_tracker parent="Atk.Util"
+remove_global_event_listener parent="Atk.Util"
+remove_key_event_listener parent="Atk.Util"
+text_free_ranges skip
+
+// Deprecated fields
+Socket.embedded_plug_id skip=false deprecated
+RelationSet.relations type_arguments="Atk.Relation" deprecated
+
+// Backward compatibility
+Role.edit_bar name="editbar"
+
+// G-I doesn't distinguish between abstract and virtual
+Document.*#virtual_method virtual
+
+// Can't document callback fields
+Text.get_bounded_ranges skip
+
+// Callbacks without user data
+add_focus_tracker skip=false
+focus_tracker_init skip=false
+add_global_event_listener skip=false
+add_key_event_listener skip=false
+Object.connect_property_change_handler skip=false
+Component.add_focus_handler skip=false
+
+// Ownership of fields
+TextRange.content unowned=false
+Attribute.* unowned=false
+
+// Should be fixed upstream
+Implementor* skip // g-ir-scanner doesn't realize this is an interface

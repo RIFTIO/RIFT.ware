@@ -1,0 +1,231 @@
+#!/bin/bash
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+
+
+# !!! MANUAL !!! = all released versions so far
+RELEASED_VERSIONS=("4.0" "4.1" "4.2" "4.3")
+# should also be entries for ALL these versions in scripts/packaging/rift.repo
+
+#DEBUG=1
+DEBUG=0
+
+function echoMe {
+
+	if [[ ${DEBUG} == "1" ]]; then
+		echo -e $@
+	fi
+
+}
+
+function line {
+
+	echo -e "---------------------------------------------------------------------------------------------------------------------------------"
+
+}
+
+# shell colors
+#. ${RIFT_ROOT}/scripts/util/colors.sh
+
+if [ -z "$RIFT_ROOT" ]; then
+    echo "RIFT_ROOT not set. please load rift-shell"
+    exit 1
+fi
+
+REPOFILE=scripts/packaging/rift.repo
+ME=`basename "$0"`
+
+line
+echo "Starting ${ME}"
+line
+
+
+TMPDIR=${RIFT_ROOT}/.build/packaging/repos/
+# clean?!?
+#rm -Rfv ${TMPDIR}
+rm -Rf ${TMPDIR}
+mkdir -p ${TMPDIR} || $(echo "Cant create TMPDIR"; exit 1)
+
+# major version, ex. 4.1
+MVER=$(cut -d'.' -f1-2 ${RIFT_ROOT}/RELEASE)
+
+# save Internal Field Separator (IFS) and set to a newline first
+OLDIFS="$IFS"
+IFS=$'\n';
+
+
+# parse our .repo file and retrieve all the RIFT.ware repos
+repos=( $(cat  ${REPOFILE}   | grep -i '\[RIFT.ware.*\]') );
+
+# retrieve all the 'enabled' text
+enabled=( $(cat  ${REPOFILE}  | grep -i '\[RIFT.ware.*\]' -A 5 | grep -i enabled) )
+
+# retrieve all the LINE NUMBERS for lines that contain 'enabled'
+enabledLines=( $(cat ${REPOFILE} | grep -i '\[RIFT.ware.*\]' -n -A 5 | grep -i enabled | awk '{print $1}' FS="-") )
+
+
+function enablerepo {
+	file=$1
+	line=$2
+	echoMe "enablerepo: file=${file} line=${line} "
+
+	#sed '${line}s/enabled=.*/enabled=1/' ${file}
+	sed -i "${line}s/enabled=.*/enabled=1/g" ${file}
+}
+
+function disablerepo {
+	file=$1
+	line=$2
+	echoMe "disablerepo: file=${file} line=${line} "
+
+	sed -i "${line}s/enabled=.*/enabled=0/g" ${file}
+
+}
+
+
+for v in "${RELEASED_VERSIONS[@]}"; do
+
+	#echoMe -e "WORKING on ${v} , CURRENT Major RELEASE is: ${MVER} \n"
+	#echo -e "${yellow}WORKING on ${v}, CURRENT is: ${MVER} ${nc}"
+	echo -e "WORKING on ${v}, current is ${MVER}"
+
+	#echoMe -e "${yellow}"
+	if [[ "${v}" > "${MVER}" ]]; then
+		echoMe "VERSION is GREATER"
+	elif [[ "${v}" < "${MVER}" ]]; then
+		echoMe "VERSION is LESS"
+	else
+		echoMe "VERSION is EQUAL ?"
+	fi
+	#echoMe -e "${nc}"
+
+	TMPREPODIR=${TMPDIR}/${v}
+	mkdir -p ${TMPREPODIR} || $(echo "Cant create TMPREPODIR"; exit 1)
+
+	TMPREPOFILE=${TMPREPODIR}/riftware-release.repo
+
+	if [[ ! -f ${TMPREPOFILE} ]]; then
+		echo "Copying ${REPOFILE} to ${TMPREPOFILE}";
+		#cp -vf ${REPOFILE} ${TMPREPOFILE} || $(echo "Cant copy .repo to TMPREPODIR"; exit 1)
+		cp -f ${REPOFILE} ${TMPREPOFILE} || $(echo "Cant copy .repo to TMPREPODIR"; exit 1)
+	fi
+
+i=0
+#for r in ${repos}; do
+for r in ${repos[@]}; do
+	#echoMe -e "${yellow}==================== ($i) ${r} ====================${nc}"
+	echoMe -e "==================== ($i) ${r} ===================="
+
+	#echoMe ${enabled[$i]}
+	echoMe "line ${enabledLines[$i]}: ${enabled[$i]}"
+
+
+	# use RE to match [RIFT.ware-******] and extract info
+	if [[ ${r} =~ (RIFT.ware)-([a-f0-9_\.-]+)-(.*)\]$ ]]; then
+		rule=1
+		name=${BASH_REMATCH[1]}
+		ver=${BASH_REMATCH[2]}
+		lvl=${BASH_REMATCH[3]}
+
+	elif [[ ${r} =~ (RIFT.ware)-([a-f0-9.]+)\]$ ]]; then
+		rule=2
+		name=${BASH_REMATCH[1]}
+		ver=${BASH_REMATCH[2]}
+		lvl="release"
+
+	elif [[ ${r} =~ (RIFT.ware)-(.*)\]$ ]]; then
+		rule=3
+		name=${BASH_REMATCH[1]}
+		ver="4.0"
+		lvl=${BASH_REMATCH[2]}
+
+	elif [[ ${r} =~ (RIFT.ware)\]$ ]]; then
+		rule=4
+		name=${BASH_REMATCH[1]}
+		ver="4.0"
+		lvl="release"
+
+	else
+		rule="default"
+		echoMe -e "${red}ERROR PARSING REPO $r ${nc}"
+		#echoMe -e "! ERROR PARSING REPO $r !"
+		name=""
+		ver=""
+		lvl=""
+	fi
+
+	#echoMe -e "${green}Matched rule #${rule} ${nc}"
+	echoMe -e "Matched rule #${rule} "
+
+	#echoMe "name=|${name}| ver=|${ver}| lvl=|${lvl}|";
+	echoMe "data=|${name}|${ver}|${lvl}|";
+
+	#n=$( echoMe "${r}" | grep -iv '\[' | grep -iv '\]' )
+	#echoMe "n=${n}"
+
+	if [[ "${ver}" < "${v}" ]]; then
+		echoMe "${ver} < ${v} "
+
+		if [[ ${lvl} == "release" ]]; then
+			# turn on ALL release for OLD versions
+			enablerepo ${TMPREPOFILE} ${enabledLines[$i]}
+		else
+			disablerepo ${TMPREPOFILE} ${enabledLines[$i]}
+		fi
+
+
+	elif [[ "${ver}" > "${v}" ]]; then
+		echoMe "${ver} > ${v} "
+
+		disablerepo ${TMPREPOFILE} ${enabledLines[$i]}
+
+	else
+		echoMe "${ver} = ${v} "
+
+		if [[ ${lvl} == "release" ]]; then
+			# turn on ALL release for OLD versions
+			enablerepo ${TMPREPOFILE} ${enabledLines[$i]}
+		else
+			disablerepo ${TMPREPOFILE} ${enabledLines[$i]}
+		fi
+
+	fi
+
+
+	let i="$i+1"
+	done # END for r in ${repos[@]}; do
+
+line
+
+done # END for v in "${RELEASED_VERSIONS[@]}"; do
+
+# check
+#echoMe -e "${purple}===== 4.0${nc}"
+#diff scripts/packaging/rift.repo ${TMPDIR}/4.0/riftware-release.repo
+#echoMe -e "${purple}===== 4.1${nc}"
+#diff scripts/packaging/rift.repo ${TMPDIR}/4.1/riftware-release.repo
+#echoMe -e "${purple}===== 4.2${nc}"
+#diff scripts/packaging/rift.repo ${TMPDIR}/4.2/riftware-release.repo
+#echoMe -e "${purple}===== 4.3${nc}"
+#diff scripts/packaging/rift.repo ${TMPDIR}/4.3/riftware-release.repo
+
+#echoMe "${cyan}"
+echo -e "\n===== Checking\n"
+for v in "${RELEASED_VERSIONS[@]}"; do
+	count=( $(cat ${TMPDIR}/${v}/*.repo | grep -i 'enabled=1' | wc -l) )
+	#echoMe -e "${cyan}===== ${v} has ${count} repos enabled ${nc}"
+	echo -e "${v} has ${count} repos enabled = ${TMPDIR}/${v}/riftware-release.repo "
+done
+echo -e "\n===== Checking\n"
+#echoMe "${nc}"
+
+# Now we have the customized .repo files and can build the RPMs ?!?
+
+# jenkins build rpm looks like:
+# juLog -name=do_rpm_build_${r} log_cmd $RIFT_ROOT/scripts/packaging/build-rpm ${r} ${REPO} || exit 1
+
+
+# reset IFS
+IFS="$OLDIFS"

@@ -1,0 +1,262 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import "style/_colors.scss";
+@import "style/layout.scss";
+@import '../node_modules/open-iconic/font/css/open-iconic.css';
+
+.app-body {
+    display:flex;
+    flex-direction:column;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    height: 100%;
+}
+
+.name-input {
+  color: $gray-darkest;
+}
+.lpReactDashboard {
+  display:flex;
+  height:100%;
+  .app-body {
+    > header {
+      flex: 0 1 auto;
+      flex-shrink: 0;
+    }
+  }
+}
+.lp-react-launch {
+  display: flex;
+}
+.app-body.create-fleet {
+  height: 100%;
+}
+.name-input input {
+  background:white !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.39), 0 -1px 1px #ffffff, 0 1px 0 #ffffff;
+  display: block;
+  font-size: 120%;
+  height: 35px;
+  margin: 0;
+  margin-top: 0.25rem;
+  width: 350px;
+}
+
+.baseGridCell {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 30px;
+  overflow: hidden;
+  padding-left: 2px;
+  padding-right: 2px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp_dashboard {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  height: 100%;
+
+  /* Network service list styles */
+
+  .leftMinimizedNsListPanel {
+    display: flex;
+    flex: 1 100%;
+    height: auto;
+    max-width: 30px;
+    min-width: 30px;
+    header {
+      background-color: white;
+      display:block;
+      h3 {
+        // vertical | horizontal
+        // top | horizonal | bottom
+        // top right bottom left
+        padding: 1.5rem 0;
+        color: white;
+
+      }
+    }
+  }
+
+  .nsListPanel {
+    display: flex;
+    flex: 1 100%;
+    height: auto;
+    max-width: 500px;
+    min-width: 500px;
+
+    header {
+      background-color: white;
+      display:block;
+    }
+
+    &-body {
+      flex-flow: col wrap;
+    }
+  }
+
+  .nsListPanelToggle {
+    position:absolute;
+    top:1.5rem;
+    right:0.5rem;
+    cursor:pointer;
+    display:flex;
+    &:before {
+    }
+    &.on:before{
+    }
+  }
+
+  .nsListPanelToolbar {
+    background-color: $gray;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: row;
+    padding-left: 1rem;
+    .button {
+      cursor: pointer;
+      display: flex;
+      //flex: 0;
+      margin: 4px;
+      margin: 0.5rem;
+      img {
+        height: 1.5rem;
+        margin-right: 0.85rem;
+      }
+      span {
+        padding-top: 0.2rem;
+      }
+    }
+  }
+  .nsList {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: auto;
+    padding-left: 0;
+    padding-right: 0;
+    &-body {
+      overflow-y: scroll;
+    }
+  }
+  .nsListItemRow {
+    display: flex;
+    flex-direction: row;
+  }
+  .cellValue {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nsList-body .nsListItemRow:nth-child(odd):not(.openedCard) {
+    background-color: $gray-lighter;
+  }
+  .nsList-body .nsListItemRow:nth-child(even):not(.openedCard) {
+    background-color: $gray-lightest;
+  }
+  .nsListItemRow.openedCard {
+    background-color: $lighter-blue;
+  }
+  .nsListHeaderRow {
+    background-color: $gray;
+    border-top: 1px solid $gray-lightest;
+    border-bottom: 1px solid $gray-lightest;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: row;
+  }
+  .nsListItemField {
+    @extend .baseGridCell;
+    span {
+      text-overflow: ellipsis;
+    }
+
+  }
+  .nsListHeaderField {
+    @extend .baseGridCell;
+    text-transform: uppercase;
+  }
+  .nsListHeaderField.nsColAction {
+  }
+  .nsListItemField.nsColAction {
+      padding-left: 0.2rem;
+  }
+
+  .colBorderRight {
+    border-right: 1px solid $gray-lightest;
+  }
+
+  .nsColNsName {
+    @extend .colBorderRight;
+    width: 130px;
+  }
+  .nsColNsdName {
+    @extend .colBorderRight;
+    width: 130px;
+  }
+  .nsColStatus {
+    @extend .colBorderRight;
+    width: 85px;
+  }
+  .nsColUptime {
+    @extend .colBorderRight;
+    width: 110px;
+  }
+  .nsColAction {
+    width: 20px;
+    text-overflow: clip;
+  }
+
+  .actionButton {
+    cursor: pointer;
+    // margin-top is a hack to fix the top of the glyph from
+    // being chopped off
+    margin-top: 5px;
+  }
+
+  .nsViewportLink {
+    text-decoration: none;
+    color: black;
+  }
+
+  /* Network service detail card styles */
+
+  .nsCardPanel {
+    //border: 1px solid black;
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    height: auto;
+    header {
+      background-color: white;
+    }
+    &_content {
+    }
+    &-body {
+      background-color: $gray;
+      display: flex;
+      flex: 1;
+      flex-direction: row;
+      min-width: 0;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+  }
+
+  /* Angular wrapping */
+  lp-react-dashboard {
+    display:flex;
+  }
+}
+
+
+

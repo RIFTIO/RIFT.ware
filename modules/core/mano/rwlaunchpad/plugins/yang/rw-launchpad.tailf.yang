@@ -1,0 +1,25 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-launchpad-annotation
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-launchpad-annotation";
+  prefix "rw-launchpad-ann";
+
+  import rw-launchpad {
+    prefix rw-launchpad;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/rw-launchpad:datacenters" {
+    tailf:callpoint rw_callpoint;
+  }
+}

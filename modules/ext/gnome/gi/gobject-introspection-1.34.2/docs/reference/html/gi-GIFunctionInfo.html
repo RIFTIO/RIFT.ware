@@ -1,0 +1,365 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>GIFunctionInfo</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<link rel="home" href="index.html" title="GObject Introspection Reference Manual">
+<link rel="up" href="gi-repository-structs.html" title="GIRepository structs">
+<link rel="prev" href="gi-GIBaseInfo.html" title="GIBaseInfo">
+<link rel="next" href="gi-GICallableInfo.html" title="GICallableInfo">
+<meta name="generator" content="GTK-Doc V1.18.1 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="gi-GIBaseInfo.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="gi-repository-structs.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">GObject Introspection Reference Manual</th>
+<td><a accesskey="n" href="gi-GICallableInfo.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#gi-GIFunctionInfo.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#gi-GIFunctionInfo.description" class="shortcut">Description</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="gi-GIFunctionInfo"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="gi-GIFunctionInfo.top_of_page"></a>GIFunctionInfo</span></h2>
+<p>GIFunctionInfo — Struct representing a function</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="gi-GIFunctionInfo.synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">#define             <a class="link" href="gi-GIFunctionInfo.html#GI-IS-FUNCTION-INFO:CAPS" title="GI_IS_FUNCTION_INFO()">GI_IS_FUNCTION_INFO</a>                 (info)
+typedef             <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo">GIFunctionInfo</a>;
+enum                <a class="link" href="gi-GIFunctionInfo.html#GInvokeError" title="enum GInvokeError">GInvokeError</a>;
+enum                <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfoFlags" title="enum GIFunctionInfoFlags">GIFunctionInfoFlags</a>;
+#define             <a class="link" href="gi-GIFunctionInfo.html#G-INVOKE-ERROR:CAPS" title="G_INVOKE_ERROR">G_INVOKE_ERROR</a>
+const <span class="returnvalue">gchar</span> *       <a class="link" href="gi-GIFunctionInfo.html#g-function-info-get-symbol" title="g_function_info_get_symbol ()">g_function_info_get_symbol</a>          (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfoFlags" title="enum GIFunctionInfoFlags"><span class="returnvalue">GIFunctionInfoFlags</span></a> <a class="link" href="gi-GIFunctionInfo.html#g-function-info-get-flags" title="g_function_info_get_flags ()">g_function_info_get_flags</a>           (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="returnvalue">GIPropertyInfo</span></a> *    <a class="link" href="gi-GIFunctionInfo.html#g-function-info-get-property" title="g_function_info_get_property ()">g_function_info_get_property</a>        (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="returnvalue">GIVFuncInfo</span></a> *       <a class="link" href="gi-GIFunctionInfo.html#g-function-info-get-vfunc" title="g_function_info_get_vfunc ()">g_function_info_get_vfunc</a>           (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>);
+<span class="returnvalue">gboolean</span>            <a class="link" href="gi-GIFunctionInfo.html#g-function-info-invoke" title="g_function_info_invoke ()">g_function_info_invoke</a>              (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">GIArgument</span> *in_args</code></em>,
+                                                         <em class="parameter"><code><span class="type">int</span> n_in_args</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">GIArgument</span> *out_args</code></em>,
+                                                         <em class="parameter"><code><span class="type">int</span> n_out_args</code></em>,
+                                                         <em class="parameter"><code><span class="type">GIArgument</span> *return_value</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="gi-GIFunctionInfo.description"></a><h2>Description</h2>
+<p>
+GIFunctionInfo represents a function, method or constructor.
+To find out what kind of entity a <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> represents, call
+<a class="link" href="gi-GIFunctionInfo.html#g-function-info-get-flags" title="g_function_info_get_flags ()"><code class="function">g_function_info_get_flags()</code></a>.
+</p>
+<p>
+See also <a class="link" href="gi-GICallableInfo.html#GICallableInfo" title="GICallableInfo"><span class="type">GICallableInfo</span></a> for information on how to retreive arguments and
+other metadata.
+</p>
+<p>
+</p>
+<div class="refsect1">
+<a name="gi-gifunctioninfo.struct-hierarchy"></a><h2>Struct hierarchy</h2>
+<pre class="synopsis">
+  <a class="link" href="gi-GIBaseInfo.html" title="GIBaseInfo">GIBaseInfo</a>
+   +----<a class="link" href="gi-GICallableInfo.html" title="GICallableInfo">GICallableInfo</a>
+         +----GIFunctionInfo
+         +----<a class="link" href="gi-GISignalInfo.html" title="GISignalInfo">GISignalInfo</a>
+         +----<a class="link" href="gi-GIVFuncInfo.html" title="GIVFuncInfo">GIVFuncInfo</a>
+</pre>
+</div>
+<p>
+</p>
+</div>
+<div class="refsect1">
+<a name="gi-GIFunctionInfo.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="GI-IS-FUNCTION-INFO:CAPS"></a><h3>GI_IS_FUNCTION_INFO()</h3>
+<pre class="programlisting">#define             GI_IS_FUNCTION_INFO(info)</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIFunctionInfo"></a><h3>GIFunctionInfo</h3>
+<pre class="programlisting">typedef GIBaseInfo GIFunctionInfo;
+</pre>
+<p>
+Represents a function, eg arguments and return value.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GInvokeError"></a><h3>enum GInvokeError</h3>
+<pre class="programlisting">typedef enum {
+  G_INVOKE_ERROR_FAILED,
+  G_INVOKE_ERROR_SYMBOL_NOT_FOUND,
+  G_INVOKE_ERROR_ARGUMENT_MISMATCH
+} GInvokeError;
+</pre>
+<p>
+An error occuring while invoking a function via
+<a class="link" href="gi-GIFunctionInfo.html#g-function-info-invoke" title="g_function_info_invoke ()"><code class="function">g_function_info_invoke()</code></a>.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><a name="G-INVOKE-ERROR-FAILED:CAPS"></a><span class="term"><code class="literal">G_INVOKE_ERROR_FAILED</code></span></p></td>
+<td>invokation failed, unknown error.
+</td>
+</tr>
+<tr>
+<td><p><a name="G-INVOKE-ERROR-SYMBOL-NOT-FOUND:CAPS"></a><span class="term"><code class="literal">G_INVOKE_ERROR_SYMBOL_NOT_FOUND</code></span></p></td>
+<td>symbol couldn't be found in any of the
+libraries associated with the typelib of the function.
+</td>
+</tr>
+<tr>
+<td><p><a name="G-INVOKE-ERROR-ARGUMENT-MISMATCH:CAPS"></a><span class="term"><code class="literal">G_INVOKE_ERROR_ARGUMENT_MISMATCH</code></span></p></td>
+<td>the arguments provided didn't match
+the expected arguments for the functions type signature.
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIFunctionInfoFlags"></a><h3>enum GIFunctionInfoFlags</h3>
+<pre class="programlisting">typedef enum {
+  GI_FUNCTION_IS_METHOD      = 1 &lt;&lt; 0,
+  GI_FUNCTION_IS_CONSTRUCTOR = 1 &lt;&lt; 1,
+  GI_FUNCTION_IS_GETTER      = 1 &lt;&lt; 2,
+  GI_FUNCTION_IS_SETTER      = 1 &lt;&lt; 3,
+  GI_FUNCTION_WRAPS_VFUNC    = 1 &lt;&lt; 4,
+  GI_FUNCTION_THROWS         = 1 &lt;&lt; 5
+} GIFunctionInfoFlags;
+</pre>
+<p>
+Flags for a <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> struct.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><a name="GI-FUNCTION-IS-METHOD:CAPS"></a><span class="term"><code class="literal">GI_FUNCTION_IS_METHOD</code></span></p></td>
+<td>is a method.
+</td>
+</tr>
+<tr>
+<td><p><a name="GI-FUNCTION-IS-CONSTRUCTOR:CAPS"></a><span class="term"><code class="literal">GI_FUNCTION_IS_CONSTRUCTOR</code></span></p></td>
+<td>is a constructor.
+</td>
+</tr>
+<tr>
+<td><p><a name="GI-FUNCTION-IS-GETTER:CAPS"></a><span class="term"><code class="literal">GI_FUNCTION_IS_GETTER</code></span></p></td>
+<td>is a getter of a <a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a>.
+</td>
+</tr>
+<tr>
+<td><p><a name="GI-FUNCTION-IS-SETTER:CAPS"></a><span class="term"><code class="literal">GI_FUNCTION_IS_SETTER</code></span></p></td>
+<td>is a setter of a <a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a>.
+</td>
+</tr>
+<tr>
+<td><p><a name="GI-FUNCTION-WRAPS-VFUNC:CAPS"></a><span class="term"><code class="literal">GI_FUNCTION_WRAPS_VFUNC</code></span></p></td>
+<td>represents a virtual function.
+</td>
+</tr>
+<tr>
+<td><p><a name="GI-FUNCTION-THROWS:CAPS"></a><span class="term"><code class="literal">GI_FUNCTION_THROWS</code></span></p></td>
+<td>the function may throw an error.
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="G-INVOKE-ERROR:CAPS"></a><h3>G_INVOKE_ERROR</h3>
+<pre class="programlisting">#define G_INVOKE_ERROR (g_invoke_error_quark ())
+</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-function-info-get-symbol"></a><h3>g_function_info_get_symbol ()</h3>
+<pre class="programlisting">const <span class="returnvalue">gchar</span> *       g_function_info_get_symbol          (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the symbol of the function. The symbol is the name of the
+exported function, suitable to be used as an argument to
+<code class="function">g_module_symbol()</code>.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the symbol</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-function-info-get-flags"></a><h3>g_function_info_get_flags ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfoFlags" title="enum GIFunctionInfoFlags"><span class="returnvalue">GIFunctionInfoFlags</span></a> g_function_info_get_flags           (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfoFlags" title="enum GIFunctionInfoFlags"><span class="type">GIFunctionInfoFlags</span></a> for the <em class="parameter"><code>info</code></em>.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the flags</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-function-info-get-property"></a><h3>g_function_info_get_property ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="returnvalue">GIPropertyInfo</span></a> *    g_function_info_get_property        (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the property associated with this <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a>.
+Only <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> with the flag <a class="link" href="gi-GIFunctionInfo.html#GI-FUNCTION-IS-GETTER:CAPS"><code class="literal">GI_FUNCTION_IS_GETTER</code></a> or
+<a class="link" href="gi-GIFunctionInfo.html#GI-FUNCTION-IS-SETTER:CAPS"><code class="literal">GI_FUNCTION_IS_SETTER</code></a> have a property set. For other cases,
+<a href="/src/build/jhbuild/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL--CAPS"><code class="literal">NULL</code></a> will be returned.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the property or <a href="/src/build/jhbuild/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL--CAPS"><code class="literal">NULL</code></a> if not set. Free it with
+<a class="link" href="gi-GIBaseInfo.html#g-base-info-unref" title="g_base_info_unref ()"><code class="function">g_base_info_unref()</code></a> when done. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-function-info-get-vfunc"></a><h3>g_function_info_get_vfunc ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="returnvalue">GIVFuncInfo</span></a> *       g_function_info_get_vfunc           (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the virtual function associated with this <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a>.
+Only <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> with the flag <a class="link" href="gi-GIFunctionInfo.html#GI-FUNCTION-WRAPS-VFUNC:CAPS"><code class="literal">GI_FUNCTION_WRAPS_VFUNC</code></a> has
+a virtual function set. For other cases, <a href="/src/build/jhbuild/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL--CAPS"><code class="literal">NULL</code></a> will be returned.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the virtual function or <a href="/src/build/jhbuild/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL--CAPS"><code class="literal">NULL</code></a> if not set.
+Free it by calling <a class="link" href="gi-GIBaseInfo.html#g-base-info-unref" title="g_base_info_unref ()"><code class="function">g_base_info_unref()</code></a> when done. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-function-info-invoke"></a><h3>g_function_info_invoke ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            g_function_info_invoke              (<em class="parameter"><code><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> *info</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">GIArgument</span> *in_args</code></em>,
+                                                         <em class="parameter"><code><span class="type">int</span> n_in_args</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">GIArgument</span> *out_args</code></em>,
+                                                         <em class="parameter"><code><span class="type">int</span> n_out_args</code></em>,
+                                                         <em class="parameter"><code><span class="type">GIArgument</span> *return_value</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>
+Invokes the function described in <em class="parameter"><code>info</code></em> with the given
+arguments. Note that inout parameters must appear in both
+argument lists. This function uses <code class="function">dlsym()</code> to obtain a pointer
+to the function, so the library or shared object containing the
+described function must either be linked to the caller, or must
+have been <code class="function">g_module_symbol()</code>ed before calling this function.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a> describing the function to invoke</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>in_args</code></em> :</span></p></td>
+<td>an array of <span class="type">GIArgument</span>s, one for each in
+parameter of <em class="parameter"><code>info</code></em>. If there are no in parameter, <em class="parameter"><code>in_args</code></em>
+can be <a href="/src/build/jhbuild/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL--CAPS"><code class="literal">NULL</code></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>n_in_args</code></em> :</span></p></td>
+<td>the length of the <em class="parameter"><code>in_args</code></em> array</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>out_args</code></em> :</span></p></td>
+<td>an array of <span class="type">GIArgument</span>s, one for each out
+parameter of <em class="parameter"><code>info</code></em>. If there are no out parameters, <em class="parameter"><code>out_args</code></em>
+may be <a href="/src/build/jhbuild/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL--CAPS"><code class="literal">NULL</code></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>n_out_args</code></em> :</span></p></td>
+<td>the length of the <em class="parameter"><code>out_args</code></em> array</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>return_value</code></em> :</span></p></td>
+<td>return location for the return value of the
+function. If the function returns void, <em class="parameter"><code>return_value</code></em> may be
+<a href="/src/build/jhbuild/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL--CAPS"><code class="literal">NULL</code></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>error</code></em> :</span></p></td>
+<td>return location for detailed error information, or <a href="/src/build/jhbuild/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL--CAPS"><code class="literal">NULL</code></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>
+<code class="literal">TRUE</code> if the function has been invoked, <code class="literal">FALSE</code> if an
+error occurred.</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.18.1</div>
+</body>
+</html>

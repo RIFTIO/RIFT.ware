@@ -1,0 +1,44 @@
+
+TO test the LP mocklet via command line:
+
+Part 1:  Run the test server infrastructure
+
+1. ssh into a VM, navigate to your workspace rift root and run ./rift-shell
+2. navigate to:
+    modules/core/mc/rwmc/test
+
+3. run:
+    $ python3 ./mission_control.py -m ethsim -c --skip-prepare-vm --mock --skip-ui
+
+The --skip-ui option prevents the server infrastructure from loading Composer
+and the UI (to save time loading, especially if you are going to be running
+the server in your own dev environment).
+
+Part 2: Run the mocklet
+
+1. repeat step 1 above
+2. navigate to:
+    modules/core/mc/rwlp_dts_mock
+
+
+3. If the rwlp_dts_mock/node_modules directory does not exist, run:
+
+    $ npm install
+
+4. Start the mocklet after the server (mission_control.py) has completed initialization
+
+To start the mocklet:
+
+    $ node lp_mock_client.js
+
+5. After the mocklet has started, open another terminal window (can be
+anywhere that can access the restconf server on your VM) and run the following:
+
+Seed the descriptors and instance config objects, run:
+
+    $ ./set_data.sh <vm-ip-address>
+
+Now you are ready to test retrieving an ns-instance-opdata object
+
+    $ get_ns_instance_opdata.sh <vm-ip-address>
+

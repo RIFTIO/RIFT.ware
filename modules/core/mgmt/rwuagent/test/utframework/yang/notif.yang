@@ -1,0 +1,60 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module notif {
+
+  namespace "http://riftio.com/ns/core/mgmt/rwuagent/test/notif";
+  prefix notif;
+
+  import ietf-inet-types { prefix inet; }
+
+  description "System notification";
+
+  revision "2015-10-31" {
+    description "Initial revision";
+  }
+
+  notification new-route {
+    description "Notification for new route";
+    leaf name {
+      description "Route name";
+      type string;
+    }
+
+    leaf id {
+      description "Route ID";
+      type uint16;
+    }
+  }
+
+  notification temp-alarm {
+    description "Temperature threshold alarm";
+    leaf message {
+      description "Alarm message";
+      type string;
+    }
+
+    leaf curr-temp {
+      description "Current temperature";
+      type uint16;
+    }
+
+    leaf thresh-temp {
+      description "Threshold temperature";
+      type uint16;
+    }
+  }
+
+  notification test-tasklet-failed {
+    description "Tasklet failed";
+    leaf message {
+      type string;
+    }
+  }
+
+}

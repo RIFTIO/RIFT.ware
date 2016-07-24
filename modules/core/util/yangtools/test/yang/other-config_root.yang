@@ -1,0 +1,48 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module other-config_root
+{
+  namespace "http://riftio.com/ns/riftware-1.0/other-config_root";
+  prefix "root";
+
+  revision 2013-03-21 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT root configuration";
+  }
+
+  container load {
+    description "load data into the system";
+    config false;
+
+    container cli {
+      description "load manifest";
+      leaf manifest {
+        type string;
+      }
+    }
+
+    container config {
+      description "load configuration";
+      leaf filename {
+        type string;
+      }
+    }
+  }
+
+  container list {
+    config false;
+    container cli {
+      leaf manifest {
+        type empty;
+      }
+    }
+  }
+} // module other-config_root

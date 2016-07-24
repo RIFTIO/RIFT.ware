@@ -1,0 +1,10 @@
+VNF vnfname=trafgen, ext_port_type=virtio, fab_port_type=virtio, fab_net=physdpdk, config_file=1b_9vm_trafgen, config_priority=2, config_delay=5, monitor1=ports:0:10000, monitor2=aggr-ports
+VDU1 vduname=RW.VDU.LEAD.DDPL, fabric_port=1, external_port=0, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2
+VDU2 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2
+VDU3 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2
+VDU4 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2
+VDU5 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2
+VDU6 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2
+VDU7 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2
+VDU8 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2
+VDU9 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=2, image=rift-root-latest-multivm-vnf.qcow2

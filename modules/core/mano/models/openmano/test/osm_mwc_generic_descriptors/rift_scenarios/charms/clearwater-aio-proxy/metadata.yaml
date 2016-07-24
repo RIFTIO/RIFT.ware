@@ -1,0 +1,10 @@
+name: clearwater-aio-proxy
+summary: All-in-One proxy charm for Project Clearwater
+maintainer: Project Clearwater Maintainers <maintainers@projectclearwater.org>
+description: All-in-One proxy charm for Project Clearwater
+tags:
+  - misc
+subordinate: false
+provides:
+  ue:
+    interface: 3GPP-Gm

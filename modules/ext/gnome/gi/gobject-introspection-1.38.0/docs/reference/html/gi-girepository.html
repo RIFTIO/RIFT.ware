@@ -1,0 +1,1075 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>girepository</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="index.html" title="GObject Introspection Reference Manual">
+<link rel="up" href="gi-libgirepository.html" title="GIRepository">
+<link rel="prev" href="gi-libgirepository.html" title="GIRepository">
+<link rel="next" href="gi-ffi.html" title="GIR Foreign functions interface">
+<meta name="generator" content="GTK-Doc V1.19 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="gi-libgirepository.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="gi-libgirepository.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">GObject Introspection Reference Manual</th>
+<td><a accesskey="n" href="gi-ffi.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#gi-girepository.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#gi-girepository.description" class="shortcut">Description</a>
+                   | 
+                  <a href="#gi-girepository.object-hierarchy" class="shortcut">Object Hierarchy</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="gi-girepository"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="gi-girepository.top_of_page"></a>girepository</span></h2>
+<p>girepository</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="gi-girepository.synopsis"></a><h2>Synopsis</h2>
+<a name="GIRepository"></a><pre class="synopsis">typedef             <a class="link" href="gi-girepository.html#GICallbackInfo" title="GICallbackInfo">GICallbackInfo</a>;
+struct              <a class="link" href="gi-girepository.html#GIRepository-struct" title="struct GIRepository">GIRepository</a>;
+enum                <a class="link" href="gi-girepository.html#GIRepositoryError" title="enum GIRepositoryError">GIRepositoryError</a>;
+enum                <a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags">GIRepositoryLoadFlags</a>;
+                    <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib">GITypelib</a>;
+<a class="link" href="gi-girepository.html#GIRepository"><span class="returnvalue">GIRepository</span></a> *      <a class="link" href="gi-girepository.html#g-irepository-get-default" title="g_irepository_get_default ()">g_irepository_get_default</a>           (<em class="parameter"><code><span class="type">void</span></code></em>);
+<span class="returnvalue">void</span>                <a class="link" href="gi-girepository.html#g-irepository-prepend-search-path" title="g_irepository_prepend_search_path ()">g_irepository_prepend_search_path</a>   (<em class="parameter"><code>const <span class="type">char</span> *directory</code></em>);
+<span class="returnvalue">void</span>                <a class="link" href="gi-girepository.html#g-irepository-prepend-library-path" title="g_irepository_prepend_library_path ()">g_irepository_prepend_library_path</a>  (<em class="parameter"><code>const <span class="type">char</span> *directory</code></em>);
+<span class="returnvalue">GSList</span> *            <a class="link" href="gi-girepository.html#g-irepository-get-search-path" title="g_irepository_get_search_path ()">g_irepository_get_search_path</a>       (<em class="parameter"><code><span class="type">void</span></code></em>);
+const <span class="returnvalue">char</span> *        <a class="link" href="gi-girepository.html#g-irepository-load-typelib" title="g_irepository_load_typelib ()">g_irepository_load_typelib</a>          (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> *typelib</code></em>,
+                                                         <em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags"><span class="type">GIRepositoryLoadFlags</span></a> flags</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);
+<span class="returnvalue">gboolean</span>            <a class="link" href="gi-girepository.html#g-irepository-is-registered" title="g_irepository_is_registered ()">g_irepository_is_registered</a>         (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *version</code></em>);
+<a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="returnvalue">GIBaseInfo</span></a> *        <a class="link" href="gi-girepository.html#g-irepository-find-by-name" title="g_irepository_find_by_name ()">g_irepository_find_by_name</a>          (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *name</code></em>);
+<a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         <a class="link" href="gi-girepository.html#g-irepository-require" title="g_irepository_require ()">g_irepository_require</a>               (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *version</code></em>,
+                                                         <em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags"><span class="type">GIRepositoryLoadFlags</span></a> flags</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);
+<a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         <a class="link" href="gi-girepository.html#g-irepository-require-private" title="g_irepository_require_private ()">g_irepository_require_private</a>       (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *typelib_dir</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *version</code></em>,
+                                                         <em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags"><span class="type">GIRepositoryLoadFlags</span></a> flags</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);
+<span class="returnvalue">gchar</span> **            <a class="link" href="gi-girepository.html#g-irepository-get-dependencies" title="g_irepository_get_dependencies ()">g_irepository_get_dependencies</a>      (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);
+<span class="returnvalue">gchar</span> **            <a class="link" href="gi-girepository.html#g-irepository-get-loaded-namespaces" title="g_irepository_get_loaded_namespaces ()">g_irepository_get_loaded_namespaces</a> (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>);
+<a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="returnvalue">GIBaseInfo</span></a> *        <a class="link" href="gi-girepository.html#g-irepository-find-by-gtype" title="g_irepository_find_by_gtype ()">g_irepository_find_by_gtype</a>         (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code><span class="type">GType</span> gtype</code></em>);
+<span class="returnvalue">gint</span>                <a class="link" href="gi-girepository.html#g-irepository-get-n-infos" title="g_irepository_get_n_infos ()">g_irepository_get_n_infos</a>           (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);
+<a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="returnvalue">GIBaseInfo</span></a> *        <a class="link" href="gi-girepository.html#g-irepository-get-info" title="g_irepository_get_info ()">g_irepository_get_info</a>              (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code><span class="type">gint</span> index</code></em>);
+const <span class="returnvalue">gchar</span> *       <a class="link" href="gi-girepository.html#g-irepository-get-typelib-path" title="g_irepository_get_typelib_path ()">g_irepository_get_typelib_path</a>      (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);
+const <span class="returnvalue">gchar</span> *       <a class="link" href="gi-girepository.html#g-irepository-get-shared-library" title="g_irepository_get_shared_library ()">g_irepository_get_shared_library</a>    (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);
+const <span class="returnvalue">gchar</span> *       <a class="link" href="gi-girepository.html#g-irepository-get-version" title="g_irepository_get_version ()">g_irepository_get_version</a>           (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);
+<span class="returnvalue">GOptionGroup</span> *      <a class="link" href="gi-girepository.html#g-irepository-get-option-group" title="g_irepository_get_option_group ()">g_irepository_get_option_group</a>      (<em class="parameter"><code><span class="type">void</span></code></em>);
+const <span class="returnvalue">gchar</span> *       <a class="link" href="gi-girepository.html#g-irepository-get-c-prefix" title="g_irepository_get_c_prefix ()">g_irepository_get_c_prefix</a>          (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);
+<span class="returnvalue">gboolean</span>            <a class="link" href="gi-girepository.html#g-irepository-dump" title="g_irepository_dump ()">g_irepository_dump</a>                  (<em class="parameter"><code>const <span class="type">char</span> *arg</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);
+<span class="returnvalue">GList</span> *             <a class="link" href="gi-girepository.html#g-irepository-enumerate-versions" title="g_irepository_enumerate_versions ()">g_irepository_enumerate_versions</a>    (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);
+#define             <a class="link" href="gi-girepository.html#G-IREPOSITORY-ERROR:CAPS" title="G_IREPOSITORY_ERROR">G_IREPOSITORY_ERROR</a>
+<a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         <a class="link" href="gi-girepository.html#g-typelib-new-from-memory" title="g_typelib_new_from_memory ()">g_typelib_new_from_memory</a>           (<em class="parameter"><code><span class="type">guint8</span> *memory</code></em>,
+                                                         <em class="parameter"><code><span class="type">gsize</span> len</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);
+<a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         <a class="link" href="gi-girepository.html#g-typelib-new-from-const-memory" title="g_typelib_new_from_const_memory ()">g_typelib_new_from_const_memory</a>     (<em class="parameter"><code>const <span class="type">guint8</span> *memory</code></em>,
+                                                         <em class="parameter"><code><span class="type">gsize</span> len</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);
+<a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         <a class="link" href="gi-girepository.html#g-typelib-new-from-mapped-file" title="g_typelib_new_from_mapped_file ()">g_typelib_new_from_mapped_file</a>      (<em class="parameter"><code><span class="type">GMappedFile</span> *mfile</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);
+<span class="returnvalue">void</span>                <a class="link" href="gi-girepository.html#g-typelib-free" title="g_typelib_free ()">g_typelib_free</a>                      (<em class="parameter"><code><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> *typelib</code></em>);
+<span class="returnvalue">gboolean</span>            <a class="link" href="gi-girepository.html#g-typelib-symbol" title="g_typelib_symbol ()">g_typelib_symbol</a>                    (<em class="parameter"><code><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> *typelib</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *symbol_name</code></em>,
+                                                         <em class="parameter"><code><span class="type">gpointer</span> *symbol</code></em>);
+const <span class="returnvalue">gchar</span> *       <a class="link" href="gi-girepository.html#g-typelib-get-namespace" title="g_typelib_get_namespace ()">g_typelib_get_namespace</a>             (<em class="parameter"><code><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> *typelib</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="gi-girepository.object-hierarchy"></a><h2>Object Hierarchy</h2>
+<pre class="synopsis">
+  GObject
+   +----GIRepository
+</pre>
+</div>
+<div class="refsect1">
+<a name="gi-girepository.description"></a><h2>Description</h2>
+</div>
+<div class="refsect1">
+<a name="gi-girepository.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="GICallbackInfo"></a><h3>GICallbackInfo</h3>
+<pre class="programlisting">typedef GIBaseInfo GICallbackInfo;
+</pre>
+<p>
+Represents a callback, eg arguments and return value.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIRepository-struct"></a><h3>struct GIRepository</h3>
+<pre class="programlisting">struct GIRepository;</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIRepositoryError"></a><h3>enum GIRepositoryError</h3>
+<pre class="programlisting">typedef enum {
+  G_IREPOSITORY_ERROR_TYPELIB_NOT_FOUND,
+  G_IREPOSITORY_ERROR_NAMESPACE_MISMATCH,
+  G_IREPOSITORY_ERROR_NAMESPACE_VERSION_CONFLICT,
+  G_IREPOSITORY_ERROR_LIBRARY_NOT_FOUND
+} GIRepositoryError;
+</pre>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><a name="G-IREPOSITORY-ERROR-TYPELIB-NOT-FOUND:CAPS"></a><span class="term"><code class="literal">G_IREPOSITORY_ERROR_TYPELIB_NOT_FOUND</code></span></p></td>
+<td>the typelib could not be found.
+</td>
+</tr>
+<tr>
+<td><p><a name="G-IREPOSITORY-ERROR-NAMESPACE-MISMATCH:CAPS"></a><span class="term"><code class="literal">G_IREPOSITORY_ERROR_NAMESPACE_MISMATCH</code></span></p></td>
+<td>the namespace does not match the
+requested namespace.
+</td>
+</tr>
+<tr>
+<td><p><a name="G-IREPOSITORY-ERROR-NAMESPACE-VERSION-CONFLICT:CAPS"></a><span class="term"><code class="literal">G_IREPOSITORY_ERROR_NAMESPACE_VERSION_CONFLICT</code></span></p></td>
+<td>the version of the
+typelib does not match the requested version.
+</td>
+</tr>
+<tr>
+<td><p><a name="G-IREPOSITORY-ERROR-LIBRARY-NOT-FOUND:CAPS"></a><span class="term"><code class="literal">G_IREPOSITORY_ERROR_LIBRARY_NOT_FOUND</code></span></p></td>
+<td>the library used by the typelib
+could not be found.
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIRepositoryLoadFlags"></a><h3>enum GIRepositoryLoadFlags</h3>
+<pre class="programlisting">typedef enum {
+  G_IREPOSITORY_LOAD_FLAG_LAZY = 1 &lt;&lt; 0
+} GIRepositoryLoadFlags;
+</pre>
+<p>
+Flags that controlls how a typelib is loaded by
+GIRepositry, used by <a class="link" href="gi-girepository.html#g-irepository-load-typelib" title="g_irepository_load_typelib ()"><code class="function">g_irepository_load_typelib()</code></a>.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><a name="G-IREPOSITORY-LOAD-FLAG-LAZY:CAPS"></a><span class="term"><code class="literal">G_IREPOSITORY_LOAD_FLAG_LAZY</code></span></p></td>
+<td>Load the types lazily.
+</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GITypelib"></a><h3>GITypelib</h3>
+<pre class="programlisting">typedef struct {
+} GITypelib;
+</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-default"></a><h3>g_irepository_get_default ()</h3>
+<pre class="programlisting"><a class="link" href="gi-girepository.html#GIRepository"><span class="returnvalue">GIRepository</span></a> *      g_irepository_get_default           (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+<p>
+Returns the singleton process-global default <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>.  It is
+not currently supported to have multiple repositories in a
+particular process, but this function is provided in the unlikely
+eventuality that it would become possible, and as a convenience for
+higher level language bindings to conform to the GObject method
+call conventions.
+</p>
+<p>
+All methods on <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> also accept <code class="literal">NULL</code> as an instance
+parameter to mean this default repository, which is usually more
+convenient for C.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>The global singleton <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>. <span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span>
+</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-prepend-search-path"></a><h3>g_irepository_prepend_search_path ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                g_irepository_prepend_search_path   (<em class="parameter"><code>const <span class="type">char</span> *directory</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-prepend-library-path"></a><h3>g_irepository_prepend_library_path ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                g_irepository_prepend_library_path  (<em class="parameter"><code>const <span class="type">char</span> *directory</code></em>);</pre>
+<p>
+Prepends <em class="parameter"><code>directory</code></em> to the search path that is used to
+search shared libraries referenced by imported namespaces.
+Multiple calls to this function all contribute to the final
+list of paths.
+The list of paths is unique and shared for all <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>
+instances across the process, but it doesn't affect namespaces
+imported before the call.
+</p>
+<p>
+If the library is not found in the directories configured
+in this way, loading will fall back to the system library
+path (ie. LD_LIBRARY_PATH and DT_RPATH in ELF systems).
+See the documentation of your dynamic linker for full details.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><em class="parameter"><code>directory</code></em> :</span></p></td>
+<td>a single directory to scan for shared libraries. <span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span>
+</td>
+</tr></tbody>
+</table></div>
+<p class="since">Since 1.35.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-search-path"></a><h3>g_irepository_get_search_path ()</h3>
+<pre class="programlisting"><span class="returnvalue">GSList</span> *            g_irepository_get_search_path       (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+<p>
+Returns the search path the GIRepository will use when looking for typelibs.
+The string is internal to GIRespository and should not be freed, nor should
+the elements.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>list of strings. <span class="annotation">[<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span>
+</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-load-typelib"></a><h3>g_irepository_load_typelib ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *        g_irepository_load_typelib          (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> *typelib</code></em>,
+                                                         <em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags"><span class="type">GIRepositoryLoadFlags</span></a> flags</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-is-registered"></a><h3>g_irepository_is_registered ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            g_irepository_is_registered         (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *version</code></em>);</pre>
+<p>
+Check whether a particular namespace (and optionally, a specific
+version thereof) is currently loaded.  This function is likely to
+only be useful in unusual circumstances; in order to act upon
+metadata in the namespace, you should call <a class="link" href="gi-girepository.html#g-irepository-require" title="g_irepository_require ()"><code class="function">g_irepository_require()</code></a>
+instead which will ensure the namespace is loaded, and return as
+quickly as this function will if it has already been loaded.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>Namespace of interest</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>version</code></em> :</span></p></td>
+<td>Required version, may be <code class="literal">NULL</code> for latest. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>
+<code class="literal">TRUE</code> if namespace-version is loaded, <code class="literal">FALSE</code> otherwise</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-find-by-name"></a><h3>g_irepository_find_by_name ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="returnvalue">GIBaseInfo</span></a> *        g_irepository_find_by_name          (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *name</code></em>);</pre>
+<p>
+Searches for a particular entry in a namespace.  Before calling
+this function for a particular namespace, you must call
+<a class="link" href="gi-girepository.html#g-irepository-require" title="g_irepository_require ()"><code class="function">g_irepository_require()</code></a> once to load the namespace, or otherwise
+ensure the namespace has already been loaded.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>Namespace which will be searched</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>name</code></em> :</span></p></td>
+<td>Entry name to find</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>
+<a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="type">GIBaseInfo</span></a> representing metadata about <em class="parameter"><code>name</code></em>, or <code class="literal">NULL</code>. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-require"></a><h3>g_irepository_require ()</h3>
+<pre class="programlisting"><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         g_irepository_require               (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *version</code></em>,
+                                                         <em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags"><span class="type">GIRepositoryLoadFlags</span></a> flags</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>
+Force the namespace <em class="parameter"><code>namespace_</code></em> to be loaded if it isn't already.
+If <em class="parameter"><code>namespace_</code></em> is not loaded, this function will search for a
+".typelib" file using the repository search path.  In addition, a
+version <em class="parameter"><code>version</code></em> of namespace may be specified.  If <em class="parameter"><code>version</code></em> is
+not specified, the latest will be used.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>Repository, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>GI namespace to use, e.g. "Gtk"</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>version</code></em> :</span></p></td>
+<td>Version of namespace, may be <code class="literal">NULL</code> for latest. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>flags</code></em> :</span></p></td>
+<td>Set of <a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags"><code class="literal">GIRepositoryLoadFlags</code></a>, may be 0</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>error</code></em> :</span></p></td>
+<td>a <span class="type">GError</span>.</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>a pointer to the <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> if successful, <code class="literal">NULL</code> otherwise. <span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-require-private"></a><h3>g_irepository_require_private ()</h3>
+<pre class="programlisting"><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         g_irepository_require_private       (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *typelib_dir</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *version</code></em>,
+                                                         <em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags"><span class="type">GIRepositoryLoadFlags</span></a> flags</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>
+Force the namespace <em class="parameter"><code>namespace_</code></em> to be loaded if it isn't already.
+If <em class="parameter"><code>namespace_</code></em> is not loaded, this function will search for a
+".typelib" file within the private directory only. In addition, a
+version <em class="parameter"><code>version</code></em> of namespace should be specified.  If <em class="parameter"><code>version</code></em> is
+not specified, the latest will be used.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>Repository, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>typelib_dir</code></em> :</span></p></td>
+<td>Private directory where to find the requested typelib</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>GI namespace to use, e.g. "Gtk"</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>version</code></em> :</span></p></td>
+<td>Version of namespace, may be <code class="literal">NULL</code> for latest. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>flags</code></em> :</span></p></td>
+<td>Set of <a class="link" href="gi-girepository.html#GIRepositoryLoadFlags" title="enum GIRepositoryLoadFlags"><code class="literal">GIRepositoryLoadFlags</code></a>, may be 0</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>error</code></em> :</span></p></td>
+<td>a <span class="type">GError</span>.</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>a pointer to the <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> if successful, <code class="literal">NULL</code> otherwise. <span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-dependencies"></a><h3>g_irepository_get_dependencies ()</h3>
+<pre class="programlisting"><span class="returnvalue">gchar</span> **            g_irepository_get_dependencies      (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);</pre>
+<p>
+Return an array of all (transitive) dependencies for namespace
+<em class="parameter"><code>namespace_</code></em>, including version.  The returned strings are of the
+form <code class="code">namespace-version</code>.
+</p>
+<p>
+Note: The namespace must have already been loaded using a function
+such as <a class="link" href="gi-girepository.html#g-irepository-require" title="g_irepository_require ()"><code class="function">g_irepository_require()</code></a> before calling this function.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>Namespace of interest</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>Zero-terminated string array of versioned dependencies. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-loaded-namespaces"></a><h3>g_irepository_get_loaded_namespaces ()</h3>
+<pre class="programlisting"><span class="returnvalue">gchar</span> **            g_irepository_get_loaded_namespaces (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>);</pre>
+<p>
+Return the list of currently loaded namespaces.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>List of namespaces. <span class="annotation">[<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> utf8][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-find-by-gtype"></a><h3>g_irepository_find_by_gtype ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="returnvalue">GIBaseInfo</span></a> *        g_irepository_find_by_gtype         (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code><span class="type">GType</span> gtype</code></em>);</pre>
+<p>
+Searches all loaded namespaces for a particular <span class="type">GType</span>.  Note that
+in order to locate the metadata, the namespace corresponding to
+the type must first have been loaded.  There is currently no
+mechanism for determining the namespace which corresponds to an
+arbitrary GType - thus, this function will operate most reliably
+when you know the GType to originate from be from a loaded namespace.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>gtype</code></em> :</span></p></td>
+<td>GType to search for</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>
+<a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="type">GIBaseInfo</span></a> representing metadata about <em class="parameter"><code>type</code></em>, or <code class="literal">NULL</code>. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-n-infos"></a><h3>g_irepository_get_n_infos ()</h3>
+<pre class="programlisting"><span class="returnvalue">gint</span>                g_irepository_get_n_infos           (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);</pre>
+<p>
+This function returns the number of metadata entries in
+given namespace <em class="parameter"><code>namespace_</code></em>.  The namespace must have
+already been loaded before calling this function.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>Namespace to inspect</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>number of metadata entries</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-info"></a><h3>g_irepository_get_info ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="returnvalue">GIBaseInfo</span></a> *        g_irepository_get_info              (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>,
+                                                         <em class="parameter"><code><span class="type">gint</span> index</code></em>);</pre>
+<p>
+This function returns a particular metadata entry in the
+given namespace <em class="parameter"><code>namespace_</code></em>.  The namespace must have
+already been loaded before calling this function.
+See <a class="link" href="gi-girepository.html#g-irepository-get-n-infos" title="g_irepository_get_n_infos ()"><code class="function">g_irepository_get_n_infos()</code></a> to find the maximum number of
+entries.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>Namespace to inspect</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>index</code></em> :</span></p></td>
+<td>0-based offset into namespace metadata for entry</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>
+<a class="link" href="gi-GIBaseInfo.html#GIBaseInfo" title="GIBaseInfo"><span class="type">GIBaseInfo</span></a> containing metadata. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-typelib-path"></a><h3>g_irepository_get_typelib_path ()</h3>
+<pre class="programlisting">const <span class="returnvalue">gchar</span> *       g_irepository_get_typelib_path      (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);</pre>
+<p>
+If namespace <em class="parameter"><code>namespace_</code></em> is loaded, return the full path to the
+.typelib file it was loaded from.  If the typelib for
+namespace <em class="parameter"><code>namespace_</code></em> was included in a shared library, return
+the special string "$lt;builtin$gt;".
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>Repository, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>GI namespace to use, e.g. "Gtk"</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>Filesystem path (or $lt;builtin$gt;) if successful, <code class="literal">NULL</code> if namespace is not loaded</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-shared-library"></a><h3>g_irepository_get_shared_library ()</h3>
+<pre class="programlisting">const <span class="returnvalue">gchar</span> *       g_irepository_get_shared_library    (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);</pre>
+<p>
+This function returns the full path to the shared C library
+associated with the given namespace <em class="parameter"><code>namespace_</code></em>. There may be no
+shared library path associated, in which case this function will
+return <code class="literal">NULL</code>.
+</p>
+<p>
+Note: The namespace must have already been loaded using a function
+such as <a class="link" href="gi-girepository.html#g-irepository-require" title="g_irepository_require ()"><code class="function">g_irepository_require()</code></a> before calling this function.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>Namespace to inspect</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>Full path to shared library, or <code class="literal">NULL</code> if none associated</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-version"></a><h3>g_irepository_get_version ()</h3>
+<pre class="programlisting">const <span class="returnvalue">gchar</span> *       g_irepository_get_version           (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);</pre>
+<p>
+This function returns the loaded version associated with the given
+namespace <em class="parameter"><code>namespace_</code></em>.
+</p>
+<p>
+Note: The namespace must have already been loaded using a function
+such as <a class="link" href="gi-girepository.html#g-irepository-require" title="g_irepository_require ()"><code class="function">g_irepository_require()</code></a> before calling this function.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>Namespace to inspect</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>Loaded version</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-option-group"></a><h3>g_irepository_get_option_group ()</h3>
+<pre class="programlisting"><span class="returnvalue">GOptionGroup</span> *      g_irepository_get_option_group      (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+<p>
+Obtain the option group for girepository, it's used
+by the dumper and for programs that wants to provide
+introspection information
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the option group. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-get-c-prefix"></a><h3>g_irepository_get_c_prefix ()</h3>
+<pre class="programlisting">const <span class="returnvalue">gchar</span> *       g_irepository_get_c_prefix          (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);</pre>
+<p>
+This function returns the "C prefix", or the C level namespace
+associated with the given introspection namespace.  Each C symbol
+starts with this prefix, as well each <span class="type">GType</span> in the library.
+</p>
+<p>
+Note: The namespace must have already been loaded using a function
+such as <a class="link" href="gi-girepository.html#g-irepository-require" title="g_irepository_require ()"><code class="function">g_irepository_require()</code></a> before calling this function.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>A <a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a>, may be <code class="literal">NULL</code> for the default. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>Namespace to inspect</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>C namespace prefix, or <code class="literal">NULL</code> if none associated</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-dump"></a><h3>g_irepository_dump ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            g_irepository_dump                  (<em class="parameter"><code>const <span class="type">char</span> *arg</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>
+Argument specified is a comma-separated pair of filenames; i.e. of
+the form "input.txt,output.xml".  The input file should be a
+UTF-8 Unix-line-ending text file, with each line containing either
+"get-type:" followed by the name of a GType _get_type function, or
+"error-quark:" followed by the name of an error quark function.  No
+extra whitespace is allowed.
+</p>
+<p>
+The output file should already exist, but be empty.  This function will
+overwrite its contents.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>arg</code></em> :</span></p></td>
+<td>Comma-separated pair of input and output filenames</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>error</code></em> :</span></p></td>
+<td>a <code class="literal">GError</code>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>
+<code class="literal">TRUE</code> on success, <code class="literal">FALSE</code> on error</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-irepository-enumerate-versions"></a><h3>g_irepository_enumerate_versions ()</h3>
+<pre class="programlisting"><span class="returnvalue">GList</span> *             g_irepository_enumerate_versions    (<em class="parameter"><code><a class="link" href="gi-girepository.html#GIRepository"><span class="type">GIRepository</span></a> *repository</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *namespace_</code></em>);</pre>
+<p>
+Obtain an unordered list of versions (either currently loaded or
+available) for <em class="parameter"><code>namespace_</code></em> in this <em class="parameter"><code>repository</code></em>.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>repository</code></em> :</span></p></td>
+<td>the repository. <span class="annotation">[<acronym title="NULL is ok, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>namespace_</code></em> :</span></p></td>
+<td>GI namespace, e.g. "Gtk"</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the array of versions. <span class="annotation">[<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> utf8][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="G-IREPOSITORY-ERROR:CAPS"></a><h3>G_IREPOSITORY_ERROR</h3>
+<pre class="programlisting">#define G_IREPOSITORY_ERROR (g_irepository_error_quark ())
+</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-typelib-new-from-memory"></a><h3>g_typelib_new_from_memory ()</h3>
+<pre class="programlisting"><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         g_typelib_new_from_memory           (<em class="parameter"><code><span class="type">guint8</span> *memory</code></em>,
+                                                         <em class="parameter"><code><span class="type">gsize</span> len</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>
+Creates a new <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> from a memory location.  The memory block
+pointed to by <em class="parameter"><code>typelib</code></em> will be automatically <code class="function">g_free()</code>d when the
+repository is destroyed.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>memory</code></em> :</span></p></td>
+<td>address of memory chunk containing the typelib</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>len</code></em> :</span></p></td>
+<td>length of memory chunk containing the typelib</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>error</code></em> :</span></p></td>
+<td>a <span class="type">GError</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the new <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-typelib-new-from-const-memory"></a><h3>g_typelib_new_from_const_memory ()</h3>
+<pre class="programlisting"><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         g_typelib_new_from_const_memory     (<em class="parameter"><code>const <span class="type">guint8</span> *memory</code></em>,
+                                                         <em class="parameter"><code><span class="type">gsize</span> len</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>
+Creates a new <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> from a memory location.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>memory</code></em> :</span></p></td>
+<td>address of memory chunk containing the typelib</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>len</code></em> :</span></p></td>
+<td>length of memory chunk containing the typelib</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>error</code></em> :</span></p></td>
+<td>A <span class="type">GError</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the new <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-typelib-new-from-mapped-file"></a><h3>g_typelib_new_from_mapped_file ()</h3>
+<pre class="programlisting"><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="returnvalue">GITypelib</span></a> *         g_typelib_new_from_mapped_file      (<em class="parameter"><code><span class="type">GMappedFile</span> *mfile</code></em>,
+                                                         <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>
+Creates a new <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> from a <span class="type">GMappedFile</span>.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>mfile</code></em> :</span></p></td>
+<td>a <span class="type">GMappedFile</span>, that will be free'd when the repository is destroyed</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>error</code></em> :</span></p></td>
+<td>a <span class="type">GError</span>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the new <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-typelib-free"></a><h3>g_typelib_free ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                g_typelib_free                      (<em class="parameter"><code><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> *typelib</code></em>);</pre>
+<p>
+Free a <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a>.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><em class="parameter"><code>typelib</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a>
+</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-typelib-symbol"></a><h3>g_typelib_symbol ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            g_typelib_symbol                    (<em class="parameter"><code><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> *typelib</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *symbol_name</code></em>,
+                                                         <em class="parameter"><code><span class="type">gpointer</span> *symbol</code></em>);</pre>
+<p>
+Loads a symbol from <a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a>.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>typelib</code></em> :</span></p></td>
+<td>the typelib</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>symbol_name</code></em> :</span></p></td>
+<td>name of symbol to be loaded</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>symbol</code></em> :</span></p></td>
+<td>returns a pointer to the symbol value</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>
+<span class="type">TRUE</span> on success</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-typelib-get-namespace"></a><h3>g_typelib_get_namespace ()</h3>
+<pre class="programlisting">const <span class="returnvalue">gchar</span> *       g_typelib_get_namespace             (<em class="parameter"><code><a class="link" href="gi-girepository.html#GITypelib" title="GITypelib"><span class="type">GITypelib</span></a> *typelib</code></em>);</pre>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.19</div>
+</body>
+</html>

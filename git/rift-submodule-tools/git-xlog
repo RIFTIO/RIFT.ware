@@ -1,0 +1,49 @@
+#!/bin/bash -e
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+
+# This script shows all changes in the super-module and all sub-modules in between two git super-module hashes
+
+if [ $# -ne 2 ]; then
+    echo "$(basename $0) args are start_hash end_hash"
+    exit 1
+fi
+
+START=$1
+END=$2
+export START END
+
+top_gitdir() {
+    local d=$(git rev-parse --git-dir 2>/dev/null)
+    [ $? -ne 0 ] && return
+
+    d=$(readlink -m "${d}")
+    d=${d%/.git*}
+    echo "${d}"
+}
+
+toplevel=$(top_gitdir)
+if [ -z "$toplevel" ]; then
+    echo "Cannot locate top of git tree"
+    exit 1
+fi
+export toplevel
+
+
+echo "================================================== changes in SUPER-MODULE:"
+cd $toplevel
+git log ${START}..${END}
+
+git submodule foreach --quiet '
+    start=$(GIT_DIR=${toplevel}/.git git ls-tree $START $path | awk "{print \$3}");
+    end=$(GIT_DIR=${toplevel}/.git git ls-tree $END $path | awk "{print \$3}");
+    if [ $start == $end ]; then
+            echo ================================================== NO changes in $path
+    else
+            echo ================================================== Changes in $path from $start to $end
+            git log ${start}..${end};
+    fi
+'
+

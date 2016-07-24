@@ -1,0 +1,34 @@
+#!/bin/bash
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Varun Prasad
+# Creation Date: 2016/01/04
+#
+
+source $RIFT_INSTALL/usr/rift/systemtest/util/mano/mano_common.sh
+
+# Helper script for invoking the mission control system test using the systest_wrapper
+SCRIPT_TEST="py.test -x -v -p no:cacheprovider -k 'not Teardown or test_stop_launchpad' \
+            ${PYTEST_DIR}/mission_control/test_mission_control.py \
+            ${PYTEST_DIR}/mission_control/pingpong_vnf/test_onboard_vnf.py \
+            ${PYTEST_DIR}/mission_control/pingpong_vnf/test_records.py"
+
+REBOOT_SCRIPT_TEST="py.test -x -v -p no:cacheprovider -k 'test_wait_for_launchpad_started or test_wait_for_pingpong_started or Teardown' \
+                    ${PYTEST_DIR}/mission_control/test_mission_control.py \
+                    ${PYTEST_DIR}/mission_control/pingpong_vnf/test_onboard_vnf.py \
+                    ${PYTEST_DIR}/mission_control/pingpong_vnf/test_records.py"
+
+test_prefix="pingpong_vnf_reload_systest"
+test_cmd=""
+
+# Parse commonline argument and set test variables
+parse_args "${@}"
+
+# Construct the test command based on the test variables
+construct_test_comand
+
+# Execute from pytest root directory to pick up conftest.py
+cd "${PYTEST_DIR}"
+
+eval ${test_cmd}

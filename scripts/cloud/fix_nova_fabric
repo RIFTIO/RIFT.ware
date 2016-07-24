@@ -1,0 +1,56 @@
+#!/bin/bash
+
+if [ `whoami` != "root" ]; then
+    echo must be root
+    exit 1
+fi
+
+if [[ ! `hostname -s` =~ ^(grunt[0-9]+|tapti)$ ]]; then
+    echo only run on grunt
+    exit 1
+fi
+
+
+trap "rm -f /tmp/filter.$$" 0
+trap "exit 1" 2
+
+instances=`virsh list --name`
+for vm in $instances
+do
+    x=`virsh dumpxml $vm  2>/dev/null | xpath '/domain/devices/interface/filterref[../source[attribute::bridge="br176"]]' 2>/dev/null`
+    if [ -z "$x" ]; then
+        echo vm $vm has no connection to bridge br176
+        continue
+    fi
+    if [[ ! $x =~ filterref\ filter=\"(.*)\" ]]; then
+        echo unable to parse $x for filter name
+        continue
+    fi
+    filter=${BASH_REMATCH[1]}
+    virsh nwfilter-dumpxml $filter | grep -v "'IP'" >/tmp/filter.$$
+    virsh nwfilter-define /tmp/filter.$$ >/dev/null
+    if [ $? -eq 0 ]; then
+        echo fixed $vm filter $filter
+    else
+        echo ERROR on $vm filter $filter. System did not accept this XML:
+        cat /tmp/filter.$$
+    fi
+done
+# one of these should work
+# devstack:
+virsh nwfilter-dumpxml nova-base | egrep -v 'no-mac-spoofing|no-ip-spoofing|no-arp-spoofing' >/tmp/filter.$$
+virsh nwfilter-define /tmp/filter.$$ >/dev/null
+rc1=$?
+# packstack
+virsh nwfilter-dumpxml clean-traffic | egrep -v 'no-mac-spoofing|no-ip-spoofing|no-arp-spoofing' >/tmp/filter.$$
+virsh nwfilter-define /tmp/filter.$$ >/dev/null
+rc2=$?
+if [ $rc1 -eq 0 -o $rc2 -eq 0 ]; then
+    echo fixed global spoofing filter
+else
+    echo ERROR on global spoofing filter
+fi
+
+
+
+    

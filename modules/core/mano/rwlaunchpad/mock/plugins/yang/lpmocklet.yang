@@ -1,0 +1,99 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module lpmocklet
+{
+    namespace "http://riftio.com/ns/riftware-1.0/lpmocklet";
+    prefix "lpmocklet";
+
+    import rw-pb-ext {
+        prefix "rwpb";
+    }
+
+    import ietf-inet-types {
+        prefix "inet";
+    }
+
+    import ietf-yang-types {
+        prefix "yang";
+    }
+
+    import mano-types {
+        prefix "manotypes";
+    }
+
+    // Used for LP Mocklet RPC action-param and control-param responses
+    container lpmocklet-action-status {
+        config false;
+        leaf id {
+            type yang:uuid;
+        }
+        // TODO: Make this consistent with 'set-control-param' 'obj-code'
+        leaf object_type {
+            type string;
+        }
+        leaf action {
+            type string;
+        }
+        leaf status {
+            type string;
+        }
+    }
+
+    rpc set-control-param {
+        input {
+            leaf id {
+                description "object id";
+                type yang:uuid;
+                mandatory true;
+            }
+            leaf obj-code {
+                description "Type of object: NS, VNF";
+                type string;
+                mandatory true;
+            }
+            leaf control-id {
+                type string;
+                mandatory true;
+            }
+            // The new vale to assign
+            leaf value {
+                type uint64;
+                mandatory true;
+            }
+        }
+    }
+
+    rpc start-vnfr {
+        input {
+            rwpb:msg-new "StartVnfrInput";
+            leaf id {
+                type yang:uuid;
+                mandatory true;
+            }
+        }
+        output {
+            rwpb:msg-new "StartVnfrOutput";
+            leaf status {
+                description "status of the start request";
+                type string;
+            }
+        }
+    }
+
+    rpc stop-vnfr {
+        input {
+            rwpb:msg-new "StopVnfr";
+            leaf id {
+                type yang:uuid;
+                mandatory true;
+            }
+        }
+    }
+}
+

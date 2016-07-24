@@ -1,0 +1,110 @@
+{
+    "title":"Configuration",
+    "description":"The test configuration detail",
+    "type":"object",
+    "properties":{
+        "test_name":{
+            "description":"test case name",
+            "type":"string"
+        },
+        "_comment":{
+            "description":"OPTIONAL comments",
+            "type":"string"
+        },
+        "commandline":{
+            "description":"Commandline including absolute path name of the script and arguments",
+            "type":"string"
+        },
+        "target_vm":{
+            "description":"logicl VM name to launch the script on",
+            "type":"string"
+        },
+        "run_as_root":{
+            "description":"execute as root",
+            "type":"boolean"
+        },
+        "test_description":{
+            "description":"A brief descripton of the test case",
+            "type":"string",
+            "maxLength":200
+        },
+        "status":{
+            "description":"Current status of the test case",
+            "enum":[
+                "working",
+                "broken",
+                "development"
+            ]
+        },
+        "keywords":{
+            "description":"List of keyworkds indicating how to run test case",
+            "type":"array",
+            "items":{
+                "type": "string"
+            },
+            "uniqueItems":true
+        },
+        "networks":{
+            "description":"List of networks",
+            "type":"array",
+            "items":{
+                "enum": [
+                    "fabric1",
+                    "fabric2",
+                    "ext1",
+                    "ext2",
+                    "internet"
+                ],
+                "uniqueItems":true
+            }
+        },
+        "vms":{
+            "description":"set of VMs to run the test case",
+            "type":"array",
+            "items":{
+                "type":"object",
+                "description":"Each Vm",
+                "properties":{
+                    "name":{
+                        "type":"string"
+                    },
+                    "memory": {
+                        "type":"number"
+                    },
+                    "hugepages": {
+                        "type":"boolean"
+                    },
+                    "cpus": {
+                        "type":"number"
+                    },
+                    "fabric1":{
+                        "type":"number"
+                    },
+                    "ext1":{
+                        "type":"number"
+                    },
+                    "ext2":{
+                        "type":"number"
+                    },
+                    "internet": {
+                        "type":"number"
+                    }
+                },
+                "required":[
+                    "name"
+                ]
+
+            },
+            "uniqueItems":true
+        }
+
+    },
+    "required":[
+        "test_name",
+        "commandline",
+        "test_description",
+        "status",
+        "keywords"
+    ]
+
+}

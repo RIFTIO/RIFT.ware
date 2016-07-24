@@ -1,0 +1,131 @@
+module test-a-rw-sfmgr-data
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-sfmgr-data";
+  prefix "rw-sfmgr-data";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+  import rw-yang-types {
+    prefix "rwt";
+  }
+  import test-a-rw-vnf-base-types {
+    prefix "rwvnfbasetypes";
+  }
+  import test-a-mano-base {
+    prefix "manobase";
+  }
+  import test-a-rw-vnf-base-config {
+    prefix "rwvnfbaseconfig";
+  }
+  import test-a-rw-vnf-base-opdata {
+    prefix "rwvnfbaseopdata";
+  }
+  import ietf-inet-types { prefix inet; }
+
+  revision 2015-01-09 {
+    description "Initial revision";
+  }
+
+  augment /manobase:vnf-opdata/manobase:vnf {
+    container nsh-service-function-state {
+      rwpb:msg-new NshServiceFunctionState;
+      config false;
+      list nsh-service-function-oper {
+        rwpb:msg-new RwNshServiceFunctionOper; 
+        config false;
+        rwpb:field-inline-max yang;
+        max-elements 24;
+        key "sf-name";
+
+        leaf sf-name {
+          type string;
+          description "Name of service function";
+        }
+        leaf vsap-type {
+          type rwvnfbasetypes:vsap-type;
+          description "VSAP type needed";
+        }
+        leaf vsap-name{
+          rwpb:field-inline "true";
+          rwpb:field-string-max 64;
+          type string;
+          description "VSAP name for this mgr";
+        }
+        leaf vsap-service-id{
+          type uint32;
+          description "Local id for this SF";
+        }
+        container nsh-dp-locator {
+          rwpb:msg-new RwNshServiceFunctionDpState; 
+          config false;
+          list dp-locators {
+            rwpb:msg-new RwNshServiceFunctionDpOper; 
+            config false;
+            max-elements 24;
+            key "dp-locator-name";
+            rwpb:field-inline-max yang;
+
+            leaf dp-locator-name {
+              type string;
+              description "Name of data-plane-locator";
+            }
+            leaf vsap-service-subindex {
+              type uint32;
+              description "Local sub-id for this SF";
+            }
+            leaf vsap-id {
+              type uint32;
+              description "VSAP id allocated by FPctrl";
+            }
+            leaf address {
+              type inet:ip-address;
+              description "Data Plane IP address of SFF";
+            }
+            leaf port {
+              type inet:port-number;
+              description "Data Plane port number of SFF";
+            }
+            leaf transport-type {
+              type rwvnfbasetypes:nsh-transport-type;
+              description "Type of NSH encapsulation";
+            }
+            leaf bytes-in {
+              type rwt:zero-based-counter64;
+              description "Aggregate of pkts received at this SF Data plane";
+            }
+            leaf bytes-out {
+              type rwt:zero-based-counter64;
+              description "Aggregate of pkts transmitted at this SF Data plane";
+            }
+            leaf packets-in {
+              type rwt:zero-based-counter64;
+              description "Aggregate of pkts received at this SF Data plane";
+            }
+            leaf packets-out {
+              type rwt:zero-based-counter64;
+              description "Aggregate of pkts transmitted at this SF Data plane";
+            } 
+          }
+        }
+ 
+        leaf bytes-in {
+          type rwt:zero-based-counter64;
+          description "Aggregate of pkts received at SF";
+        }
+        leaf bytes-out {
+          type rwt:zero-based-counter64;
+          description "Aggregate of pkts transmitted by SF";
+        }
+        leaf packets-in {
+          type rwt:zero-based-counter64;
+          description "Aggregate of pkts received at SF";
+        }
+        leaf packets-out {
+          type rwt:zero-based-counter64;
+          description "Aggregate of pkts transmitted by SF";
+        }
+      } 
+    }
+  }
+}

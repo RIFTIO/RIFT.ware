@@ -1,0 +1,8 @@
+1:
+  test/cp1: 11.0.0.1
+2:
+  test/cp1: 11.0.0.2
+test/cp1: 11.0.0.3
+rw_mgmt_ip: 1.1.1.1
+rw_username: admin
+rw_password: admin

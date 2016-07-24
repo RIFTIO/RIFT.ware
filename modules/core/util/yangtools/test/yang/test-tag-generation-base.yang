@@ -1,0 +1,125 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file test-tag-generation-base.yang
+ * @author Rajesh Velandy
+ * @date 2014/09/03
+ * @brief Base yang for testing tag generation in NCX/yangpbc
+ */
+
+module test-tag-generation-base
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/test-tag-generation-base";
+  prefix "ttgb";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description
+    "Base yang for testing Tag generation.";
+
+  revision 2014-09-03 {
+    description "Initial version"; }
+
+  typedef enum_ttgb_e {
+    type enumeration {
+      enum TTGB_ONE   { value 1; }
+      enum TTGB_TWO   { value 2; }
+      enum TTGB_THREE { value 3; }
+      enum TTGB_FOUR  { value 4; }
+      enum TTGB_FIVE  { value 5; }
+    }
+  }
+
+  leaf x {
+    type enum_ttgb_e;
+  }
+  grouping base-grp-1 {
+    container cont1 {
+      config true;
+      description "Test container 1 in base-grp-1.";
+      rwpb:msg-new TtgbGrpCont1;
+      rwpb:msg-flat "true";
+
+      leaf str1 {
+        description "A string from cont 1";
+        rwpb:field-string-max 64;
+        type string {
+          length "1..64";
+        }
+      }
+      leaf num1 {
+        description "A number from cont 1";
+        type int64;
+      }
+      list lst1 {
+        description "A plain list1 under grp 1, cont1";
+        rwpb:field-inline-max "1024";
+        key "str11";
+        max-elements 1024;
+
+        leaf num11 {
+          description "A number under lst1, cont1, base-grp-1";
+          type int32 { range "1..10"; }
+        }
+
+        leaf str11 {
+          rwpb:field-string-max 64;
+          description "A string under lst1, cont1, base-grp-1";
+          type string;
+        }
+      }
+
+      leaf-list ll1 {
+        rwpb:field-inline-max "64";
+        description "A leaf-list of under base grp 1";
+        type int64;
+      }
+    }
+  }
+  grouping base-grp-2 {
+    leaf str3 {
+      description "A string from base grp 2";
+      type string;
+    }
+
+    leaf num3 {
+      description "A number from base grp 2";
+      type int8;
+    }
+  }
+
+  container top-cont1 {
+    description "A top container 1";
+    rwpb:msg-new TtgbTopCont1;
+
+    leaf top-str1 {
+      description "A string from cont 1";
+      type string {
+        length "1..20";
+      }
+    }
+
+    leaf top-num1 {
+      description "A number from cont 1";
+      type int64;
+    }
+
+    uses base-grp-1;
+
+    uses base-grp-2;
+  }
+  uses base-grp-2;
+  container top-cont2 {
+    description "A top container 2";
+    rwpb:msg-new TtgbTopCont2;
+    uses base-grp-1;
+    uses base-grp-2;
+  }
+}

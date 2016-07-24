@@ -1,0 +1,271 @@
+#!/bin/bash
+
+
+# bring the current VM back to a base state
+
+
+DEBUG=0
+if [ "$1" == "-d" ]; then
+    DEBUG=1
+    shift
+fi
+
+log() { 
+    echo $*
+    echo $* >>/tmp/reset_vm.log
+}
+
+# delete any network namespaces if they exist, this will remove the kni_rw* processes that come from DPDK tests - RIFT-11223
+clean_netns() {
+	NUM_NETNS=`ip netns list | wc -l`
+	log "found ${NUM_NETNS} network namespaces to cleanup"
+	for ns in `ip netns list`; do
+	        log "removing netns: ${ns}"
+        	ip netns delete ${ns}
+	done
+}
+
+
+rm -f /tmp/reset_vm.log
+who=`whoami`;
+log "reset_vm running as ${who}";
+
+uptime=`uptime`;
+log ${uptime};
+
+systemctl stop dnsmasq
+
+# dnsmasq is actually running under libvirtd, destroy the virsh network and the dnsmasq process is stopped
+virsh net-destroy default
+sleep 2;
+killall dnsmasq
+
+# cleanup the LVMs for the LXC containers
+systemctl stop lvm2-lvmetad
+umount /var/lib/lxc/rwm0/rootfs
+lvremove -f /dev/rift/rwm0
+systemctl restart lvm2-lvmetad
+
+systemctl restart salt-master
+
+clean_netns
+
+# cleanup logs
+rm -rf /tmp/RWLOGD*
+
+
+# define known (good) procs
+KNOWN_PROCS='
+agetty
+ata_sff
+auditd
+automount
+bash
+bioset
+CMD
+crond
+crypto
+cut
+dbus-daemon
+deferwq
+dhclient
+dmeventd
+dmesg
+ebtables
+ext4-rsv-conver
+ext4lazyinit
+fsnotify_mark
+getenforce
+jbd2
+kauditd
+kblockd
+kcopyd
+kdevtmpfs
+kdmflush
+khelper
+khubd
+khugepaged
+kintegrityd
+kpsmoused
+ksmd
+ksnaphd
+ksoftirqd
+kswapd
+kthreadd
+kthrotld
+kworker
+launch_composer
+libvirtd
+lockd
+loop0
+loop1
+loop2
+loop3
+loop4
+loop5
+loop6
+loop7
+lvmetad
+md
+migration
+mount
+mount.nfs
+netns
+nfsiod
+node
+nslcd
+ntpd
+pm-is-supported
+ps
+python
+python2
+rcu_bh
+rcu_sched
+reset_vm
+rpcbind
+rpciod
+rpc.statd
+rsyslogd
+rwhod
+salt-master
+scsi_eh
+sd-pam
+sftp-server
+sh
+sleep
+sort
+sshd
+sssd
+sudo
+systemd
+ttm_swap
+vballoon
+vim
+watchdog
+writeback
+'
+
+FATAL_PROCS='
+gdb
+strace'
+
+
+# first check for a FATAL_PROC running on a terminal
+# and ABORT if found
+
+debug() { 
+    echo $* >>/tmp/reset_vm.log
+    if [ $DEBUG == 0 ]; then
+        return 
+    fi
+    echo $*
+}
+
+
+find_proc_in_list() { 
+
+    pname=$1
+    shift
+    for proc_name in $*; do
+        if [[ "$pname" =~ ^\(?$proc_name ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+check_for_fatal_procs() {
+    log "checking for fatal procs"
+    while read pid term start pname; do
+        debug pid $pid pname $pname
+        if find_proc_in_list $pname $FATAL_PROCS; then
+            if [[ "$term" =~ ^(tty|pts) ]]; then
+                log FATAL proc found pid $pid term $term name $pname
+                return 1
+            else
+                log IGNORING FATAL proc $pname on term $term
+            fi
+        fi
+    done
+    return 0
+}
+
+kill_all () {
+
+    # now check and kill any procs we don't expect to see
+    # some procs show with a leading open paren and some have trailing CPU ids so we use a RE
+    # sig should be 15, 9 or 0
+
+    sig=$1
+    log "kill_all $sig"
+
+    rc=0
+    while read pid x y pname; do
+        if ! find_proc_in_list $pname $KNOWN_PROCS; then
+            if [ $sig == 0 ]; then
+                # just report
+                log "found proc $pname pid $pid"
+                return 1
+            fi
+            log "kill -$sig $pid  # $pname"
+            kill -$sig $pid
+            rc=1
+        else
+            debug $pid $pname is OK
+        fi
+    done
+    return $rc
+}
+
+if [ -n "$1" ]; then
+    log "clearing confd peristent data"
+    rm -rf $1/.install/persist*
+fi
+
+if [ -n "$2" ]; then
+    log "resetting permissions in $1 to $2"
+    mkdir -p $1/.install
+    mkdir -p $1/.artifacts/moduletest/
+    chown -R $2 $1/.install $1/.artifacts
+fi
+
+#remove data store db files
+log "removing data store persistant files"
+rm -rf .install/*db
+
+
+if [ -f /usr/rift/etc/fix_this_vm ]; then
+    /usr/rift/etc/fix_this_vm || exit 1
+fi
+
+ps -A | check_for_fatal_procs || exit 1
+ps -A | kill_all 15
+clean_netns
+if [ $? -ne 0 ]; then
+    sleep 1
+    ps -A | kill_all 9
+    sleep 2
+fi
+ps -A | kill_all 0
+if [ $? -eq 0 ]; then
+    log SUCCESS
+    exit 0
+fi
+clean_netns
+log "poison processes found. Waiting 3 seconds"
+sleep 3
+ps -A | kill_all 0
+if [ $? -eq 0 ]; then
+    log SUCCESS
+    exit 0
+fi
+log "poison processes found. Waiting 3 more seconds"
+sleep 3
+ps -A | kill_all 0
+if [ $? -eq 0 ]; then
+    log SUCCESS
+    exit 0
+fi
+
+log "poison processes still exist after 6 seconds"
+exit 1

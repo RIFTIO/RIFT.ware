@@ -1,0 +1,156 @@
+tosca_definitions_version:      tosca_simple_profile_for_nfv_1_0_0
+#tosca_default_namespace :    # Optional. default namespace (schema, types version)
+
+description: Define RIFT.io custom types
+
+data_types:
+  tosca.datatypes.network.riftio.vnf_configuration:
+    properties:
+      config_type:
+        type: string
+      config_delay:
+        type: integer
+        default: 0
+        required: no
+        constraints:
+          - greater_or_equal: 0
+      config_priority:
+        type: integer
+        constraints:
+          - greater_than: 0
+      config_details:
+        type: map
+      config_template:
+        type: string
+        required: no
+
+capability_types:
+  tosca.capabilities.riftio.http_endpoint_type:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      polling_interval:
+        type: integer
+        #type: scalar_unit.time
+      path:
+        type: string
+
+  tosca.capabilities.riftio.mgmt_interface_type:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      dashboard_params:
+        type: map
+
+  tosca.capabilities.riftio.monitoring_param:
+    derived_from: tosca.capabilities.nfv.Metric
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      value_type:
+        type: string
+        default: INT
+      group_tag:
+        type: string
+        default: Group1
+      units:
+        type: string
+      description:
+        type: string
+      json_query_method:
+        type: string
+        default: NAMEKEY
+      http_endpoint_ref:
+        type: string
+      widget_type:
+        type: string
+        default: COUNTER
+
+node_types:
+  tosca.nodes.riftio.VNF1:
+    derived_from: tosca.nodes.nfv.VNF
+    properties:
+      #vdu_ref:
+      #  type: list
+      #  description: VDUs this VNF references
+      vnf_configuration:
+        type: tosca.datatypes.network.riftio.vnf_configuration
+      port:
+        type: integer
+        constraints:
+          - in_range: [1, 65535]
+    capabilities:
+      mgmt_interface:
+        type: tosca.capabilities.riftio.mgmt_interface_type
+      http_endpoint:
+        type: tosca.capabilities.riftio.http_endpoint_type
+      # Have not figured out how to do a list for capabilities
+      # If you specify multiple cpabilites of same type the
+      # last one is only available in parser
+      monitoring_param_0:
+        type: tosca.capabilities.riftio.monitoring_param
+      monitoring_param_1:
+        type: tosca.capabilities.riftio.monitoring_param
+    requirements:
+      - vdus:
+          type: tosca.capabilities.nfv.VirtualLinkable
+          relationship: tosca.relationships.nfv.VirtualLinksTo
+          node: tosca.nodes.riftio.VDU1
+          occurrences: [ 1, UNBOUND ]
+
+  tosca.nodes.riftio.VDU1:
+    derived_from: tosca.nodes.nfv.VDU
+    properties:
+      count:
+        type: integer
+        default: 1
+      cloud_init :
+        type: string
+        default: "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\nssh_pwauth: True\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ ifup, eth1 ]\n"
+    capabilities:
+      virtual_linkable:
+        type: tosca.capabilities.nfv.VirtualLinkable
+
+  tosca.nodes.riftio.CP1:
+    derived_from: tosca.nodes.nfv.CP
+    properties:
+      name:
+        type: string
+        description: Name of the connection point
+      cp_type:
+        type: string
+        description: Type of connection point
+      vdu_intf_name:
+        type: string
+        description: Name of interface on VDU
+      vdu_intf_type:
+        type: string
+        description: Type of interface on VDU
+
+  tosca.nodes.riftio.VL1:
+    derived_from: tosca.nodes.nfv.VL.ELAN
+    properties:
+      description:
+        type: string
+
+group_types:
+  tosca.groups.riftio.ConfigPrimitives:
+    derived_from: tosca.groups.Root
+    properties:
+      primitive:
+        type: map
+
+policy_types:
+  tosca.policies.riftio.ScalingGroup:
+    derived_from: tosca.policies.Root
+    properties:
+      name:
+        type: string
+      max_instance_count:
+        type: integer
+      min_instance_count:
+        type: integer
+      vnfd_members:
+        type: map
+      config_actions:
+        type: map

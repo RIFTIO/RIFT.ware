@@ -1,0 +1,35 @@
+#!/bin/bash -e
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+
+# This script recursively shows the status of each submodule that is changed
+# check that you are a top level
+if [ ! -f .gitmodules ] ; then
+    echo "$(basename $0) can only be executed from top (supermodule) level"
+    exit 1
+fi
+
+RE1="--- a/(.*)"
+RE2="-Subproject commit (.*)"
+RE3="\+Subproject commit (.*)"
+trap "rm /tmp/xgit-show.$$" 0
+trap "exit 1" 2
+git show "$@" >/tmp/xgit-show.$$
+echo -e "\n================= rift"
+cat /tmp/xgit-show.$$
+cat /tmp/xgit-show.$$ | while read line; do 
+    if [[ $line =~ $RE1 ]]; then
+        module=${BASH_REMATCH[1]}
+    elif [[ $line =~ $RE2 ]]; then
+        start=${BASH_REMATCH[1]}
+    elif [[ $line =~ $RE3 ]]; then
+        end=${BASH_REMATCH[1]}
+        echo -e "\n================= $module"
+        pushd $module >/dev/null
+        git show $end
+        popd >/dev/null
+    fi
+done
+        

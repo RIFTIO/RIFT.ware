@@ -1,0 +1,87 @@
+vnfd:vnfd-catalog:
+    vnfd:
+    -   id: mwc16gen
+        name: mwc16gen
+        short-name: mwc16gen
+        description: tidgen 4x10Gbps 28GB 11cores
+        logo: tef.png
+        mgmt-interface:
+            vdu-id: mwc16gen1-VM
+        connection-point:
+        -   name: eth0
+            type: VPORT
+        -   name: eth1
+            type: VPORT
+        -   name: xe0
+            type: VPORT
+        -   name: xe1
+            type: VPORT
+        -   name: xe2
+            type: VPORT
+        -   name: xe3
+            type: VPORT
+        vdu:
+        -   id: mwc16gen1-VM
+            name: mwc16gen1-VM
+            description: tidgen with 4x10Gbps 28GB
+            image: /mnt/powervault/virtualization/vnfs/demos/mwc2016/tidgen_mwc16.qcow2
+            vm-flavor:
+                memory-mb: '28672'
+            mgmt-vpci: 0000:00:0a.0
+            external-interface:
+            -   name: xe0
+                virtual-interface:
+                    type: PCI-PASSTHROUGH
+                    vpci: '0000:00:10.0'
+                vnfd-connection-point-ref: xe0
+            -   name: xe1
+                virtual-interface:
+                    type: PCI-PASSTHROUGH
+                    vpci: '0000:00:11.0'
+                vnfd-connection-point-ref: xe1
+            -   name: xe2
+                virtual-interface:
+                    type: PCI-PASSTHROUGH
+                    vpci: '0000:00:12.0'
+                vnfd-connection-point-ref: xe2
+            -   name: xe3
+                virtual-interface:
+                    type: PCI-PASSTHROUGH
+                    vpci: '0000:00:13.0'
+                vnfd-connection-point-ref: xe3
+            -   name: eth0
+                virtual-interface:
+                    bandwidth: '1000000'
+                    type: VIRTIO
+                    vpci: 0000:00:0a.0
+                vnfd-connection-point-ref: eth0
+            -   name: eth1
+                virtual-interface:
+                    bandwidth: '1000000'
+                    type: OM-MGMT
+                    vpci: 0000:00:0b.0
+                vnfd-connection-point-ref: eth1
+            guest-epa:
+                cpu-pinning-policy: DEDICATED
+                cpu-thread-pinning-policy: PREFER
+                mempage-size: LARGE
+                numa-node-policy:
+                    mem-policy: STRICT
+                    node:
+                    -   id: '0'
+                        paired-threads:
+                            num-paired-threads: '11'
+                    node-cnt: '1'
+            host-epa:
+                om-cpu-feature:
+                - 64b
+                - iommu
+                - lps
+                - tlbps
+                - hwsv
+                - dioc
+                - ht
+                om-cpu-model-string: Intel(R) Xeon(R) CPU E5-4620 0 @ 2.20GHz
+            hypervisor-epa:
+                type: REQUIRE_KVM
+                version: 10002|12001|2.6.32-358.el6.x86_64

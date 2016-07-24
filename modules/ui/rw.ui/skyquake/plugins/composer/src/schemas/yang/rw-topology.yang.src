@@ -1,0 +1,114 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-topology {
+    namespace "http://riftio.com/ns/riftware-1.0/rw-topology";
+    prefix rw-topology;
+
+    import ietf-inet-types {prefix inet;}
+    import ietf-network {prefix nw;}
+    import ietf-network-topology {prefix nt;}
+    import ietf-l2-topology {prefix l2t;}
+
+    revision "2015-10-20" {
+        description "Initial revision of IP level addressing for L2 host topology";
+    }
+
+    grouping  ip-address-group  {
+      description "IP addresses if present for L2 termination points";
+      container ip-attributes {
+        description "L2 termination points containing IP addresses";
+        list ip-addresses {
+          key ip;
+          leaf ip {
+            type inet:ip-address;
+            description "IPv4 or IPv6 address";
+          }
+        }
+      }
+    } // grouping  ip-address-group
+
+
+    grouping rw-network-attributes {
+      description "RW Topology scope attributes";
+      container rw-network-attributes {
+        description "Containing RW network attributes";
+        leaf name {
+          type string;
+          description "Name of the RW Topology network";
+        }
+        leaf sdn-account-name {
+          type string;
+          description "Name of the SDN account from which topology is got"; 
+        }
+      }
+    }
+
+    grouping  rw-node-attributes {
+      description "RW node attributes";
+      container rw-node-attributes {
+        description "Containing RW node attributes";
+        leaf name {
+          type string;
+          description "Node name";
+        }
+        leaf ovs-bridge-name {
+          type string;
+         description "Name of OVS bridge";
+        } 
+      }
+    }
+
+    grouping rw-link-attributes {
+      description "RW link attributes";
+      container rw-link-attributes {
+        description "Containing RW link attributes";
+        leaf name {
+          type string;
+          description "Link name";
+        }
+      }
+    }
+
+    grouping rw-termination-point-attributes {
+      description "RW termination point attributes";
+      container rw-termination-point-attributes {
+        description "Containing RW TP attributes";
+        leaf description {
+          type string;
+          description "Port description";
+        }
+        uses ip-address-group;
+      }
+    }
+
+    augment "/nw:network" {
+      description
+        "Configuration parameters for the RW network
+         as a whole";
+      uses rw-network-attributes;
+    }
+
+    augment "/nw:network/nw:node" {
+      description
+        "Configuration parameters for RW at the node
+         level";
+      uses rw-node-attributes;
+    }
+
+    augment "/nw:network/nt:link" {
+      description "Augment RW topology link information";
+      uses rw-link-attributes;
+    }
+
+    augment "/nw:network/nw:node/nt:termination-point" {
+      description
+        "Augment RW topology termination point configuration";
+      uses rw-termination-point-attributes;
+    }
+}

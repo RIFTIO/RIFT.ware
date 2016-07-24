@@ -1,0 +1,141 @@
+
+<nsd:nsd-catalog xmlns:nsd="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+
+  <nsd:nsd>
+    <nsd:id>764c375c-c44e-11e5-b325-fa163eb18cb8</nsd:id>
+    <nsd:name>mwc16-pe</nsd:name>
+    <nsd:short-name>mwc16-pe</nsd:short-name>
+    <nsd:description>mwc16-pe</nsd:description>
+    <nsd:constituent-vnfd>
+      <nsd:member-vnf-index>2</nsd:member-vnf-index>
+      <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+    </nsd:constituent-vnfd>
+    <nsd:constituent-vnfd>
+      <nsd:member-vnf-index>3</nsd:member-vnf-index>
+      <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+    </nsd:constituent-vnfd>
+    <nsd:constituent-vnfd>
+      <nsd:member-vnf-index>1</nsd:member-vnf-index>
+      <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+    </nsd:constituent-vnfd>
+    <nsd:vld>
+      <nsd:id>76610cb8-c44e-11e5-b325-fa163eb18cb8</nsd:id>
+      <nsd:name>6WindTR1.1.2__3 to OpenStack</nsd:name>
+      <nsd:short-name>6WindTR1.1.2__3 to OpenStack</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>3</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe3</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>interDC</manotypes:physical-network>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>7660f714-c44e-11e5-b325-fa163eb18cb8</nsd:id>
+      <nsd:name>6WindTR1.1.2__1 enty point</nsd:name>
+      <nsd:short-name>6WindTR1.1.2__1 enty point</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe2</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>mwc16data1</manotypes:physical-network>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>76611fc8-c44e-11e5-b325-fa163eb18cb8</nsd:id>
+      <nsd:name>6WindTR1.1.2__2 entry point</nsd:name>
+      <nsd:short-name>6WindTR1.1.2__2 entry point</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>2</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe2</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>mwc16data2</manotypes:physical-network>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>7660d040-c44e-11e5-b325-fa163eb18cb8</nsd:id>
+      <nsd:name>management</nsd:name>
+      <nsd:short-name>management</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>eth0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>2</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>eth0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>3</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>eth0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>mgmt</manotypes:physical-network>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>7660b376-c44e-11e5-b325-fa163eb18cb8</nsd:id>
+      <nsd:name>6WindTR1.1.2__2-6WindTR1.1.2__3</nsd:name>
+      <nsd:short-name>6WindTR1.1.2__2-6WindTR1.1.2__3</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>2</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe1</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>3</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe1</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>76604f80-c44e-11e5-b325-fa163eb18cb8</nsd:id>
+      <nsd:name>6WindTR1.1.2__1-6WindTR1.1.2__3</nsd:name>
+      <nsd:short-name>6WindTR1.1.2__1-6WindTR1.1.2__3</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe1</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>3</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>766091de-c44e-11e5-b325-fa163eb18cb8</nsd:id>
+      <nsd:name>6WindTR1.1.2__1-6WindTR1.1.2__2</nsd:name>
+      <nsd:short-name>6WindTR1.1.2__1-6WindTR1.1.2__2</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>2</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>b7a3d170-c448-11e5-8795-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+    </nsd:vld>
+  </nsd:nsd>
+
+</nsd:nsd-catalog>

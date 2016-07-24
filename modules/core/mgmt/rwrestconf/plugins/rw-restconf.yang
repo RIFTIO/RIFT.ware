@@ -1,0 +1,190 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-restconf
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-restconf";
+  prefix "rw-restconf";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-mgmt-schema {
+    prefix "rw-mgmt-schema";
+  }
+
+  import ietf-restconf-monitoring {
+    prefix "rcmon";
+  }
+  
+  import rw-mgmtagt {
+    prefix "rw-mgmtagt";
+  }
+  
+  import rw-mgmtagt-dts {
+    prefix "rw-mgmtagt-dts";
+  }
+
+  description "Rift RestConf Data Model";
+  revision 2015-08-26 {
+    description "Initial version"; 
+  }
+
+  container rwrestconf-configuration {
+    rwpb:msg-new "RestconfConfig";  
+    config true;
+
+    leaf log-timing {
+      type boolean;
+      default false;
+    }
+
+    leaf use-https {
+      type boolean;
+    }
+  }
+
+  container rwrestconf-statistics {
+    rwpb:msg-new Restconfstats;
+    description "Restconf statistics";
+    config false;
+
+    leaf get-req {
+      type uint64;
+    }
+
+    leaf put-req {
+      type uint64;
+    }
+
+    leaf post-req {
+      type uint64;
+    }
+
+    leaf del-req {
+      type uint64;
+    }
+
+    leaf get-200-rsp {
+      type uint64;
+    }
+
+    leaf get-404-rsp {
+      type uint64;
+    }
+
+    leaf get-500-rsp {
+      type uint64;
+    }
+
+    leaf get-204-rsp {
+      type uint64;
+    }
+
+    leaf put-200-rsp {
+      type uint64;
+    }
+
+    leaf put-404-rsp {
+      type uint64;
+    }
+
+    leaf put-500-rsp {
+      type uint64;
+    }
+
+    leaf put-409-rsp {
+      type uint64;
+    }
+
+    leaf put-405-rsp {
+      type uint64;
+    }
+
+    leaf put-201-rsp {
+      type uint64;
+    }
+
+    leaf post-200-rsp {
+      type uint64;
+    }
+
+    leaf post-404-rsp {
+      type uint64;
+    }
+
+    leaf post-500-rsp {
+      type uint64;
+    }
+
+    leaf post-409-rsp {
+      type uint64;
+    }
+
+    leaf post-405-rsp {
+      type uint64;
+    }
+
+    leaf post-201-rsp {
+      type uint64;
+    }
+
+    leaf del-405-rsp {
+      type uint64;
+    }
+
+    leaf del-404-rsp {
+      type uint64;
+    }
+
+    leaf del-500-rsp {
+      type uint64;
+    }
+
+    leaf del-200-rsp {
+      type uint64;
+    }
+
+    container eventsource-statistics {
+      description
+          "Statistics for RESTCONF event notifications";
+
+      leaf websocket-stream-open {
+        type uint64;
+        description "Number of Websocket event streams opened/subscribed.";
+      }
+
+      leaf websocket-stream-close {
+        type uint64;
+        description "Number of Websocket event streams closed/unsubscribed.";
+      }
+
+      leaf websocket-events {
+        type uint64;
+        description "Number of Websocket events notified.";
+      }
+
+      leaf http-stream-open {
+        type uint64;
+        description "Number of HTTP event streams opened.";
+      }
+
+      leaf http-stream-close {
+        type uint64;
+        description "Number of HTTP event streams closed.";
+      }
+
+      leaf http-events {
+        type uint64;
+        description "Number of HTTP events notified.";
+      }
+    }
+  }
+
+}

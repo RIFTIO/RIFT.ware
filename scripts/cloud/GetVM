@@ -1,0 +1,32 @@
+#!/usr/bin/python
+
+import sys
+import os
+import requests
+
+
+if len(sys.argv) < 2:
+    print """
+args are ip_address [param_name....]
+if no params are specifed, all are shown
+if one is requested, then its value is shown
+if more than one is requested, then they results are shown as 
+param_name<tab>param_value
+...
+
+    """
+    sys.exit(0)
+
+RESERVATION_SERVER = os.getenv('RESERVATION_SERVER', 'http://reservation.eng.riftio.com:80')
+url = RESERVATION_SERVER + '/testlab/REST/GetSystem/%s/' % sys.argv[1]
+response = requests.get(url)
+if response.status_code != 200:
+    raise Exception("error %d retrieving testbed defintion from %s" % (response.status_code, url))
+data = response.json()
+if len(sys.argv) == 3:
+    print data[sys.argv[2]]
+elif len(sys.argv) > 3:
+    for param in sys.argv[2:]:
+        print "%s   %s" % ( param, data[param] )
+else:
+    print data

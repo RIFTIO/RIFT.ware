@@ -1,0 +1,69 @@
+
+<nsd:nsd-catalog xmlns:nsd="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+
+  <nsd:nsd>
+    <nsd:id>11af9f00-baf8-11e5-99ee-001b21b98a9d</nsd:id>
+    <nsd:name>mwc16-gen</nsd:name>
+    <nsd:short-name>mwc16-gen</nsd:short-name>
+    <nsd:description>mwc16 generator/sinc for testing a corporate network</nsd:description>
+    <nsd:vld>
+      <nsd:id>11be9258-baf8-11e5-99ee-001b21b98a9d</nsd:id>
+      <nsd:name>connection 4</nsd:name>
+      <nsd:short-name>connection 4</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>1194cfd6-baf8-11e5-99ee-001b21b98a9d</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>eth0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>2</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>1194cfd6-baf8-11e5-99ee-001b21b98a9d</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>eth0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>mwc16mgmt</manotypes:physical-network>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>11beec62-baf8-11e5-99ee-001b21b98a9d</nsd:id>
+      <nsd:name>connection 3</nsd:name>
+      <nsd:short-name>connection 3</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>2</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>1194cfd6-baf8-11e5-99ee-001b21b98a9d</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>mwc16data2</manotypes:physical-network>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>11bf0634-baf8-11e5-99ee-001b21b98a9d</nsd:id>
+      <nsd:name>connection 2</nsd:name>
+      <nsd:short-name>connection 2</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>1194cfd6-baf8-11e5-99ee-001b21b98a9d</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>xe0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>mwc16data1</manotypes:physical-network>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:constituent-vnfd>
+      <nsd:member-vnf-index>1</nsd:member-vnf-index>
+      <nsd:vnfd-id-ref>1194cfd6-baf8-11e5-99ee-001b21b98a9d</nsd:vnfd-id-ref>
+    </nsd:constituent-vnfd>
+    <nsd:constituent-vnfd>
+      <nsd:member-vnf-index>2</nsd:member-vnf-index>
+      <nsd:vnfd-id-ref>1194cfd6-baf8-11e5-99ee-001b21b98a9d</nsd:vnfd-id-ref>
+    </nsd:constituent-vnfd>
+  </nsd:nsd>
+
+</nsd:nsd-catalog>

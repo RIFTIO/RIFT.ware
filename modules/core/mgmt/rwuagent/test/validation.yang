@@ -1,0 +1,215 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+module validation
+{
+  namespace "http://riftio.com/ns/core/mgmt/uagent/test/validation";
+  prefix "valid";
+
+  container aug {
+    leaf something {
+      type string;
+    }
+  }
+
+  container validation {
+    
+    leaf ref {
+      type leafref {
+        path "../../valid:other/valid:str";
+      }
+    }
+
+    list validation-list {
+      key "name";
+      leaf name {
+        type string;
+      }
+
+      leaf ref {
+        type leafref {
+          path "../../../valid:other/valid:other-list[valid:name=current()/../valid:name]/valid:str";
+        }
+      }
+
+    }
+
+  }
+
+  container other {
+    leaf str {
+      type string;
+    }
+    list other-list {
+      key "name";
+      leaf name {
+        type string;
+      }
+
+      leaf str {
+        type string;
+      }
+
+    }
+  }
+
+  list third {
+    key "name";
+    leaf name {
+      type string;
+    }
+
+    leaf ref {
+      type leafref {
+        path "../../valid:validation/valid:validation-list[valid:name=current()/../valid:name]/valid:ref";
+      }
+    }
+
+  }
+
+  grouping group {
+
+    container top {
+      list source {
+        key "name";
+
+        leaf name {
+          type string;
+        }
+
+        leaf str {
+          type string;
+        }
+
+      }
+
+      list ref-list {
+        key "name";
+
+        leaf name {
+          type string;
+        }
+
+        leaf ref {
+          type leafref {
+            path "../../source[name=current()/../name]/str";
+          }
+        }
+
+      }
+      
+
+    }
+  }
+
+  container mand {
+    presence true;
+    leaf mand-leaf {
+      mandatory true;
+      type string;
+    }
+    list inner {
+      key "k";
+      leaf k {
+        type string;
+      }
+      leaf inner-leaf {
+        mandatory true;
+        type string;
+      }
+      
+      container bottom {
+        leaf bottom-leaf-a {
+          mandatory true;
+          type string;
+        }
+        leaf bottom-leaf-b {
+          mandatory true;
+          type string;
+        }
+      }
+    }
+  }
+
+  rpc call {
+    input {
+      list stuff-a {
+        key "name";
+        leaf name {
+          type string;
+        }
+        leaf str {
+          type string;
+        }
+        leaf absolute {
+          type leafref {
+            path "/valid:other/valid:other-list[valid:name=current()/../valid:name]/valid:str";
+          }
+        }
+      }
+      list stuff-b {
+        key "name";
+        leaf name {
+          type string;
+        }
+        leaf relative {
+          type leafref {
+            path "../../stuff-a[name=current()/../name]/str";
+          }
+        }
+
+      }
+    }
+  }
+
+  rpc vstart {
+    input {
+      leaf component-name {
+        type string;
+        mandatory true;
+      }
+
+      leaf parent-instance {
+        type string;
+        mandatory true;
+      }
+    }
+  }
+
+  list possible-things {
+    key "name";
+    leaf name {
+      type string;
+    }
+  }
+
+  list thing-collections {
+    key "name";
+    leaf name {
+      type string;
+    }
+    
+    list constituent-things {
+      key "index";
+
+      leaf index {
+        type uint64;
+      }
+
+      leaf thing {
+        type leafref {
+          path "/valid:possible-things/valid:name";
+        }
+      }
+
+    }
+
+  }
+
+}

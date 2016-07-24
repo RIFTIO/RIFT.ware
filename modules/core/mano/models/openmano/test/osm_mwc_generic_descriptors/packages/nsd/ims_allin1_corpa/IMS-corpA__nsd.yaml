@@ -1,0 +1,57 @@
+nsd:nsd-catalog:
+    nsd:
+    -   id: IMS-corpA
+        name: IMS-corpA
+        short-name: IMS-corpA
+        description: All in one Clearwater IMS for corporation A in MWC16
+        logo: osm_2x.png
+        constituent-vnfd:
+        -   member-vnf-index: '1'
+            vnfd-id-ref: IMS-ALLIN1_2p
+        vld:
+        -   id: data
+            name: data
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: net-corp
+                segmentation_id: '108'
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: eth0
+                vnfd-id-ref: IMS-ALLIN1_2p
+        -   id: management
+            name: management
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: net-mgmtOS
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: eth1
+                vnfd-id-ref: IMS-ALLIN1_2p
+        config-primitive:
+        -   name: Update Domain
+            vnf-primitive-group:
+            -   member-vnf-index-ref: '1'
+                vnfd-id-ref: IMS-ALLIN1_2p
+                vnfd-name: cwims_vnfd
+                primitive:
+                -   index: '1'
+                    name: config
+        -   name: Add User
+            vnf-primitive-group:
+            -   member-vnf-index-ref: '1'
+                vnfd-id-ref: IMS-ALLIN1_2p
+                vnfd-name: cwims_vnfd
+                primitive:
+                -   index: '1'
+                    name: create-update-user
+        -   name: Delete User
+            vnf-primitive-group:
+            -   member-vnf-index-ref: '1'
+                vnfd-id-ref: IMS-ALLIN1_2p
+                vnfd-name: cwims_vnfd
+                primitive:
+                -   index: '1'
+                    name: delete-user

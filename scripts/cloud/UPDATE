@@ -1,0 +1,20 @@
+#!/bin/bash -xe
+
+# this script installs the latest patches
+# a la the old sync.sh
+#
+if [ `whoami` != "root" ]; then
+    echo MUST be root
+    exit 1
+fi
+
+# this should not be necessary some day
+for file in fedora-updates3.repo; do
+    if [ ! -f /etc/yum.repos.d/$file ]; then
+        cp ${RIFT_ROOT:-/usr/rift}/scripts/setup/skel/etc/yum.repos.d/$file /etc/yum.repos.d/
+    fi
+done
+
+yum --enablerepo=updates3 install -y python-libcloud 
+yum install -y python3-libcloud 
+

@@ -1,0 +1,13 @@
+{
+    "root": "public",
+    "name": "Catalog",
+    "dashboard" : "./src/components/ComposerApp.js",
+    "order": 2,
+    "routes" : [{
+        "label": "Catalog",
+        "route": "/",
+        "component": "./src/components/ComposerApp.js",
+        "path": "",
+        "type": "internal"
+    }]
+}

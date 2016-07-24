@@ -1,0 +1,63 @@
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+@import "style/_colors.scss";
+
+@mixin optional() {
+    // height: 1.25rem;
+    // margin-left: 0.5rem;
+    // margin-top: 0.5rem;
+    flex: 0 1 auto;
+}
+.nsScalingGroupContainer {
+    flex: 1 0 100%;
+}
+.nsScalingGroups {
+    display: flex;
+    flex: 1 1 100%;
+    flex-direction: column;
+
+    .vnfsList {
+        padding: 1rem;
+        .vnfsLabel {
+            opacity: 0.5;
+        }    
+    }
+
+    .scalingGroupsInstancesTableWrapper {
+        padding: 1rem;
+
+        .scalingGroupsInstancesTable {
+            background: white;
+            width: 693px;
+            border-collapse: collapse;
+            border: 1px solid black;
+            text-transform: capitalize;
+            th {
+                text-align: left;
+                padding: 0.5rem;
+                background: $gray-dark;
+                border: 1px solid black;
+            }
+            tr:nth-child(odd) {
+                background: $gray-lighter;
+                td {
+                    border: 1px solid black;
+                    padding: 0.5rem;
+                }
+            }
+            tr:nth-child(even) {
+                background: $white;
+                td {
+                    border: 1px solid black;
+                    padding: 0.5rem;
+                }
+            }
+        }
+    }
+
+    
+}

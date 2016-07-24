@@ -1,0 +1,74 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file testy2p-search-node1.yang
+ * @author Tom Seidenberg
+ * @date 2014/04/28
+ * @brief yangpbc test file 1 for pb to yang mapping data
+ */
+
+module testy2p-search-node1
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testy2p-search-node1";
+  prefix "tysn1";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "Node search testing file 1";
+  revision 2014-04-28 { description "Initial version"; }
+
+  container tysn1_t0 {
+    config false;
+  }
+
+  container tysn1_t1 {
+    config true;
+    container lvl2 {
+      container lvl3a {
+        rwpb:msg-new Tysn1T1Lvl2Lvl3a;
+        leaf lf1 { type int32; }
+        leaf lf2 { type string; }
+      }
+      container lvl3b {
+        rwpb:msg-new Tysn1T1Lvl2Lvl3b;
+        leaf lfa { type int32; }
+        leaf lfb { type string; }
+      }
+      // tysn2 augments this with a dup lvl3b
+    }
+    list lvl2l {
+      key "lfk1 lfk2";
+      leaf lf1 { type uint64; }
+      leaf lfk1 { type uint64; }
+      leaf lfk2 { type uint64; }
+      leaf lf2 { type uint64; }
+      container lvl3c {
+        leaf lfx { type int32; }
+        leaf lfy { type string; }
+      }
+    }
+  }
+
+  container tysn1_t2 {
+    config false;
+    // tysn2 augments this
+  }
+
+  // Duplicate names between tysn1 and tysn2
+  container tysn1tysn2_dup {
+    config false;
+    list ls1 {
+      list ls2 {
+        leaf lf1 { type string; }
+      }
+    }
+  }
+}
+

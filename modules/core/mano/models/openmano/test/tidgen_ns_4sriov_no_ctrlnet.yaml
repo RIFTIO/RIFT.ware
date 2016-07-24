@@ -1,0 +1,33 @@
+---
+name:            2tidgenMWC_4sriov_no_ctrlnet
+description:     scenario with 2 tidgenMWC VNFs
+topology:
+  nodes:
+    tidgen1:                           #VNF name
+      type:      VNF
+      VNF model: tidgenMWC_4sriov_no_ctrlnet      #VNF type
+    tidgen2:
+      type:      VNF
+      VNF model: tidgenMWC_4sriov_no_ctrlnet
+    default:                    #Name of external network
+      type:      external_network
+      model:     default
+  connections:
+    datanet0: 
+      nodes:
+      -  tidgen1: xe0
+      -  tidgen2: xe0
+    datanet1: 
+      nodes:
+      -  tidgen1: xe1
+      -  tidgen2: xe1
+    datanet2: 
+      nodes:
+      -  tidgen1: xe2
+      -  tidgen2: xe2
+    datanet3: 
+      nodes:
+      -  tidgen1: xe3
+      -  tidgen2: xe3
+
+

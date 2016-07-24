@@ -1,0 +1,113 @@
+/* STANDARD-RIFT-IO-COPYRIGHT */
+/**
+ * @file   rwmsg-log.yang
+ * @author Prashanth Bhaskar
+ * @date   2015/11/04
+ * @brief  Riftware yang data schema for RwMsg logging
+ */
+
+module rw-msg-log
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwmsglog";
+  prefix "rwmsglog";
+
+
+  import rw-base {
+    prefix rwbase;
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rw-notify-ext {
+    prefix "rwnotify";
+  }
+
+  import rw-log {
+    prefix "rwlog";
+  }
+
+  description "RW.Msg logging definitions";
+
+  revision 2015-11-04 {
+    description "Initial revision";
+    reference "Rift Yang Data schema for RwMsg Logging";
+  }
+
+  notification msg-debug {
+    rwnotify:log-event-id 00090000;
+    description "RwMsg generic debug log";
+    uses rwlog:severity-debug;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification msg-info {
+    rwnotify:log-event-id 00090001;
+    description "RwMsg generic info log";
+    uses rwlog:severity-info;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification msg-notice {
+    rwnotify:log-event-id 00090002;
+    description "RwMsg generic notice log";
+    uses rwlog:severity-notice;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification msg-warning {
+    rwnotify:log-event-id 00090003;
+    description "RwMsg generic warning log";
+    uses rwlog:severity-warning;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification msg-error {
+    rwnotify:log-event-id 00090004;
+    description "RwMsg generic error log";
+    uses rwlog:severity-error;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification msg-critical {
+    rwnotify:log-event-id 00090005;
+    description "RwMsg generic critical log";
+    uses rwlog:severity-critical;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification msg-alert {
+    rwnotify:log-event-id 00090006;
+    description "RwMsg generic alert log";
+    uses rwlog:severity-alert;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification msg-emergency {
+    rwnotify:log-event-id 00090007;
+    description "RwMsg generic emergency log";
+    uses rwlog:severity-emergency;
+    leaf log {
+      type string;
+    }
+  }
+} // module rw-msg-log

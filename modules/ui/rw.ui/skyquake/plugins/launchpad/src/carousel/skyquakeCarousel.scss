@@ -1,0 +1,28 @@
+.carousel-component {
+  border: 1px dashed #f00;
+  height:400px;
+  overflow:hidden;
+    .carousel-container {
+        display:flex;
+        position: relative;
+        left: -100%;
+        transform: translateX(100%);
+        &.is-reversing {
+            transform: translateX(-100%);
+        }
+        &.is-set {
+            transform: none;
+            transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .slide {
+            flex:1 0 100%;
+            order:2;
+            border:1px solid white;
+            width: 100px;
+            height: 100px;
+            &.is-ref {
+                order:1;
+            }
+        }
+    }
+}

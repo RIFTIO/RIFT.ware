@@ -1,0 +1,80 @@
+<nsd:nsd-catalog xmlns:nsd="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+  <nsd:nsd>
+    <nsd:id>965dc8ea-c475-11e5-8040-fa163eb18cb8</nsd:id>
+    <nsd:name>IMS-corpA</nsd:name>
+    <nsd:short-name>IMS-corpA</nsd:short-name>
+    <nsd:description>All in one Clearwater IMS for corporation A in MWC16</nsd:description>
+    <nsd:vld>
+      <nsd:id>9670b946-c475-11e5-8040-fa163eb18cb8</nsd:id>
+      <nsd:name>data</nsd:name>
+      <nsd:short-name>data</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>47914a30-c474-11e5-990a-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>eth0</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>net-corp</manotypes:physical-network>
+        <manotypes:segmentation_id>108</manotypes:segmentation_id>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:vld>
+      <nsd:id>9670b946-c475-11e5-8040-fa163eb18cb9</nsd:id>
+      <nsd:name>management</nsd:name>
+      <nsd:short-name>management</nsd:short-name>
+      <nsd:type>ELAN</nsd:type>
+      <nsd:vnfd-connection-point-ref>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>47914a30-c474-11e5-990a-fa163eb18cb8</nsd:vnfd-id-ref>
+        <nsd:vnfd-connection-point-ref>eth1</nsd:vnfd-connection-point-ref>
+      </nsd:vnfd-connection-point-ref>
+      <manotypes:provider-network xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:nsd">
+        <manotypes:physical-network>net-mgmtOS</manotypes:physical-network>
+        <manotypes:overlay-type>VLAN</manotypes:overlay-type>
+      </manotypes:provider-network>
+    </nsd:vld>
+    <nsd:constituent-vnfd>
+      <nsd:member-vnf-index>1</nsd:member-vnf-index>
+      <nsd:vnfd-id-ref>47914a30-c474-11e5-990a-fa163eb18cb8</nsd:vnfd-id-ref>
+    </nsd:constituent-vnfd>
+    <nsd:config-primitive>
+      <nsd:name>Update Domain</nsd:name>
+      <nsd:vnf-primitive-group>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>37838e08-d04c-11e5-8e5b-001b21b98a9d</nsd:vnfd-id-ref>
+        <nsd:vnfd-name>cwims_vnfd</nsd:vnfd-name>
+        <nsd:primitive>
+          <nsd:index>1</nsd:index>
+          <nsd:name>config</nsd:name>
+        </nsd:primitive>
+      </nsd:vnf-primitive-group>
+    </nsd:config-primitive>
+    <nsd:config-primitive>
+      <nsd:name>Add User</nsd:name>
+      <nsd:vnf-primitive-group>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>37838e08-d04c-11e5-8e5b-001b21b98a9d</nsd:vnfd-id-ref>
+        <nsd:vnfd-name>cwims_vnfd</nsd:vnfd-name>
+        <nsd:primitive>
+          <nsd:index>1</nsd:index>
+          <nsd:name>create-update-user</nsd:name>
+        </nsd:primitive>
+      </nsd:vnf-primitive-group>
+    </nsd:config-primitive>
+    <nsd:config-primitive>
+      <nsd:name>Delete User</nsd:name>
+      <nsd:vnf-primitive-group>
+        <nsd:member-vnf-index-ref>1</nsd:member-vnf-index-ref>
+        <nsd:vnfd-id-ref>37838e08-d04c-11e5-8e5b-001b21b98a9d</nsd:vnfd-id-ref>
+        <nsd:vnfd-name>cwims_vnfd</nsd:vnfd-name>
+        <nsd:primitive>
+          <nsd:index>1</nsd:index>
+          <nsd:name>delete-user</nsd:name>
+        </nsd:primitive>
+      </nsd:vnf-primitive-group>
+    </nsd:config-primitive>
+  </nsd:nsd>
+
+</nsd:nsd-catalog>

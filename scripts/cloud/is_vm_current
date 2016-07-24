@@ -1,0 +1,75 @@
+#!/bin/bash
+
+
+# this is meant to run INSIDE the VM
+# returns 0 if it is sure this VM is up to date
+# returns 1 is this is the latest but not current (they could be the same)
+# returns 2 in all other cases
+
+case `dmidecode -s bios-vendor` in 
+    Bochs) ;;
+    *) echo "WARNING this system $hostname does not appear to be a VM";;
+esac
+
+
+if [ ! -f /etc/rift.hash ]; then 
+    echo "/etc/rift.hash not found. This VM is almost certainly out of date"
+    exit 2
+fi
+
+me=`cat /etc/rift.hash`
+
+VM=/net/boson/home1/common/vm
+if [ ! -d $VM ]; then
+    echo "FATAL: Cannot access $VM"
+    echo "my hash is $me"
+    exit 2
+fi
+fn="rift-root-${hash}.qcow2"
+find $VM -name $fn -print
+if [ $? -ne 0 ]; then
+	echo "VM image $fn NOT found."
+	exit 2
+fi
+
+# current is the released image
+files=`find $VM -name 'rift-root-current.qcow2' -print`
+for fn in $files; do
+	current=`readlink $fn`
+    if [[ ! $current =~ rift-root(_nfs|_sa|)-([a-f0-9]+)(-[0-9]+|).qcow2 ]]; then
+        echo "error parsing $current for git hash"
+    else
+        if [ $me == ${BASH_REMATCH[2]} ]; then
+            echo "image verified via hash comparison to $fn"
+            exit 0
+        fi
+    fi
+done
+
+# latest is the latest official build. This is checked just as an FYI
+files=`find $VM -name 'rift-root-latest.qcow2' -print`
+for fn in $files; do
+	current=`readlink $fn`
+    if [[ ! $current =~ rift-root(_nfs|_sa|)-([a-f0-9]+)(-[0-9]+|).qcow2 ]]; then
+        echo "error parsing $current for git hash"
+    else
+        if [ $me == ${BASH_REMATCH[2]} ]; then
+            echo "image verified via hash comparison to ${fn}. This is NOT The released image"
+            exit 1
+        fi
+    fi
+done
+
+echo "==============   verification failed. Our hash is $me"
+
+files=`find /net/boson/home1/common/vm -name "rift-*${me}*.qcow2"`
+if [ -n "$files" ]; then
+    echo "vm image does exist in /net/boson/home1/common but it is not current:"
+    ls -l $files
+else
+    echo "this appears to be a very old or personal VM image"
+fi
+
+
+exit 2
+    

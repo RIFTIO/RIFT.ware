@@ -1,0 +1,34 @@
+package enum_test;
+
+enum OuterEnum {
+  VALUE1 = 1;
+  VALUE2 = 2;
+  VALUE3 = 3;
+  VALUE4 = 4;
+}
+
+message OuterMessage1 {
+  enum InnerEnum1 {
+    VALUE1 = 11;
+    VALUE2 = 12;
+    VALUE3 = 13;
+    VALUE4 = 14;
+  }
+  optional OuterEnum outer_e = 1;
+  optional InnerEnum1 inner_e = 2;
+}
+
+message OuterMessage2 {
+  enum InnerEnum2 {
+    VALUE1 = 21;
+    VALUE2 = 22;
+    VALUE3 = 23;
+    VALUE4 = 24;
+  }
+  required OuterEnum  outer_e_req = 1 [default = VALUE3];
+  optional OuterEnum  outer_e_opt = 2 [default = VALUE3];
+  repeated OuterEnum  outer_e_rep = 3;
+  required InnerEnum2 inner_e_req = 4 [default = VALUE3];
+  optional InnerEnum2 inner_e_opt = 5  [default = VALUE3];
+  repeated InnerEnum2 inner_e_rep = 6;
+}

@@ -1,0 +1,19 @@
+{
+  "test_name":"TC_LPRECOVERY_TEST",
+  "commandline":"./launchpad_recovery",
+  "target_vm":"VM",
+  "test_description":"Test targeting launchpad recovery feature",
+  "run_as_root": true,
+  "status":"working",
+  "keywords":["nightly","smoke"],
+  "timelimit": 4800,
+  "networks":[],
+  "vms":[
+    {
+      "name": "VM",
+      "memory": 8192,
+      "cpus": 2
+    }
+  ]
+}
+

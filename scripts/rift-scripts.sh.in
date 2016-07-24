@@ -1,0 +1,63 @@
+#!/usr/bin/bash
+
+# This script creates an rpm file with the rift scripts targeted for installing to /usr/rift
+
+SOURCE_DIR=@CMAKE_CURRENT_SOURCE_DIR@
+CURRENT_BIN_DIR=@CMAKE_CURRENT_BINARY_DIR@
+RELEASE=$1
+TAR=rift-scripts.tar.xz
+SPEC=rift-scripts.spec
+BUILD=$2
+
+TEMPDIR=`mktemp -d -p . rift-scripts.XXXXXX`
+echo ${TEMPDIR}
+
+##
+# Copy the scripts
+##
+mkdir -p ${TEMPDIR}/usr/rift/
+cp -r ${SOURCE_DIR}  ${TEMPDIR}/usr/rift/
+
+mkdir ${TEMPDIR}/usr/rift/lib
+cp $RIFT_ROOT/modules/automation/core/lib/ndl.py ${TEMPDIR}/usr/rift/lib/
+mkdir ${TEMPDIR}/usr/rift/bin
+
+mkdir -p ${TEMPDIR}/usr/rift/etc
+cat <<EOF >${TEMPDIR}/usr/rift/etc/fix_this_vm
+#!/bin/bash
+
+# placeholder
+
+exit 0
+EOF
+
+# used by ssh_rift
+ln -s ../scripts/env/id_grunt ${TEMPDIR}/usr/rift/etc/id_grunt
+
+# populate /usr/rift/bin
+cd ${TEMPDIR}/usr/rift
+for src in scripts/git/repo-mgmt/rwclone scripts/env/* scripts/util/*; do
+    f2=`basename $src`
+    if [ $f2 == CMakeLists.txt ]; then
+        continue
+    fi
+    ln -s ../$src bin/$f2
+done
+cd ../../..
+    
+
+
+##
+# Create a tar
+##
+tar -cvf ${TAR} -C ${TEMPDIR} usr
+
+RPMBUILD_DIR=`mktemp -d -p . rpm.XXXXXX`
+mkdir -p ${RPMBUILD_DIR}/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+chmod 755 ${RPMBUILD_DIR}
+cp ${TAR} ${RPMBUILD_DIR}/SOURCES
+cp ${SOURCE_DIR}/rpm/${SPEC} ${RPMBUILD_DIR}/SPECS
+rpmbuild --define "_topdir ${CURRENT_BIN_DIR}/${RPMBUILD_DIR}" --define "RELEASE ${RELEASE}" --define "BUILD ${BUILD}" -ba ${RPMBUILD_DIR}/SPECS/${SPEC}
+mv ${RPMBUILD_DIR}/RPMS/noarch/rift_scripts-${RELEASE}-${BUILD}.fc20.noarch.rpm  .
+# rm -rf ${RPMBUILD_DIR} ${TEMPDIR}
+

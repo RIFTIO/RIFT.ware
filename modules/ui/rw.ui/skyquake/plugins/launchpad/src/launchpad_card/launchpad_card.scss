@@ -1,0 +1,343 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import 'style/_colors.scss';
+@import '../../node_modules/open-iconic/font/css/open-iconic.css';
+.launchpadCard {
+  display:flex;
+  margin-top: 0.75rem;
+  &-body{
+    position: relative;
+  }
+  .deletingIndicator {
+    display: flex;
+    flex:1;
+    align-items: center;
+    justify-content: center;
+  }
+  &_launch {
+    display:flex;
+    flex-direction:column;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    img {
+      width: 88px;
+      padding:1rem;
+    }
+  }
+  &_header {
+    color:white;
+    padding-right: 1rem;
+    min-width: 693px;
+    max-width: 693px;
+    &-link, a {
+      display:flex;
+      align-items:center;
+      text-decoration: none;
+      color: inherit;
+    }
+    &-link {
+      margin-left:0.5rem;
+      cursor:pointer;
+    }
+    .oi {
+      margin:0 0 -0.25rem 0.5rem;
+    }
+    &-title {
+      display: flex;
+      line-height: 3rem;
+      background-color: $brand-green-light;
+      //background-color: $primary-header;
+      position: relative;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      padding-right:1rem;
+      &-off {
+        background-color:white;
+        color:black;
+      }
+    }
+        .activeIcon{
+          color: #dadada;
+          position:relative;
+        span:after{
+          content: '\25b2';
+          color:#dadada;
+          width:0.5rem;
+          height:0.5rem;
+          position: absolute;
+          top: 17px;
+          left: 8px;
+        }
+      }
+      .inActiveIcon {
+        color:white;
+        position:relative;
+      }
+    &-actions {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      padding-right: 1rem;
+      h3{
+        padding-right:0.25rem;
+        text-transform: capitalize;
+      }
+
+    }
+    &-status {
+      background-color: $brand-green;
+      &-current {
+        display:flex;
+        justify-content:space-between;
+        padding: 0.5rem 0;
+        span,a {
+          padding: 0 0.25rem;
+        }
+        a{
+          cursor:pointer;
+          &:hover {
+            text-decoration:underline;
+          }
+        }
+      }
+    }
+    &-operational-status {
+      &_loading {
+        display:flex;
+        flex-direction:column;
+        justify-content: center;
+        justify-content: center;
+        align-items: center;
+        color:$gray-darkest;
+     }
+      &_open {
+    overflow: hidden;
+    background: #ddd;
+    height: 100%;
+    visibility: visible;
+    opacity: 1;
+    position: absolute;
+    width: 100%;
+    z-index: 99;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    color: black;
+    h2{
+          padding: 2rem;
+    }
+        ul,li {
+          margin:0.25rem 1rem 0 0.825rem;
+          list-style-type:disc;
+          color:black;
+        }
+        ul {
+          overflow: auto;
+          padding-right: 1rem;
+          margin-right: 0.5rem;
+          height: inherit;
+        }
+      }
+      &_close {
+        height: 0;
+        visibility:hidden;
+        opacity:0;
+      }
+    }
+    &-vnfr_management-links {
+
+      &_loading {
+        display:flex;
+        flex-direction:column;
+        justify-content: center;
+        align-items: center;
+        color:$gray-darkest;
+     }
+      &_open {
+        overflow:hidden;
+        background: #ddd;
+        height: 100%;
+        visibility:visible;
+        opacity:1;
+        position:absolute;
+        width:100%;
+        z-index: 99;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        align-content: center;
+        color:black;
+        a {
+          cursor: pointer;
+          margin-left: 0.5rem;
+          font-weight: normal;
+          color: black;
+        }
+        h2 {
+          padding:2rem;
+        }
+        ul,li {
+          margin:0.25rem 1rem 0 0.825rem;
+          list-style-type:disc;
+          color:black;
+        }
+        ul {
+          width:90%;
+          overflow: auto;
+          padding-right: 1rem;
+          margin-right: 0.5rem;
+          height: inherit;
+        }
+        li {
+          justify-content: space-between;
+          display: flex;
+        }
+      }
+      &_close {
+        height: 0;
+        visibility:hidden;
+        opacity:0;
+      }
+    }
+    .failed {
+      background-color:white;
+      color:black;
+      a {
+        color:black !important;
+      }
+    }
+  }
+
+  &_content {
+    .launchpadCard_content {
+      overflow-x: hidden;
+      overflow-y: scroll;
+    }
+    .empty {
+      min-height:50px;
+      max-width: 100%;
+      display:flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+  &_title {
+      color:$black;
+      background:$secondary-header;
+      padding: 0.5rem;
+      // margin: 0 0 0.5rem 0;
+      // border-top:1px solid #666;
+      // border-bottom:1px solid #666;
+      border-top:1px solid #f1f1f1;
+      border-bottom:1px solid #f1f1f1;
+  }
+
+  &_data-list {
+    ul, dl{
+      display:flex;
+      flex-direction:row;
+      flex-wrap:wrap;
+      align-items:flex-start;
+       font-size: 0.825rem;
+      li{
+        flex:1 1 30%;
+      }
+    }
+    dl {
+      margin: 0.5rem 0 0.5rem 0;
+      dt{
+        margin: 0 0 0 0.5rem;
+        text-transform:uppercase;
+      }
+      dd{
+        margin: 0 0 0 0.5rem;
+      }
+    }
+    &.CONFIG-PRIMITIVES {
+      height: 400px;
+      overflow-y: scroll;
+      h1 {
+        margin: 0 0 0 0.5rem;
+      }
+      > div {
+        overflow: hidden;
+      }
+    }
+  }
+  &_data-list.EPA-PARAMS {
+      // height: 105px;
+      width: 715px;
+      overflow-y: scroll;
+      h1 {
+        margin: 0 0 0 0.5rem;
+      }
+      > div {
+        overflow: hidden;
+      }
+  }
+  &_controls{
+    display:flex;
+    flex-direction:row;
+    .react-tabs {
+      flex: auto;
+    [role=tab][aria-selected=true] {
+      background:none;
+      border:none;
+      color: rgb(85, 26, 139);
+    }
+    [role=tab]{
+      text-decoration:underline;
+      border:none;
+      &:focus{
+        outline:none;
+        box-shadow:none;
+        border:none;
+        &:after {
+           background:none;
+           border:none;
+      }
+    }
+
+  }
+    [role=tablist] {
+      border:none;
+      margin: 0 0 10px;
+      padding: 0;
+      display: flex;
+      justify-content: flex-end;
+
+         [role=tab]:first-child {
+            flex: 1;
+         }
+    }
+
+    }
+
+  }
+  .slick-initialized.slick-slider {
+    // min-height:200px;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    z-index: 100;
+    cursor: pointer;
+    img {
+      width: 1.25rem;
+      height: 1.25rem;
+      background-color: white;
+      border-radius: 15px;
+    }
+  }
+}

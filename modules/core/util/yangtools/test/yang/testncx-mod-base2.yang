@@ -1,0 +1,134 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file testncx-mod-base2.yang
+ * @author Tom Seidenberg
+ * @date 2014/03/25
+ * @brief yangncx test file for modules
+ */
+
+module testncx-mod-base2
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testncx-mod-base2";
+  prefix "tnmb2";
+
+  import testncx-mod-base1 { prefix "tnmb1-b2"; }
+  import testncx-mod-base3 { prefix "tnmb3-b2"; }
+
+  description "Module testing for yangncx.";
+  revision 2014-03-25 { description "Initial version"; }
+
+  /////////////////////////////////////////////////////////////////////////////
+  typedef b2t1 {
+    type int64;
+    description "A typedef from base2";
+  }
+
+  typedef b2t2 {
+    type tnmb1-b2:b1t1;
+    description "A typedef of b1t1 from base1, in base2";
+  }
+
+  typedef b2t3 {
+    type tnmb1-b2:b1t2;
+    description "A typedef of b1t2 from base1, in base2";
+  }
+
+  typedef b2t4 {
+    type tnmb3-b2:b3t1;
+    description "A typedef of b3t1 from base3, in base2";
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  grouping b2g1 {
+    leaf b2g1-b2t1 {
+      description "A type b2t1 from group b2g1 in base2";
+      type b2t1;
+    }
+
+    leaf b2g1-b2t2 {
+      description "A type b2t2 from group b2g1 in base2";
+      type b2t2;
+    }
+
+    leaf b2g1-b2t3 {
+      description "A type b2t3 from group b2g1 in base2";
+      type b2t3;
+    }
+
+    leaf b2g1-b2t4 {
+      description "A type b2t4 from group b2g1 in base2";
+      type b2t4;
+    }
+
+    leaf b2g1-b1t1 {
+      description "A type b1t1 from group b2g1 in base2";
+      type tnmb1-b2:b1t1;
+    }
+
+    leaf b2g1-b1t2 {
+      description "A type b1t2 from group b2g1 in base2";
+      type tnmb1-b2:b1t2;
+    }
+
+    leaf b2g1-b3t1 {
+      description "A type b3t1 from group b2g1 in base2";
+      type tnmb3-b2:b3t1;
+    }
+
+    uses tnmb1-b2:b1g1;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  container b2c1 {
+    leaf b2c1-b2t1 {
+      description "A type b2t1 from container b2c1 in base2";
+      type b2t1;
+    }
+
+    leaf b2c1-b2t2 {
+      description "A type b2t2 from container b2c1 in base2";
+      type b2t2;
+    }
+
+    leaf b2c1-b2t3 {
+      description "A type b2t3 from container b2c1 in base2";
+      type b2t3;
+    }
+
+    leaf b2c1-b2t4 {
+      description "A type b2t4 from container b2c1 in base2";
+      type b2t4;
+    }
+
+    leaf b2c1-b1t1 {
+      description "A type b1t1 from container b2c1 in base2";
+      type tnmb1-b2:b1t1;
+    }
+
+    leaf b2c1-b1t2 {
+      description "A type b1t2 from container b2c1 in base2";
+      type tnmb1-b2:b1t2;
+    }
+
+    leaf b2c1-b3t1 {
+      description "A type b3t1 from container b2c1 in base2";
+      type tnmb3-b2:b3t1;
+    }
+
+    uses tnmb1-b2:b1g1;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  container b2c2 {
+    uses b2g1;
+  }
+}
+

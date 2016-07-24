@@ -1,0 +1,29 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-keyspec-stats-tailf
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-keyspec-stats-tailf";
+  prefix "rw-keyspec-stats-tailf";
+
+  import rw-keyspec-stats {
+    prefix rwks;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/rwks:keyspec-stats" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rwks:keyspec-ebuf" {
+    tailf:callpoint rw_callpoint;
+  }
+}

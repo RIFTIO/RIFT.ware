@@ -1,0 +1,18 @@
+{
+  "name": "rw.lp.dts.mock",
+  "version": "1.0.0",
+  "description": "This is node js launchpad dts mock client.",
+  "main": "lp_mock_client.js",
+  "scripts": {
+    "start": "node lp_mock_client"
+  },
+  "author": "JohnBaldwin",
+  "license": "ISC",
+  "dependencies": {
+    "autobahn": "~0.9.6",
+    "lodash": "~3.10.1",
+    "node-uuid": "~1.4.3",
+    "mocha": "~2.3.3"
+  },
+  "devDependencies": {}
+}

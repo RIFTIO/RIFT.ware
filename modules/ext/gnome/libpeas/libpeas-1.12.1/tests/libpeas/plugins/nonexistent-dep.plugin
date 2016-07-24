@@ -1,0 +1,7 @@
+[Plugin]
+Module=nonexistent-dep
+Depends=does-not-exist
+Name=Nonexistent Dependency
+Description=This plugin has a nonexistent dependency.
+Authors=Garrett Regier
+Copyright=Copyright © 2011 Garrett Regier

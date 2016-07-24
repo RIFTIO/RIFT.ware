@@ -1,0 +1,119 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import "main";
+@import "FullScreen";
+.AppRoot {
+    display: flex;
+    flex: 1;
+    position: relative;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+
+    /* General */
+    .crouton {
+        color: #FFF;
+        line-height: 140%;
+        border-radius: 3px;
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        right: 0px;
+        max-width: 700px;
+        width: 90%;
+        text-align: center;
+        z-index: 99999;
+        margin: 0 auto;
+        div {
+            padding: 20px;
+            &.info {
+                background-color: #1F8DD6;
+            }
+            &.success {
+                background-color: #50CD84;
+            }
+            &.warning {
+                background-color: #FF8859;
+            }
+            &.error {
+                background-color: #FF5F5F;
+            }
+            span {
+                display: block;
+                margin-bottom: 0;
+                margin-left: 0px;
+            }
+            .buttons {
+                text-align: right;
+                button {
+                    &.btn, &.retry, &.close, &.cancel, &.ignore {
+                        padding: 0px;
+                        border: 1px solid transparent;
+                        border-radius: 3px;
+                    }
+                    &:hover {
+                        opacity: .75;
+                    }
+                    &.retry {
+                        border-color: #FFF;
+                    }
+                    &.btn {
+                        &.close {
+                            border-color: #FF5F5F;
+                            margin-left: 10px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    .AppHeader {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: 0;
+    }
+    .AppBody {
+		@extend .panel;
+		position: absolute;
+        top: 0px;
+        right: 20px;
+        bottom: 20px;
+        left: 20px;
+        background-color: #e5e5e5;
+        margin: 0.5rem 1rem;
+    }
+    .corner-accent {
+        border: 1px solid #000000;
+        display: block;
+        height: 4px;
+        position: absolute;
+        width: 4px;
+		z-index: 999;
+    }
+    .corner-accent.top {
+        border-bottom: 0 none;
+        top: 6px;
+    }
+	.corner-accent.bottom {
+		border-top: 0 none;
+		bottom: 27px;
+	}
+    .corner-accent.right {
+        border-left: 0 none;
+        right: 35px;
+    }
+    .corner-accent.left {
+        border-right: 0 none;
+        left: 35px;
+    }
+    button:focus {
+        outline: 0;
+    }
+}

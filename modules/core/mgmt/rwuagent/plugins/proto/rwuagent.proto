@@ -1,0 +1,95 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rwuagent.proto
+ * @author Tom Seidenberg
+ * @date 2014/04/02
+ * @brief Micro-agent consumer service definitions
+ */
+
+import "descriptor.proto";
+import "rwpbapi.proto";
+
+option cc_generic_services = true;
+
+/**
+ * An XML blob
+ */
+message XmlBlob {
+  /// Unlimited length string containing XML data
+  required string xml_blob = 1;
+}
+
+enum Netconf_Operations {
+  nc_default = 0; // backward compatiability?
+  nc_get = 1;
+  nc_get_config = 2;
+  nc_edit_config = 3;
+  nc_rpc_exec = 4;
+  nc_commit = 5;
+  nc_discard_changes = 6;
+  nc_get_candidate_config = 7;
+}
+
+enum Netconf_Edit_Config_Operations {
+  ec_merge = 1;
+  ec_replace = 2;
+  ec_create = 3;
+  ec_delete = 4;
+  ec_remove = 5;
+}
+
+enum Transaction_Phase {
+  tp_test = 1;
+  tp_set = 2;
+}
+
+/**
+ * A netconf-ish request message.
+ */
+message NetconfReq {
+  
+  /// The request data.
+  optional XmlBlob xml_blob = 1;
+  // requested operation 
+  optional Netconf_Operations operation = 2;
+  // phase of commit
+  optional Transaction_Phase phase = 3;
+ // For edit configuration, what sub-operation to perform
+  optional Netconf_Edit_Config_Operations edit_config_operation = 4;
+}
+
+/**
+ * A response to a netconf-ish request.
+ */
+message NetconfRsp {
+  /// The number of consumers that had request errors.
+  optional uint32 error_cnt = 1 [ default = 0 ];
+
+  /// The number of consumers that responded.
+  optional uint32 resp_cnt = 2 [ default = 0 ];
+
+  /// The response data. May be missing or empty.
+  optional XmlBlob xml_response = 3;
+
+  optional Netconf_Operations operation = 4;
+}
+
+/**
+ * uAgent service
+ */
+service RwUAgent {
+  option (rw_srvopts) = { srvnum:101 };
+
+  rpc netconf_request (NetconfReq) returns(NetconfRsp) {
+    option (rw_methopts) = { methno:2 blocking:true };
+  };
+}
+

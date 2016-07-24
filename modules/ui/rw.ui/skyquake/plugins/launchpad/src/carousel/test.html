@@ -1,0 +1,53 @@
+<!-- A test for the button component -->
+<!doctype html>
+<html lang="en" class="viewport">
+<head>
+  <!-- -->
+  <title>RIFT.ware</title>
+  <!-- -->
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- -->
+<!--   <link href="../../build/core.css" rel="stylesheet" type="text/css"  />
+ -->  <!-- -->
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.5/angular.min.js"></script>
+  <script src="components.js"></script>
+</head>
+<body class="viewport" style="margin:100px;">
+<h2>Button States</h2>
+    <br/>
+  <!-- Create A Button -->
+  <div id="carousel"></div>
+  <br>
+<!-- -->
+
+  <script>
+    $(document).ready(function() {
+      var React = $rw.component.React;
+
+      /*
+       * Each button this onClick is passed to will run this function when clicked.
+       */
+      var onClick = function (e, comp) {
+        console.log('click');
+      };
+
+      // Renders the normal button.
+      $rw.ui({
+        button: {
+          label: "button",
+          onClick: onClick
+        }
+      }, document.getElementById('carousel'));
+
+    });
+
+
+
+
+          </script>
+</body>
+</html>

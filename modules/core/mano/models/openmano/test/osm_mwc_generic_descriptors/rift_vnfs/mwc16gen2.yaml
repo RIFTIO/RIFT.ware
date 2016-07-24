@@ -1,0 +1,85 @@
+vnfd:vnfd-catalog:
+    vnfd:vnfd:
+    -   vnfd:connection-point:
+        -   vnfd:name: eth0
+            vnfd:type: VPORT
+        -   vnfd:name: eth1
+            vnfd:type: VPORT
+        -   vnfd:name: xe0
+            vnfd:type: VPORT
+        -   vnfd:name: xe1
+            vnfd:type: VPORT
+        -   vnfd:name: xe2
+            vnfd:type: VPORT
+        -   vnfd:name: xe3
+            vnfd:type: VPORT
+        vnfd:description: tidgen 4x10Gbps 28GB 11cores
+        vnfd:id: eecfd632-bef1-11e5-b5b8-0800273ab84b
+        vnfd:mgmt-interface:
+            vnfd:vdu-id: 09163412-c46c-11e5-8576-fa163eb18cb8
+        vnfd:name: mwc16gen2
+        vnfd:vdu:
+        -   vnfd:description: tidgen with 4x10Gbps 28GB
+            vnfd:external-interface:
+            -   vnfd:name: xe0
+                vnfd:virtual-interface:
+                    vnfd:type: PCI-PASSTHROUGH
+                    vnfd:vpci: '0000:00:10.0'
+                vnfd:vnfd-connection-point-ref: xe0
+            -   vnfd:name: xe1
+                vnfd:virtual-interface:
+                    vnfd:type: PCI-PASSTHROUGH
+                    vnfd:vpci: '0000:00:11.0'
+                vnfd:vnfd-connection-point-ref: xe1
+            -   vnfd:name: xe2
+                vnfd:virtual-interface:
+                    vnfd:type: PCI-PASSTHROUGH
+                    vnfd:vpci: '0000:00:12.0'
+                vnfd:vnfd-connection-point-ref: xe2
+            -   vnfd:name: xe3
+                vnfd:virtual-interface:
+                    vnfd:type: PCI-PASSTHROUGH
+                    vnfd:vpci: '0000:00:13.0'
+                vnfd:vnfd-connection-point-ref: xe3
+            -   vnfd:name: eth0
+                vnfd:virtual-interface:
+                    vnfd:bandwidth: '1000000'
+                    vnfd:type: VIRTIO
+                    vnfd:vpci: 0000:00:0a.0
+                vnfd:vnfd-connection-point-ref: eth0
+            -   vnfd:name: eth1
+                vnfd:virtual-interface:
+                    vnfd:bandwidth: '1000000'
+                    vnfd:type: OM-MGMT
+                    vnfd:vpci: 0000:00:0b.0
+                vnfd:vnfd-connection-point-ref: eth1
+            vnfd:guest-epa:
+                vnfd:cpu-pinning-policy: DEDICATED
+                vnfd:cpu-thread-pinning-policy: PREFER
+                vnfd:mempage-size: LARGE
+                vnfd:numa-node-policy:
+                    vnfd:mem-policy: STRICT
+                    vnfd:node:
+                    -   vnfd:id: '0'
+                        vnfd:paired-threads:
+                            vnfd:num-paired-threads: '11'
+                    vnfd:node-cnt: '1'
+            vnfd:host-epa:
+                vnfd:om-cpu-feature:
+                - 64b
+                - iommu
+                - lps
+                - tlbps
+                - hwsv
+                - dioc
+                - ht
+                vnfd:om-cpu-model-string: Intel(R) Xeon(R) CPU E5-4620 0 @ 2.20GHz
+            vnfd:hypervisor-epa:
+                vnfd:type: REQUIRE_KVM
+                vnfd:version: 10002|12001|2.6.32-358.el6.x86_64
+            vnfd:id: 09163412-c46c-11e5-8576-fa163eb18cb8
+            vnfd:image: /mnt/powervault/virtualization/vnfs/demos/mwc2016/mwc16-gen2.qcow2
+            vnfd:mgmt-vpci: 0000:00:0a.0
+            vnfd:name: mwc16gen2-VM
+            vnfd:vm-flavor:
+                vnfd:memory-mb: '28672'

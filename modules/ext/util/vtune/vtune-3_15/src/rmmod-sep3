@@ -1,0 +1,314 @@
+#!/bin/sh
+
+#
+# File: rmmod-sep3
+#
+# Description: script to unload SEP driver
+#
+# Version: 1.9
+#
+#     Copyright (C) 2005-2014 Intel Corporation.  All Rights Reserved.
+# 
+#     This file is part of SEP Development Kit
+# 
+#     SEP Development Kit is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     version 2 as published by the Free Software Foundation.
+# 
+#     SEP Development Kit is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with SEP Development Kit; if not, write to the Free Software
+#     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# 
+#     As a special exception, you may use this file as part of a free software
+#     library without restriction.  Specifically, if other files instantiate
+#     templates or use macros or inline functions from this file, or you compile
+#     this file and link it with other files to produce an executable, this
+#     file does not by itself cause the resulting executable to be covered by
+#     the GNU General Public License.  This exception does not however
+#     invalidate any other reasons why the executable file might be covered by
+#     the GNU General Public License.
+#
+
+# ------------------------------ CONSTANTS -----------------------------------
+
+# base driver name and version
+DRIVER_BASE=sep
+DRIVER_MAJOR=3
+DRIVER_MINOR=15
+# basic name of driver
+DRIVER_NAME=${DRIVER_BASE}${DRIVER_MAJOR}_${DRIVER_MINOR}
+
+# ------------------------------- OUTPUT -------------------------------------
+
+print_msg()
+{
+  MSG="$*"
+  echo "$MSG"
+}
+
+print_nnl()
+{
+  MSG="$*"
+  echo -n "$MSG"
+}
+
+print_err()
+{
+  MSG="$*"
+  if [ -w /dev/stderr ] ; then
+    echo "$MSG" >> /dev/stderr
+  else
+    echo "$MSG"
+  fi
+}
+
+# set the path to include "standard" locations so commands below can be found
+PATH="/sbin:/usr/sbin:/bin:/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/local/gnu/bin:"${PATH}":."
+export PATH
+
+# ------------------------------ COMMANDS ------------------------------------
+
+CUT="cut"
+GREP="grep"
+INSMOD="insmod"
+LSMOD="lsmod"
+PGREP="pgrep"
+PKILL="pkill"
+RM="rm"
+RMMOD="rmmod"
+SED="sed"
+SU="su"
+TR="tr"
+UNAME="uname"
+WHICH="which"
+
+COMMANDS_TO_CHECK="${CUT} ${GREP} ${INSMOD} ${LSMOD} ${RM} ${RMMOD} ${SED} ${TR} ${UNAME}"
+
+# ------------------------------ FUNCTIONS -----------------------------------
+
+# function to show usage and exit
+print_usage_and_exit()
+{
+  err=${1:-0}
+  print_msg ""
+  print_msg "Usage: $0 [ options ]"
+  print_msg ""
+  print_msg " where \"options\" are the following:"
+  print_msg ""
+  print_msg "    -s | --stop-pax-service"
+  print_msg "      attempts to stop the PAX service before unloading"
+  print_msg "      the ${DRIVER_NAME} driver; note that the PAX service will"
+  print_msg "      not be stopped if it is still in use."
+  print_msg ""
+  print_msg "    -re | --restricted-environment"
+  print_msg "      restricted environment mode: minimal requirements to the system runtime"
+  print_msg "      like in busybox case"
+  print_msg ""
+  exit $err
+}
+
+# check for certain options
+stop_pax_service=0
+while [ $# -gt 0 ] ; do
+  case "$1" in
+    -h | --help)
+      print_usage_and_exit 0
+      ;;
+    -s | --stop-pax-service)
+      stop_pax_service=1
+      ;;
+    -re | --restricted-environment)
+      BUSYBOX_SHELL=yes
+      ;;
+    *)
+      print_err ""
+      print_err "ERROR: unrecognized option \"$1\""
+      print_usage_and_exit 254
+      ;;
+  esac
+  shift
+done
+
+#
+# Note: Busybox has a restricted shell environment, and
+#       conventional system utilities may not be present;
+#       so need to account for this ...
+# Note: Restricted environment mode can be forced by the option -re
+#       in case user may not know about the Busybox
+#
+
+# busybox binary check
+if [ -z "${BUSYBOX_SHELL}" ]; then
+  # if not forced by command line option -re then check it
+  BUSYBOX_SHELL=` ${GREP} --help 2>&1 | ${GREP} BusyBox`
+fi
+
+if [ -z "${BUSYBOX_SHELL}" ] ; then
+  COMMANDS_TO_CHECK="${PGREP} ${PKILL} ${SU} ${COMMANDS_TO_CHECK}"
+fi
+
+# if any of the COMMANDS_TO_CHECK are not executable, then exit script
+OK="true"
+for c in ${COMMANDS_TO_CHECK} ; do
+  CMD=`${WHICH} $c 2>&1` ;
+  if [ -z "${CMD}" ] ; then
+    OK="false"
+    print_err "ERROR: unable to find command \"$c\" !"
+  fi
+done
+if [ ${OK} != "true" ] ; then
+  print_err "If you are using BusyBox, please re-run this script with the '-re' flag added"
+  print_err "Otherwise, please add the above commands to your PATH and re-run the script ... exiting."
+  exit 255
+fi
+
+# ------------------------------ VARIABLES -----------------------------------
+
+SCRIPT=$0
+PLATFORM=`${UNAME} -m`
+KERNEL_VERSION=`${UNAME} -r`
+
+# set the directory of the rmmod-sep3 script
+SCRIPT_DIR=`dirname $0`
+SEP_SHELL=
+SEP_FORCE=-f
+
+if [ -n "${BUSYBOX_SHELL}" ] ; then
+   SEP_SHELL=sh
+   SEP_FORCE=
+fi
+
+# --------------------------------- MAIN -------------------------------------
+
+# check for a loaded driver (should be only one)
+DRIVER_LOADED=`${LSMOD} | ${GREP} ${DRIVER_NAME} | ${GREP} -v ${DRIVER_NAME}_ | ${CUT} -d ' ' -f 1`
+
+# if no driver is loaded, and we're not stopping PAX service, then exit
+if [ -z "${DRIVER_LOADED}" ] ; then
+  print_msg "Warning:  no ${DRIVER_NAME} driver was found loaded in the kernel."
+  if [ $stop_pax_service -ne 1 ] ; then
+    exit 0
+  fi
+fi
+
+# check if USER is root
+if [ -z "${BUSYBOX_SHELL}" ] ; then
+  if [ "${USER}x" != "rootx" ] ; then
+    if [ ! -w /dev ] ; then
+      print_msg "NOTE:  super-user or \"root\" privileges are required in order to continue."
+      print_nnl "Please enter \"root\" "
+      OPTIONS=""
+      if [ $stop_pax_service -eq 1 ] ; then
+        OPTIONS="$OPTIONS -s"
+      fi
+      exec ${SU} -c "/bin/sh ${SCRIPT} ${OPTIONS}"
+      print_msg ""
+      exit 0
+    fi
+  fi
+fi
+
+# shutdown any currently running SEP processes
+SEP_PROCESSES="sep"
+SHUTDOWN_SUCCEEDED=1
+for i in ${SEP_PROCESSES} ; do
+  if [ -z "${BUSYBOX_SHELL}" ] ; then
+    PLIST=`${PGREP} -l -x $i`
+    if [ -n "${PLIST}" ] ; then
+      print_msg "Shutting down the following $i process(es):"
+      print_nnl "${PLIST} "
+      ${PKILL} -x $i
+      sleep 2
+      ${PKILL} -x $i
+      sleep 1
+      PLIST=`${PGREP} -l -x $i`
+      if [ -n "${PLIST}" ] ; then
+        print_msg " -- shutdown FAILED"
+        SHUTDOWN_SUCCEEDED=0
+      else
+        print_msg ""
+      fi
+    fi
+  else
+    PLIST=`ps | ${GREP} -w $i | ${GREP} -v grep | ${CUT} -d ' ' -f 2`
+    if [ -n "${PLIST}" ] ; then
+      print_msg "Shutting down the following $i process(es):"
+      print_nnl "${PLIST} "
+      kill ${PLIST}
+      sleep 2
+      PLIST=`ps | ${GREP} -w $i | ${GREP} -v grep`
+      if [ -n "${PLIST}" ] ; then
+        print_msg " -- shutdown FAILED"
+        SHUTDOWN_SUCCEEDED=0
+      else
+        print_msg ""
+      fi
+    fi
+  fi
+done
+
+# if any driver processes are still running, exit with error
+if [ ${SHUTDOWN_SUCCEEDED} -eq 0 ] ; then
+  print_err ""
+  print_err "ERROR:  The above process(es) must be shutdown before unloading the driver."
+  print_err ""
+  exit 245
+fi
+
+# if SEP driver is loaded, then attempt to remove it
+if [ -n "${DRIVER_LOADED}" ] ; then
+  print_nnl "Removing ${DRIVER_NAME} driver from the kernel ... "
+  sleep 2
+  ${RMMOD} ${DRIVER_NAME}
+  RMMOD_RESULT=$?
+  if [ ${RMMOD_RESULT} -ne 0 ] ; then
+    print_err ""
+    print_err "Error:  unable to remove the driver from the kernel ... exiting."
+    print_err ""
+    exit 246
+  fi
+  print_msg "done."
+fi
+
+# remove SEP base and percpu devices that were created by insmod script
+if [ -e /dev/${DRIVER_NAME} ] ; then
+  print_nnl "Deleting /dev/${DRIVER_NAME} devices ... "
+  sleep 1
+  ${RM} -r ${SEP_FORCE} /dev/${DRIVER_NAME}
+  print_msg "done."
+fi
+
+# show which SEP driver was loaded
+if [ -n "${DRIVER_LOADED}" ] ; then
+  print_msg "The ${DRIVER_NAME} driver has been successfully unloaded."
+fi
+
+# if VTSS++ driver is loaded, then attempt to remove it
+if [ -d "${SCRIPT_DIR}/vtsspp" ] ; then
+  (sh ${SCRIPT_DIR}/vtsspp/rmmod-vtsspp)
+  err=$?
+  if [ $err -ne 0 ] ; then
+    exit $err
+  fi
+fi
+
+# if requested, attempt to unload PAX driver
+if [ $stop_pax_service -eq 1 ] ; then
+  print_msg "Attempting to stop PAX service ..."
+   (${SEP_SHELL} ${SCRIPT_DIR}/pax/rmmod-pax)
+  err=$?
+  if [ $err -ne 0 ] ; then
+    print_err ""
+    print_err "Error: failed to stop PAX service"
+    print_err ""
+    exit $err
+  fi
+  print_msg "PAX service has been stopped."
+fi
+
+exit 0

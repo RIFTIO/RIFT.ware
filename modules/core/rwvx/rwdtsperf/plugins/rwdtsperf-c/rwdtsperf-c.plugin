@@ -1,0 +1,7 @@
+[Plugin]
+Module=rwdtsperf-c
+Name=rwdtsperf-c
+Description=This plugin is for RIFT.IO dtsperf tasklet
+Authors=RIFT.IO
+Copyright=Copyright © 2014 RIFT.IO
+Website=http://www.riftio.com

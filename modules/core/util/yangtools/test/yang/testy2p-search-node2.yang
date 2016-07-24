@@ -1,0 +1,55 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file testy2p-search-node2.yang
+ * @author Tom Seidenberg
+ * @date 2014/04/28
+ * @brief yangpbc test file 2 for pb to yang mapping data
+ */
+
+module testy2p-search-node2
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testy2p-search-node2";
+  prefix "tysn2";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import testy2p-search-node1 { prefix "tysn1"; }
+
+  description "Node search testing file 2";
+  revision 2014-04-28 { description "Initial version"; }
+
+  augment /tysn1:tysn1_t1/tysn1:lvl2 {
+    container lvl3b1 {
+      // This object is a duplicate name - ignore warning
+      rwpb:field-name tysn2_lvl3b1;
+      rwpb:msg-new Tysn2Tysn1T1Lvl2Alvl3b;
+      leaf lfa { type int32; }
+      leaf lfb { type string; }
+    }
+  }
+
+  augment /tysn1:tysn1_t2 {
+    leaf al1 { type uint64; }
+    container c2 {
+      leaf al2 { type int64; }
+    }
+  }
+
+  // Duplicate names between tysn1 and tysn2
+  container tysn1tysn2_dup {
+    config false;
+    list ls1 {
+      list ls2 {
+        leaf lf1 { type string; }
+      }
+    }
+  }
+}
+

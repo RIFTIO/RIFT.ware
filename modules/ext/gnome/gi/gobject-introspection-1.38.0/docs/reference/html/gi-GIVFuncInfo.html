@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>GIVFuncInfo</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="index.html" title="GObject Introspection Reference Manual">
+<link rel="up" href="gi-repository-structs.html" title="GIRepository structs">
+<link rel="prev" href="gi-GIPropertyInfo.html" title="GIPropertyInfo">
+<link rel="next" href="gi-GISignalInfo.html" title="GISignalInfo">
+<meta name="generator" content="GTK-Doc V1.19 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="gi-GIPropertyInfo.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="gi-repository-structs.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">GObject Introspection Reference Manual</th>
+<td><a accesskey="n" href="gi-GISignalInfo.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#gi-GIVFuncInfo.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#gi-GIVFuncInfo.description" class="shortcut">Description</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="gi-GIVFuncInfo"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="gi-GIVFuncInfo.top_of_page"></a>GIVFuncInfo</span></h2>
+<p>GIVFuncInfo — Struct representing a virtual function</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="gi-GIVFuncInfo.synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">#define             <a class="link" href="gi-GIVFuncInfo.html#GI-IS-VFUNC-INFO:CAPS" title="GI_IS_VFUNC_INFO()">GI_IS_VFUNC_INFO</a>                    (info)
+typedef             <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo">GIVFuncInfo</a>;
+enum                <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfoFlags" title="enum GIVFuncInfoFlags">GIVFuncInfoFlags</a>;
+<a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfoFlags" title="enum GIVFuncInfoFlags"><span class="returnvalue">GIVFuncInfoFlags</span></a>    <a class="link" href="gi-GIVFuncInfo.html#g-vfunc-info-get-flags" title="g_vfunc_info_get_flags ()">g_vfunc_info_get_flags</a>              (<em class="parameter"><code><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> *info</code></em>);
+<span class="returnvalue">gint</span>                <a class="link" href="gi-GIVFuncInfo.html#g-vfunc-info-get-offset" title="g_vfunc_info_get_offset ()">g_vfunc_info_get_offset</a>             (<em class="parameter"><code><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GISignalInfo.html#GISignalInfo" title="GISignalInfo"><span class="returnvalue">GISignalInfo</span></a> *      <a class="link" href="gi-GIVFuncInfo.html#g-vfunc-info-get-signal" title="g_vfunc_info_get_signal ()">g_vfunc_info_get_signal</a>             (<em class="parameter"><code><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="returnvalue">GIFunctionInfo</span></a> *    <a class="link" href="gi-GIVFuncInfo.html#g-vfunc-info-get-invoker" title="g_vfunc_info_get_invoker ()">g_vfunc_info_get_invoker</a>            (<em class="parameter"><code><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> *info</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="gi-GIVFuncInfo.description"></a><h2>Description</h2>
+<p>
+GIVfuncInfo represents a virtual function. A property belongs to
+either a <a class="link" href="gi-GIObjectInfo.html#GIObjectInfo" title="GIObjectInfo"><span class="type">GIObjectInfo</span></a> or a <a class="link" href="gi-GIInterfaceInfo.html#GIInterfaceInfo" title="GIInterfaceInfo"><span class="type">GIInterfaceInfo</span></a>.
+</p>
+<p>
+</p>
+<div class="refsect1">
+<a name="gi-givfuncinfo.struct-hierarchy"></a><h2>Struct hierarchy</h2>
+<pre class="synopsis">
+  <a class="link" href="gi-GIBaseInfo.html" title="GIBaseInfo">GIBaseInfo</a>
+   +----<a class="link" href="gi-GICallableInfo.html" title="GICallableInfo">GICallableInfo</a>
+         +----<a class="link" href="gi-GIFunctionInfo.html" title="GIFunctionInfo">GIFunctionInfo</a>
+         +----<a class="link" href="gi-GISignalInfo.html" title="GISignalInfo">GISignalInfo</a>
+         +----GIVFuncInfo
+</pre>
+</div>
+<p>
+</p>
+</div>
+<div class="refsect1">
+<a name="gi-GIVFuncInfo.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="GI-IS-VFUNC-INFO:CAPS"></a><h3>GI_IS_VFUNC_INFO()</h3>
+<pre class="programlisting">#define             GI_IS_VFUNC_INFO(info)</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIVFuncInfo"></a><h3>GIVFuncInfo</h3>
+<pre class="programlisting">typedef GIBaseInfo GIVFuncInfo;
+</pre>
+<p>
+Represents a virtual function.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIVFuncInfoFlags"></a><h3>enum GIVFuncInfoFlags</h3>
+<pre class="programlisting">typedef enum {
+  GI_VFUNC_MUST_CHAIN_UP     = 1 &lt;&lt; 0,
+  GI_VFUNC_MUST_OVERRIDE     = 1 &lt;&lt; 1,
+  GI_VFUNC_MUST_NOT_OVERRIDE = 1 &lt;&lt; 2,
+  GI_VFUNC_THROWS =            1 &lt;&lt; 3
+} GIVFuncInfoFlags;
+</pre>
+<p>
+Flags of a <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> struct.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><a name="GI-VFUNC-MUST-CHAIN-UP:CAPS"></a><span class="term"><code class="literal">GI_VFUNC_MUST_CHAIN_UP</code></span></p></td>
+<td>chains up to the parent type
+</td>
+</tr>
+<tr>
+<td><p><a name="GI-VFUNC-MUST-OVERRIDE:CAPS"></a><span class="term"><code class="literal">GI_VFUNC_MUST_OVERRIDE</code></span></p></td>
+<td>overrides
+</td>
+</tr>
+<tr>
+<td><p><a name="GI-VFUNC-MUST-NOT-OVERRIDE:CAPS"></a><span class="term"><code class="literal">GI_VFUNC_MUST_NOT_OVERRIDE</code></span></p></td>
+<td>does not override
+</td>
+</tr>
+<tr>
+<td><p><a name="GI-VFUNC-THROWS:CAPS"></a><span class="term"><code class="literal">GI_VFUNC_THROWS</code></span></p></td>
+<td>Includes a <span class="type">GError</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-vfunc-info-get-flags"></a><h3>g_vfunc_info_get_flags ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfoFlags" title="enum GIVFuncInfoFlags"><span class="returnvalue">GIVFuncInfoFlags</span></a>    g_vfunc_info_get_flags              (<em class="parameter"><code><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the flags for this virtual function info. See <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfoFlags" title="enum GIVFuncInfoFlags"><span class="type">GIVFuncInfoFlags</span></a> for
+more information about possible flag values.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the flags</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-vfunc-info-get-offset"></a><h3>g_vfunc_info_get_offset ()</h3>
+<pre class="programlisting"><span class="returnvalue">gint</span>                g_vfunc_info_get_offset             (<em class="parameter"><code><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the offset of the function pointer in the class struct. The value
+0xFFFF indicates that the struct offset is unknown.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the struct offset or 0xFFFF if it's unknown</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-vfunc-info-get-signal"></a><h3>g_vfunc_info_get_signal ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GISignalInfo.html#GISignalInfo" title="GISignalInfo"><span class="returnvalue">GISignalInfo</span></a> *      g_vfunc_info_get_signal             (<em class="parameter"><code><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the signal for the virtual function if one is set.
+The signal comes from the object or interface to which
+this virtual function belongs.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the signal or <code class="literal">NULL</code> if none set. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-vfunc-info-get-invoker"></a><h3>g_vfunc_info_get_invoker ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="returnvalue">GIFunctionInfo</span></a> *    g_vfunc_info_get_invoker            (<em class="parameter"><code><a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> *info</code></em>);</pre>
+<p>
+If this virtual function has an associated invoker method, this
+method will return it.  An invoker method is a C entry point.
+</p>
+<p>
+Not all virtuals will have invokers.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the <a class="link" href="gi-GIVFuncInfo.html#GIVFuncInfo" title="GIVFuncInfo"><span class="type">GIVFuncInfo</span></a> or <code class="literal">NULL</code>. Free it with
+<a class="link" href="gi-GIBaseInfo.html#g-base-info-unref" title="g_base_info_unref ()"><code class="function">g_base_info_unref()</code></a> when done. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.19</div>
+</body>
+</html>

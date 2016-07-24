@@ -1,0 +1,69 @@
+
+This directory has source code of libuinet taken from git repository.Libuinet is fetched as subtree using below commaand.
+
+git subtree add --prefix=app/libipfp/app-plugin/ip-uinet/lib/libuinet -m 'Add libuinet code from git respository - Initial pull' --squash https://github.com/pkelsey/libuinet.git master
+
+Base repository is as below and version being used is as below.
+git clone https://github.com/pkelsey/libuinet.git
+
+## commit comment is as below for version currently being used
+commit 5ebef7d2bf1b8364a7269fffcb6dd104b0b6c7e1
+Author: Patrick Kelsey <kelsey@ieee.org>
+Date:   Sun Sep 14 14:29:14 2014 -0400
+
+    Rework uinet_if_netmap transmit path, avoiding the inherent hazards in
+    using IFF_DRV_OACTIVE and IFQ_DRV_IS_EMPTY() and replacing
+    mutex_sleep()/wakeup() with a more efficient condition variable.
+
+Base libuinet code
+======================
+Base libuinet code is available in below path
+cd libuinet/lib/libuinet
+
+Base libuinet code gets built as part of Riftware make system. This creates a libuinet.so.1 which will be used as part of the IP UINET Fast path APP plugin.
+
+Sample Test code
+====================
+Libuinet framework provides basic test code.
+To run these, first top level make is required in rift directory which will ensure to create .build directory and libuinet.a or libuinet.so.1 is created.
+
+cd rift
+make
+
+After this, Libuinet specific code are placed in below directly and we can run test applications available as part of libuinet from here.
+cd  .build/modules/core/fpath/src/core_fpath-build/app/libipfp/app-plugin/ip-uinet/lib/lib/libuinet/
+
+Sample applications make use of libev framework and same must be built
+cd lib/libev/
+./configure --with-uinet=../libuinet/api_include
+make
+
+Sample test code are available in bin directory and echo server and client applications are validated by making necessary to run it on top of raw socket.
+
+== Echo server
+cd bin/echo
+make
+
+To run echo server
+./echo -i eth9 -l 192.168.123.1 -p 24000 -t raw
+
+== Echo client
+
+cd bin/client-echo
+make
+
+./client_echo -i eth9 -f 10.110.1.4 -l 192.168.123.1 -p 24000 -r 2983 -t raw
+
+Notes:
+=====
+(1) To avoid TCP reset being sent by kernel when using raw socket and userspace TCP socket, below filter should be used to avoid sending RST.
+iptables -A OUTPUT -p tcp -o ens2f0 --sport 24000 --tcp-flags RST RST -j DROP
+To view ip table below command can be used
+iptables -S -v
+
+(2) With TCP checksum offload enabled for ethernet interfaces, userspace stack version using raw socket has checksum failure. So below command can be used to disable Rx checksum offload.
+ethtool --offload  ens2f0  rx off
+Current settings can be seen using below command
+ethtool --show-offload ens2f0
+
+

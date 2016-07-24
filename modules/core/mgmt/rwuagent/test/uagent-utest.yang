@@ -1,0 +1,135 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+module uagent-utest
+{
+  namespace "http://riftio.com/ns/core/mgmt/rwuagent/test/uagent-test";
+  prefix "conv";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  
+  description
+    "Base yang for testing xml to pb and pb to xml conversion with flat PB";
+
+  revision 2014-05-19 {
+    description "Initial version"; }
+
+  typedef cb-enum {
+    type enumeration {
+      enum first { value 1; }
+      enum second{ value 0; }
+      enum seventh { value 7;}
+    }
+  }
+
+  container container-1 {
+    rwpb:msg-new FirstLevel;
+    rwpb:msg-flat true;
+    
+    description  "The root node";
+
+    container container_1-1{
+      leaf leaf-1_1.1 {
+        type string;
+        rwpb:field-string-max 30;        
+      }
+      
+      list list-1.1_2 {
+        rwpb:msg-new List112;
+        rwpb:msg-flat true;
+        rwpb:field-inline-max "10";
+        key "int_1.1.2_1";
+        leaf int_1.1.2_1 {
+          type int32;
+          description "A really large list could fit in here";
+        }
+        choice drink {
+          case vodka {
+            leaf grey-goose {
+              type empty;
+            }
+          }
+          container wine {
+            choice color {
+              case white {
+                leaf cheap-white-wine {
+                  type empty;
+                }
+              }
+              case red {
+                leaf merlot {
+                  type empty;
+                }
+              }
+            }
+          }
+        }      
+      }
+    }
+
+    list two-keys {
+      rwpb:msg-new TwoKeys;
+      rwpb:msg-flat true;
+      rwpb:field-inline-max "10";
+
+      key "prim-enum sec-string";
+
+      leaf prim-enum {
+        type cb-enum;
+      }
+
+      leaf sec-string {
+        type string;
+        rwpb:field-string-max 30;
+      }
+
+      container unrooted-pb {
+        rwpb:msg-new Unrooted;
+        rwpb:msg-flat true;
+
+        leaf unroot-int {
+          type int32;
+        }
+      }
+
+    }
+    leaf-list leaf.list.1.2 {
+      type string;
+      rwpb:field-inline-max "5";
+      rwpb:field-string-max 30;
+    }
+
+    leaf empty-1_3 {
+      type empty;
+    }
+
+    leaf-list enum_1-4 {
+      rwpb:field-inline-max "3";
+      type enumeration {
+        enum first { value 100;}
+        enum second { value 234;}
+        enum seventh { value 999;}
+      }
+    }
+
+    leaf enum_1.5 {
+      type cb-enum;
+      description "Test import of enumerations with conversions";
+    }
+
+  
+             
+    leaf bool.1-6 {
+      type boolean;
+      description "Nobodys paying attention to the truth?";
+    }
+  }
+
+}
+        

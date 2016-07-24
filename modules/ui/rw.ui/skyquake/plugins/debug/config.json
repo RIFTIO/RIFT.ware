@@ -1,0 +1,14 @@
+{
+    "root": "public",
+    "name": "Debug",
+    "dashboard": "./crash.jsx",
+    "order": 100,
+    "priority":2,
+    "routes" : [{
+        "label": "Debug",
+        "route": "/",
+        "component": "./crash.jsx",
+        "path": "",
+        "type": "internal"
+    }]
+}

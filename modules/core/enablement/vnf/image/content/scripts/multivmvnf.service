@@ -1,0 +1,12 @@
+[Unit]
+Description=Rift Enabled VNF
+After=syslog.target network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/opt/rift/.vnf_start_conf
+ExecStart=/opt/rift/start_multivmvnf $VNFNAME $VDUNAME $MASTERIP
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,18 @@
+{
+  "test_name":"TC_PINGPONG_VNF_RELOAD_OPENSTACK_XML",
+  "commandline":"./pingpong_vnf_reload_systest --lp-standalone --cloud-type 'openstack' --sysinfo --use-xml-mode --cloud-host={cloud_host} --user={user} {tenants} --restconf",
+  "test_description":"System test for ping pong vnf reload(Openstack)",
+  "run_as_root": false,
+  "status":"working",
+  "keywords":["nightly","smoke","MANO","openstack"],
+  "timelimit": 2200,
+  "networks":[],
+  "vms":[
+    {
+      "name": "rift_auto_launchpad",
+      "memory": 4096,
+      "cpus": 2
+    }
+  ]
+}
+

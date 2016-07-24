@@ -1,0 +1,22 @@
+Pixbuf
+        .new_from_xpm_data.data type="string[]"
+        .new_from_stream_at_scale_async skip
+        .new_subpixbuf skip
+        .save_to_stream_finish skip
+
+// gdk-pixdata.h isn't included by gdk-pixbuf.h
+Pixdata* cheader_filename="gdk-pixbuf/gdk-pixdata.h"
+Pixbuf
+        .from_pixdata cheader_filename="gdk-pixbuf/gdk-pixdata.h"
+
+// default values other than null
+Pixbuf
+        .new_from_data skip
+
+// Bug #558620: default values
+Pixbuf
+        .from_pixdata.copy_pixels default=true
+        .new_from_inline.copy_pixels default=true
+
+// Bug #666798: delegates which throw exceptions
+PixbufSaveFunc skip

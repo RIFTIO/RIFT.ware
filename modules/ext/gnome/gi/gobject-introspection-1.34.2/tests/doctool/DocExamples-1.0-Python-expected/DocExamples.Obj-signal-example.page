@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<page id="DocExamples.Obj-signal-example"
+      type="topic"
+      style="signal"
+      xmlns="http://projectmallard.org/1.0/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/">
+  <info>
+    <link type="guide" xref="DocExamples.Obj" group="signal"/>
+    <title type="link" role="topic">signal-example</title>
+  </info>
+  <title>DocExamples.Obj::signal-example</title>
+<synopsis><code mime="text/x-python">
+def callback(obj, int_param, float_param, user_param1, ...)
+</code></synopsis>
+<p>This is an example of how to document a signal.</p>
+
+<table>
+<tr>
+<td><p>obj :</p></td>
+<td><p>instance of DocExamples.Obj that is emitting the signal</p></td>
+</tr>
+<tr>
+<td><p>int_param :</p></td>
+<td><p>a parameter of type int</p></td>
+</tr>
+<tr>
+<td><p>float_param :</p></td>
+<td><p>a parameter of type float</p></td>
+</tr>
+<tr>
+<td><p>user_param1 :</p></td>
+<td><p>first user parameter (if any) specified with the connect() method</p></td>
+</tr>
+<tr>
+<td><p>... :</p></td>
+<td><p>additional user parameters (if any)</p></td>
+</tr>
+</table>
+<p>Since 0.99</p>
+</page>

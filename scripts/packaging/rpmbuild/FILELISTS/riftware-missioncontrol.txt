@@ -1,0 +1,6 @@
+#
+# missioncontrol specific files 
+#
+# --------------------------------------------------------------------
+#
+.install/usr/rift/systemtest/mission_control/mission_control.py

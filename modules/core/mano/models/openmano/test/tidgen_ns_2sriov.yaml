@@ -1,0 +1,34 @@
+---
+name:            2tidgenMWC_2sriov
+description:     scenario with 2 tidgenMWC VNFs
+topology:
+  nodes:
+    tidgen1:                           #VNF name
+      type:      VNF
+      VNF model: tidgenMWC_2sriov      #VNF type
+    tidgen2:
+      type:      VNF
+      VNF model: tidgenMWC_2sriov
+    default:                    #Name of external network
+      type:      external_network
+      model:     default
+  connections:
+    mgmtnet:
+      nodes:
+      -  tidgen1: eth0
+      -  tidgen2: eth0
+    datanet0: 
+      nodes:
+      -  tidgen1: xe0
+      -  tidgen2: xe0
+    datanet1: 
+      nodes:
+      -  tidgen1: xe1
+      -  tidgen2: xe1
+    control-net:
+      nodes:
+      -   default: null
+      -   tidgen1: eth1
+      -   tidgen2: eth1
+
+

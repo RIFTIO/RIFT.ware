@@ -1,0 +1,101 @@
+package _tutO_OO_rial_;
+
+message moo {
+ optional string name =1;
+}
+
+message _goo {
+ optional string name =1;
+}
+message ho_o {
+ optional string name =1;
+}
+message  joo_ {
+ optional string name =1;
+}
+message  Koo {
+ optional string name =1;
+}
+message  _ {
+ optional string name =1;
+}
+
+
+message fooA__BC_DEF_G_ {
+ optional string name =1;
+}
+
+enum COLORType {
+    RED = 0;
+    BLUE = 1;
+    GREEN = 2;
+}
+
+
+
+
+message Person {
+  required string name = 1;
+  required int32 id = 2;
+  optional string email = 3;
+
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+  required PhoneType type = 11;
+
+  message PhoneNumber {
+    required string number = 1;
+    optional PhoneType type = 2 [default = HOME];
+  }
+
+  repeated PhoneNumber phone = 4;
+}
+
+message AddressBook {
+  repeated Person person = 1;
+}
+
+message AMessage
+   {
+      required int32 a=1; 
+      optional int32 b=2;
+   }
+
+message CMessage
+{
+    repeated int32 c=1;
+}
+message Submessage
+{
+    required int32 value=1;
+}
+
+message DMessage
+{
+    required Submessage a=1;
+    optional Submessage b=2;
+}
+
+message EMessage
+{
+    repeated Submessage a=1;
+}
+message Point {
+  required int32 x = 1;
+  required int32 y = 2;
+  optional string label1 = 3;
+}
+ 
+message Line {
+  required Point start = 1;
+  required Point end = 2;
+  optional string label2 = 3;
+}
+ 
+message Polyline {
+  repeated Point point = 1;
+  optional string label3 = 2;
+}

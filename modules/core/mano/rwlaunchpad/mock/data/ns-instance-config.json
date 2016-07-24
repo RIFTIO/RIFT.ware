@@ -1,0 +1,19 @@
+{
+    "nsr": [
+        {
+            "id": "a636c6de-6dd0-11e5-9e8f-6cb3113b406f",
+            "nsd-ref": "a631e8c6-663a-11e5-b122-6cb3113b406f",
+            "admin-status": "ENABLED"
+        },
+        {
+            "id": "c8c6cc24-6dd0-11e5-9e8f-6cb3113b406f",
+            "nsd-ref": "b631e8c6-663a-11e5-b122-6cb3113b406f",
+            "admin-status": "ENABLED"
+        },
+        {
+            "id": "c8c6cf3a-6dd0-11e5-9e8f-6cb3113b406f",
+            "nsd-ref": "c631e8c6-663a-11e5-b122-6cb3113b406f",
+            "admin-status": "DISABLED"
+        }
+    ]
+}

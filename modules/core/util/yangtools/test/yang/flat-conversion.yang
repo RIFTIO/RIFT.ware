@@ -1,0 +1,187 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file flat-conversion.yang
+ * @author Vinod Kamalaraj
+ * @date 2014/05/19
+ * @brief YANG definition for testing "flat" conversion from xml to pb and back
+ */
+
+module flat-conversion
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/conversion";
+  prefix "conv";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import base-conversion { prefix "cb";}
+
+  description
+    "Base yang for testing xml to pb and pb to xml conversion with flat PB";
+
+  revision 2014-05-19 {
+    description "Initial version"; }
+
+  container container-1 {
+    rwpb:msg-new FirstLevel;
+    rwpb:msg-flat true;
+
+    description  "The root node";
+
+    container container_1-1{
+      leaf leaf-1_1.1 {
+        type string;
+        rwpb:field-string-max 30;
+      }
+
+      leaf test-enum {
+        type cb:cb-enum;
+      }
+
+      list list-1.1_2 {
+        rwpb:msg-new List112;
+        rwpb:msg-flat true;
+        rwpb:field-inline-max "10";
+        key "int_1.1.2_1";
+        leaf int_1.1.2_1 {
+          type int32;
+          description "A really large list could fit in here";
+        }
+        choice drink {
+          case vodka {
+            leaf grey-goose {
+              type empty;
+            }
+          }
+          container wine {
+            choice color {
+              case white {
+                leaf cheap-white-wine {
+                  type empty;
+                }
+              }
+              case red {
+                leaf merlot {
+                  type empty;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    list two-keys {
+      rwpb:msg-new TwoKeys;
+      rwpb:msg-flat true;
+      rwpb:field-inline-max "10";
+
+      key "prim-enum sec-string";
+
+      leaf prim-enum {
+        type cb:cb-enum;
+      }
+
+      leaf sec-string {
+        type string;
+        rwpb:field-string-max 30;
+      }
+
+      container unrooted-pb {
+        rwpb:msg-new Unrooted;
+        rwpb:msg-flat true;
+
+        leaf unroot-int {
+          type int32;
+        }
+      }
+
+    }
+    leaf-list leaf.list.1.2 {
+      type string;
+      rwpb:field-inline-max "5";
+      rwpb:field-string-max 30;
+    }
+
+    leaf empty-1_3 {
+      type empty;
+    }
+
+    leaf-list enum_1-4 {
+      rwpb:field-inline-max "3";
+      type enumeration {
+        enum first { value 100;}
+        enum second { value 234;}
+        enum seventh { value 999;}
+      }
+    }
+
+    leaf enum_1.5 {
+      type cb:cb-enum;
+      description "Test import of enumerations with conversions";
+    }
+
+    leaf bool.1-6 {
+      type boolean;
+      description "Nobodys paying attention to the truth?";
+    }
+
+    container all-types {
+      leaf-list n1 { max-elements 4; type int8 {range "-12..14";} }
+      leaf-list n2 { max-elements 4; type int16 {range "100..200|300|400..500";} }
+      leaf-list n3 { max-elements 4; type int32; }
+      leaf-list n4 { max-elements 4; type int64; }
+      leaf-list n5 { max-elements 4; type uint8; }
+      leaf-list n6 { max-elements 4; type uint16; }
+      leaf-list n7 { max-elements 4; type uint32; }
+      leaf-list n8 { max-elements 4; type uint64; }
+      // ATTN: leaf-list iref1 { max-elements 4; type identityref { base "tnb:company"; } }
+      leaf-list bin1 { max-elements 4; type binary {length "2..5";}}
+      // ATTN: leaf-list bits1 { max-elements 4; type flags; }
+      leaf-list dec1 { max-elements 4; type decimal64 { fraction-digits 10; } }
+      leaf-list s1 { max-elements 4; type string{length "2..5";} }
+    }
+  }
+    container flat {
+
+    rwpb:msg-flat true;
+    list keyless {
+      config false;
+      rwpb:field-inline-max "10";
+      leaf str {
+        rwpb:field-string-max 30;
+        type string;
+      }
+      
+      leaf enum {
+        type enumeration {
+          enum foo;
+          enum bar;
+          enum foo-bar;
+        }
+      }
+      
+      leaf number {
+        type uint32;
+      }
+      
+      
+      container cont {
+      leaf bool {
+        type boolean;
+      }
+      
+      leaf nothing {
+        type empty;
+       }
+      }
+    }
+  }
+
+}

@@ -1,0 +1,27 @@
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+.cloudAccount {
+    flex: 1 1 100%;
+    .associateSdnAccount {
+        margin: 1rem 1.5rem;
+    }
+
+  .form-actions a.delete,
+  .form-actions a.cancel {
+    cursor: pointer;
+  }
+
+  .form-actions a.delete:hover,
+  .form-actions a.delete:active,
+  .form-actions a.cancel:hover,
+  .form-actions a.cancel:active {
+    background: #00acee;
+    color: #ffffff;
+  }
+
+
+}

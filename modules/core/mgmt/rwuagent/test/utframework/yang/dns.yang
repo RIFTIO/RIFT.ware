@@ -1,0 +1,45 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module dns {
+
+  namespace "http://riftio.com/ns/core/mgmt/rwuagent/test/dns";
+  prefix dns;
+
+  import ietf-inet-types { prefix inet; }
+  import rw-pb-ext { prefix rwpb; }
+
+  description "System DNS configuration ";
+
+  revision "2015-10-31" {
+    description "Initial revision";
+  }
+
+  container dns {
+    rwpb:msg-new "Dns"; 
+    list search {
+      key name;
+      max-elements 3;
+      leaf name      { type int32; }
+      leaf domain    { type inet:host; }
+    }
+    list server {
+      key address;
+      max-elements 3;
+      ordered-by user;
+      leaf address   { type inet:ip-address; }
+      leaf ttl       { type uint8; }
+    }
+    container options {
+      rwpb:msg-new "DnsOptions";
+      leaf ndots    { type uint8; }
+      leaf timeout  { type uint8; }
+      leaf attempts { type uint8; }
+    }
+  }
+}

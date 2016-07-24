@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+# Get the configuration.
+proxied_ip=$(config-get proxied_ip)
+login_password=$(config-get password)
+home_domain=$(config-get home_domain)
+base_number=$(config-get base_number)
+number_count=$(config-get number_count)
+
+# If the node is configured, provision it and its numbers.
+if [ -n "$proxied_ip" ] && [ -n "$home_domain" ]  && [ -n "$login_password" ] ; then
+  # Copy the reconfigure-aio script on, and run it.
+  status-set maintenance "configuring"
+  sshpass -p$login_password scp -o StrictHostKeyChecking=no $CHARM_DIR/lib/reconfigure-aio ubuntu@$proxied_ip:/tmp/reconfigure-aio.$$
+  sshpass -p$login_password ssh -o StrictHostKeyChecking=no ubuntu@$proxied_ip "echo $login_password | sudo -S bash -c 'bash /tmp/reconfigure-aio.$$ $home_domain $base_number $number_count ; rm -f /tmp/reconfigure-aio.$$'"
+  status-set active "configured"
+else
+  status-set blocked "waiting for configuration"
+fi

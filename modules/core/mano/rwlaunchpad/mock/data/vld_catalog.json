@@ -1,0 +1,16 @@
+{
+    "vld": [
+        {
+            "id": "a631e8c6-663a-11e5-b122-6cb3113b406f",
+            "name": "vld-one"
+        },
+        {
+            "id": "b631e8c6-663a-11e5-b122-6cb3113b406f",
+            "name": "vld-two"
+        },
+        {
+            "id": "c631e8c6-663a-11e5-b122-6cb3113b406f",
+            "name": "vld-three"
+        }
+    ]
+}

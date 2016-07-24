@@ -1,0 +1,2 @@
+confd/*.installer.bin  export-ignore
+libconfd/*/*libconfd.tar.gz  export-ignore

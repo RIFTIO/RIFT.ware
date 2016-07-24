@@ -1,0 +1,175 @@
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Tim Mortsolf
+# Creation Date: 11/18/2013
+# 
+
+##
+# Set a variable for the top level directory
+##
+
+top.src.path := $(abspath $(dir $(makefile.top)))
+top.build.path := $(abspath $(top.src.path)/.build)
+top.install.path := $(abspath $(top.src.path)/.install)
+
+##
+# From the top level directory and the current directory, determine the module directory
+##
+
+module.src.path := $(abspath $(dir $(call find_upward, "manifest")))
+module.src.subdir := $(subst $(top.src.path),,$(module.src.path))
+ifeq ($(wildcard $(top.build.path)/$(module.src.subdir)/src/*-build),)
+  module.build.path := $(abspath $(top.build.path)/$(module.src.subdir))
+else
+  module.build.path = $(abspath $(wildcard $(top.build.path)/$(module.src.subdir)/src/*-build)/)
+endif
+
+##
+# From the module directory, determine the final build directory
+##
+
+here.src.path := $(abspath $(PWD))
+here.src.subdir := $(subst $(module.src.path),,$(here.src.path))
+here.build.path := $(abspath $(module.build.path)/$(here.src.subdir))
+
+makefile.env := $(call find_upward, "Makefile.env")
+include $(makefile.env)
+
+##
+# Define a variable for newline
+##
+
+define newline
+
+
+endef
+
+##
+# Default rule is to invoke the "compile" target
+##
+
+all:: compile
+
+##
+# Rule to clean from a particular directory
+##
+
+clean::
+ifeq ($(wildcard $(here.build.path)),)
+	$(error ${newline}The build directory does not exist:${newline}-----> ${here.build.path})
+else
+	cd $(here.build.path) && $(MAKE) $(MAKECMDGOALS)
+endif
+
+##
+# Rule to compile from a particular directory
+##
+
+compile::
+ifeq ($(wildcard $(here.build.path)),)
+	$(error ${newline}The build directory does not exist:${newline}-----> ${here.build.path})
+else
+	cd $(here.build.path) && $(MAKE) $(MAKECMDGOALS)
+endif
+
+##
+# Rule to install from a particular directory
+##
+
+install::
+ifeq ($(wildcard $(here.build.path)),)
+	$(error ${newline}The build directory does not exist:${newline}-----> ${here.build.path})
+else
+	cd $(here.build.path) && $(MAKE) $(MAKECMDGOALS)
+endif
+
+##
+# Rule to create a symbolic link to the build directory for a particular directory
+##
+
+link::
+ifeq ($(wildcard $(here.build.path)),)
+	$(error ${newline}The build directory does not exist:${newline}-----> ${here.build.path})
+else
+	ln -s $(here.build.path) .build
+endif
+
+
+##
+# This is a VERY temporary rule to get rid of things in .install that OVERRIDE the local things
+# The correct fix for this is in the CMakefiles so we do not need to remove these in the first place
+##
+
+localize:
+	rm -f $(top.src.path)/.install/usr/include/*rwsched*
+	rm -f $(top.src.path)/.install/usr/lib/*rwsched*
+
+##
+# Rule to invoke ctest from a particular directory
+##
+
+test::
+ifeq ($(wildcard $(here.build.path)),)
+	$(error ${newline}The build directory does not exist:${newline}-----> ${here.build.path})
+else
+	cd $(here.build.path) && ctest --verbose
+endif
+
+unittest::
+ifeq ($(wildcard $(here.build.path)),)
+	$(error ${newline}The build directory does not exist:${newline}-----> ${here.build.path})
+else
+	cd $(here.build.path) && $(MAKE) $(MAKECMDGOALS)
+endif
+
+##
+# Rule to invoke cmake
+##
+
+cmake::
+	echo $(top.build.path)
+	rm -rf $(top.build.path)
+	mkdir $(top.build.path)
+	cd $(top.build.path) && cmake ..
+	cd $(top.build.path) && $(MAKE)
+
+
+##
+# Generic code to run rwmain
+##
+
+run_rwmain::
+ifeq ($(wildcard $(here.build.path)),)
+	$(error ${newline}The build directory does not exist:${newline}-----> ${here.build.path})
+else
+	cd $(here.build.path) && $(MAKE) $(MAKECMDGOALS)
+endif
+
+run_ravcs_mtest::
+ifeq ($(wildcard $(here.build.path)),)
+	$(error ${newline}The build directory does not exist:${newline}-----> ${here.build.path})
+else
+	cd $(here.build.path) && $(MAKE) $(MAKECMDGOALS)
+endif
+
+##
+# Make rule to display help for all targets
+##
+
+help::
+	@echo '======================================================================'
+	@echo 'Makefile targets - the default target is "compile"'
+	@echo '======================================================================'
+	@echo ''
+	@echo '    compile   - compile for this directory (default target)'
+	@echo ''
+	@echo '    clean     - invoke clean in the current sub-directory'
+	@echo '    cmake     - invoke cmake for the module this directory is in'
+	@echo '    link      - create symbolic links to the cmake .build directory for the current sub-directory'
+	@echo '    test      - invoke the cmake "test" target in the current sub-directory'
+	@echo '    run_rwain - invoke the cmake "run_rwmain" target in the current sub-directory'
+	@echo '    run_ravcs_mtest - invoke the cmake "run_ravcs_mtest" target in the current sub-directory'
+
+
+

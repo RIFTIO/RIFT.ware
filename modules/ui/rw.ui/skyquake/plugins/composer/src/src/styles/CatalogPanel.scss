@@ -1,0 +1,40 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import 'main';
+@import 'variables';
+.CatalogPanel {
+	border-right: 1px solid $panel-border-color;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 300px;
+	min-width: 6px;
+	overflow: hidden;
+	z-index: 3;
+	&.-is-tray-open {
+		.CatalogPanelBody {
+			bottom: 275px;/*height of the CatalogPanelTray*/
+		}
+	}
+	.CatalogPanelBody {
+		@extend .panel-body;
+		min-width: 300px;
+
+		>div {
+			position: relative;
+			height: 100%;
+			width: 100%;
+		}
+
+		.LoaderWrapper {
+			display: flex;
+			justify-content: center;
+		}
+	}
+}
+

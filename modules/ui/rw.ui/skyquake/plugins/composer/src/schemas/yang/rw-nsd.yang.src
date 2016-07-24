@@ -1,0 +1,45 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-nsd
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-nsd";
+  prefix "rw-nsd";
+
+  import nsd {
+    prefix "nsd";
+  }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  revision 2015-09-10 {
+    description
+      "Initial revision. This YANG file augments
+       the base MANO NSD";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  augment /nsd:nsd-catalog/nsd:nsd {
+    uses manotypes:control-param;
+    uses manotypes:action-param;
+    leaf meta {
+      description
+        "Any meta-data needed by the UI";
+      type string;
+    }
+  }
+}
+
+// vim: sw=2

@@ -1,0 +1,327 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>GIStructInfo</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="index.html" title="GObject Introspection Reference Manual">
+<link rel="up" href="gi-repository-structs.html" title="GIRepository structs">
+<link rel="prev" href="gi-GITypeInfo.html" title="GITypeInfo">
+<link rel="next" href="gi-GIUnionInfo.html" title="GIUnionInfo">
+<meta name="generator" content="GTK-Doc V1.19 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="gi-GITypeInfo.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="gi-repository-structs.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">GObject Introspection Reference Manual</th>
+<td><a accesskey="n" href="gi-GIUnionInfo.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#gi-GIStructInfo.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#gi-GIStructInfo.description" class="shortcut">Description</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="gi-GIStructInfo"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="gi-GIStructInfo.top_of_page"></a>GIStructInfo</span></h2>
+<p>GIStructInfo — Struct representing a C structure</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="gi-GIStructInfo.synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">#define             <a class="link" href="gi-GIStructInfo.html#GI-IS-STRUCT-INFO:CAPS" title="GI_IS_STRUCT_INFO()">GI_IS_STRUCT_INFO</a>                   (info)
+typedef             <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo">GIStructInfo</a>;
+<span class="returnvalue">gint</span>                <a class="link" href="gi-GIStructInfo.html#g-struct-info-get-n-fields" title="g_struct_info_get_n_fields ()">g_struct_info_get_n_fields</a>          (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GIFieldInfo.html#GIFieldInfo" title="GIFieldInfo"><span class="returnvalue">GIFieldInfo</span></a> *       <a class="link" href="gi-GIStructInfo.html#g-struct-info-get-field" title="g_struct_info_get_field ()">g_struct_info_get_field</a>             (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>,
+                                                         <em class="parameter"><code><span class="type">gint</span> n</code></em>);
+<span class="returnvalue">gint</span>                <a class="link" href="gi-GIStructInfo.html#g-struct-info-get-n-methods" title="g_struct_info_get_n_methods ()">g_struct_info_get_n_methods</a>         (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="returnvalue">GIFunctionInfo</span></a> *    <a class="link" href="gi-GIStructInfo.html#g-struct-info-get-method" title="g_struct_info_get_method ()">g_struct_info_get_method</a>            (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>,
+                                                         <em class="parameter"><code><span class="type">gint</span> n</code></em>);
+<a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="returnvalue">GIFunctionInfo</span></a> *    <a class="link" href="gi-GIStructInfo.html#g-struct-info-find-method" title="g_struct_info_find_method ()">g_struct_info_find_method</a>           (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *name</code></em>);
+<span class="returnvalue">gsize</span>               <a class="link" href="gi-GIStructInfo.html#g-struct-info-get-size" title="g_struct_info_get_size ()">g_struct_info_get_size</a>              (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);
+<span class="returnvalue">gsize</span>               <a class="link" href="gi-GIStructInfo.html#g-struct-info-get-alignment" title="g_struct_info_get_alignment ()">g_struct_info_get_alignment</a>         (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);
+<span class="returnvalue">gboolean</span>            <a class="link" href="gi-GIStructInfo.html#g-struct-info-is-gtype-struct" title="g_struct_info_is_gtype_struct ()">g_struct_info_is_gtype_struct</a>       (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);
+<span class="returnvalue">gboolean</span>            <a class="link" href="gi-GIStructInfo.html#g-struct-info-is-foreign" title="g_struct_info_is_foreign ()">g_struct_info_is_foreign</a>            (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="gi-GIStructInfo.description"></a><h2>Description</h2>
+<p>
+GIStructInfo represents a generic C structure type.
+</p>
+<p>
+A structure has methods and fields.
+</p>
+<p>
+</p>
+<div class="refsect1">
+<a name="gi-giobjectinfo.struct-hierarchy"></a><h2>Struct hierarchy</h2>
+<pre class="synopsis">
+  <a class="link" href="gi-GIBaseInfo.html" title="GIBaseInfo">GIBaseInfo</a>
+   +----<a class="link" href="gi-GIRegisteredTypeInfo.html" title="GIRegisteredTypeInfo">GIRegisteredTypeInfo</a>
+         +----GIStructInfo
+</pre>
+</div>
+<p>
+</p>
+</div>
+<div class="refsect1">
+<a name="gi-GIStructInfo.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="GI-IS-STRUCT-INFO:CAPS"></a><h3>GI_IS_STRUCT_INFO()</h3>
+<pre class="programlisting">#define             GI_IS_STRUCT_INFO(info)</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIStructInfo"></a><h3>GIStructInfo</h3>
+<pre class="programlisting">typedef GIBaseInfo GIStructInfo;
+</pre>
+<p>
+Represents a struct.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-get-n-fields"></a><h3>g_struct_info_get_n_fields ()</h3>
+<pre class="programlisting"><span class="returnvalue">gint</span>                g_struct_info_get_n_fields          (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the number of fields this structure has.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>number of fields</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-get-field"></a><h3>g_struct_info_get_field ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIFieldInfo.html#GIFieldInfo" title="GIFieldInfo"><span class="returnvalue">GIFieldInfo</span></a> *       g_struct_info_get_field             (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>,
+                                                         <em class="parameter"><code><span class="type">gint</span> n</code></em>);</pre>
+<p>
+Obtain the type information for field with specified index.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>n</code></em> :</span></p></td>
+<td>a field index</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the <a class="link" href="gi-GIFieldInfo.html#GIFieldInfo" title="GIFieldInfo"><span class="type">GIFieldInfo</span></a>, free it with <a class="link" href="gi-GIBaseInfo.html#g-base-info-unref" title="g_base_info_unref ()"><code class="function">g_base_info_unref()</code></a>
+when done. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-get-n-methods"></a><h3>g_struct_info_get_n_methods ()</h3>
+<pre class="programlisting"><span class="returnvalue">gint</span>                g_struct_info_get_n_methods         (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the number of methods this structure has.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>number of methods</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-get-method"></a><h3>g_struct_info_get_method ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="returnvalue">GIFunctionInfo</span></a> *    g_struct_info_get_method            (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>,
+                                                         <em class="parameter"><code><span class="type">gint</span> n</code></em>);</pre>
+<p>
+Obtain the type information for method with specified index.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>n</code></em> :</span></p></td>
+<td>a method index</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a>, free it with <a class="link" href="gi-GIBaseInfo.html#g-base-info-unref" title="g_base_info_unref ()"><code class="function">g_base_info_unref()</code></a>
+when done. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-find-method"></a><h3>g_struct_info_find_method ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="returnvalue">GIFunctionInfo</span></a> *    g_struct_info_find_method           (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">gchar</span> *name</code></em>);</pre>
+<p>
+Obtain the type information for method named <em class="parameter"><code>name</code></em>.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>name</code></em> :</span></p></td>
+<td>a method name</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the <a class="link" href="gi-GIFunctionInfo.html#GIFunctionInfo" title="GIFunctionInfo"><span class="type">GIFunctionInfo</span></a>, free it with <a class="link" href="gi-GIBaseInfo.html#g-base-info-unref" title="g_base_info_unref ()"><code class="function">g_base_info_unref()</code></a>
+when done. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-get-size"></a><h3>g_struct_info_get_size ()</h3>
+<pre class="programlisting"><span class="returnvalue">gsize</span>               g_struct_info_get_size              (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the total size of the structure.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>size of the structure in bytes</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-get-alignment"></a><h3>g_struct_info_get_alignment ()</h3>
+<pre class="programlisting"><span class="returnvalue">gsize</span>               g_struct_info_get_alignment         (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the required alignment of the structure.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>required alignment in bytes</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-is-gtype-struct"></a><h3>g_struct_info_is_gtype_struct ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            g_struct_info_is_gtype_struct       (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);</pre>
+<p>
+Return true if this structure represents the "class structure" for some
+<span class="type">GObject</span> or <span class="type">GInterface</span>.  This function is mainly useful to hide this kind of structure
+from generated public APIs.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>
+<code class="literal">TRUE</code> if this is a class struct, <code class="literal">FALSE</code> otherwise</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-struct-info-is-foreign"></a><h3>g_struct_info_is_foreign ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            g_struct_info_is_foreign            (<em class="parameter"><code><a class="link" href="gi-GIStructInfo.html#GIStructInfo" title="GIStructInfo"><span class="type">GIStructInfo</span></a> *info</code></em>);</pre>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.19</div>
+</body>
+</html>

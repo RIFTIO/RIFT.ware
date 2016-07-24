@@ -1,0 +1,50 @@
+module test-a-rw-ipreceiverapp-data
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-ipreceiverapp-data";
+  prefix "rw-ipreceiverapp-data";
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+  import test-a-rw-vnf-base-opdata{
+    prefix "rwvnfbaseopdata";
+  }
+  revision 2014-03-31 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Destination NAT";
+  }
+  augment /rwvnfbaseopdata:start/rwvnfbaseopdata:input/rwvnfbaseopdata:vnf{
+    container ip-receiver-app {
+      rwpb:msg-new RwStartRxAppTraffic;
+      uses rwvnfbaseopdata:vnf-key;
+      leaf service-name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+        type string;
+      }
+    }
+  }
+
+  augment /rwvnfbaseopdata:stop/rwvnfbaseopdata:input/rwvnfbaseopdata:vnf{
+    container ip-receiver-app {
+      rwpb:msg-new RwStopRxAppTraffic;
+      uses rwvnfbaseopdata:vnf-key;
+      leaf service-name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+        type string;
+      }
+    }              
+  }
+  augment /rwvnfbaseopdata:stop/rwvnfbaseopdata:output/rwvnfbaseopdata:vnf-output{
+    list flowops-stats {
+      key "fastpath-instance";
+      leaf fastpath-instance { type uint32; }
+      leaf flow-ops-attempts { type uint64; }
+      leaf flow-add-failures { type uint64; }
+      leaf flow-del-failures { type uint64; }
+      leaf flow-ops-rate     { type uint64; }
+    }
+  }
+}

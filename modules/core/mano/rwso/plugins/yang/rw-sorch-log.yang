@@ -1,0 +1,124 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+/**
+ * @file rw-sorch-log.yang
+ * @author Rift.IO
+ * @date 03/02/2015
+ * @brief RiftWare Log Event Definitions for rw-sorch logging
+ */
+
+module rw-sorch-log
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-sorch-log";
+  prefix "rw-sorch-log";
+
+  import rw-base {
+    prefix rwbase;
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rw-notify-ext {
+    prefix "rwnotify";
+  }
+
+  import rw-log {
+    prefix "rwlog";
+  }
+
+  revision 2014-12-30 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Launchpad Logging";
+  }
+
+  /*
+   * Generic Logger Log Events - ID space 160000 - 160099
+   */
+  notification debug {
+    rwpb:msg-new Debug;
+    rwnotify:log-event-id 160000;
+      description
+         "Generic Debug Log";
+      uses rwlog:severity-debug;
+      leaf category {
+        type string;
+      }
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification info {
+    rwpb:msg-new Info;
+    rwnotify:log-event-id 160001;
+      description
+         "Generic Info Log";
+      uses rwlog:severity-info;
+      leaf category {
+        type string;
+      }
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification warn {
+    rwpb:msg-new Warn;
+    rwnotify:log-event-id 160002;
+      description
+         "Generic Warning Log";
+      uses rwlog:severity-warning;
+      leaf category {
+        type string;
+      }
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification error {
+    rwpb:msg-new Error;
+    rwnotify:log-event-id 160003;
+      description
+         "Generic Warning Log";
+      uses rwlog:severity-error;
+      leaf category {
+        type string;
+      }
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification critical {
+    rwpb:msg-new Critical;
+    rwnotify:log-event-id 160004;
+      description
+         "Generic Critical Log";
+      uses rwlog:severity-critical;
+      leaf category {
+        type string;
+      }
+      leaf log  {
+        type string;
+      }
+  }
+
+  /*
+   * END - generic log events
+   */
+}

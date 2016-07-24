@@ -1,0 +1,85 @@
+<cli>
+  <yang-modules>
+    <module name="rw-base"/>
+    <module name="rw-mgmtagt"/>
+    <module name="rw-mgmtagt-confd"/>
+    <module name="rw-manifest"/>
+    <module name="rw-vcs"/>
+    <module name="rw-mc"/>
+    <module name="rwlog-mgmt"/>
+    <module name="rw-dts"/>
+    <module name="rwmsg-data"/>
+    <module name="rw-dtsperf"/>
+    <module name="rwshell-mgmt"/>
+    <module name="rw-debug"/>
+    <module name="rw-dtsperfmgr"/>
+    <module name="nsd"/>
+    <module name="rw-nsd"/>
+    <module name="nsr"/>
+    <module name="rw-nsr"/>
+    <module name="vnfr"/>
+    <module name="rw-vnfr"/>
+    <module name="vnfd"/>
+    <module name="rw-vnfd"/>
+    <module name="vlr"/>
+    <module name="rw-vlr"/>
+    <module name="vld"/>
+    <module name="rw-vld"/>
+    <module name="rw-memlog"/>
+    <module name="ietf-network"/>
+    <module name="ietf-network-topology"/>
+    <module name="ietf-l2-topology"/>
+    <module name="rw-restportforward"/>
+    <module name="rw-topology"/>
+    <module name="rw-conman"/>
+    <module name="rw-launchpad"/>
+    <module name="rw-cloud"/>
+    <module name="rw-sdn"/>
+    <module name="rw-config-agent"/>
+  </yang-modules>
+
+  <plugin-list>
+    <plugin name="rwcli_plugin" typelib="rwcli_plugin/1.0"/>
+  </plugin-list>
+
+  <modifications>
+    <!--
+    If there is a keyword node when specifying hooks, that should be omitted. For example
+    if you want to add a print hook for "node id 1 show counters", use the following
+    syntax.
+    <addPrintHook path="node show port counters" hook="rwcli_plugin-python:default_print"/>
+    <addPrintHook path="debug heap-state" hook="rwcli_plugin:print_tasklet_heap"/>
+    -->
+    <addPrintHook path="vcs info" hook="rwcli_plugin:print_tasklet_info"/>
+    <addPrintHook path="profiler" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="crash" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="uagent" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="messaging info" hook="rwcli_plugin:print_messaging_info"/>
+    <addPrintHook path="messaging debug-info" hook="rwcli_plugin:print_messaging_debug_info"/>
+    <addPrintHook path="messaging" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="vcs" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="show-logs" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="dts" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="version" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="perf-statistics" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="profiler-start" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="profiler-stop" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="profiler-report" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="system" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="start-dts" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="debug heap" hook="rwcli_plugin:print_tasklet_heap"/>
+    <addPrintHook path="debug" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="debug" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="rtr-peer-reg-keyspec" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="perf-test" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="rw-memlog-state" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="sdn" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="config-agent" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="mission-control" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="network" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="ns-instance-opdata" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="vnfr-catalog" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="vlr-catalog" hook="rwcli_plugin:default_print"/>
+    <addPrintHook path="cm-state" hook="rwcli_plugin:default_print"/>
+  </modifications>
+</cli>

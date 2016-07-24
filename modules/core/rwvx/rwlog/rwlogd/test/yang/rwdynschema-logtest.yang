@@ -1,0 +1,41 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rwdynschema-logtest
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwdynschema-logtest";
+  prefix "rwdynlogtest";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-notify-ext {
+    prefix "rwnotify";
+  }
+
+  import rw-log {
+    prefix "rwlog";
+  }
+
+  revision 2014-05-29 {
+    description
+      "Initial revision. This YANG file defines dynamic schema log
+      notifications";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  notification dynschema-log-error {
+    rwnotify:log-event-id 00002001;
+      description
+         "Testing123";
+      uses rwlog:severity-error;
+      leaf data { type string; }
+  }
+}

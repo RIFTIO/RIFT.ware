@@ -1,0 +1,49 @@
+#! /usr/bin/bash
+
+set -e
+
+SOURCE_DIR=@CMAKE_CURRENT_SOURCE_DIR@
+BINARY_DIR=@CMAKE_CURRENT_BINARY_DIR@
+PROJECT_TOP_DIR=@PROJECT_TOP_DIR@
+
+echo "BIN IS $BINARY_DIR"
+echo "SRC is $SOURCE_DIR"
+
+if ! ARGPARSE=$(getopt -o w --long with-image -- "$@")
+then
+    exit 1
+fi
+eval set -- "$ARGPARSE"
+
+WITH_IMAGE=0
+while [ $# -gt 0 ]
+do
+    case "$1" in
+    -w|--with-image)
+        WITH_IMAGE=1
+        shift
+        ;;
+    --)
+        break
+        ;;
+    -*)
+        echo "$0: error - unrecognized option $1" 1>&2
+        exit 1
+        ;;
+    *)
+        echo "$0: error - not an option $1" 1>&2
+        exit 1
+        ;;
+    esac
+    shift
+done
+
+# Remove any old directories
+rm -rf ${BINARY_DIR}/*_vnfd*
+
+for file in $SOURCE_DIR/templates/* ; do
+  file_name=$(basename $file)
+  echo $file_name
+  ${SOURCE_DIR}/rw_multivm_vnfd.py --outdir=${BINARY_DIR} --srcdir=$SOURCE_DIR --format=yaml --template=$file_name
+  ${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} "$file_name"_vnfd
+done

@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE book PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "">
+<book xmlns="http://www.devhelp.net/book" title="GObject Introspection Reference Manual" link="index.html" author="" name="gi" version="2" language="c">
+  <chapters>
+    <sub name="GObject-Introspection Overview" link="glib.html">
+      <sub name="Introspection Overview" link="gi-overview.html"/>
+    </sub>
+    <sub name="" link="girepository.html">
+      <sub name="GIRepository" link="gi-libgirepository.html">
+        <sub name="girepository" link="gi-girepository.html"/>
+      </sub>
+      <sub name="GIR Foreign functions interface" link="gi-ffi.html">
+        <sub name="girffi" link="gi-girffi.html"/>
+      </sub>
+      <sub name="GIRepository structs" link="gi-repository-structs.html">
+        <sub name="Struct hierarchy" link="gi-struct-hierarchy.html"/>
+        <sub name="GIBaseInfo" link="gi-GIBaseInfo.html"/>
+        <sub name="GIFunctionInfo" link="gi-GIFunctionInfo.html"/>
+        <sub name="GICallableInfo" link="gi-GICallableInfo.html"/>
+        <sub name="GIArgInfo" link="gi-GIArgInfo.html"/>
+        <sub name="GITypeInfo" link="gi-GITypeInfo.html"/>
+        <sub name="GIStructInfo" link="gi-GIStructInfo.html"/>
+        <sub name="GIUnionInfo" link="gi-GIUnionInfo.html"/>
+        <sub name="GIFieldInfo" link="gi-GIFieldInfo.html"/>
+        <sub name="GIPropertyInfo" link="gi-GIPropertyInfo.html"/>
+        <sub name="GIVFuncInfo" link="gi-GIVFuncInfo.html"/>
+        <sub name="GISignalInfo" link="gi-GISignalInfo.html"/>
+        <sub name="GIEnumInfo" link="gi-GIEnumInfo.html"/>
+        <sub name="GIRegisteredTypeInfo" link="gi-GIRegisteredTypeInfo.html"/>
+        <sub name="GIObjectInfo" link="gi-GIObjectInfo.html"/>
+        <sub name="GIInterfaceInfo" link="gi-GIInterfaceInfo.html"/>
+        <sub name="GIConstantInfo" link="gi-GIConstantInfo.html"/>
+        <sub name="gierrordomaininfo" link="gi-gierrordomaininfo.html"/>
+      </sub>
+    </sub>
+    <sub name="GIR markup format" link="gi-gir.html">
+      <sub name="The GIR XML format" link="gi-gir-reference.html"/>
+    </sub>
+    <sub name="Typelib binary format" link="gi-typelib.html">
+      <sub name="gtypelib" link="gi-gtypelib.html"/>
+    </sub>
+    <sub name="Annotation Glossary" link="annotation-glossary.html"/>
+  </chapters>
+  <functions>
+    <keyword type="typedef" name="GICallbackInfo" link="gi-girepository.html#GICallbackInfo"/>
+    <keyword type="struct" name="struct GIRepository" link="gi-girepository.html#GIRepository-struct"/>
+    <keyword type="enum" name="enum GIRepositoryError" link="gi-girepository.html#GIRepositoryError"/>
+    <keyword type="enum" name="enum GIRepositoryLoadFlags" link="gi-girepository.html#GIRepositoryLoadFlags"/>
+    <keyword type="struct" name="GITypelib" link="gi-girepository.html#GITypelib"/>
+    <keyword type="function" name="g_irepository_get_default ()" link="gi-girepository.html#g-irepository-get-default"/>
+    <keyword type="function" name="g_irepository_prepend_search_path ()" link="gi-girepository.html#g-irepository-prepend-search-path"/>
+    <keyword type="function" name="g_irepository_prepend_library_path ()" link="gi-girepository.html#g-irepository-prepend-library-path" since="1.35.8"/>
+    <keyword type="function" name="g_irepository_get_search_path ()" link="gi-girepository.html#g-irepository-get-search-path"/>
+    <keyword type="function" name="g_irepository_load_typelib ()" link="gi-girepository.html#g-irepository-load-typelib"/>
+    <keyword type="function" name="g_irepository_is_registered ()" link="gi-girepository.html#g-irepository-is-registered"/>
+    <keyword type="function" name="g_irepository_find_by_name ()" link="gi-girepository.html#g-irepository-find-by-name"/>
+    <keyword type="function" name="g_irepository_require ()" link="gi-girepository.html#g-irepository-require"/>
+    <keyword type="function" name="g_irepository_require_private ()" link="gi-girepository.html#g-irepository-require-private"/>
+    <keyword type="function" name="g_irepository_get_dependencies ()" link="gi-girepository.html#g-irepository-get-dependencies"/>
+    <keyword type="function" name="g_irepository_get_loaded_namespaces ()" link="gi-girepository.html#g-irepository-get-loaded-namespaces"/>
+    <keyword type="function" name="g_irepository_find_by_gtype ()" link="gi-girepository.html#g-irepository-find-by-gtype"/>
+    <keyword type="function" name="g_irepository_get_n_infos ()" link="gi-girepository.html#g-irepository-get-n-infos"/>
+    <keyword type="function" name="g_irepository_get_info ()" link="gi-girepository.html#g-irepository-get-info"/>
+    <keyword type="function" name="g_irepository_get_typelib_path ()" link="gi-girepository.html#g-irepository-get-typelib-path"/>
+    <keyword type="function" name="g_irepository_get_shared_library ()" link="gi-girepository.html#g-irepository-get-shared-library"/>
+    <keyword type="function" name="g_irepository_get_version ()" link="gi-girepository.html#g-irepository-get-version"/>
+    <keyword type="function" name="g_irepository_get_option_group ()" link="gi-girepository.html#g-irepository-get-option-group"/>
+    <keyword type="function" name="g_irepository_get_c_prefix ()" link="gi-girepository.html#g-irepository-get-c-prefix"/>
+    <keyword type="function" name="g_irepository_dump ()" link="gi-girepository.html#g-irepository-dump"/>
+    <keyword type="function" name="g_irepository_enumerate_versions ()" link="gi-girepository.html#g-irepository-enumerate-versions"/>
+    <keyword type="macro" name="G_IREPOSITORY_ERROR" link="gi-girepository.html#G-IREPOSITORY-ERROR:CAPS"/>
+    <keyword type="function" name="g_typelib_new_from_memory ()" link="gi-girepository.html#g-typelib-new-from-memory"/>
+    <keyword type="function" name="g_typelib_new_from_const_memory ()" link="gi-girepository.html#g-typelib-new-from-const-memory"/>
+    <keyword type="function" name="g_typelib_new_from_mapped_file ()" link="gi-girepository.html#g-typelib-new-from-mapped-file"/>
+    <keyword type="function" name="g_typelib_free ()" link="gi-girepository.html#g-typelib-free"/>
+    <keyword type="function" name="g_typelib_symbol ()" link="gi-girepository.html#g-typelib-symbol"/>
+    <keyword type="function" name="g_typelib_get_namespace ()" link="gi-girepository.html#g-typelib-get-namespace"/>
+    <keyword type="function" name="GIFFIClosureCallback ()" link="gi-girffi.html#GIFFIClosureCallback"/>
+    <keyword type="struct" name="struct GIFunctionInvoker" link="gi-girffi.html#GIFunctionInvoker"/>
+    <keyword type="function" name="gi_cclosure_marshal_generic ()" link="gi-girffi.html#gi-cclosure-marshal-generic"/>
+    <keyword type="function" name="g_type_info_get_ffi_type ()" link="gi-girffi.html#g-type-info-get-ffi-type"/>
+    <keyword type="function" name="g_function_info_prep_invoker ()" link="gi-girffi.html#g-function-info-prep-invoker"/>
+    <keyword type="function" name="g_function_invoker_destroy ()" link="gi-girffi.html#g-function-invoker-destroy"/>
+    <keyword type="function" name="g_callable_info_prepare_closure ()" link="gi-girffi.html#g-callable-info-prepare-closure"/>
+    <keyword type="function" name="g_callable_info_free_closure ()" link="gi-girffi.html#g-callable-info-free-closure"/>
+    <keyword type="enum" name="enum GIInfoType" link="gi-GIBaseInfo.html#GIInfoType"/>
+    <keyword type="function" name="g_info_type_to_string ()" link="gi-GIBaseInfo.html#g-info-type-to-string"/>
+    <keyword type="struct" name="GIAttributeIter" link="gi-GIBaseInfo.html#GIAttributeIter"/>
+    <keyword type="typedef" name="GIBaseInfo" link="gi-GIBaseInfo.html#GIBaseInfo"/>
+    <keyword type="function" name="g_base_info_ref ()" link="gi-GIBaseInfo.html#g-base-info-ref"/>
+    <keyword type="function" name="g_base_info_unref ()" link="gi-GIBaseInfo.html#g-base-info-unref"/>
+    <keyword type="function" name="g_base_info_get_type ()" link="gi-GIBaseInfo.html#g-base-info-get-type"/>
+    <keyword type="function" name="g_base_info_get_name ()" link="gi-GIBaseInfo.html#g-base-info-get-name"/>
+    <keyword type="function" name="g_base_info_get_namespace ()" link="gi-GIBaseInfo.html#g-base-info-get-namespace"/>
+    <keyword type="function" name="g_base_info_is_deprecated ()" link="gi-GIBaseInfo.html#g-base-info-is-deprecated"/>
+    <keyword type="function" name="g_base_info_get_attribute ()" link="gi-GIBaseInfo.html#g-base-info-get-attribute"/>
+    <keyword type="function" name="g_base_info_iterate_attributes ()" link="gi-GIBaseInfo.html#g-base-info-iterate-attributes"/>
+    <keyword type="function" name="g_base_info_get_container ()" link="gi-GIBaseInfo.html#g-base-info-get-container"/>
+    <keyword type="function" name="g_base_info_get_typelib ()" link="gi-GIBaseInfo.html#g-base-info-get-typelib"/>
+    <keyword type="function" name="g_base_info_equal ()" link="gi-GIBaseInfo.html#g-base-info-equal"/>
+    <keyword type="macro" name="GI_IS_FUNCTION_INFO()" link="gi-GIFunctionInfo.html#GI-IS-FUNCTION-INFO:CAPS"/>
+    <keyword type="typedef" name="GIFunctionInfo" link="gi-GIFunctionInfo.html#GIFunctionInfo"/>
+    <keyword type="enum" name="enum GInvokeError" link="gi-GIFunctionInfo.html#GInvokeError"/>
+    <keyword type="enum" name="enum GIFunctionInfoFlags" link="gi-GIFunctionInfo.html#GIFunctionInfoFlags"/>
+    <keyword type="macro" name="G_INVOKE_ERROR" link="gi-GIFunctionInfo.html#G-INVOKE-ERROR:CAPS"/>
+    <keyword type="function" name="g_function_info_get_symbol ()" link="gi-GIFunctionInfo.html#g-function-info-get-symbol"/>
+    <keyword type="function" name="g_function_info_get_flags ()" link="gi-GIFunctionInfo.html#g-function-info-get-flags"/>
+    <keyword type="function" name="g_function_info_get_property ()" link="gi-GIFunctionInfo.html#g-function-info-get-property"/>
+    <keyword type="function" name="g_function_info_get_vfunc ()" link="gi-GIFunctionInfo.html#g-function-info-get-vfunc"/>
+    <keyword type="function" name="g_function_info_invoke ()" link="gi-GIFunctionInfo.html#g-function-info-invoke"/>
+    <keyword type="macro" name="GI_IS_CALLABLE_INFO()" link="gi-GICallableInfo.html#GI-IS-CALLABLE-INFO:CAPS"/>
+    <keyword type="typedef" name="GICallableInfo" link="gi-GICallableInfo.html#GICallableInfo"/>
+    <keyword type="function" name="g_callable_info_get_return_type ()" link="gi-GICallableInfo.html#g-callable-info-get-return-type"/>
+    <keyword type="function" name="g_callable_info_get_caller_owns ()" link="gi-GICallableInfo.html#g-callable-info-get-caller-owns"/>
+    <keyword type="function" name="g_callable_info_may_return_null ()" link="gi-GICallableInfo.html#g-callable-info-may-return-null"/>
+    <keyword type="function" name="g_callable_info_get_return_attribute ()" link="gi-GICallableInfo.html#g-callable-info-get-return-attribute"/>
+    <keyword type="function" name="g_callable_info_iterate_return_attributes ()" link="gi-GICallableInfo.html#g-callable-info-iterate-return-attributes"/>
+    <keyword type="function" name="g_callable_info_get_n_args ()" link="gi-GICallableInfo.html#g-callable-info-get-n-args"/>
+    <keyword type="function" name="g_callable_info_get_arg ()" link="gi-GICallableInfo.html#g-callable-info-get-arg"/>
+    <keyword type="function" name="g_callable_info_load_arg ()" link="gi-GICallableInfo.html#g-callable-info-load-arg"/>
+    <keyword type="function" name="g_callable_info_load_return_type ()" link="gi-GICallableInfo.html#g-callable-info-load-return-type"/>
+    <keyword type="macro" name="GI_IS_ARG_INFO()" link="gi-GIArgInfo.html#GI-IS-ARG-INFO:CAPS"/>
+    <keyword type="typedef" name="GIArgInfo" link="gi-GIArgInfo.html#GIArgInfo"/>
+    <keyword type="enum" name="enum GIDirection" link="gi-GIArgInfo.html#GIDirection"/>
+    <keyword type="enum" name="enum GIScopeType" link="gi-GIArgInfo.html#GIScopeType"/>
+    <keyword type="enum" name="enum GITransfer" link="gi-GIArgInfo.html#GITransfer"/>
+    <keyword type="function" name="g_arg_info_get_direction ()" link="gi-GIArgInfo.html#g-arg-info-get-direction"/>
+    <keyword type="function" name="g_arg_info_is_caller_allocates ()" link="gi-GIArgInfo.html#g-arg-info-is-caller-allocates"/>
+    <keyword type="function" name="g_arg_info_is_return_value ()" link="gi-GIArgInfo.html#g-arg-info-is-return-value"/>
+    <keyword type="function" name="g_arg_info_is_optional ()" link="gi-GIArgInfo.html#g-arg-info-is-optional"/>
+    <keyword type="function" name="g_arg_info_may_be_null ()" link="gi-GIArgInfo.html#g-arg-info-may-be-null"/>
+    <keyword type="function" name="g_arg_info_get_ownership_transfer ()" link="gi-GIArgInfo.html#g-arg-info-get-ownership-transfer"/>
+    <keyword type="function" name="g_arg_info_get_scope ()" link="gi-GIArgInfo.html#g-arg-info-get-scope"/>
+    <keyword type="function" name="g_arg_info_get_closure ()" link="gi-GIArgInfo.html#g-arg-info-get-closure"/>
+    <keyword type="function" name="g_arg_info_get_destroy ()" link="gi-GIArgInfo.html#g-arg-info-get-destroy"/>
+    <keyword type="function" name="g_arg_info_get_type ()" link="gi-GIArgInfo.html#g-arg-info-get-type"/>
+    <keyword type="function" name="g_arg_info_load_type ()" link="gi-GIArgInfo.html#g-arg-info-load-type"/>
+    <keyword type="macro" name="GI_IS_TYPE_INFO()" link="gi-GITypeInfo.html#GI-IS-TYPE-INFO:CAPS"/>
+    <keyword type="enum" name="enum GIArrayType" link="gi-GITypeInfo.html#GIArrayType"/>
+    <keyword type="typedef" name="GITypeInfo" link="gi-GITypeInfo.html#GITypeInfo"/>
+    <keyword type="enum" name="enum GITypeTag" link="gi-GITypeInfo.html#GITypeTag"/>
+    <keyword type="macro" name="G_TYPE_TAG_IS_BASIC()" link="gi-GITypeInfo.html#G-TYPE-TAG-IS-BASIC:CAPS"/>
+    <keyword type="function" name="g_type_tag_to_string ()" link="gi-GITypeInfo.html#g-type-tag-to-string"/>
+    <keyword type="function" name="g_type_info_is_pointer ()" link="gi-GITypeInfo.html#g-type-info-is-pointer"/>
+    <keyword type="function" name="g_type_info_get_tag ()" link="gi-GITypeInfo.html#g-type-info-get-tag"/>
+    <keyword type="function" name="g_type_info_get_param_type ()" link="gi-GITypeInfo.html#g-type-info-get-param-type"/>
+    <keyword type="function" name="g_type_info_get_interface ()" link="gi-GITypeInfo.html#g-type-info-get-interface"/>
+    <keyword type="function" name="g_type_info_get_array_length ()" link="gi-GITypeInfo.html#g-type-info-get-array-length"/>
+    <keyword type="function" name="g_type_info_get_array_fixed_size ()" link="gi-GITypeInfo.html#g-type-info-get-array-fixed-size"/>
+    <keyword type="function" name="g_type_info_is_zero_terminated ()" link="gi-GITypeInfo.html#g-type-info-is-zero-terminated"/>
+    <keyword type="function" name="g_type_info_get_array_type ()" link="gi-GITypeInfo.html#g-type-info-get-array-type"/>
+    <keyword type="macro" name="GI_IS_STRUCT_INFO()" link="gi-GIStructInfo.html#GI-IS-STRUCT-INFO:CAPS"/>
+    <keyword type="typedef" name="GIStructInfo" link="gi-GIStructInfo.html#GIStructInfo"/>
+    <keyword type="function" name="g_struct_info_get_n_fields ()" link="gi-GIStructInfo.html#g-struct-info-get-n-fields"/>
+    <keyword type="function" name="g_struct_info_get_field ()" link="gi-GIStructInfo.html#g-struct-info-get-field"/>
+    <keyword type="function" name="g_struct_info_get_n_methods ()" link="gi-GIStructInfo.html#g-struct-info-get-n-methods"/>
+    <keyword type="function" name="g_struct_info_get_method ()" link="gi-GIStructInfo.html#g-struct-info-get-method"/>
+    <keyword type="function" name="g_struct_info_find_method ()" link="gi-GIStructInfo.html#g-struct-info-find-method"/>
+    <keyword type="function" name="g_struct_info_get_size ()" link="gi-GIStructInfo.html#g-struct-info-get-size"/>
+    <keyword type="function" name="g_struct_info_get_alignment ()" link="gi-GIStructInfo.html#g-struct-info-get-alignment"/>
+    <keyword type="function" name="g_struct_info_is_gtype_struct ()" link="gi-GIStructInfo.html#g-struct-info-is-gtype-struct"/>
+    <keyword type="function" name="g_struct_info_is_foreign ()" link="gi-GIStructInfo.html#g-struct-info-is-foreign"/>
+    <keyword type="macro" name="GI_IS_UNION_INFO()" link="gi-GIUnionInfo.html#GI-IS-UNION-INFO:CAPS"/>
+    <keyword type="typedef" name="GIUnionInfo" link="gi-GIUnionInfo.html#GIUnionInfo"/>
+    <keyword type="function" name="g_union_info_get_n_fields ()" link="gi-GIUnionInfo.html#g-union-info-get-n-fields"/>
+    <keyword type="function" name="g_union_info_get_field ()" link="gi-GIUnionInfo.html#g-union-info-get-field"/>
+    <keyword type="function" name="g_union_info_get_n_methods ()" link="gi-GIUnionInfo.html#g-union-info-get-n-methods"/>
+    <keyword type="function" name="g_union_info_get_method ()" link="gi-GIUnionInfo.html#g-union-info-get-method"/>
+    <keyword type="function" name="g_union_info_is_discriminated ()" link="gi-GIUnionInfo.html#g-union-info-is-discriminated"/>
+    <keyword type="function" name="g_union_info_get_discriminator_offset ()" link="gi-GIUnionInfo.html#g-union-info-get-discriminator-offset"/>
+    <keyword type="function" name="g_union_info_get_discriminator_type ()" link="gi-GIUnionInfo.html#g-union-info-get-discriminator-type"/>
+    <keyword type="function" name="g_union_info_get_discriminator ()" link="gi-GIUnionInfo.html#g-union-info-get-discriminator"/>
+    <keyword type="function" name="g_union_info_find_method ()" link="gi-GIUnionInfo.html#g-union-info-find-method"/>
+    <keyword type="function" name="g_union_info_get_size ()" link="gi-GIUnionInfo.html#g-union-info-get-size"/>
+    <keyword type="function" name="g_union_info_get_alignment ()" link="gi-GIUnionInfo.html#g-union-info-get-alignment"/>
+    <keyword type="macro" name="GI_IS_FIELD_INFO()" link="gi-GIFieldInfo.html#GI-IS-FIELD-INFO:CAPS"/>
+    <keyword type="typedef" name="GIFieldInfo" link="gi-GIFieldInfo.html#GIFieldInfo"/>
+    <keyword type="enum" name="enum GIFieldInfoFlags" link="gi-GIFieldInfo.html#GIFieldInfoFlags"/>
+    <keyword type="function" name="g_field_info_get_flags ()" link="gi-GIFieldInfo.html#g-field-info-get-flags"/>
+    <keyword type="function" name="g_field_info_get_size ()" link="gi-GIFieldInfo.html#g-field-info-get-size"/>
+    <keyword type="function" name="g_field_info_get_offset ()" link="gi-GIFieldInfo.html#g-field-info-get-offset"/>
+    <keyword type="function" name="g_field_info_get_type ()" link="gi-GIFieldInfo.html#g-field-info-get-type"/>
+    <keyword type="function" name="g_field_info_get_field ()" link="gi-GIFieldInfo.html#g-field-info-get-field"/>
+    <keyword type="function" name="g_field_info_set_field ()" link="gi-GIFieldInfo.html#g-field-info-set-field"/>
+    <keyword type="macro" name="GI_IS_PROPERTY_INFO()" link="gi-GIPropertyInfo.html#GI-IS-PROPERTY-INFO:CAPS"/>
+    <keyword type="typedef" name="GIPropertyInfo" link="gi-GIPropertyInfo.html#GIPropertyInfo"/>
+    <keyword type="function" name="g_property_info_get_flags ()" link="gi-GIPropertyInfo.html#g-property-info-get-flags"/>
+    <keyword type="function" name="g_property_info_get_type ()" link="gi-GIPropertyInfo.html#g-property-info-get-type"/>
+    <keyword type="function" name="g_property_info_get_ownership_transfer ()" link="gi-GIPropertyInfo.html#g-property-info-get-ownership-transfer"/>
+    <keyword type="macro" name="GI_IS_VFUNC_INFO()" link="gi-GIVFuncInfo.html#GI-IS-VFUNC-INFO:CAPS"/>
+    <keyword type="typedef" name="GIVFuncInfo" link="gi-GIVFuncInfo.html#GIVFuncInfo"/>
+    <keyword type="enum" name="enum GIVFuncInfoFlags" link="gi-GIVFuncInfo.html#GIVFuncInfoFlags"/>
+    <keyword type="function" name="g_vfunc_info_get_flags ()" link="gi-GIVFuncInfo.html#g-vfunc-info-get-flags"/>
+    <keyword type="function" name="g_vfunc_info_get_offset ()" link="gi-GIVFuncInfo.html#g-vfunc-info-get-offset"/>
+    <keyword type="function" name="g_vfunc_info_get_signal ()" link="gi-GIVFuncInfo.html#g-vfunc-info-get-signal"/>
+    <keyword type="function" name="g_vfunc_info_get_invoker ()" link="gi-GIVFuncInfo.html#g-vfunc-info-get-invoker"/>
+    <keyword type="macro" name="GI_IS_SIGNAL_INFO()" link="gi-GISignalInfo.html#GI-IS-SIGNAL-INFO:CAPS"/>
+    <keyword type="typedef" name="GISignalInfo" link="gi-GISignalInfo.html#GISignalInfo"/>
+    <keyword type="function" name="g_signal_info_get_flags ()" link="gi-GISignalInfo.html#g-signal-info-get-flags"/>
+    <keyword type="function" name="g_signal_info_get_class_closure ()" link="gi-GISignalInfo.html#g-signal-info-get-class-closure"/>
+    <keyword type="function" name="g_signal_info_true_stops_emit ()" link="gi-GISignalInfo.html#g-signal-info-true-stops-emit"/>
+    <keyword type="macro" name="GI_IS_ENUM_INFO()" link="gi-GIEnumInfo.html#GI-IS-ENUM-INFO:CAPS"/>
+    <keyword type="macro" name="GI_IS_VALUE_INFO()" link="gi-GIEnumInfo.html#GI-IS-VALUE-INFO:CAPS"/>
+    <keyword type="typedef" name="GIEnumInfo" link="gi-GIEnumInfo.html#GIEnumInfo"/>
+    <keyword type="typedef" name="GIValueInfo" link="gi-GIEnumInfo.html#GIValueInfo"/>
+    <keyword type="function" name="g_enum_info_get_n_values ()" link="gi-GIEnumInfo.html#g-enum-info-get-n-values"/>
+    <keyword type="function" name="g_enum_info_get_value ()" link="gi-GIEnumInfo.html#g-enum-info-get-value"/>
+    <keyword type="function" name="g_enum_info_get_n_methods ()" link="gi-GIEnumInfo.html#g-enum-info-get-n-methods" since="1.29.17"/>
+    <keyword type="function" name="g_enum_info_get_method ()" link="gi-GIEnumInfo.html#g-enum-info-get-method" since="1.29.17"/>
+    <keyword type="function" name="g_enum_info_get_storage_type ()" link="gi-GIEnumInfo.html#g-enum-info-get-storage-type"/>
+    <keyword type="function" name="g_value_info_get_value ()" link="gi-GIEnumInfo.html#g-value-info-get-value"/>
+    <keyword type="macro" name="GI_IS_REGISTERED_TYPE_INFO()" link="gi-GIRegisteredTypeInfo.html#GI-IS-REGISTERED-TYPE-INFO:CAPS"/>
+    <keyword type="typedef" name="GIRegisteredTypeInfo" link="gi-GIRegisteredTypeInfo.html#GIRegisteredTypeInfo"/>
+    <keyword type="function" name="g_registered_type_info_get_type_name ()" link="gi-GIRegisteredTypeInfo.html#g-registered-type-info-get-type-name"/>
+    <keyword type="function" name="g_registered_type_info_get_type_init ()" link="gi-GIRegisteredTypeInfo.html#g-registered-type-info-get-type-init"/>
+    <keyword type="function" name="g_registered_type_info_get_g_type ()" link="gi-GIRegisteredTypeInfo.html#g-registered-type-info-get-g-type"/>
+    <keyword type="macro" name="GI_IS_OBJECT_INFO()" link="gi-GIObjectInfo.html#GI-IS-OBJECT-INFO:CAPS"/>
+    <keyword type="typedef" name="GIObjectInfo" link="gi-GIObjectInfo.html#GIObjectInfo"/>
+    <keyword type="function" name="GIObjectInfoGetValueFunction ()" link="gi-GIObjectInfo.html#GIObjectInfoGetValueFunction"/>
+    <keyword type="function" name="GIObjectInfoRefFunction ()" link="gi-GIObjectInfo.html#GIObjectInfoRefFunction"/>
+    <keyword type="function" name="GIObjectInfoSetValueFunction ()" link="gi-GIObjectInfo.html#GIObjectInfoSetValueFunction"/>
+    <keyword type="function" name="GIObjectInfoUnrefFunction ()" link="gi-GIObjectInfo.html#GIObjectInfoUnrefFunction"/>
+    <keyword type="function" name="g_object_info_get_type_name ()" link="gi-GIObjectInfo.html#g-object-info-get-type-name"/>
+    <keyword type="function" name="g_object_info_get_type_init ()" link="gi-GIObjectInfo.html#g-object-info-get-type-init"/>
+    <keyword type="function" name="g_object_info_get_abstract ()" link="gi-GIObjectInfo.html#g-object-info-get-abstract"/>
+    <keyword type="function" name="g_object_info_get_fundamental ()" link="gi-GIObjectInfo.html#g-object-info-get-fundamental"/>
+    <keyword type="function" name="g_object_info_get_parent ()" link="gi-GIObjectInfo.html#g-object-info-get-parent"/>
+    <keyword type="function" name="g_object_info_get_n_interfaces ()" link="gi-GIObjectInfo.html#g-object-info-get-n-interfaces"/>
+    <keyword type="function" name="g_object_info_get_interface ()" link="gi-GIObjectInfo.html#g-object-info-get-interface"/>
+    <keyword type="function" name="g_object_info_get_n_fields ()" link="gi-GIObjectInfo.html#g-object-info-get-n-fields"/>
+    <keyword type="function" name="g_object_info_get_field ()" link="gi-GIObjectInfo.html#g-object-info-get-field"/>
+    <keyword type="function" name="g_object_info_get_n_properties ()" link="gi-GIObjectInfo.html#g-object-info-get-n-properties"/>
+    <keyword type="function" name="g_object_info_get_property ()" link="gi-GIObjectInfo.html#g-object-info-get-property"/>
+    <keyword type="function" name="g_object_info_get_n_methods ()" link="gi-GIObjectInfo.html#g-object-info-get-n-methods"/>
+    <keyword type="function" name="g_object_info_get_method ()" link="gi-GIObjectInfo.html#g-object-info-get-method"/>
+    <keyword type="function" name="g_object_info_find_method ()" link="gi-GIObjectInfo.html#g-object-info-find-method"/>
+    <keyword type="function" name="g_object_info_get_n_signals ()" link="gi-GIObjectInfo.html#g-object-info-get-n-signals"/>
+    <keyword type="function" name="g_object_info_get_signal ()" link="gi-GIObjectInfo.html#g-object-info-get-signal"/>
+    <keyword type="function" name="g_object_info_get_n_vfuncs ()" link="gi-GIObjectInfo.html#g-object-info-get-n-vfuncs"/>
+    <keyword type="function" name="g_object_info_get_vfunc ()" link="gi-GIObjectInfo.html#g-object-info-get-vfunc"/>
+    <keyword type="function" name="g_object_info_get_n_constants ()" link="gi-GIObjectInfo.html#g-object-info-get-n-constants"/>
+    <keyword type="function" name="g_object_info_get_constant ()" link="gi-GIObjectInfo.html#g-object-info-get-constant"/>
+    <keyword type="function" name="g_object_info_get_class_struct ()" link="gi-GIObjectInfo.html#g-object-info-get-class-struct"/>
+    <keyword type="function" name="g_object_info_find_vfunc ()" link="gi-GIObjectInfo.html#g-object-info-find-vfunc"/>
+    <keyword type="function" name="g_object_info_get_unref_function ()" link="gi-GIObjectInfo.html#g-object-info-get-unref-function"/>
+    <keyword type="function" name="g_object_info_get_unref_function_pointer ()" link="gi-GIObjectInfo.html#g-object-info-get-unref-function-pointer"/>
+    <keyword type="function" name="g_object_info_get_ref_function ()" link="gi-GIObjectInfo.html#g-object-info-get-ref-function"/>
+    <keyword type="function" name="g_object_info_get_ref_function_pointer ()" link="gi-GIObjectInfo.html#g-object-info-get-ref-function-pointer"/>
+    <keyword type="function" name="g_object_info_get_set_value_function ()" link="gi-GIObjectInfo.html#g-object-info-get-set-value-function"/>
+    <keyword type="function" name="g_object_info_get_set_value_function_pointer ()" link="gi-GIObjectInfo.html#g-object-info-get-set-value-function-pointer"/>
+    <keyword type="function" name="g_object_info_get_get_value_function ()" link="gi-GIObjectInfo.html#g-object-info-get-get-value-function"/>
+    <keyword type="function" name="g_object_info_get_get_value_function_pointer ()" link="gi-GIObjectInfo.html#g-object-info-get-get-value-function-pointer"/>
+    <keyword type="macro" name="GI_IS_INTERFACE_INFO()" link="gi-GIInterfaceInfo.html#GI-IS-INTERFACE-INFO:CAPS"/>
+    <keyword type="typedef" name="GIInterfaceInfo" link="gi-GIInterfaceInfo.html#GIInterfaceInfo"/>
+    <keyword type="function" name="g_interface_info_get_n_prerequisites ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-n-prerequisites"/>
+    <keyword type="function" name="g_interface_info_get_prerequisite ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-prerequisite"/>
+    <keyword type="function" name="g_interface_info_get_n_properties ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-n-properties"/>
+    <keyword type="function" name="g_interface_info_get_property ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-property"/>
+    <keyword type="function" name="g_interface_info_get_n_methods ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-n-methods"/>
+    <keyword type="function" name="g_interface_info_get_method ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-method"/>
+    <keyword type="function" name="g_interface_info_find_method ()" link="gi-GIInterfaceInfo.html#g-interface-info-find-method"/>
+    <keyword type="function" name="g_interface_info_get_n_signals ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-n-signals"/>
+    <keyword type="function" name="g_interface_info_get_signal ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-signal"/>
+    <keyword type="function" name="g_interface_info_find_signal ()" link="gi-GIInterfaceInfo.html#g-interface-info-find-signal" since="1.34"/>
+    <keyword type="function" name="g_interface_info_get_n_vfuncs ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-n-vfuncs"/>
+    <keyword type="function" name="g_interface_info_get_vfunc ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-vfunc"/>
+    <keyword type="function" name="g_interface_info_get_n_constants ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-n-constants"/>
+    <keyword type="function" name="g_interface_info_get_constant ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-constant"/>
+    <keyword type="function" name="g_interface_info_get_iface_struct ()" link="gi-GIInterfaceInfo.html#g-interface-info-get-iface-struct"/>
+    <keyword type="function" name="g_interface_info_find_vfunc ()" link="gi-GIInterfaceInfo.html#g-interface-info-find-vfunc"/>
+    <keyword type="macro" name="GI_IS_CONSTANT_INFO()" link="gi-GIConstantInfo.html#GI-IS-CONSTANT-INFO:CAPS"/>
+    <keyword type="typedef" name="GIConstantInfo" link="gi-GIConstantInfo.html#GIConstantInfo"/>
+    <keyword type="function" name="g_constant_info_get_type ()" link="gi-GIConstantInfo.html#g-constant-info-get-type"/>
+    <keyword type="function" name="g_constant_info_get_value ()" link="gi-GIConstantInfo.html#g-constant-info-get-value"/>
+    <keyword type="" name="api node" link="gi-gir-reference.html#gi-gir-api"/>
+    <keyword type="" name="namespace node" link="gi-gir-reference.html#gi-gir-namespace"/>
+    <keyword type="" name="class node" link="gi-gir-reference.html#gi-gir-class"/>
+    <keyword type="" name="interface node" link="gi-gir-reference.html#gi-gir-interface"/>
+    <keyword type="" name="function node" link="gi-gir-reference.html#gi-gir-function"/>
+    <keyword type="macro" name="G_IR_MAGIC" link="gi-gtypelib.html#G-IR-MAGIC:CAPS"/>
+    <keyword type="enum" name="enum GTypelibBlobType" link="gi-gtypelib.html#GTypelibBlobType"/>
+    <keyword type="struct" name="Header" link="gi-gtypelib.html#Header"/>
+    <keyword type="struct" name="DirEntry" link="gi-gtypelib.html#DirEntry"/>
+    <keyword type="struct" name="ArgBlob" link="gi-gtypelib.html#ArgBlob"/>
+    <keyword type="struct" name="SignatureBlob" link="gi-gtypelib.html#SignatureBlob"/>
+    <keyword type="struct" name="CommonBlob" link="gi-gtypelib.html#CommonBlob"/>
+    <keyword type="struct" name="FunctionBlob" link="gi-gtypelib.html#FunctionBlob"/>
+    <keyword type="struct" name="CallbackBlob" link="gi-gtypelib.html#CallbackBlob"/>
+    <keyword type="struct" name="InterfaceTypeBlob" link="gi-gtypelib.html#InterfaceTypeBlob"/>
+    <keyword type="struct" name="ParamTypeBlob" link="gi-gtypelib.html#ParamTypeBlob"/>
+    <keyword type="struct" name="ErrorTypeBlob" link="gi-gtypelib.html#ErrorTypeBlob"/>
+    <keyword type="struct" name="ValueBlob" link="gi-gtypelib.html#ValueBlob"/>
+    <keyword type="struct" name="FieldBlob" link="gi-gtypelib.html#FieldBlob"/>
+    <keyword type="struct" name="RegisteredTypeBlob" link="gi-gtypelib.html#RegisteredTypeBlob"/>
+    <keyword type="struct" name="StructBlob" link="gi-gtypelib.html#StructBlob"/>
+    <keyword type="struct" name="UnionBlob" link="gi-gtypelib.html#UnionBlob"/>
+    <keyword type="struct" name="EnumBlob" link="gi-gtypelib.html#EnumBlob"/>
+    <keyword type="struct" name="PropertyBlob" link="gi-gtypelib.html#PropertyBlob"/>
+    <keyword type="struct" name="SignalBlob" link="gi-gtypelib.html#SignalBlob"/>
+    <keyword type="struct" name="VFuncBlob" link="gi-gtypelib.html#VFuncBlob"/>
+    <keyword type="struct" name="ObjectBlob" link="gi-gtypelib.html#ObjectBlob"/>
+    <keyword type="struct" name="InterfaceBlob" link="gi-gtypelib.html#InterfaceBlob"/>
+    <keyword type="struct" name="ConstantBlob" link="gi-gtypelib.html#ConstantBlob"/>
+    <keyword type="struct" name="AttributeBlob" link="gi-gtypelib.html#AttributeBlob"/>
+    <keyword type="function" name="g_typelib_get_dir_entry ()" link="gi-gtypelib.html#g-typelib-get-dir-entry"/>
+    <keyword type="function" name="g_typelib_check_sanity ()" link="gi-gtypelib.html#g-typelib-check-sanity"/>
+    <keyword type="macro" name="g_typelib_get_string()" link="gi-gtypelib.html#g-typelib-get-string"/>
+    <keyword type="macro" name="G_TYPELIB_ERROR" link="gi-gtypelib.html#G-TYPELIB-ERROR:CAPS"/>
+    <keyword type="function" name="g_typelib_validate ()" link="gi-gtypelib.html#g-typelib-validate"/>
+    <keyword type="macro" name="BLOB_IS_REGISTERED_TYPE()" link="gi-gtypelib.html#BLOB-IS-REGISTERED-TYPE:CAPS"/>
+    <keyword type="constant" name="G_IREPOSITORY_ERROR_TYPELIB_NOT_FOUND" link="gi-girepository.html#G-IREPOSITORY-ERROR-TYPELIB-NOT-FOUND:CAPS"/>
+    <keyword type="constant" name="G_IREPOSITORY_ERROR_NAMESPACE_MISMATCH" link="gi-girepository.html#G-IREPOSITORY-ERROR-NAMESPACE-MISMATCH:CAPS"/>
+    <keyword type="constant" name="G_IREPOSITORY_ERROR_NAMESPACE_VERSION_CONFLICT" link="gi-girepository.html#G-IREPOSITORY-ERROR-NAMESPACE-VERSION-CONFLICT:CAPS"/>
+    <keyword type="constant" name="G_IREPOSITORY_ERROR_LIBRARY_NOT_FOUND" link="gi-girepository.html#G-IREPOSITORY-ERROR-LIBRARY-NOT-FOUND:CAPS"/>
+    <keyword type="constant" name="G_IREPOSITORY_LOAD_FLAG_LAZY" link="gi-girepository.html#G-IREPOSITORY-LOAD-FLAG-LAZY:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_INVALID" link="gi-GIBaseInfo.html#GI-INFO-TYPE-INVALID:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_FUNCTION" link="gi-GIBaseInfo.html#GI-INFO-TYPE-FUNCTION:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_CALLBACK" link="gi-GIBaseInfo.html#GI-INFO-TYPE-CALLBACK:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_STRUCT" link="gi-GIBaseInfo.html#GI-INFO-TYPE-STRUCT:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_BOXED" link="gi-GIBaseInfo.html#GI-INFO-TYPE-BOXED:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_ENUM" link="gi-GIBaseInfo.html#GI-INFO-TYPE-ENUM:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_FLAGS" link="gi-GIBaseInfo.html#GI-INFO-TYPE-FLAGS:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_OBJECT" link="gi-GIBaseInfo.html#GI-INFO-TYPE-OBJECT:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_INTERFACE" link="gi-GIBaseInfo.html#GI-INFO-TYPE-INTERFACE:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_CONSTANT" link="gi-GIBaseInfo.html#GI-INFO-TYPE-CONSTANT:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_INVALID_0" link="gi-GIBaseInfo.html#GI-INFO-TYPE-INVALID-0:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_UNION" link="gi-GIBaseInfo.html#GI-INFO-TYPE-UNION:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_VALUE" link="gi-GIBaseInfo.html#GI-INFO-TYPE-VALUE:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_SIGNAL" link="gi-GIBaseInfo.html#GI-INFO-TYPE-SIGNAL:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_VFUNC" link="gi-GIBaseInfo.html#GI-INFO-TYPE-VFUNC:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_PROPERTY" link="gi-GIBaseInfo.html#GI-INFO-TYPE-PROPERTY:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_FIELD" link="gi-GIBaseInfo.html#GI-INFO-TYPE-FIELD:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_ARG" link="gi-GIBaseInfo.html#GI-INFO-TYPE-ARG:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_TYPE" link="gi-GIBaseInfo.html#GI-INFO-TYPE-TYPE:CAPS"/>
+    <keyword type="constant" name="GI_INFO_TYPE_UNRESOLVED" link="gi-GIBaseInfo.html#GI-INFO-TYPE-UNRESOLVED:CAPS"/>
+    <keyword type="constant" name="G_INVOKE_ERROR_FAILED" link="gi-GIFunctionInfo.html#G-INVOKE-ERROR-FAILED:CAPS"/>
+    <keyword type="constant" name="G_INVOKE_ERROR_SYMBOL_NOT_FOUND" link="gi-GIFunctionInfo.html#G-INVOKE-ERROR-SYMBOL-NOT-FOUND:CAPS"/>
+    <keyword type="constant" name="G_INVOKE_ERROR_ARGUMENT_MISMATCH" link="gi-GIFunctionInfo.html#G-INVOKE-ERROR-ARGUMENT-MISMATCH:CAPS"/>
+    <keyword type="constant" name="GI_FUNCTION_IS_METHOD" link="gi-GIFunctionInfo.html#GI-FUNCTION-IS-METHOD:CAPS"/>
+    <keyword type="constant" name="GI_FUNCTION_IS_CONSTRUCTOR" link="gi-GIFunctionInfo.html#GI-FUNCTION-IS-CONSTRUCTOR:CAPS"/>
+    <keyword type="constant" name="GI_FUNCTION_IS_GETTER" link="gi-GIFunctionInfo.html#GI-FUNCTION-IS-GETTER:CAPS"/>
+    <keyword type="constant" name="GI_FUNCTION_IS_SETTER" link="gi-GIFunctionInfo.html#GI-FUNCTION-IS-SETTER:CAPS"/>
+    <keyword type="constant" name="GI_FUNCTION_WRAPS_VFUNC" link="gi-GIFunctionInfo.html#GI-FUNCTION-WRAPS-VFUNC:CAPS"/>
+    <keyword type="constant" name="GI_FUNCTION_THROWS" link="gi-GIFunctionInfo.html#GI-FUNCTION-THROWS:CAPS"/>
+    <keyword type="constant" name="GI_DIRECTION_IN" link="gi-GIArgInfo.html#GI-DIRECTION-IN:CAPS"/>
+    <keyword type="constant" name="GI_DIRECTION_OUT" link="gi-GIArgInfo.html#GI-DIRECTION-OUT:CAPS"/>
+    <keyword type="constant" name="GI_DIRECTION_INOUT" link="gi-GIArgInfo.html#GI-DIRECTION-INOUT:CAPS"/>
+    <keyword type="constant" name="GI_SCOPE_TYPE_INVALID" link="gi-GIArgInfo.html#GI-SCOPE-TYPE-INVALID:CAPS"/>
+    <keyword type="constant" name="GI_SCOPE_TYPE_CALL" link="gi-GIArgInfo.html#GI-SCOPE-TYPE-CALL:CAPS"/>
+    <keyword type="constant" name="GI_SCOPE_TYPE_ASYNC" link="gi-GIArgInfo.html#GI-SCOPE-TYPE-ASYNC:CAPS"/>
+    <keyword type="constant" name="GI_SCOPE_TYPE_NOTIFIED" link="gi-GIArgInfo.html#GI-SCOPE-TYPE-NOTIFIED:CAPS"/>
+    <keyword type="constant" name="GI_TRANSFER_NOTHING" link="gi-GIArgInfo.html#GI-TRANSFER-NOTHING:CAPS"/>
+    <keyword type="constant" name="GI_TRANSFER_CONTAINER" link="gi-GIArgInfo.html#GI-TRANSFER-CONTAINER:CAPS"/>
+    <keyword type="constant" name="GI_TRANSFER_EVERYTHING" link="gi-GIArgInfo.html#GI-TRANSFER-EVERYTHING:CAPS"/>
+    <keyword type="constant" name="GI_ARRAY_TYPE_C" link="gi-GITypeInfo.html#GI-ARRAY-TYPE-C:CAPS"/>
+    <keyword type="constant" name="GI_ARRAY_TYPE_ARRAY" link="gi-GITypeInfo.html#GI-ARRAY-TYPE-ARRAY:CAPS"/>
+    <keyword type="constant" name="GI_ARRAY_TYPE_PTR_ARRAY" link="gi-GITypeInfo.html#GI-ARRAY-TYPE-PTR-ARRAY:CAPS"/>
+    <keyword type="constant" name="GI_ARRAY_TYPE_BYTE_ARRAY" link="gi-GITypeInfo.html#GI-ARRAY-TYPE-BYTE-ARRAY:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_VOID" link="gi-GITypeInfo.html#GI-TYPE-TAG-VOID:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_BOOLEAN" link="gi-GITypeInfo.html#GI-TYPE-TAG-BOOLEAN:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_INT8" link="gi-GITypeInfo.html#GI-TYPE-TAG-INT8:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_UINT8" link="gi-GITypeInfo.html#GI-TYPE-TAG-UINT8:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_INT16" link="gi-GITypeInfo.html#GI-TYPE-TAG-INT16:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_UINT16" link="gi-GITypeInfo.html#GI-TYPE-TAG-UINT16:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_INT32" link="gi-GITypeInfo.html#GI-TYPE-TAG-INT32:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_UINT32" link="gi-GITypeInfo.html#GI-TYPE-TAG-UINT32:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_INT64" link="gi-GITypeInfo.html#GI-TYPE-TAG-INT64:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_UINT64" link="gi-GITypeInfo.html#GI-TYPE-TAG-UINT64:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_FLOAT" link="gi-GITypeInfo.html#GI-TYPE-TAG-FLOAT:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_DOUBLE" link="gi-GITypeInfo.html#GI-TYPE-TAG-DOUBLE:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_GTYPE" link="gi-GITypeInfo.html#GI-TYPE-TAG-GTYPE:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_UTF8" link="gi-GITypeInfo.html#GI-TYPE-TAG-UTF8:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_FILENAME" link="gi-GITypeInfo.html#GI-TYPE-TAG-FILENAME:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_ARRAY" link="gi-GITypeInfo.html#GI-TYPE-TAG-ARRAY:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_INTERFACE" link="gi-GITypeInfo.html#GI-TYPE-TAG-INTERFACE:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_GLIST" link="gi-GITypeInfo.html#GI-TYPE-TAG-GLIST:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_GSLIST" link="gi-GITypeInfo.html#GI-TYPE-TAG-GSLIST:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_GHASH" link="gi-GITypeInfo.html#GI-TYPE-TAG-GHASH:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_ERROR" link="gi-GITypeInfo.html#GI-TYPE-TAG-ERROR:CAPS"/>
+    <keyword type="constant" name="GI_TYPE_TAG_UNICHAR" link="gi-GITypeInfo.html#GI-TYPE-TAG-UNICHAR:CAPS"/>
+    <keyword type="constant" name="GI_FIELD_IS_READABLE" link="gi-GIFieldInfo.html#GI-FIELD-IS-READABLE:CAPS"/>
+    <keyword type="constant" name="GI_FIELD_IS_WRITABLE" link="gi-GIFieldInfo.html#GI-FIELD-IS-WRITABLE:CAPS"/>
+    <keyword type="constant" name="GI_VFUNC_MUST_CHAIN_UP" link="gi-GIVFuncInfo.html#GI-VFUNC-MUST-CHAIN-UP:CAPS"/>
+    <keyword type="constant" name="GI_VFUNC_MUST_OVERRIDE" link="gi-GIVFuncInfo.html#GI-VFUNC-MUST-OVERRIDE:CAPS"/>
+    <keyword type="constant" name="GI_VFUNC_MUST_NOT_OVERRIDE" link="gi-GIVFuncInfo.html#GI-VFUNC-MUST-NOT-OVERRIDE:CAPS"/>
+    <keyword type="constant" name="GI_VFUNC_THROWS" link="gi-GIVFuncInfo.html#GI-VFUNC-THROWS:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_INVALID" link="gi-gtypelib.html#BLOB-TYPE-INVALID:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_FUNCTION" link="gi-gtypelib.html#BLOB-TYPE-FUNCTION:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_CALLBACK" link="gi-gtypelib.html#BLOB-TYPE-CALLBACK:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_STRUCT" link="gi-gtypelib.html#BLOB-TYPE-STRUCT:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_BOXED" link="gi-gtypelib.html#BLOB-TYPE-BOXED:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_ENUM" link="gi-gtypelib.html#BLOB-TYPE-ENUM:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_FLAGS" link="gi-gtypelib.html#BLOB-TYPE-FLAGS:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_OBJECT" link="gi-gtypelib.html#BLOB-TYPE-OBJECT:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_INTERFACE" link="gi-gtypelib.html#BLOB-TYPE-INTERFACE:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_CONSTANT" link="gi-gtypelib.html#BLOB-TYPE-CONSTANT:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_INVALID_0" link="gi-gtypelib.html#BLOB-TYPE-INVALID-0:CAPS"/>
+    <keyword type="constant" name="BLOB_TYPE_UNION" link="gi-gtypelib.html#BLOB-TYPE-UNION:CAPS"/>
+  </functions>
+</book>

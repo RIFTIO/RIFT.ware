@@ -1,0 +1,88 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file testncx-mod-base3.yang
+ * @author Tom Seidenberg
+ * @date 2014/03/25
+ * @brief yangncx test file for modules
+ */
+
+module testncx-mod-base3
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testncx-mod-base3";
+  prefix "tnmb3";
+
+  import testncx-mod-base4 { prefix "tnmb4-b3"; }
+
+  description "Module testing for yangncx.";
+  revision 2014-03-25 { description "Initial version"; }
+
+  /////////////////////////////////////////////////////////////////////////////
+  typedef b3t1 {
+    type uint8;
+    description "A typedef from base3";
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  grouping b3g1 {
+    leaf b3g1-b3t1 {
+      description "A type b3t1 from group b3g1 in base3";
+      type b3t1;
+    }
+
+    leaf b3g1-b4t1 {
+      description "A type b4t1 from group b3g1 in base3";
+      type tnmb4-b3:b4t1;
+    }
+
+    leaf b3g1-n1 {
+      description "A number from group b3g1 in base3";
+      type int64;
+    }
+
+    leaf b3g1-s1 {
+      description "A string from group b3g1 in base3";
+      type string;
+    }
+
+    uses tnmb4-b3:b4g1;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  container b3c1 {
+    leaf b3c1-b3t1 {
+      description "A type b3t1 from container b3c1 in base3";
+      type b3t1;
+    }
+
+    leaf b3c1-b4t1 {
+      description "A type b4t1 from container b3c1 in base3";
+      type tnmb4-b3:b4t1;
+    }
+
+    leaf b3c1-n1 {
+      description "A number from container b3c1 in base3";
+      type int64;
+    }
+
+    leaf b3c1-s1 {
+      description "A string from container b3c1 in base3";
+      type string;
+    }
+
+    uses tnmb4-b3:b4g1;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  container b3c2 {
+    uses b3g1;
+  }
+}
+

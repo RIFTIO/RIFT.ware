@@ -1,0 +1,71 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module vnffgd
+{
+  namespace "urn:ietf:params:xml:ns:yang:nfvo:vnffgd";
+  prefix "vnffgd";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import ietf-inet-types {
+    prefix "inet";
+  }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  revision 2014-10-27 {
+    description
+      "Initial revision. This YANG file defines 
+       the VNF Forwarding Graph Descriptor (VNFFGD)";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  container vnffgd-catalog {
+
+    list vnffgd {
+      key "id";
+
+      leaf name {
+        description "VNF Forwarding Graph Descriptor name.";
+        type string;
+      }
+
+      leaf id {
+        description "Identifier for the VNFFGD.";
+        type yang:uuid;
+      }
+
+      leaf provider {
+        description "Provider of the VNFFGD.";
+        type string;
+      }
+
+      leaf description {
+        description "Description of the VNFFGD.";
+        type string;
+      }
+
+      leaf version {
+        description "Version of the VNFFGD";
+        type string;
+      }
+
+      //TODO: Add more content here
+    }
+  }
+}

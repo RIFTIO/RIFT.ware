@@ -1,0 +1,113 @@
+    <vnf-config xmlns="http://riftio.com/ns/riftware-1.0/mano-base">
+      <vnf>
+        <name>autoscaler</name>
+        <instance>0</instance>
+          <scriptable-lb xmlns="http://riftio.com/ns/riftware-1.0/rw-scriptable-lb">
+            <name>abc</name>
+            <network-context>
+              <name>trafgen-lb</name>
+            </network-context>
+            <receive-function>
+              <builtin>
+                <transparent-lb>
+                  <ip-interface>
+                    <if-name>ingress</if-name>
+                  </ip-interface>
+                </transparent-lb>
+              </builtin>
+            </receive-function>
+            <classify-function>
+              <builtin>
+                <transparent-lb>
+                  <transparent-key-type>l4-session</transparent-key-type>
+                </transparent-lb>
+              </builtin>
+            </classify-function>
+            <server-selection-function>
+              <server-group>
+                <name>grp1</name>
+                <server>
+                  <address><rw_connection_point_name trafsink/cp0></address>
+                </server>
+              </server-group>
+              <builtin>
+                <basic-lb>
+                  <selection-type>basic-round-robin</selection-type>
+                </basic-lb>
+              </builtin>
+            </server-selection-function>
+            <transform-function>
+              <builtin>
+                <transparent-transform>
+                  <trans-type>nexthop-forward</trans-type>
+                </transparent-transform>
+              </builtin>
+            </transform-function>
+          </scriptable-lb>
+        <network-context xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafgen-lb</name>
+          <interface>
+            <name>ingress</name>
+            <autoconfigure>
+              <port/>
+            </autoconfigure>
+            <bind>
+              <port>autoscaler/cp0</port>
+            </bind>
+          </interface>
+        </network-context>
+        <network-context xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafgen-lb</name>
+          <interface>
+            <name>egress</name>
+            <autoconfigure>
+              <port/>
+            </autoconfigure>
+            <bind>
+              <port>autoscaler/cp1</port>
+            </bind>
+          </interface>
+        </network-context>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>autoscaler/cp0</name>
+          <open/>
+          <application>
+            <rx>rw-ipfastpath</rx>
+            <tx>rw-ipfastpath</tx>
+          </application>
+          <receive-q-length>2</receive-q-length>
+          <port-identity>
+          <ip-address><rw_connection_point_name autoscaler/cp0></ip-address>
+          <port-mode>direct</port-mode>
+          </port-identity>
+        </port>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>autoscaler/cp1</name>
+          <open/>
+          <application>
+            <rx>rw-ipfastpath</rx>
+            <tx>rw-ipfastpath</tx>
+          </application>
+          <receive-q-length>2</receive-q-length>
+          <port-identity>
+          <ip-address><rw_connection_point_name autoscaler/cp1></ip-address>
+          <port-mode>direct</port-mode>
+          </port-identity>
+        </port>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>ethsim1</name>
+          <open/>
+          <virtual-fabric>true</virtual-fabric>
+          <port-identity>
+            <vm-identity>1</vm-identity>
+            <private-name>eth_sim:name=abc</private-name>
+            <port-mode>direct</port-mode>
+          </port-identity>
+          <application>
+            <rx>rw-ipfastpath</rx>
+            <tx>rw-ipfastpath</tx>
+          </application>
+        </port>
+      </vnf>
+    </vnf-config>
+

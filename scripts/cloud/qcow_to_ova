@@ -1,0 +1,48 @@
+#!/bin/bash
+
+USAGE() { 
+    echo $*
+    cat <<EOF
+USAGE: $0 source dest [ vmdk ]
+source should be a qcow2 file
+dest should not exist and should have the extension .ova (for an appliance) or .ovf (for a definition file)
+vmdk is optional and should have the extension vmdk
+
+EOF
+    exit 1
+}
+
+[ $# -lt 2 ] && USAGE "incorrect argument count"
+[ $# -gt 3 ] && USAGE "incorrect argument count"
+[ -f "$1" ] || USAGE "source file not found"
+[ -f "$2" ] && USAGE "destination file exists"
+
+template=${RIFT_ROOT:-/usr/rift}/scripts/cloud/template.vmx
+[ -f $template ] || USAGE "template file $template not found"
+
+src=$(realpath $1)
+dst=$(realpath $2)
+
+pid=$$
+trap "rm /tmp/disk1_${pid}.vm*" 0
+if [ $# -eq 3 ]; then
+	if [[ $3 =~ .vmdk$ ]]; then
+		vmdk=$(realpath $3)
+	else
+		USAGE "vmdk file extension must be vmdk"
+	fi
+else
+	vmdk=/tmp/disk1_${pid}.vmdk
+fi
+
+qemu-img convert -f qcow2 $src -O vmdk $vmdk
+perl -p -e "s^disk1.vmdk^$vmdk^;" <$template >/tmp/disk1_${pid}.vmx
+ovftool /tmp/disk1_${pid}.vmx $dst
+if [ $# -ne 3 ]; then
+	rm $vmdk
+fi
+
+echo to deploy this image run
+echo ovftool --vCloudTemplate --datastore=datastore1 --network=\'VM Network\' $dst vi://root:vmware@vcenter/RIFT.vmware/host/Rift.cluster
+
+

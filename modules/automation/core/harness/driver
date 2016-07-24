@@ -1,0 +1,534 @@
+#!/usr/bin/env python3
+
+"""
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+
+@file driver
+@author Jeremy Mordkoff (Jeremy.Mordkoff@riftio.com)
+@date 11/20/14
+@brief This script is normally invoked by the test harness
+
+The primary job of this script is to kill the test script if it hangs
+and make sure that it returns within a reasonable period
+
+
+Args
+    pathname of the config file for the test to be run [required]
+    pathname to a testbed file that defines the resources to be used for this test run [optional. If not
+    specified, then all resources reserved by the current user (or the user specified by --user) will be used
+    sutfile -- if specified, this overrides the testbed file and is passed directly to the test
+    logging directory [optional] defaults to CWD
+
+environment
+    This script must be run from inside a rift_shell
+
+runtime
+    when called from the harness, this script will be passed an sut_file that defines the resources that should be used
+    if called standalone, this script will attempt to select SUTs from the resourecs already reserved by this user
+
+return codes are documented in the wiki http://riftnet.eng.riftio.com/wiki/doku.php?id=test_harness
+
+"""
+
+import argparse
+import datetime
+import json
+import logging
+import os
+import paramiko
+import pwd
+import shlex
+import signal
+import socket
+import subprocess
+import sys
+import time
+import tempfile
+
+from rw_testconfig import TestConfiguration
+from ndl import Testbed
+from rw_testcase import TestCaseManager
+
+logger=logging.getLogger(__name__)
+logging.basicConfig(format='%(asctime)-15s %(module)s %(levelname)s %(message)s', level=logging.INFO)
+
+
+global QUIT_NOW
+QUIT_NOW = False
+
+def signal_handler(sig, fr):
+    global QUIT_NOW
+    print("Driver got a signal")
+    QUIT_NOW = True
+
+def preexec_function():
+    # Ignore the SIGINT signal by setting the handler to the standard
+    # signal handler SIG_IGN.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    os.setsid()
+
+def sys_exit(rc):
+    sys.exit(rc)
+
+
+def run_on_all_vms(cmd, first_cmd=None, mark_doa_on_failure=False):
+
+    if first_cmd is None:
+        first_cmd = cmd
+
+    vms_by_address = {}
+    addrs = []
+    if 'vm_addrs' in test_config.suts:
+        addrs = set(test_config.suts['vm_addrs'].values())
+    else:
+        for vm_name in test_config.suts['vms'].values():
+            vm = tb.find_host(vm_name)
+            addrs.append(vm.ipaddress)
+            vms_by_address[vm.ipaddress] = vm
+    
+    first = True
+    for vm_addr in addrs:
+        if first:
+            this_cmd = first_cmd
+        else:
+            this_cmd = cmd
+
+        logging.info("running %s in %s" % (this_cmd, vm_addr) )
+
+        keyfile = os.path.join(os.environ['HOME'], ".ssh/id_grunt")
+        key = paramiko.RSAKey.from_private_key_file(keyfile)
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        user = 'root'
+        logging.info("connecting to %s as %s" % ( vm_addr, user ))
+        ssh.connect(vm_addr, username=user, pkey=key)
+        stdin, stdout, stderr = ssh.exec_command(this_cmd)
+        first = False
+        logging.info(this_cmd)
+        for line in stdout.readlines():
+            try:
+                logging.info(line[:-1])
+            except UnicodeEncodeError:
+                logging.info("error printing output from VM")
+        if stdout.channel.recv_exit_status() != 0:
+            if mark_doa_on_failure:
+                if vm_addr in vms_by_address:
+                    logging.info("%s failed on %s --  marking DOA" % ( this_cmd, vm_addr) )
+                    vm = vms_by_address[vm_addr]
+                    vm.mark_doa()
+            for line in stderr.readlines():
+                print(line)
+            sys_exit(TestCaseManager.get_code('DEFERRED'))
+        else:
+            logging.info("%s on %s done sucessful" % ( this_cmd, vm_addr) )
+
+######################### MAIN ##############
+
+parser = argparse.ArgumentParser(description="RIFT.ware test driver")
+parser.add_argument('-l', '--log-dir',      dest='logdir',  type=str, help='Where to store log files', default=".")
+parser.add_argument('-t', '--testbed',      dest='testbed', type=str, help='testbed file name OPTIONAL', default=None)
+parser.add_argument('-c', '--configfile',   dest='cfgfile', type=str, help='config file name REQUIRED', default=None)
+parser.add_argument('-u', '--username',     dest='user',    type=str, help='username for pre-reserved resources', default=os.environ.get('USER', 'ruser'))
+parser.add_argument('-U', '--USER',     dest='run_as_user', type=str, help='User to execute test as', default=None )
+parser.add_argument('-s', '--sut-file',     dest='sutfile', type=str, help='SUT file to be passed to the test')
+parser.add_argument('-d', '--debug',        dest='debug',   action='store_true', help='enable debug output', default=False)
+parser.add_argument('-T', '--timeout-factor',      dest='timeout', type=int, default=1, help='multiplier for testcase timeouts')
+parser.add_argument(      '--chown',     dest='chown', default=False, action='store_true', help='run chown')
+parser.add_argument('--openstack', dest='openstack', action='store', help='prepare systemtest hosts on openstack controller')
+parser.add_argument('--nfs-root', dest='nfs_root', action='store', help='location of RIFT_ROOT in nfs mounted workspace')
+parser.add_argument('--prepare', dest='prepare', action='store_true', help='indicates resources should be prepared by the driver')
+parser.add_argument('--scrub', dest='scrub', action='store_true', help='indicates resources should be cleaned up by the driver')
+parser.add_argument('--tenant', dest='tenants', action='append', help='openstack tenant to be used for test resources')
+parser.add_argument('--image', dest='image', action='store', help='default image to use when preparing resources')
+parser.add_argument('--task-id', dest='task_id', action='store', help='id to uniquely identify this task')
+parser.add_argument('--ip-list', dest='iplist', action='store', help='list of ips to be used as test resources')
+parser.add_argument('--rsyslog', dest='rsyslog', action='store_true', help='start rsyslog server and direct system and test ouptut to it')
+
+cmdargs = parser.parse_args()
+if cmdargs.debug:
+    logger.setLevel(logging.DEBUG)
+
+if not 'RIFT_ROOT' in os.environ:
+    logger.critical("ERROR: RIFT_ROOT is not set")
+    sys_exit(1)
+RIFT_ROOT = os.environ['RIFT_ROOT']
+
+if not cmdargs.cfgfile:
+    logger.critical("--configfile not specified")
+    sys_exit(1)
+
+signal.signal(signal.SIGINT, signal.SIG_IGN )
+signal.signal(signal.SIGTERM, signal_handler)
+
+# load the configfile
+try:
+    test_config = TestConfiguration(cmdargs.cfgfile)
+except:
+    sys_exit(2)
+
+if not test_config.is_valid:
+    print("ERROR: test config is not valid: %s" % test_config.error)
+    sys_exit(1)
+
+rsyslog_pid_file = None
+rsyslog_dir = None
+rsyslog_host = None
+rsyslog_port = None
+if cmdargs.rsyslog:  
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('',0))
+    rsyslog_port = sock.getsockname()[1]
+    sock.close()
+
+    rsyslog_dir = "{rift_root}/.artifacts/rsyslog_{test_name}_{task_id}".format(
+        test_name=test_config.test_name,
+        rift_root=os.environ['RIFT_ROOT'],
+        task_id=cmdargs.task_id
+    )
+
+    rsyslog_work_dir = os.path.join(rsyslog_dir, "spool")
+    os.makedirs(rsyslog_work_dir, exist_ok=True)
+
+    rsyslog_log_dir = os.path.join(rsyslog_dir, "log")
+    os.makedirs(rsyslog_log_dir, exist_ok=True)
+
+    rsyslog_config_file = os.path.join(rsyslog_dir, "rsyslog.conf")
+    rsyslog_pid_file = os.path.join(rsyslog_dir, "rsyslog.pid")
+
+
+    rsyslog_config = r'''
+$ModLoad immark
+$ModLoad imudp
+
+$UDPServerRun {port}
+
+$ActionFileDefaultTemplate RSYSLOG_FileFormat
+$RepeatedMsgReduction on
+$FileCreateMode 0640
+$DirCreateMode 0755
+$Umask 0022
+$WorkDirectory {work_dir}
+
+auth,authpriv.*         {log_dir}/auth.log
+*.*;auth,authpriv.none  {log_dir}/syslog
+cron.*                  {log_dir}/cron.log
+daemon.*                {log_dir}/daemon.log
+kern.*                  {log_dir}/kern.log
+user.*                  {log_dir}/user.log
+
+*.=debug;\
+    auth,authpriv.none;\
+    news.none;mail.none {log_dir}/debug
+*.=info;*.=notice;*.=warn;\
+    auth,authpriv.none;\
+    cron,daemon.none;\
+    mail,news.none      {log_dir}/messages
+    '''.format(
+        port=rsyslog_port,
+        work_dir=rsyslog_work_dir,
+        log_dir=rsyslog_log_dir,
+    )
+
+    with open(rsyslog_config_file, 'w') as fh:
+        fh.write(rsyslog_config)
+
+    rsyslog_cmd = ['rsyslogd', '-f', rsyslog_config_file, '-i', rsyslog_pid_file]
+    subprocess.check_call(rsyslog_cmd)
+
+    rsyslog_host = socket.gethostbyname(socket.gethostname())
+
+
+if cmdargs.prepare:
+    prepare_cmd = (
+            '{rift_root}/rift-shell -e -r '
+            '-E AUTO_TASK_ID={task_id} '
+            '-E AUTO_USER={user} '
+    ).format(
+            rift_root=os.environ['RIFT_ROOT'],
+            task_id=cmdargs.task_id,
+            user=cmdargs.user,
+    )
+    
+    if cmdargs.rsyslog and rsyslog_dir and rsyslog_host and rsyslog_port:
+        prepare_cmd += (
+                '-E RW_AUTO_RSYSLOG_DIR={rsyslog_dir} '
+                '-E RW_AUTO_RSYSLOG_HOST={rsyslog_host} '
+                '-E RW_AUTO_RSYSLOG_PORT={rsyslog_port} '
+        ).format(
+                rsyslog_dir=rsyslog_dir,
+                rsyslog_host=rsyslog_host,
+                rsyslog_port=rsyslog_port,
+        )
+
+    prepare_cmd += (
+            '-- '
+            '{rift_root}/.install/usr/rift/systemtest/harness/prepare_openstack.py '
+            '--cloud-host {cloud_host} '
+            '--user {user} '
+            '--sut-file {sut_file} '
+            '--tenant {tenant} '
+            '--image {image} '
+            '--racfg {racfg} '
+            ).format(
+                rift_root=os.environ['RIFT_ROOT'],
+                user=cmdargs.user,
+                cloud_host=cmdargs.openstack,
+                sut_file=cmdargs.sutfile,
+                tenant=cmdargs.tenants[0],
+                racfg=cmdargs.cfgfile,
+                image=cmdargs.image,
+    )
+
+
+    if cmdargs.nfs_root:
+        prepare_cmd = prepare_cmd + '--nfs-root %s ' % (cmdargs.nfs_root)
+
+    logger.info("Preparing tenant: %s", prepare_cmd)
+    subprocess.check_call(prepare_cmd, shell=True)
+
+# calculate and/or load the testbed definition
+# in most cases the resources are reserved and released externally
+if cmdargs.sutfile is not None:
+    sut_file_name = cmdargs.sutfile
+    with open(cmdargs.sutfile, "r") as f:
+        suts = json.loads(f.read() )
+
+else:
+    ''' this little block of logic was not originally called out in the spec, but
+        without it you cannot run a single test standalone unless we decide to duplicate this logic
+        in the tests
+    '''
+    if cmdargs.testbed is None:
+        # first try to see if the user has reserved any already
+        testbed = Testbed(url='auto', user=cmdargs.user)
+    else:
+        testbed = Testbed(json=testbedfile)
+    logging.debug("===== testbed: %s" % testbed)
+
+    # we could leave this to be up to the tests....
+    suts = testbed.select_by_config(test_config)
+    if suts is None:
+        logging.critical("unable to reserve the necessary resources to run test %s" % test_config.test_name)
+        sys_exit(1)
+
+    logging.debug("===== suts: %s" % suts)
+
+    with tempfile.NamedTemporaryFile(delete=False) as sut_file:
+        sut_file.write(json.dumps(suts, sort_keys=False, indent=4, separators=(',', ': ')))
+    sut_file_name = sut_file.name
+
+tb = Testbed(user=os.environ.get('USER', 'ruser'))
+result = subprocess.check_output('cat %s' % (sut_file_name), shell=True)
+test_config.set_sut_file(sut_file_name)
+os.chdir(os.path.dirname(os.path.abspath(cmdargs.cfgfile)))
+
+task_context = {    'logdir': cmdargs.logdir,
+                    'user': cmdargs.user,
+                    'debug': cmdargs.debug }
+if cmdargs.tenants:
+    task_context['tenants'] = cmdargs.tenants
+if cmdargs.iplist:
+    task_context['iplist'] = cmdargs.iplist
+
+task_context['cloud_host'] = '127.0.0.1'
+if cmdargs.openstack:
+    task_context['cloud_host'] = cmdargs.openstack
+
+cmdline = test_config.get_commandline( cmdln_options=task_context, testbed=tb )
+logging.debug("===== launching \"%s\"" % cmdline )
+user = pwd.getpwuid(os.getuid())[0]
+rift_shell = "%s/rift-shell" % os.environ['RIFT_ROOT']
+logger.info("user is %s run as is %s" % ( user, cmdargs.run_as_user ))
+
+
+if not cmdargs.openstack:
+    if test_config.post_reset_vms:
+        reset_vm_command = "%s/scripts/cloud/reset_vm %s 2>&1" % ( RIFT_ROOT, RIFT_ROOT )
+        if cmdargs.chown:
+            username = os.environ.get('USER', 'jenkins')
+            first_reset_vm_command = "%s/scripts/cloud/reset_vm %s %s:%s 2>&1" % ( RIFT_ROOT, RIFT_ROOT, username, username )
+        else:
+            first_reset_vm_command = reset_vm_command
+        run_on_all_vms(reset_vm_command, first_reset_vm_command, True)
+
+
+cmds = []
+if test_config.target_vm:
+    logging.debug("got testbed")
+    vm_name = test_config.get_actual_vm(test_config.target_vm)
+    logging.debug("sut %s is VM %s" % (test_config.target_vm, vm_name ))
+    ip_address = test_config.get_ip_address(test_config.target_vm, tb)
+    if not ip_address:
+        logging.critical("===== FATAL ERROR: vm %s has no IP address" % test_config.target_vm)
+        sys_exit(2)
+
+    # copy SUT files
+    if test_config.run_as_root:
+        keyfile = os.path.join(os.environ['HOME'], ".ssh/id_grunt")
+        user = 'root'
+        host = ip_address
+#        host = "root@" + ip_address
+    else:
+        keyfile = os.path.join(os.environ['HOME'], ".ssh/id_rsa")
+        user = os.environ['USER']
+        host = ip_address
+
+    key = paramiko.RSAKey.from_private_key_file(keyfile)
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    logging.info("connecting to %s as %s" % ( ip_address, user ))
+    ssh.connect(ip_address, username=user, pkey=key)
+    sftp = ssh.open_sftp()
+    sftp.put(sut_file_name, sut_file_name)
+
+    ssh_cmd = 'ssh'
+    if test_config.run_as_root:
+        ssh_cmd = '/usr/rift/bin/ssh_root'
+
+    cmds = [ ssh_cmd, host, '-n', '-i', keyfile, '-o', 'StrictHostKeyChecking=no' ]
+
+
+if ( user == 'jenkins' or user == 'root' ) and cmdargs.run_as_user is not None:
+    logger.info("running as user %s" % cmdargs.run_as_user )
+    cmds =  cmds + [ "sudo", "-u", cmdargs.run_as_user ]
+
+'''
+    FYI
+    -e -- use existing env
+    -r -- cd to rift_root
+    -w -- use testwrapper.sh
+'''
+
+cmds = cmds + [ rift_shell, '-e', '-r', '-w' ]
+for var in [ 'TESTCASE_URL', 'RESERVATION_SERVER' ]: 
+    if var in os.environ:
+        cmds = cmds + [ '-E', "\"%s=%s\"" % ( var, os.environ[var] ) ]
+
+if cmdargs.openstack:
+    cmds = cmds + [ "-E", "%s=%s" % ('NOCREATE', '1') ]
+if cmdargs.task_id:
+    cmds = cmds + [ "-E", "%s=%s" % ('AUTO_TASK_ID', str(cmdargs.task_id)) ]
+if cmdargs.user:
+    cmds = cmds + [ "-E", "%s=%s" % ('AUTO_USER', str(cmdargs.user)) ]
+if cmdargs.rsyslog and rsyslog_dir and rsyslog_host and rsyslog_port:
+    cmds = cmds + [ "-E", "%s=%s" % ('RW_AUTO_RSYSLOG_DIR', str(rsyslog_dir)) ]
+    cmds = cmds + [ "-E", "%s=%s" % ('RW_AUTO_RSYSLOG_HOST', str(rsyslog_host)) ]
+    cmds = cmds + [ "-E", "%s=%s" % ('RW_AUTO_RSYSLOG_PORT', str(rsyslog_port)) ]
+
+cmds = cmds + [ '--' ] + shlex.split(cmdline)
+
+print("===== driver launching %s" % " ".join(cmds))
+
+print("==========================================")
+sys.stdout.flush()
+
+scr = subprocess.Popen(cmds, preexec_fn=preexec_function, stderr=subprocess.STDOUT )
+
+starttime = datetime.datetime.now()
+done = False
+res = None
+max_et = datetime.timedelta(seconds=test_config.timeout) * cmdargs.timeout
+status="running"
+rc=-1
+while not done:
+    time.sleep(1)
+    res = scr.poll()
+    if res is not None:
+        done = True
+        status="DONE"
+        rc=scr.returncode
+        print("=== DONE return code is %d" % rc )
+        # 0 = pass, 1=fail, other=exception
+        if rc > 2:
+            rc=TestCaseManager.get_code('EXCEPTION')
+        break
+    elapsed_time = datetime.datetime.now() - starttime
+    if elapsed_time > max_et:
+        status="TIMEOUT"
+        done = True
+        print("==== driver: test timed out")
+        rc=TestCaseManager.get_code('TIMEDOUT')
+        break
+    if QUIT_NOW:
+        done = True
+        print("==== driver: test was aborted")
+        rc=TestCaseManager.get_code('ABORTED')
+    #print("=====   %s, et is %s max et is %s" % ( status, elapsed_time, max_et ))
+
+print("==========================================")
+if res is None:
+    # ATTN: SIGQUIT did not give core dump.
+    # SIGXCPU did give core dump but it could not
+    # be read due to unknown reasons
+    print("===== driver: Sending signal 11")
+    scr.send_signal(11)
+    sys.stdout.flush()
+    print("=====driver: waiting 120 seconds to finish writing core")
+    time.sleep(120)
+    res = scr.poll()
+    if res is None:
+        # try taking pstack
+        with open("pstack_{}".format(scr.pid), 'wb') as f:
+            print("===== driver: taking pstack of the process")
+            pstk = subprocess.check_output(shlex.split("popen {}".format(scr.pid)), timeout=120)
+            f.write(pstk)
+
+        # If still running, just kill it 
+        res = scr.poll()
+        if res is None:
+            print("===== driver: Sending signal 9")
+            scr.send_signal(9)
+else:
+    sys.stdout.flush()
+
+
+elapsed_time = datetime.datetime.now() - starttime
+print("==== driver: %s is done. rc is %d, elapsed time was %s" % (test_config.test_name, rc, elapsed_time ))
+
+if cmdargs.scrub:
+    for tenant in cmdargs.tenants:
+        logger.info("Cleaning up openstack [%s@%s]", tenant, cmdargs.openstack)
+        scrub_cmd = (
+            '{rift_root}/rift-shell -e -r -- '
+            '{rift_root}/.install/usr/rift/systemtest/harness/scrub_tenant.py '
+            '--cloud-host {cloud_host} '
+            '--tenant {tenant} '
+            '--user {user} '
+        ).format(
+            rift_root=os.environ['RIFT_ROOT'],
+            cloud_host=cmdargs.openstack,
+            tenant=tenant,
+            user=cmdargs.user,
+        )
+
+        if cmdargs.task_id:
+            scrub_cmd += '--task-id {task_id} '.format(task_id=cmdargs.task_id)
+
+        subprocess.check_call(scrub_cmd, shell=True)
+
+    if rsyslog_pid_file:
+        kill_cmd = "kill $(cat {pid_file})".format(pid_file=rsyslog_pid_file)
+        try:
+            subprocess.check_call(kill_cmd, shell=True)
+        except subprocess.CalledProcessError:
+            pass
+
+        cleanup_cmd = "rm {pid_file}".format(pid_file=rsyslog_pid_file)
+        try:
+            subprocess.check_call(cleanup_cmd, shell=True)
+        except subprocess.CalledProcessError:
+            pass
+
+
+try:
+    archive_cmd = '{rift_shell} -e -r -- rwyangutil --archive-mgmt-persist-ws --remove-schema-dir '.format(rift_shell=rift_shell)
+    print("===== driver archiviving mgmt perist directories - %s" % (archive_cmd))
+    subprocess.check_call(archive_cmd, shell=True)
+except:
+    logger.error("exception caught while archiving mgmt data", exc_info=True)
+
+sys_exit(rc)
+
+

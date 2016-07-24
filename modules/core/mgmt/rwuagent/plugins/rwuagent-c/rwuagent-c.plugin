@@ -1,0 +1,8 @@
+[Plugin]
+Module=rwuagent-c
+Name=rwuagent-c
+Description=RiftWare phase 1 demo management uAgent
+Authors=Tom Seidenberg
+Copyright=Copyright (c) 2014 RIFT.IO
+Website=http://www.riftio.com
+

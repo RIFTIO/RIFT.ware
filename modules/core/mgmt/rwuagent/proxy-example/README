@@ -1,0 +1,87 @@
+Readme for toyproxy
+===================
+
+This is a toy program which builds and runs entirely outside of the
+rift environment, looking in.  Only a rift binary ".install"
+installation is required; the riftware sources or build tree are not
+used.
+
+Toyp is a suitable basis for construction of an application program
+that needs to interact with a Rift system over DTS.  This may be a
+useful half step along the path between Rift Light and Rift Heavy
+integration.
+
+In Rift terms, the program constructs a single spoofed tasklet;
+executes the Riftware scheduler; binds to RWLOG, RWMSG, and RWDTS;
+and, when ready, invokes the tasklet's start method.  Code beginning
+from the tasklet start method would require few or no adjustments to
+be bolted into RiftWare as the body of a true VCS component.
+
+In Posix terms, the program is a regular C program which starts at
+main(), then goes right into as a cooperatively multitasked runloop.
+The foreground thread is thus given over to the "CFRunLoop" event
+scheduler.  This is comparable to libevent and other similar
+select/poll/epoll/kqueue runtime event loops.
+
+It is suggested that event-driven application code be adapted to the
+rwsched CFRunLoop API, which provides timers and socket/file
+descriptor polling.  This will permit seamless interaction between
+long-running asynchronous DTS operations and DTS-generated
+subscription notifications.
+
+
+Building toyp
+-------------
+
+Adjust the RIFT_INSTALL macro atop the Makefile to reflect the
+installation directory of the rift distribution or a build tree's
+.install being used.
+
+Type "make".
+
+
+Running the RiftWare Simpleton
+------------------------------
+
+If no runnable RiftWare environment is at hand, a trivial setup is
+provided for use with toyp.
+
+The included manifest.xml file defines a minimal RiftWare environment
+and can be used for testing.  This includes a very small set of tasks
+and a CLI, but approximately zero application code.  It runs entirely
+on the local host.
+
+Note that, while RiftWare proper will run as an unprivileged user, it
+currently invokes a task reaper as root via sudo.  Therefore sudo
+rights are required.
+
+Copy the include manifest.xml file to the RIFT_INSTALL directory.
+
+Run:
+
+rift-shell        # Not in installation, it's in ... ???
+cd ${RIFT_INSTALL}
+rwmain -m ./manifest.xml
+
+
+Running toyp
+------------
+
+Adjust the RIFT_INSTALL variable atop renv.sh to reflect the
+installation directory of the rift distribution or a build tree's
+.install being used.
+
+Start the Rift environment in such a topology that there is a msg
+broker on the local host.  If no Rift environment is at hand, see
+Running the RiftWare Simpleton.
+
+Use the Riftware "show messaging info" command, and look for the
+instance-uri with a local IP address value, either 127.0.0.1 or the
+local hosts IP address.  Note the port number xxxxx at the end of this
+uri.
+
+Run:
+
+. renv.sh
+export RWMSG_BROKER_PORT=xxxxx
+./toyp

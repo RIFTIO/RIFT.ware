@@ -1,0 +1,40 @@
+#! /usr/bin/bash
+
+set -e
+
+SOURCE_DIR=@CMAKE_CURRENT_SOURCE_DIR@
+BINARY_DIR=@CMAKE_CURRENT_BINARY_DIR@
+PROJECT_TOP_DIR=@PROJECT_TOP_DIR@
+
+# These paths are needed for finding the overrides and so files
+PYTHONPATH=${PYTHONPATH}:@RIFT_SUBMODULE_SOURCE_ROOT@/rwvcs/ra:@RIFT_SUBMODULE_BINARY_ROOT@/models/plugins/yang
+PYTHON3PATH=${PYTHON3PATH}:@RIFT_SUBMODULE_SOURCE_ROOT@/rwvcs/ra:@RIFT_SUBMODULE_BINARY_ROOT@/models/plugins/yang
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RIFT_SUBMODULE_BINARY_ROOT@/models/plugins/yang
+
+# Remove any old directories
+rm -rf ${BINARY_DIR}/2tidgenMWC_4sriov
+rm -rf ${BINARY_DIR}/tidgenMWC_4sriov
+rm -rf ${BINARY_DIR}/2tidgenMWC_2sriov
+rm -rf ${BINARY_DIR}/tidgenMWC_2sriov
+rm -rf ${BINARY_DIR}/2tidgenMWC_2sriov_noctrlnet
+rm -rf ${BINARY_DIR}/tidgenMWC_2sriov_noctrlnet
+rm -rf ${BINARY_DIR}/2tidgenMWC_4sriov_noctrlnet
+rm -rf ${BINARY_DIR}/tidgenMWC_4sriov_noctrlnet
+
+
+# Generate the descriptors
+${SOURCE_DIR}/openmano2rift.py -o ${BINARY_DIR} @RIFT_SUBMODULE_SOURCE_ROOT@/models/openmano/test/tidgen_ns_4sriov.yaml @RIFT_SUBMODULE_SOURCE_ROOT@/models/openmano/test/tidgen_vnf_4sriov.yaml
+${SOURCE_DIR}/openmano2rift.py -o ${BINARY_DIR} @RIFT_SUBMODULE_SOURCE_ROOT@/models/openmano/test/tidgen_ns_2sriov.yaml @RIFT_SUBMODULE_SOURCE_ROOT@/models/openmano/test/tidgen_vnf_2sriov.yaml
+${SOURCE_DIR}/openmano2rift.py -o ${BINARY_DIR} @RIFT_SUBMODULE_SOURCE_ROOT@/models/openmano/test/tidgen_ns_4sriov_no_ctrlnet.yaml @RIFT_SUBMODULE_SOURCE_ROOT@/models/openmano/test/tidgen_vnf_4sriov_no_ctrlnet.yaml
+${SOURCE_DIR}/openmano2rift.py -o ${BINARY_DIR} @RIFT_SUBMODULE_SOURCE_ROOT@/models/openmano/test/tidgen_ns_2sriov_no_ctrlnet.yaml @RIFT_SUBMODULE_SOURCE_ROOT@/models/openmano/test/tidgen_vnf_2sriov_no_ctrlnet.yaml
+
+
+# Generate the tar files
+${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} tidgenMWC_4sriov 
+${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} 2tidgenMWC_4sriov
+${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} tidgenMWC_2sriov 
+${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} 2tidgenMWC_2sriov
+${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} tidgenMWC_2sriov_no_ctrlnet 
+${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} 2tidgenMWC_2sriov_no_ctrlnet
+${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} tidgenMWC_4sriov_no_ctrlnet 
+${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} 2tidgenMWC_4sriov_no_ctrlnet

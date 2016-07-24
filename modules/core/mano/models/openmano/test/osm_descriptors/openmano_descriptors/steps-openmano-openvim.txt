@@ -1,0 +1,38 @@
+
+#1 Create an openmano tenant (MANUAL)
+openmano tenant-create SP --description="Tenant for service provider"
+
+openmano tenant-list
+        # 5b774582-b5e6-11e5-8b84-5254006be016   SP
+
+#2 Create openvim datacenter and attach to this tenant (MANUAL)
+openmano datacenter-create openvim1 http://localhost:9080/openvim
+
+openmano datacenter-list --all
+        # 03edb122-b544-11e5-8b84-5254006be016   OSDC
+
+#3 Attach the datacenter to the tenant (MANUAL)
+export OPENMANO_TENANT=5b774582-b5e6-11e5-8b84-5254006be016 #USE YOUR UUID
+openmano datacenter-attach openvim1 --vim-tenant-id 21b586fa-b5e2-11e5-a97e-5254006be016 #USE YOUR UUID "openvim tenant-list"
+
+
+#4 Update/Get the datacenter external networks
+openmano datacenter-net-update -f openvim1
+
+#5 Create VNFs  (AUTO)
+openmano vnf-create tidgen4pLarge.yaml
+openmano vnf-create 6WindTR1.1.2.yaml
+openmano vnf-create TID-MGMTGW.yaml
+
+#6 Create PEs (SP) scenario (monosite) (AUTO)
+openmano scenario-create mwc16-pe.yaml
+
+#7 Desploy PEs (SP) scenario (AUTO)
+openmano scenario-deploy mwc16-pe mwc16-pe
+
+#8 Create gen/sync traffic generators scenario (AUTO)
+openmano scenario-create mwc16-gen.yaml
+
+#9 Deploy gen/sync traffic generators scenario (AUTO)
+openmano scenario-deploy mwc16-gen mwc16-gen
+

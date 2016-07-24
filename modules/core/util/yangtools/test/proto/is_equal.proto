@@ -1,0 +1,169 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+/**
+ * @file is_equal.proto
+ * @brief Test protobuf is_equal operations
+ */
+
+import "descriptor.proto";
+import "rwpbapi.proto";
+option cc_generic_services = true;
+
+package is_equal;
+
+enum EnumA {
+  IE_A_VALUE1 = 1;
+  IE_A_VALUE2 = 2;
+  IE_A_VALUE3 = 3;
+  IE_A_VALUE4 = 4;
+};
+
+enum EnumB {
+  IE_B_VALUE4 = 4;
+  IE_B_VALUE5 = 5;
+  IE_B_VALUE6 = 6;
+  IE_B_VALUE7 = 7;
+  IE_B_VALUE8 = 8;
+  IE_B_VALUE9 = 9;
+};
+
+
+message MsgA {
+  required string s1 = 1;
+  required bytes  b1 = 2;
+  required int32  i1 = 3;
+  required EnumA  e1 = 6;
+};
+
+message MsgB {
+  optional int32  i1 = 3;
+  optional string s1 = 4;
+  optional bytes  b1 = 5;
+  optional EnumA  e1 = 6;
+};
+
+message MsgC {
+  repeated bytes  b1 = 1;
+  repeated bytes  b2 = 2;
+  optional int32  i1 = 3;
+  repeated MsgA   ma = 4;
+  repeated MsgB   mb = 5;
+  optional EnumB  e1 = 6;
+};
+
+
+/*
+ * The primary test message.
+ */
+message Test {
+  optional int32     oi32 = 110;
+  optional uint32    ou32 = 111;
+  optional sint32    os32 = 112;
+  optional int64     oi64 = 113;
+  optional uint64    ou64 = 114;
+  optional sint64    os64 = 115;
+  optional bool      oboo = 116;
+  optional EnumA     oena = 117;
+  optional EnumB     oenb = 118; /*______ wire-compatible, above: varint */
+  optional fixed64   of64 = 119;
+  optional sfixed64  oz64 = 120;
+  optional double    odbl = 121; /*______ wire-compatible, above: 64b */
+  optional string    ostr = 122;
+  optional bytes     obyt = 123;
+  optional MsgA      omga = 124;
+  optional MsgB      omgb = 125;
+  optional MsgC      omgc = 126; /*______ wire-compatible, above: length delimitted */
+  optional fixed32   of32 = 127;
+  optional sfixed32  oz32 = 128;
+  optional float     oflt = 129; /*______ wire-compatible, above: 32b */
+
+  repeated int32     ai32 = 210;
+  repeated EnumA     aena = 211;
+  repeated string    astr = 212;
+  repeated bytes     abyt = 213;
+  repeated MsgA      amga = 214;
+  repeated MsgB      amgb = 215;
+  repeated MsgC      amgc = 216;
+};
+
+
+/*
+ * A half-tag-compatible message - half of the tags are the same as
+ * Test, and half are not.  The compatible fields are exactly opposite
+ * of TestHalfB, making A and B completely incompatible.
+ */
+message TestHalfA {
+  optional int32     oi32 = 110;
+  optional uint32    ou32 = 311;
+  optional sint32    os32 = 112;
+  optional int64     oi64 = 313;
+  optional uint64    ou64 = 114;
+  optional sint64    os64 = 315;
+  optional bool      oboo = 116;
+  optional EnumA     oena = 317;
+  optional EnumB     oenb = 118; /*______ wire-compatible, above: varint */
+  optional fixed64   of64 = 319;
+  optional sfixed64  oz64 = 120;
+  optional double    odbl = 321; /*______ wire-compatible, above: 64b */
+  optional string    ostr = 122;
+  optional bytes     obyt = 323;
+  optional MsgA      omga = 124;
+  optional MsgB      omgb = 325;
+  optional MsgC      omgc = 126; /*______ wire-compatible, above: length delimitted */
+  optional fixed32   of32 = 327;
+  optional sfixed32  oz32 = 128;
+  optional float     oflt = 329; /*______ wire-compatible, above: 32b */
+
+  repeated int32     ai32 = 210;
+  repeated EnumA     aena = 411;
+  repeated string    astr = 212;
+  repeated bytes     abyt = 413;
+  repeated MsgA      amga = 214;
+  repeated MsgB      amgb = 415;
+  repeated MsgC      amgc = 216;
+};
+
+
+/*
+ * A half-tag-compatible message - half of the tags are the same as
+ * Test, and half are not.  The compatible fields are exactly opposite
+ * of TestHalfA, making A and B completely incompatible.
+ */
+message TestHalfB {
+  optional int32     oi32 = 310;
+  optional uint32    ou32 = 111;
+  optional sint32    os32 = 312;
+  optional int64     oi64 = 113;
+  optional uint64    ou64 = 314;
+  optional sint64    os64 = 115;
+  optional bool      oboo = 316;
+  optional EnumA     oena = 117;
+  optional EnumB     oenb = 318; /*______ wire-compatible, above: varint */
+  optional fixed64   of64 = 119;
+  optional sfixed64  oz64 = 320;
+  optional double    odbl = 121; /*______ wire-compatible, above: 64b */
+  optional string    ostr = 322;
+  optional bytes     obyt = 123;
+  optional MsgA      omga = 324;
+  optional MsgB      omgb = 125;
+  optional MsgC      omgc = 326; /*______ wire-compatible, above: length delimitted */
+  optional fixed32   of32 = 127;
+  optional sfixed32  oz32 = 328;
+  optional float     oflt = 129; /*______ wire-compatible, above: 32b */
+
+  repeated int32     ai32 = 410;
+  repeated EnumA     aena = 211;
+  repeated string    astr = 412;
+  repeated bytes     abyt = 213;
+  repeated MsgA      amga = 414;
+  repeated MsgB      amgb = 215;
+  repeated MsgC      amgc = 416;
+};
+
+

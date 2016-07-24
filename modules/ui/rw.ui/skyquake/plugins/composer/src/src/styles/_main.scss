@@ -1,0 +1,443 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import 'variables';
+
+path[data-outline-indicator-svg-outline-path] {
+	stroke-dasharray: 0;
+	stroke: #b58900;
+	stroke-width: 5px;
+}
+
+$font-path: '../assets';
+$robo-black: $font-path + '/Roboto-Black-webfont.woff';
+$robo-black-italic: $font-path + '/Roboto-BlackItalic-webfont.woff';
+$robo-bold: $font-path + '/Roboto-Bold-webfont.woff';
+$robo-bold-italic: $font-path + '/Roboto-BoldItalic-webfont.woff';
+$robo-light: $font-path + '/Roboto-Light-webfont.woff';
+$robo-light-italic: $font-path + '/Roboto-LightItalic-webfont.woff';
+$robo-medium: $font-path + '/Roboto-Medium-webfont.woff';
+$robo-medium-italic: $font-path + '/Roboto-MediumItalic-webfont.woff';
+$robo-reg: $font-path + '/Roboto-Regular-webfont.woff';
+$robo-reg-italic: $font-path + '/Roboto-Italic-webfont.woff';
+$robo-thin: $font-path + '/Roboto-Thin-webfont.woff';
+$robo-thin-italic: $font-path + '/Roboto-ThinItalic-webfont.woff';
+
+$robo-cond-bold: $font-path + '/RobotoCondensed-Bold-webfont.woff';
+$robo-cond-bold-italic: $font-path + '/RobotoCondensed-BoldItalic-webfont.woff';
+$robo-cond-light: $font-path + '/RobotoCondensed-Light-webfont.woff';
+$robo-cond-light-italic: $font-path + '/RobotoCondensed-LightItalic-webfont.woff';
+$robo-cond-reg: $font-path + '/RobotoCondensed-Regular-webfont.woff';
+$robo-cond-reg-italic: $font-path + '/RobotoCondensed-Italic-webfont.woff';
+
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-thin) format('woff');
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-thin-italic) format('woff');
+  font-weight: 100;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-light) format('woff');
+  font-weight: 200;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-light-italic) format('woff');
+  font-weight: 200;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-reg) format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-reg-italic) format('woff');
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-medium) format('woff');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-medium-italic) format('woff');
+  font-weight: 500;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-bold) format('woff');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-bold-italic) format('woff');
+  font-weight: 700;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-black) format('woff');
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url($robo-black-italic) format('woff');
+  font-weight: 800;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'RobotoCondensed';
+  src: url($robo-cond-light) format('woff');
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'RobotoCondensed';
+  src: url($robo-cond-light-italic) format('woff');
+  font-weight: 100;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'RobotoCondensed';
+  src: url($robo-cond-reg) format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'RobotoCondensed';
+  src: url($robo-cond-reg-italic) format('woff');
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'RobotoCondensed';
+  src: url($robo-cond-bold) format('woff');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'RobotoCondensed';
+  src: url($robo-cond-bold-italic) format('woff');
+  font-weight: 700;
+  font-style: italic;
+}
+
+$font-family-serif: Georgia, Times, 'Times New Roman', serif;
+$font-family-sans-serif: Roboto, Helvetica, Arial, sans-serif;
+$font-family-display: $font-family-sans-serif;
+$font-family-icons: 'FontAwesome';
+$font-family-default: $font-family-sans-serif;
+
+html, body {
+	background: $primary-bg-color;
+	cursor: auto;
+	font-family: $font-family-sans-serif;
+	overflow: hidden;
+}
+
+::-webkit-scrollbar {
+	//display: none;
+}
+
+html {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+	border: 0;
+	padding: 0;
+	border-collapse: collapse;
+}
+
+*, *:before, *:after {
+	-webkit-box-sizing: inherit;
+	-moz-box-sizing: inherit;
+	box-sizing: inherit;
+}
+
+h1 {
+	margin: 0;
+	padding: 3px 6px;
+	color: #323232;
+	font-size: 0.75em;
+	font-weight: normal;
+	text-align: center;
+	font-variant-caps: all-small-caps;
+	font-variant: small-caps;
+	text-transform: uppercase;
+}
+
+img {
+	vertical-align: middle;
+}
+
+button,
+input[type="image"] {
+
+    box-shadow: 2px 2px rgba(0, 0, 0, 0.15);
+    color: #000000;
+    display: inline-block;
+    font-size: 12px;
+    padding: 8px 34px;
+    text-decoration: none;
+    text-transform: uppercase;
+
+	&:hover {
+		background-color: #7E9BC1;
+		color:#ffffff;
+	}
+	&:active, &:visited{
+		background-color:#4C5E74;
+		color:#ffffff;
+	}
+
+	&.-selected {
+		background-color: rgb(159, 196, 244);
+	}
+
+}
+
+input[type="image"] {
+	width: 28px;
+	height: 28px;
+	margin-right: 12px;
+	border: 0;
+	border-radius: 4px;
+	padding: 4px;
+}
+
+input,
+select,
+textarea {
+	height: 25px;
+	line-height: 25px;
+	max-width: 100%;
+	min-width: 100%;
+	margin: 0;
+	padding: 0 8px;
+	border: 1px solid $field-background-color !important;;
+	border-radius: $field-border-radius;
+	color: #002b36;
+	background-color: $field-background-color !important;
+	vertical-align: top;
+	&:focus {
+		color: #002b36;
+		background-color: white !important;
+	}
+	&::-webkit-input-placeholder {
+		color: #eee8d5 !important;
+	}
+
+	&:-moz-placeholder { /* Firefox 18- */
+		color: #eee8d5 !important;
+	}
+
+	&::-moz-placeholder {  /* Firefox 19+ */
+		color: #eee8d5 !important;
+	}
+
+	&:-ms-input-placeholder {
+		color: #eee8d5 !important;
+	}
+}
+
+select {
+	padding-right: 0;
+	margin-right: 0;
+	-moz-appearance: none;
+	text-indent: 0.01px;
+	text-overflow: '';
+	-webkit-appearance: none;
+	-webkit-border-radius: $field-border-radius;
+	&.-value-not-set {
+		color: #eee8d5;
+	}
+}
+
+select {
+	appearance: none; // using -prefix-free http://leaverou.github.io/prefixfree/
+    background: $field-background-color url(../../../node_modules/open-iconic/svg/caret-bottom.svg) no-repeat right 6px center;
+	background-size: 10px;
+	border: {
+		color: $field-background-color;
+		radius: $field-border-radius;
+		style: solid;
+		width: 1px;
+	}
+}
+
+// Removes default arrow for IE10+
+// IE 8/9 get dafault arrow which covers caret image
+// as long as caret image is small than and positioned
+// behind default arrow
+select::-ms-expand {
+	display: none;
+}
+
+textarea {
+	height: 50px;
+}
+
+input[name$="id"],
+input.-is-guid {
+	font-size: 10px;
+	font-family: monospace;
+}
+
+.ContentEditableDiv {
+	margin: 0;
+	border: 0;
+	padding: 0;
+	overflow: hidden;
+	border-radius: $field-border-radius;
+	height: 25px;
+	line-height: 25px;
+}
+
+.btn-group {
+	white-space: nowrap;
+	button {
+		border-right: 1px solid $button-border-color;
+		&:first-of-type {
+			border-top-left-radius: 2px;
+			border-bottom-left-radius: 2px;
+		}
+		&:last-of-type {
+			border-right: none;
+			border-top-right-radius: 2px;
+			border-bottom-right-radius: 2px;
+		}
+	}
+}
+
+.panel {
+	overflow: hidden;
+	-ms-overflow-style: -ms-autohiding-scrollbar;
+	background-color: $panel-bg-color;
+	> div {
+		min-width: 200px;
+	}
+}
+.panel-header {
+	h1 {
+		padding: 16px;
+		white-space: nowrap;
+		text-align: center;
+	}
+}
+.panel-body {
+	position: absolute;
+	overflow: hidden;
+	&:hover {
+		overflow: auto;
+	}
+	-ms-overflow-style: -ms-autohiding-scrollbar;
+	top: 111px;
+	bottom: 0px;
+	left: 0;
+	right: 0;
+
+
+}
+.panel-footer {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 40px;
+	padding: 0 12px;
+	background-color: $panel-bg-color-contrast;
+	border-top: 1px solid $panel-border-color-light;
+	white-space: nowrap;
+}
+
+.welcome-message {
+	margin: 20px;
+	color: #06173c;
+	font-size: x-large;
+	font-weight: 200;
+	.Button {
+		display: inline-block;
+	}
+}
+
+/* react-tooltip overrides */
+.__react_component_tooltip {
+	transition: opacity 300ms cubic-bezier(0.230, 1.000, 0.320, 1.000) !important;
+}
+
+/* simple css-only drop-down menu */
+.menu {
+	display: inline-flex;
+	position: relative;
+	z-index: 9999;
+	> .Button:after {
+		content: "ˇ";
+		position: absolute;
+		right: 4px;
+		bottom: -13px;
+		font-size: 20px;
+	}
+	.sub-menu {
+		display: none;
+		position: absolute;
+		top: 36px;
+		left: -4px;
+		padding: 4px;
+		background-color: #f1f1f1;
+		box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.15);
+		border-radius: 3px;
+		.Button {
+			display: block;
+			text-align: left;
+		}
+		&:hover {
+			display: block;
+		}
+	}
+	> .Button:hover .sub-menu {
+		display: block;
+	}
+	&:hover .sub-menu {
+		display: block;
+	}
+}
+
+.descriptor {
+	text {
+		&.badge {
+			font-weight: 100;
+			font-size: 12px;
+			text-anchor: middle;
+			fill: white;/* font color */
+			stroke: white !important;/* font color */
+		}
+	}
+}
+
+.hint {
+	margin: 5px;
+}

@@ -1,0 +1,82 @@
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import 'style/_colors.scss';
+@import 'style/layout.scss';
+.app-body {
+	display: flex;
+	height: 100%;
+	&.topologyAppBody {
+		flex: 1;
+	}
+}
+.topologyView {
+
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: stretch;
+	align-content: stretch;
+	flex: 1;
+	position: relative;
+	margin: 0.5rem;
+	min-width: 1340px;
+  height: auto;
+	.dashboardCard {
+		display: flex;
+		//flex: 0 1 auto;
+		flex: 1;
+		width: auto;
+		height: auto;
+		margin: 0;
+		max-height: none;
+		.corner-accent {
+			display: none;
+		}
+		header {
+			background-color: white;
+			display: block;
+		}
+	}
+	.topologyTreeGraph {
+		flex-grow: 2;
+	}
+  .recordDetails {
+	  flex: 1 1 auto;
+
+		pre {
+			flex: 1;
+			margin: 0;
+			white-space: pre-wrap;
+		}
+		&-body {
+			display: flex;
+			flex: 1;
+			min-width: 0;
+			min-height: 0;
+			overflow: auto;
+		}
+	}
+
+
+	svg {
+		.node {
+			cursor: pointer;
+
+			circle {
+				stroke: steelblue;
+				stroke-width: 1.5px;
+			}
+		}
+		.link {
+			fill: none;
+			stroke: gray;
+			stroke-width: 1.5px;
+		}
+	}
+}
+.reloadButton {
+    // TODO: Style this button
+}

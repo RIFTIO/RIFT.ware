@@ -1,0 +1,32 @@
+The server configuration is avialable under libcloud_rest/server.py
+Modify this to reflect the host ip and port.
+Copy over libcloud_rest directory to the test machine and run following command to install it
+[libcloud_rest]#  python setup.py install
+The server can then be started by running >libcloud_rest
+
+CURL can be used to interact with the server and the underlying cloud. The openstack credentials like user,passwd,auth url etc needs to be known to run
+the following.
+
+Some example commands: (Server IP: 10.64.1.39 and PORT:5001)
+1) Listing VM nodes
+curl 10.64.1.39:5001/0.1/compute/OPENSTACK/nodes -H  x-auth-user:admin -H x-api-key:18267ce5260b404b  -H
+x-force-auth-url:http://10.64.1.39:35357/v2.0/tokens -H x-tenant-name:rwdemo -H x-force-auth-version:2.0_password
+
+2)Listing images
+curl 10.64.1.39:5001/0.1/compute/OPENSTACK/iimages -H  x-auth-user:admin -H x-api-key:18267ce5260b404b  -H
+x-force-auth-url:http://10.64.1.39:35357/v2.0/tokens -H x-tenant-name:rwdemo -H x-force-auth-version:2.0_password
+ 
+3)Creating a VM 
+
+curl -i -X POST 10.64.1.39:5001/0.1/compute/OPENSTACK/nodes -H x-auth-user:admin -H x-api-key:18267ce5260b404b -H
+x-force-auth-url:http://10.64.1.39:35357/v2.0/tokens -H x-tenant-name:rwdemo -H x-force-auth-version:2.0_password -H  "Content-Type: application/json" -d
+'{"name": "opstk_rest_test","size_id" : "3", "image_id": "4780cd5a-761d-46fb-9dfd-ff09473e9292"}'
+
+4)Deleting a VM
+
+curl -i -X DELETE 10.64.1.39:5001/0.1/compute/OPENSTACK/nodes/9ef0c144-fd05-4568-983f-6b15a5de5034 -H x-auth-user:admin -H x-api-key:18267ce5260b404b -H
+x-force-auth-url:http://10.64.1.39:35357/v2.0/tokens -H x-tenant-name:rwdemo -H x-force-auth-version:2.0_password -H  "Content-Type: application/json" -d
+'{"name": "opstk_rest_test"}'
+
+
+

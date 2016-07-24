@@ -1,0 +1,4 @@
+fpm -s python -t rpm -n python-libcloud ./setup.py
+sudo -u jenkins cp python-libcloud-0.16.1-1.noarch.rpm /net/boson/home1/jmordkof/links/mirrors/rwrepo/releases/20/Everything/x86_64/os/Packages/
+cd /net/boson/home1/jmordkof/links/mirrors/rwrepo/releases/20/Everything/x86_64/os/
+sudo -u jenkins createrepo --update --database .

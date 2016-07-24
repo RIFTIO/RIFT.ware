@@ -1,0 +1,24 @@
+---
+name:            IMS-corpA
+description:     All in one Clearwater IMS for corporation A in MWC16
+topology: 
+  nodes: 
+    ims-corpA:                   # vnf/net name in the scenario
+      type:      VNF          # VNF, network, external_network (if it is a datacenter network)
+      VNF model: IMS-ALLIN1_2p        # VNF name as introduced in OPENMANO DB
+    net-corpA: 
+      type:      external_network # Datacenter net
+      model:     net-corp:${VLAN_CORPA_PE3}
+    net-mgmtOS: 
+      type:      external_network # Datacenter net
+      model:     net-mgmtOS
+  connections: 
+    data:                   # provide a name for this net or connection
+      nodes: 
+      -   net-corpA: null      # Datacenter net
+      -   ims-corpA: eth0       # Node and its interface
+    management:                   # provide a name for this net or connection
+      nodes: 
+      -   net-mgmtOS: null      # Datacenter net
+      -   ims-corpA: eth1       # Node and its interface
+

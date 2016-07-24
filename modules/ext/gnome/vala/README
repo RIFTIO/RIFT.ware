@@ -1,0 +1,6 @@
+The vala repo is imported/tracked directly from the 
+upstream repository. The following commands are used to create this from 
+the upstream repo
+
+git branch 0.26
+git subtree add --prefix=vala/vala-0.26 -m 'Add the vala 0.26 branch' --squash git://git.gnome.org/vala 0.26

@@ -1,0 +1,78 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module test-module-ext-another
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/test-module-ext-another";
+  prefix "tmeanother";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description
+    "Test file for moduleext.cpp.";
+
+  revision 2014-05-06 {
+    description "Initial version";
+    reference "Testing Module Extension support";
+  }
+
+  grouping test-group {
+    container cont-in-group {
+      config true;
+      description "Test container in grouping.";
+
+      leaf str1 {
+        description "A string";
+        type string;
+      }
+
+      leaf num1 {
+        description "A number";
+        type int64;
+      }
+    }
+  }
+
+  container test-cont {
+    config true;
+    description "Test container.";
+    rwpb:msg-new Tx2pTestContB;
+
+    leaf str2 {
+      description "Another string";
+      type string;
+    }
+
+    leaf num2 {
+      description "Another number";
+      type int64;
+    }
+
+    leaf enum1 {
+      description "What happends to an enum?";
+      type enumeration {
+        enum zero;
+        enum one {
+          value 7;
+        }
+      }
+    }
+
+    leaf nothing {
+      description "Theres nothing inside";
+      type empty;
+    }
+
+    container here {
+      description "Try presence now";
+      presence  "Just presence";
+    }
+        
+    uses test-group;
+  }
+}

@@ -1,0 +1,390 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rwuagent-cli.yang
+ * @author Tom Seidenberg
+ * @date 2014/04/08
+ * @brief Micro-agent test CLI.  Not for demo use!
+ */
+
+module rw-mgmtagt
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-mgmtagt";
+  prefix "rw-mgmtagt";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-netconf {
+    prefix "rwnc";
+  }
+
+  revision 2014-04-08 {
+    description
+
+      "Initial revision.";
+  }
+
+  typedef nb-req-type {
+    description
+      "The Northbound client request types";
+    type enumeration {
+      enum Unset {
+        description
+          "A client with type not set";
+      }
+      enum ConfdAction {
+        description
+          "A client created or servicing a confd action";
+      }
+      enum ConfdGet {
+        description
+          "A client created or servicing a confd get transaction";
+      }
+      enum ConfdConfig {
+        description
+          "A client created or servicing a confd config transaction";
+      }
+      enum RwMsg {
+        description
+          "A client created via RW.Msg";
+      }
+      enum RwDts {
+        description
+          "A client created via RW.DTS";
+      }
+      enum Internal {
+        description
+          "Internally created client";
+      }
+      enum RwXml {
+        description
+          "Internal XML client";
+      }
+    }
+  }
+
+  typedef sb-req-type {
+    description
+      "The southbound request types";
+    type enumeration {
+      enum Invalid {
+        description
+          "Xaction type not set";
+      }
+      enum EditConfig {
+        description
+          "An edit configuration operation is currently performed
+          through DTS";
+      }
+      enum Rpc {
+        description
+          "RPC execution is done through DTS";
+      }
+      enum GetNetConf {
+        description
+          "A GET NETCONF operation ";
+      }
+      enum GetApplication {
+        description
+          "A GET initiated by a DTS client";
+      }
+      enum Maximum {
+        description
+          "A value used as MAX in indexing";
+      }
+    }
+  }
+
+  notification timer-expiry {
+    description
+      "This notification is used to test the uagent notification
+      capability.  The uagent-debug rpc is used to start a notification
+      timer.  When the timer expires, this notification is generated";
+    leaf count
+    {
+      type uint8;
+      description
+        "The number of times the timer has expired since started";
+    }
+  }
+
+  grouping processing-times {
+    container processing-times {
+      leaf request-parse-time {
+        description
+          "The time it takes the UAGENT to parse a request, and build
+          the internal data structure to process requests";
+        type uint32;
+      }
+
+      leaf transaction-start-time {
+        description
+          "The time taken to translate the request from an XML DOM to
+          DTS data structures, build a transaction, and start it";
+        type uint32;
+      }
+
+      leaf dts-response-time {
+        description
+          "The time taken from the start of a transaction till DTS
+          responds to a transaction";
+        type uint32;
+      }
+
+      leaf response-parse-time {
+        description
+          "The time taken by UAGENT to build a response DOM from the
+          data provided in the response";
+        type uint32;
+      }
+    }
+  }
+
+  container uagent {
+
+    container logrotate-conf {
+      rwpb:msg-new LogrotateConf;
+      description
+        "Configuration for logrotate";
+      config true;
+
+      leaf compress {
+        description
+          "Compress rotated log file";
+        type boolean;
+        default true;
+      }
+
+      leaf size {
+        description
+          "Max size of log file (in MB) after which it must be rotated.";
+        type uint32;
+        units "MB";
+        default 10;
+      }
+
+      leaf rotations {
+        description
+          "Number of rotations before the oldest file gets overwritten";
+        type uint32;
+        default 10;
+      }
+
+    }
+
+    container state {
+      description
+        "Information pertaining to the state of the Management Agent";
+      rwpb:msg-new State;
+      config false;
+
+      container config-state {
+        leaf ready {
+          description
+            "Indicates readiness of critical tasks, schema loading and init configuration";
+          type boolean;
+          default false;
+        }
+      }
+
+      list statistics {
+        rwpb:msg-flat "true";
+        rwpb:msg-new Statistics;
+        description
+          "Statistics on different types of transactions ";
+
+        key operation;
+        leaf operation {
+          type sb-req-type;
+        }
+
+        uses processing-times;
+
+        leaf request-count {
+          description
+            "The types of requests of this type handled by the Management Agent";
+          type uint32;
+        }
+
+        leaf parsing-failed {
+          description
+            "The number of requests that failed parsing";
+          type uint32;
+        }
+
+        leaf elapsed-time {
+          description
+            "Elapsed time since record keeping began for this statistic";
+          type uint32;
+        }
+      }
+
+      list specific {
+        description
+          "The last N commands for each type of transaction";
+        rwpb:msg-new "Specific";
+        key operation;
+        leaf operation {
+          type sb-req-type;
+        }
+
+        list commands {
+          key index;
+          rwpb:msg-new "SpecificStatistics";
+
+          leaf index {
+            description
+              "A generated index - No real keys exists, since multiple
+              of the same command can be issued";
+            type uint32;
+          }
+
+          leaf request {
+            description
+              "The XML version of the command processed";
+            type string;
+          }
+
+          uses processing-times;
+        }
+      }
+    }
+
+    container last-error {
+      config false;
+      uses rwnc:rpc-error-reply;
+      description
+        "Displays the last-error, reported by Mgmt Agent";
+    }
+  }
+
+  rpc mgmt-agent {
+    input {
+      choice action {
+        case dts-trace {
+          container dts-trace {
+            rwpb:msg-new DtsTrace;
+            description
+              "Trace the next Management Agent transaction";
+            leaf next-command {
+              description
+                "Trace the next mangement/ netconf command";
+              type empty;
+            }
+          }
+        } // end dts-trace
+
+        leaf show-agent-dom {
+          type empty;
+        }
+      }
+    }
+
+    output {
+      choice action {
+        leaf agent-dom {
+          type string;
+        }
+      }
+    }
+  }
+
+  rpc show-system-info {
+    description
+      "Generate a detailed system description and status dump.  This
+      output is used to debug the system and diagnose issues.";
+
+    input {
+      rwpb:msg-new SysInfoInput;
+      choice output {
+        default string;
+        case string {
+          leaf string {
+            description
+                "Return the information in a string in the RPC response.";
+            type empty;
+          }
+        }
+
+        case file {
+          leaf file {
+            description
+                "Save the information to a file.  This element contains the
+                filename.";
+            type string;
+          }
+        }
+      }
+    }
+
+    output {
+      rwpb:msg-new SysInfoOutput;
+
+       leaf result {
+          description
+           "The system information string.  This may be very large.";
+           type string;
+      }
+    }
+  }
+
+
+  rpc show-agent-logs {
+    description
+      "Show management system logs.";
+
+    input {
+      rwpb:msg-new AgentLogsInput;
+      choice output {
+        default string;
+
+        case string {
+          leaf string {
+            description
+              "Show the management system logs on console.";
+            type empty;
+          }
+        }
+
+        case file {
+          leaf file {
+            description
+              "Saves the log records to the provided filename.";
+            type string;
+          }
+        }
+      }
+    }
+
+    output {
+      rwpb:msg-new AgentLogsOutput;
+      list result {
+        description
+          "Management system logs";
+
+        key "log-name";
+
+        leaf log-name {
+          description
+            "Name of the log file";
+          type string;
+        }
+
+        leaf log-records {
+          description
+            "Log records from a log file";
+          type string;
+        }
+      }
+    }
+  }
+}

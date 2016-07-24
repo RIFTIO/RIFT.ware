@@ -1,0 +1,240 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+
+module rwcli_writer_test
+{
+  namespace "http://riftio.com/ns/yangtools/rwclitest";
+  prefix "rwclitest";
+
+  import rw-cli-ext { 
+    prefix "rwcli";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  revision 2015-11-03 {
+    description
+      "Initial revision.";
+  }
+
+
+  list colony {
+    rwcli:new-mode " colony";
+    key "name";
+
+    leaf name {
+      type string;
+    }
+
+    list network-context {
+      rwcli:new-mode " network-context";
+      key "name";
+
+      leaf name {
+        type string;
+      }
+
+      list interface {
+        rwcli:new-mode " interface";
+        key "name";
+
+        leaf name {
+          type string;
+        }
+
+        list ip {
+          key "address";
+
+          leaf address {
+            type string;
+          }
+        }
+      }
+    }
+
+    list port {
+      rwcli:new-mode " port";
+      key "name";
+
+      leaf name {
+        type string;
+      }
+      leaf receive-q-length {
+        type uint32;
+      }
+
+      container open {
+        container application {
+          leaf trafgen {
+            type empty;
+          }
+        }
+      }
+
+      container trafgen {
+        rwcli:new-mode "trafgen";
+        container transmit-params {
+          rwcli:new-mode "transmit-param";
+          container transmit-mode {
+            leaf single {
+              type empty;
+            }
+            leaf range {
+              type empty;
+            }
+          }
+        }
+
+        container range-template {
+          rwcli:new-mode "range-template";
+          container source-ip {
+            leaf start {
+                type rwt:ip-address;
+            }
+            leaf minimum {
+                type rwt:ip-address;
+            }
+            leaf maximum {
+                type rwt:ip-address;
+            }
+            leaf increment {
+                type uint16;
+            }
+          }
+          container destination-ip {
+            leaf start {
+                type rwt:ip-address;
+            }
+            leaf minimum {
+                type rwt:ip-address;
+            }
+            leaf maximum {
+                type rwt:ip-address;
+            }
+            leaf increment {
+                type uint16;
+            }
+          }
+          container packet-size {
+            leaf start {
+                type uint16;
+            }
+            leaf minimum {
+                type uint16;
+            }
+            leaf maximum {
+                type uint16;
+            }
+            leaf increment {
+                type uint16;
+            }
+          }            
+        } // range-template
+      } // trafgen
+    } // port
+  } // colony
+
+  container vnf-config {
+    list vnf {
+      rwcli:new-mode "vnf";
+      key "name instance";
+      leaf name {
+        type string;
+      }
+      leaf instance {
+        type uint32;
+      }
+      
+      list network-context {
+        rwcli:new-mode " network-context";
+        key "name";
+
+        leaf name {
+          type string;
+        }
+
+        list interface {
+          rwcli:new-mode " interface";
+          key "name";
+
+          leaf name {
+            type string;
+          }
+
+          list ip {
+            key "address";
+
+            leaf address {
+              type string;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  typedef account-type-enum {
+    type enumeration {
+      enum cloudsim {}
+      enum cloudsim_proxy {}
+      enum openstack {}
+    }
+  }
+
+  container cloud {
+    list account {
+      key "name";
+      leaf name {
+        type string;
+      }
+      leaf account-type {
+        type account-type-enum;
+      }
+    }
+  }
+
+  list network {
+    key "network-id";
+    leaf network-id {
+      type string;
+    }
+
+    list node {
+      key "node-id";
+      leaf node-id {
+        type string;
+      }
+
+      list termination-point {
+        key "tp-id";
+        leaf tp-id {
+          type string;
+        }
+
+        container attributes {
+          leaf description {
+            type string;
+          }
+          leaf maximum-frame-size {
+            type string;
+          }
+          leaf mac-address {
+            type string;
+          }
+          leaf eth-encapsulation {
+            type string;
+          }
+        }
+      }
+    }
+
+  }
+} // module

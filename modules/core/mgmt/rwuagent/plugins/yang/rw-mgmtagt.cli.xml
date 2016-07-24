@@ -1,0 +1,10 @@
+<cli>
+  <plugin-list>
+     <plugin name="rwcli_plugin" typelib="rwcli_plugin/1.0"/>
+  </plugin-list>
+
+  <modifications>
+     <addPrintHook path="show-system-info" hook="rwcli_plugin:print_show_system_info"/>
+     <suppress path="uagent last-error"/>
+  </modifications>
+</cli>

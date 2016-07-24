@@ -1,0 +1,28 @@
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-debug-annotation
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-debug-annotation";
+  prefix "rw-debug-ann";
+
+  import rw-debug {
+    prefix rwdebug;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/rwdebug:rw-debug/rwdebug:resource" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rwdebug:rw-debug/rwdebug:heap" {
+    tailf:callpoint rw_callpoint;
+  }
+}

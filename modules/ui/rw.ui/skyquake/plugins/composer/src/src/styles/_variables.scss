@@ -1,0 +1,38 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+$primary-bg-color: #f1f1f1;
+$primary-contrast-bg-color: #cbd1d1;
+$primary-selected-bg-color: rgb(159, 196, 244);
+
+$button-bg-color: rgb(225, 225, 225);
+$button-border-color: rgba(169, 169, 169, 0.5);
+
+$panel-border-color: rgba(143, 143, 143, 0.5);
+$panel-border-color-light: lighten($panel-border-color, 30%);
+$panel-bg-color: #e5e5e5;
+$panel-bg-color-contrast: $primary-contrast-bg-color;
+
+$section-border-color: rgb(175, 175, 185);
+
+$panel-font-color: #666;
+
+$primary-hover-fg-color: rgb(0, 0, 0);
+$primary-hover-bg-color: #7E9BC1;
+$text-secondary-color: #EF8354;
+
+
+$green: #31D2B1;
+$black: #2D3036;
+$white: #F8F9FC;
+$headers: #EFF5FE;
+$grey: #ABB6C6;
+
+$field-border-radius: 3px;
+$field-background-color: white;
+$child-indent-left-right-margin: 5px;
+
+$img-path: '../images';

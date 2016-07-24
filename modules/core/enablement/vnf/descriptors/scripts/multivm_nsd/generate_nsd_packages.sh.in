@@ -1,0 +1,22 @@
+#! /usr/bin/bash
+
+set -e
+
+SOURCE_DIR=@CMAKE_CURRENT_SOURCE_DIR@
+BINARY_DIR=@CMAKE_CURRENT_BINARY_DIR@
+PROJECT_TOP_DIR=@PROJECT_TOP_DIR@
+
+# Remove any old directories
+rm -rf ${BINARY_DIR}/*multivm_nsd*
+
+for file in $SOURCE_DIR/templates/* ; do
+  file_name=$(basename $file)
+  echo $file_name
+
+  # Generate the descriptors with epa
+  ${SOURCE_DIR}/rw_multivm_nsd.py --outdir=${BINARY_DIR} --srcdir=${SOURCE_DIR} --format=yaml --template $file_name
+
+  # Generate the tar files
+  ${PROJECT_TOP_DIR}/bin/generate_descriptor_pkg.sh ${BINARY_DIR} "$file_name"_multivm_nsd 
+done
+

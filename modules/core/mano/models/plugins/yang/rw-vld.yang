@@ -1,0 +1,27 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-vld
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-vld";
+  prefix "rw-vld";
+
+  import vld {
+    prefix "vld";
+  }
+
+  revision 2015-09-10 {
+    description
+      "Initial revision. This YANG file augments
+       the base MANO VLD";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+}
+
+// vim: sw=2

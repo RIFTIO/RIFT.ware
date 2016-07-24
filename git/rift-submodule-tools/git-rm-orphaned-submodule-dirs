@@ -1,0 +1,63 @@
+#!/bin/bash -e
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+
+## Remove orphaned submodule directories
+
+## read input, display help if necessary
+if [[ "$@" == *--help* ]]; then
+    cat<<EOF
+ Remove orphaned submodule directories
+
+ This command removed orphaned submodule directories, i.e., if a
+ submodule was removed (or han its url changed) but the directory was
+ not removed because it was not empty. Before removing a directory,
+ the script checks for any changes that might be lost. Afterwards, a
+ submodule sync is executed.
+
+ Usage:
+    git rm-orphaned-submodule-dirs
+EOF
+    exit 0;
+fi
+
+## from the git mailinglist:
+function git
+{
+    LC_MESSAGES=C command git "$@"
+} 
+export git
+
+## ensure we are in the toplevel directory
+cdup=$(git rev-parse --show-toplevel) &&
+cd "$cdup" || {
+    echo >&2 "Cannot chdir to $cdup, the toplevel of the working tree"
+    exit 1
+}
+
+## find submodule urls not in .gitmodules:
+git config --get-regexp submodule.*url |
+while read key url; do
+    #echo "$key"
+    dir=`expr "$key" : 'submodule\.\(.*\)\.url'`
+    #echo "$dir"
+    if [[ -d "$dir" && $(git config -f .gitmodules --get "$key") != "$url" ]]; then
+	tdir=$PWD
+	## Check if the directory is clean
+	cd "$dir"
+	git check-clean || exit 1
+	git check-unpushed || exit 1
+	git check-non-tracking || exit 1
+        ## find the real git-dir (might be git-file, for v.1.7.8 compatibility)
+	## git dir should be relative to current dir... but is it?
+	gitdir=$(cd `git rev-parse --git-dir`; pwd)
+	cd "$tdir"
+	rm -rf "$dir"
+        ## remove git dir as well (might git-file, for v.1.7.8 compatibility)
+	rm -rf "$gitdir"
+    fi
+done
+
+git submodule sync > /dev/null

@@ -1,0 +1,92 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module test-xml2pb
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/test-xml2pb";
+  prefix "tx2p";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description
+    "Test file for xml2pb.cpp.";
+
+  revision 2014-02-16 {
+    description "Initial version";
+    reference "CmdArgs Software Component Document";
+  }
+
+  grouping test-group {
+    container cont-in-group {
+      config true;
+      description "Test container in grouping.";
+
+      leaf str1 {
+        description "A string";
+        type string;
+      }
+
+      leaf num1 {
+        description "A number";
+        type int64;
+      }
+
+      leaf bool1 {
+        description "A boolean";
+        type boolean;
+      }
+    }
+  }
+
+  container test-cont {
+    config true;
+    description "Test container.";
+    rwpb:msg-new Tx2pTestContD;
+
+    leaf str2 {
+      description "Another string";
+      type string;
+    }
+
+    leaf num2 {
+      description "Another number";
+      type int64;
+    }
+
+    leaf bool2 {
+      description "Another boolean";
+      type boolean;
+    }
+
+    leaf enum1 {
+      description "What happends to an enum?";
+      type enumeration {
+        enum zero;
+        enum one {
+          value 7;
+        }
+      }
+    }
+
+    leaf nothing {
+      description "Theres nothing inside";
+      type empty;
+    }
+
+    container here {
+      description "Try presence now";
+      presence  "Just presence";
+    }
+        
+    uses test-group;
+    container here1 {
+      description "Test multiple grouping";
+      uses test-group;
+    }
+  }
+}

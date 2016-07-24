@@ -1,0 +1,59 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-sdn
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-sdn";
+  prefix "rw-sdn";
+
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rwsdn {
+    prefix "rwsdn";
+  }
+
+  revision 2015-09-14 {
+    description
+      "Initial revision.";
+  }
+
+  list sdn-account {
+    rwpb:msg-new SDNAccountConfig;
+
+    key "name";
+    leaf name {
+      type string;
+    }
+
+    uses rwsdn:sdn-provider-auth;
+    uses rwsdn:connection-status;
+  }
+
+  rpc update-sdn-status {
+    description "Begin sdn accunt connection status";
+    input {
+      leaf sdn-account {
+        mandatory true;
+        description
+          "The sdn account name to update connection status for";
+        type string;
+      }
+    }
+  }
+}

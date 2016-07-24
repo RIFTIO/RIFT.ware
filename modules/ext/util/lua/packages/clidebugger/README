@@ -1,0 +1,3 @@
+Added using:
+
+ git subtree add --prefix=lua/packages/clidebugger/clidebugger -m 'add the lua cli debugger' --squash https://github.com/ToddWegner/clidebugger.git master

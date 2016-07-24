@@ -1,0 +1,252 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+/**
+ * @file rw-keyspec-stats.yang
+ * @author Sujithra Periasamy
+ * @date 2015/07/01
+ * @brief keyspec stats
+ * 
+ * Yang module for keyspec API and related stats.
+ */
+
+module rw-keyspec-stats
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-keyspec-stats";
+  prefix "rwks";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  description
+   "Data model for keyspec API, error and related statistics";
+
+  revision 2015-07-01 {
+    description "Initial revision.";
+  }
+
+  container keyspec-stats {
+    config false;
+    description "Container for keyspec api stats";
+
+    list member {
+
+      key "name";
+      description "List of dts members";
+
+      leaf name {
+        type string;
+        description "Name of the member";
+        rwpb:field-inline "true";
+        rwpb:field-string-max 256;
+      }
+
+      container fcall-stats {
+
+        description "Container for fcall-stats";
+        rwpb:field-inline "true";
+        rwpb:msg-flat "true";
+
+        container path-spec {
+
+          description "Container for path-spec API stats";
+
+          leaf create-dup {
+            type uint64;
+          }
+
+          leaf create-dup-type {
+            type uint64;
+          }
+
+          leaf create-dup-type-trunc {
+            type uint64;
+          }
+
+          leaf find-spec-ks {
+            type uint64;
+          }
+
+          leaf get-binpath {
+            type uint64;
+          }
+
+          leaf set-category {
+            type uint64;
+          }
+
+          leaf has-entry {
+            type uint64;
+          }
+
+          leaf is-equal {
+            type uint64;
+          }
+
+          leaf is-equal-detail {
+            type uint64;
+          }
+
+          leaf is-match-detail {
+            type uint64;
+          }
+
+          leaf is-path-detail {
+            type uint64;
+          }
+
+          leaf is-branch-detail {
+            type uint64;
+          }
+
+          leaf append-entry {
+            type uint64;
+          }
+
+          leaf trunc-suffix {
+            type uint64;
+          }
+
+          leaf pack-dompath {
+            type uint64;
+          }
+
+          leaf create-with-binpath {
+            type uint64;
+          }
+
+          leaf create-with-dompath {
+            type uint64;
+          }
+
+          leaf free {
+            type uint64;
+          }
+
+          leaf find-mdesc {
+            type uint64;
+          }
+
+          leaf is-sub-ks {
+            type uint64;
+          }
+
+          leaf reroot {
+            type uint64;
+          }
+
+          leaf reroot-iter {
+            type uint64;
+          }
+
+          leaf reroot-and-merge {
+            type uint64;
+          }
+
+          leaf reroot-and-merge-op {
+            type uint64;
+          }
+
+          leaf add-keys {
+            type uint64;
+          }
+
+          leaf delete-proto-field {
+            type uint64;
+          }
+
+          leaf get-print-buff {
+            type uint64;
+          }
+
+          leaf from-xpath {
+            type uint64;
+          }
+
+          leaf matches-msg {
+            type uint64;
+          }
+        }
+
+        container path-entry {
+
+          description "Container for path-entry API stats";
+
+          leaf create-from-proto {
+            type uint64;
+          }
+
+          leaf create-dup {
+            type uint64;
+          }
+
+          leaf create-dup-type {
+            type uint64;
+          }
+
+          leaf pack {
+            type uint64;
+          }
+
+          leaf unpack {
+            type uint64;
+          }
+        }
+      }
+
+      container error-stats {
+
+        rwpb:field-inline "true";
+        description "Container for error statistics";
+
+        leaf total-errors {
+          type uint64;
+        }
+      }
+    }
+  }
+
+  container keyspec-ebuf {
+    config "false";
+    description "Container to export ks error buffers from all the process";
+
+    list tasklet {
+
+      key "name";
+      description "List to export per process global keyspec error buffer";
+
+      leaf name {
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 256;
+      }
+
+      list error-records {
+        description "keyspec error records stored by time";
+        max-elements 256;
+
+        leaf time-stamp {
+          type rwt:date-and-time;
+          rwpb:field-inline "true";
+          rwpb:field-string-max 64;
+        }
+
+        leaf error-str {
+          type string;
+          rwpb:field-inline "true";
+          rwpb:field-string-max 256;
+        }
+      }
+    }
+  }
+}

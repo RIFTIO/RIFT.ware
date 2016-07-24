@@ -1,0 +1,210 @@
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@mixin optional() {
+    // height: 1.25rem;
+    // margin-left: 0.5rem;
+    // margin-top: 0.5rem;
+    flex: 0 1 auto;
+}
+.vnfConfigPrimitiveContainer {
+    flex: 1 0 100%;
+}
+.vnfrConfigPrimitives {
+    display: flex;
+    flex: 1 1 100%;
+    //max-width: 50%;
+    flex-direction: column;
+    background: white;
+    .launchpadCard_title {
+        flex: 0 1 auto;
+        min-height: 1rem;
+    }
+    .configuring {
+        pointer-events: none;
+        opacity: 0.3;
+    }
+    .react-tabs {
+        display: flex;
+        flex: 1 0 auto;
+
+        [role=tablist] {
+            border: 0px;
+            margin: 0px;
+            padding-top: 1rem;
+            display: flex;
+            flex: 0 1 40%;
+            flex-direction: column;
+            background-color: rgb(221, 221, 221);
+            text-transform: capitalize;
+
+            [role=tab] {
+                padding: 1rem;
+            }
+            [role=tab]:hover {
+                background-color: #7e9bc1;
+            }
+            [role=tab][aria-selected=true] {
+                border: 0px;
+                border-radius: 0px;
+                position: relative;
+
+                &:before {
+                    display: block;
+                    position: absolute;
+                    content: ' ';
+                    top: -.125rem;
+                    left: 0rem;
+                    width: 100%;
+                    border-top: 1px dashed #00acee;
+                }
+                &:after {
+                    display: block;
+                    position: absolute;
+                    content: ' ';
+                    bottom: -.125rem;
+                    left: 0rem;
+                    width: 100%;
+                    border-bottom: 1px dashed #00acee;
+                }
+            }
+            [role=tab]:focus {
+                box-shadow: none;
+                border: 0px;
+            }
+            [role=tab]:focus:after {
+                display: none;
+            }
+        }
+        [role=tabpanel] {
+            flex: 1 1 auto;
+            margin-top: 1rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            h2 {
+                padding-bottom: 0.5rem;
+            }
+            h3 {
+                padding: 0.5rem;
+                margin-left: 1rem;
+                font-weight: bold;
+            }
+            .parameterGroup {
+                margin-left: 2rem;
+                >li {
+                }
+                label {
+                    display: flex;
+                    flex-direction:column;
+                    &[data-required="true"] span:after {
+                        content: '*';
+                    }
+                    &.disabled {
+                    }
+                    input {
+                        font-size: 1rem;
+                        flex: 1 1 auto;
+                        height: 1.25rem;
+                        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.39), 0 -1px 1px #ffffff, 0 1px 0 #ffffff;
+                        &[disabled] {
+                            background:#ccc;
+                        }
+                    }
+                    .optional {
+                        @include optional();
+                    }
+                    span {
+                        font-weight: bolder;
+                    }
+                    .readonly {
+                        flex: 0 0 30%;
+                        height: 1.25rem;
+                        margin: 0.125rem 0 0.5rem 0;
+                    }
+                }
+            }
+            .vnfConfigPrimitiveParameterGroupParameters {
+                position:relative;
+                 margin-bottom:2.5rem;
+                div {
+                    display:flex;
+                    flex-direction:column;
+                }
+                .configGroupOverlay {
+                    background: #ccc;
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0.5;
+                }
+                &:after {
+                }
+            }
+            .vnfConfigPrimitiveParameters {
+
+                label {
+                    display: flex;
+                    flex-direction:column;
+                    &[data-required="true"] span:after {
+                        content: '*';
+                    }
+                    input, span {
+                     font-size: 1rem;
+                        flex: 1 1 auto;
+                    }
+                    input {
+                        flex: 0 0 30%;
+                        height: 1.25rem;
+                        margin: 0.125rem 0 0.5rem 0;
+                        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.39), 0 -1px 1px #ffffff, 0 1px 0 #ffffff;
+                    }
+                    .optional {
+                        @include optional();
+                    }
+                    span {
+                        font-weight: bolder;
+                    }
+                    .readonly {
+                        flex: 0 0 30%;
+                        height: 1.25rem;
+                        margin: 0.125rem 0 0.5rem 0;
+                    }
+                }
+            }
+            .inputGroup{
+                display:flex;
+                flex:1 1 auto;
+                align-items:center;
+            }
+        }
+        button {
+            margin-top: 2rem;
+        }
+    }
+}
+.vnfConfigPrimitiveJobList {
+    flex: 1 1 80%;
+
+    .listView {
+        padding: 0.1rem;
+        overflow-y: auto;
+
+        >div>div {
+            margin:0.5rem;
+            >.tree-view_item {
+                padding: 1rem;
+            }
+            &:nth-child(odd) {
+                background:white;
+            }
+        }
+
+        .tree-view_children {
+            margin-left: 2rem;
+        }
+    }
+}

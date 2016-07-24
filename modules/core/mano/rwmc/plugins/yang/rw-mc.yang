@@ -1,0 +1,430 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rw-mc.yang
+ * @author Austin Cormier
+ * @author Joshua Downer
+ * @date 2015/07/30
+ * @brief Mission Control Yang
+ */
+
+module rw-mc
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-mc";
+  prefix "rw-mc";
+
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import rwcal {
+    prefix "rwcal";
+  }
+
+  import rwsdn {
+    prefix "rwsdn";
+  }
+
+  revision 2014-07-30 {
+    description
+      "Initial revision.";
+  }
+
+  typedef launchpad-state {
+    description "State of the launchpad within the mgmt-domain";
+    type enumeration {
+      enum pending;
+      enum crashed;
+      enum stopping;
+      enum stopped;
+      enum starting;
+      enum configuring;
+      enum started;
+    }
+  }
+
+  container mission-control {
+    rwpb:msg-new Uptime;
+    description "Show Mission Control related information";
+    config false;
+
+    leaf uptime {
+        description "Show the Mission Control uptime";
+        type string;
+    }
+
+    leaf create-time {
+        description
+          "Creation timestamp of the Mission Control.
+          The timestamp is expressed as seconds 
+          since unix epoch - 1970-01-01T00:00:00Z";
+        type uint32;
+    }
+  }
+
+  container sdn {
+    rwpb:msg-new SDNConfig;
+    list account {
+        rwpb:msg-new SDNAccount;
+        description "Configure SDN Accounts";
+
+        key "name";
+        leaf name {
+            mandatory true;
+            type string {
+                length "1..255";
+            }
+        }
+        uses rwsdn:sdn-provider-auth;
+    }
+  }
+
+  container cloud-account {
+    rwpb:msg-new CloudConfig;
+    list account {
+      rwpb:msg-new CloudAccount;
+      description "Configure Cloud Accounts";
+
+      max-elements 8;
+      key "name";
+
+      leaf name {
+        mandatory true;
+        type string {
+            length "1..255";
+        }
+      }
+
+      uses rwcal:provider-auth;
+
+      container resources {
+        rwpb:msg-new CloudResources;
+        description "The list of available resources belonging to this cloud account";
+        config false;
+
+        list vm {
+          description "The list of available VM's belonging to this cloud account";
+          key "id";
+          leaf id {
+            type string;
+          }
+          leaf name {
+            type string;
+          }
+          leaf available {
+            type boolean;
+          }
+        }
+
+        list network {
+          description "The list of available Network's belonging to this cloud account";
+          key "id";
+          leaf id {
+            type string;
+          }
+          leaf name {
+            type string;
+          }
+          leaf available {
+            type boolean;
+          }
+        }
+
+      }
+
+      container pools {
+        rwpb:msg-new CloudPools;
+        description "The lists of various pools associated with this cloud account";
+        config false;
+
+        list vm {
+          key "name";
+          leaf name{
+            type string;
+          }
+        }
+        list network {
+          key "name";
+          leaf name{
+            type string;
+          }
+        }
+      }
+
+      container connection {
+        rwpb:msg-new CloudStatus;
+        description "The status of Cloud Account credientials";
+        config false;
+
+        leaf status {
+            description "Status of Cloud Account's current credentials";
+            type string;
+        }
+
+        leaf details {
+            description "Details of Cloud Account's connection status";
+            type string;
+        }
+      }
+    }
+  }
+
+  grouping common-pool-attrs {
+    leaf name {
+      mandatory true;
+      type string {
+            length "1..255";
+      }
+    }
+
+    leaf mgmt-domain {
+      description "Mgmt-domain this pool is assigned to";
+      config false;
+      type leafref {
+        path "/rw-mc:mgmt-domain/rw-mc:domain/name";
+      }
+    }
+
+    leaf cloud-account {
+      description "The cloud account to use for this vm pool";
+      mandatory true;
+      type leafref {
+        path "../../../cloud-account/account/name";
+      }
+    }
+
+    leaf dynamic-scaling {
+        description "Denotes whether the pool is Static or can grow Dynamically";
+        type boolean;
+        default false;
+    }
+  }
+
+  container vm-pool {
+    list pool {
+      rwpb:msg-new VmPool;
+      description "Configure VM Pools";
+
+      max-elements 128;
+      key "name";
+
+      uses common-pool-attrs;
+
+      list available {
+        description "The list of available VM's belonging to this pools cloud account";
+        config false;
+        key "id";
+        leaf id {
+          type string;
+        }
+        leaf name {
+          type string;
+        }
+      }
+
+      list assigned {
+        description "The list of created VM's belonging to this pool";
+        key "id";
+        leaf id {
+          type string;
+        }
+      }
+
+      list assigned-detail {
+        description "The list of created VM's belonging to this pool";
+        config false;
+        key "id";
+        leaf id {
+          type string;
+        }
+
+        leaf is_reserved {
+          description "Flag indicating whether resource is reserved";
+          type boolean;
+        }
+
+        container resource-info {
+          description "Detailed resource information provided by the CAL";
+          rwpb:msg-new VmPoolResourceInfo;
+          config false;
+
+          uses rwcal:vm-info-item;
+        }
+      }
+    }
+  }
+
+  container network-pool {
+    list pool {
+      rwpb:msg-new NetworkPool;
+      description "Configure Network Pools";
+
+      max-elements 128;
+      key "name";
+
+      uses common-pool-attrs;
+
+      list available {
+        description "The list of available Networks's belonging to this pools cloud account";
+        config false;
+        key "id";
+        leaf id {
+          type string;
+        }
+        leaf name {
+          type string;
+        }
+      }
+
+      list assigned {
+        description "The list of created networks's belonging to this pool";
+        key "id";
+        leaf id {
+          type string;
+        }
+      }
+
+      list assigned-detail {
+        description "The list of created Networks belonging to this pool";
+        config false;
+        key "id";
+        leaf id {
+          type string;
+        }
+
+        leaf is_reserved {
+          description "Flag indicating whether resource is reserved";
+          type boolean;
+        }
+
+        container resource-info {
+          description "Detailed resource information provided by the CAL";
+          rwpb:msg-new NetworkPoolResourceInfo;
+
+          uses rwcal:network-info-item;
+        }
+      }
+    }
+  }
+
+  container mgmt-domain {
+    rwpb:msg-new MgmtDomainConfig;
+    rwcli:new-mode "mgmt-domain";
+    description "Configure Management Domain";
+
+    list domain {
+      rwpb:msg-new MgmtDomain;
+      key "name";
+
+      leaf name {
+        mandatory true;
+        type string {
+            length "1..255";
+        }
+      }
+
+      container pools {
+        rwpb:msg-new MgmtDomainPools;
+        description "The lists of various pools associated with this mgmt domain";
+
+        list vm {
+          key "name";
+          leaf name {
+            type leafref {
+              path "/rw-mc:vm-pool/rw-mc:pool/name";
+            }
+          }
+        }
+        list network {
+          key "name";
+          leaf name {
+            type leafref {
+              path "/rw-mc:network-pool/rw-mc:pool/name";
+            }
+          }
+        }
+      }
+
+      container launchpad {
+        rwpb:msg-new MgmtDomainLaunchpad;
+        config false;
+        leaf state {
+          description "State of the mgmt-domain's launchpad";
+          type launchpad-state;
+        }
+
+        leaf state-details {
+          description "Details of the Launchpad's current state";
+          type string;
+        }
+
+        leaf ip_address {
+          description "VM IP address in use by the launchpad";
+          type string;
+        }
+
+        leaf uptime {
+          description "Show the Launchpad uptime";
+          type string;
+        }
+
+        leaf create-time {
+            description
+              "Creation timestamp of this Launchpad.
+              The timestamp is expressed as seconds 
+              since unix epoch - 1970-01-01T00:00:00Z";
+            type uint32;
+        }
+      }
+    }
+  }
+
+  container opdata {
+    rwpb:msg-new Opdata;
+    config false;
+    list foodata {
+      key name;
+      leaf name {
+        type string;
+      }
+    }
+  }
+
+  rpc start-launchpad {
+    input {
+      rwpb:msg-new StartLaunchpadInput;
+      leaf mgmt-domain {
+        mandatory true;
+        type leafref {
+          path "/rw-mc:mgmt-domain/rw-mc:domain/name";
+        }
+      }
+    }
+  }
+
+  rpc stop-launchpad {
+    input {
+      rwpb:msg-new StopLaunchpadInput;
+      leaf mgmt-domain {
+        mandatory true;
+        type leafref {
+          path "/rw-mc:mgmt-domain/rw-mc:domain/name";
+        }
+      }
+    }
+  }
+
+
+}

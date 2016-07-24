@@ -1,0 +1,34 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+module rw-mgmtagt-confd-tailf
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-mgmtagt-confd-annotation";
+  prefix "rmct-ann";
+
+  import rw-mgmtagt
+  {
+    prefix rw-mgmtagt;
+  }
+
+  import rw-mgmtagt-confd
+  {
+    prefix rw-mgmtagt-confd;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/rw-mgmtagt-confd:mgmt-agent-confd" {
+    tailf:actionpoint rw_actionpoint;
+  }
+
+  tailf:annotate "/rw-mgmtagt:uagent/rw-mgmtagt-confd:confd" {
+    tailf:callpoint rw_callpoint;
+  }
+}

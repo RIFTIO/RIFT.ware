@@ -1,0 +1,95 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rwiaas-workspaces-d {
+  namespace "http://riftio.com/ns/riftware-1.0/rwiaas-workspaces";
+  prefix "rwworkspaces";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix rwt; }
+  import rw-cli-ext { prefix "rwcli"; }
+  import ietf-inet-types { prefix "inet"; }
+  import ietf-yang-types { prefix "yang"; }
+
+  revision 2015-01-28 {
+    description
+      "Initial revision. This YANG file captures the
+      data model for provisioning IaaS layer workspaces.";     
+    reference       
+      "Derived from earlier versions of base YANG files";
+  } 
+  grouping quotas {
+    description 
+      "This container specifies various quotas.";
+    leaf vcpus {
+      description 
+        "Maxmum number of VCPUs allowed.";
+      type uint32;
+    }
+    leaf instances {
+      description 
+        "Maximum number of VM instanaces allowed.";
+      type uint32;
+    }
+    leaf ram {
+      description 
+        "Maximum amount of RAM allowed in MB.";
+      type uint32;
+    }
+    leaf disk-space {
+      description 
+        "Maximum amount of disk space allowed for 
+        volumes and snapshots in GB.";
+      type uint32;
+    }
+    leaf networks {
+      description 
+        "Maximum number of networks allowed.";
+      type uint32;
+    }
+    leaf subnets {
+      description 
+        "Maximum number of subnets allowed.";
+      type uint32;
+    } 
+    leaf routers {
+      description 
+        "Maximum number of routers alllowed.";
+      type uint32;
+    }
+    leaf ports {
+      description "Maximum number of ports allowed.";
+      type uint32;
+    }
+    leaf floating-ips {
+      description 
+        "Maximum number of floating IPs allowed.";
+      type uint32;
+    }
+    leaf volumes {
+      description 
+        "Maximum number of volumes allowed.";
+      type uint32;
+    }
+    leaf snapshots {
+      description 
+        "Maximum number of snapshots allowed.";
+      type uint32;
+    }     
+  }
+  
+  list workspaces {
+    description "List of workspaces in the cloud.";
+    key name;
+    leaf name {
+      description "Name of the workspace.";
+      type string;
+    }
+    uses quotas;
+  }
+} 

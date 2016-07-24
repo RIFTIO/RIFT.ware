@@ -1,0 +1,71 @@
+{
+    "root": "public",
+    "name": "Launchpad",
+    "dashboard": "./launchpad.jsx",
+    "order": 1,
+    "priority":1,
+    "routes": [
+    {
+        "label": "Dashboard",
+        "route": "/",
+        "component": "./launchpad.jsx",
+        "path": "",
+        "query":"name",
+        "type": "external"
+    },{
+        "label": "Accounts",
+        "route": "accounts",
+        "component": "./account_dashboard/launchpadAccountDashboard.jsx",
+        "path": "",
+        "query":"name",
+        "type": "external"
+    },{
+        "label": "Accounts Dashboard",
+        "route": "cloud-accounts",
+        "component": "./launchpad_cloud_account/launchpadCloudAccount.jsx",
+        "path": "cloud-accounts/:name",
+        "type": "internal"
+    },{
+        "label": "SDN Accounts",
+        "route": "sdn-accounts/:name",
+        "component": "./launchpad_sdn_account/launchpadSdnAccount.jsx",
+        "path": "sdn-accounts/:name",
+        "type": "internal"
+    },{
+        "label": "Config Agent",
+        "route": "config-agent-accounts",
+        "component": "./launchpad_config_agent_account/launchpadConfigAgentAccount.jsx",
+        "path": "config-agent-accounts/:name",
+        "type": "internal"
+    },{
+        "label": "Instantiate",
+        "route": "/instantiate",
+        "component": "./network_service_launcher/launchNetworkService.jsx",
+        "path": "",
+        "type": "external"
+    },
+    {
+        "label": "Viewport",
+        "route": "/viewport",
+        "query": "id",
+        "component": "./recordViewer/recordView.jsx",
+        "type": "internal",
+        "routes": [
+
+        ]
+    },{
+        "label": "Compute Topology",
+        "route": "/compute-topology",
+        "query": "id",
+        "component": "./topologyView/topologyView.jsx",
+        "path": "",
+        "type": "internal"
+    },{
+        "label": "Network Topology",
+        "route": "/network-topology",
+        "query": "id",
+        "component": "./topologyL2View/topologyL2View.jsx",
+        "path": "",
+        "type": "internal"
+    }]
+}

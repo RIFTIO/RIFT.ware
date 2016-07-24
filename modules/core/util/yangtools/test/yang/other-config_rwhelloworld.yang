@@ -1,0 +1,58 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+// Configuration references
+
+module other-config_rwhelloworld
+{
+  namespace "http://riftio.com/ns/riftware-1.0/other-config_rwhelloworld";
+  prefix "rwhelloworld";
+
+  import other-config_base {
+    prefix config;
+  }
+
+  description "Augment test yang module";
+  revision 2014-05-27 {
+    description "Initial version"; 
+  }
+
+  grouping rwhelloworld-service {
+    list rwhelloworld-service {
+      key name;
+      leaf name {
+        type string;
+      }
+      leaf output-message {
+	type string;
+      }
+    }
+  } // grouping ipsec-service
+
+  augment /config:config/config:service-realm {
+    container service {
+      uses rwhelloworld-service;
+    }
+  }
+
+  augment /config:show {
+    container foo {
+    }
+  }
+
+  augment /config:clear {
+    container foo {
+    }
+  }
+    
+  augment /config:start {
+    container foo {
+    }
+  }
+
+} // module other-rwhelloworld

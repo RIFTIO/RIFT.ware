@@ -1,0 +1,55 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+module validation-other
+{
+  namespace "http://riftio.com/ns/core/mgmt/uagent/test/validation-other";
+  prefix "valid-o";
+
+  import "validation" {
+    prefix "valid";
+  }
+
+  container validation-module {
+    
+    list validation-list {
+      key "name";
+      leaf name {
+        type string;
+      }
+
+      leaf ref {
+        type leafref {
+          path "/valid:other/valid:other-list[valid:name=current()/../valid-o:name]/valid:str";
+        }
+      }
+
+    }
+    uses valid:group;
+  }
+
+  augment /valid:aug {
+    
+    list cross-ref {
+      key "name";
+      leaf name {
+        type string;
+      }
+      leaf ref {
+        type leafref {
+          path "/valid:other/valid:other-list[valid:name=current()/../valid-o:name]/valid:str";
+        }
+      }
+    }
+
+  }
+
+  
+  
+}

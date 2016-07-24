@@ -1,0 +1,2 @@
+VNF vnfname=cag, ext_port_type=virtio, fab_port_type=virtio, config_file=cag, config_priority=2, config_delay=5
+VDU1 vduname=RW.VDU.LEAD.DDPL-IPSEC, fabric_port=0, external_port=1, epa=0, image=rift-root-latest-multivm-vnf.qcow2

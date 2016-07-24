@@ -1,0 +1,244 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rw-conman.yang
+ * @author Manish Patel
+ * @date 2015/10/27
+ * @brief Service Orchestrator configuration yang
+ */
+
+module rw-conman
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-conman";
+  prefix "rw-conman";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import nsr {
+    prefix "nsr";
+  }
+
+  import vnfr {
+    prefix "vnfr";
+  }
+
+  import rw-vlr {
+    prefix "rwvlr";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import ietf-inet-types {
+    prefix "inet";
+  }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import mano-base {
+    prefix "manobase";
+  }
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  import rw-config-agent {
+    prefix "rw-config-agent";
+  }
+
+  revision 2015-10-27 {
+    description
+      "Initial revision.";
+  }
+
+  // typedef ro-endpoint-method {
+  //   type enumeration {
+  //     enum netconf;
+  //     enum restconf;
+  //   }
+  // }
+  
+  grouping ro-endpoint {
+    // leaf ro-endpoint-method {
+    //   description "interface between CM & RO, defaults to netconf";
+    //   type ro-endpoint-method;
+    //   default netconf;
+    // }
+    leaf ro-ip-address {
+      type inet:ip-address;
+      description "IP Address";
+      default "127.0.0.1";
+    }
+    leaf ro-port {
+      type inet:port-number;
+      description "Port Number";
+      default 2022;
+    }
+    leaf ro-username {
+      description "RO endpoint username";
+      type string;
+      default "admin";
+    }
+    leaf ro-password {
+      description "RO endpoint password";
+      type string;
+      default "admin";
+    }
+  }
+
+  grouping vnf-cfg-items {
+    leaf configuration-file {
+      description "Location of the confguration file on CM system";
+      type string;
+    }
+    leaf translator-script {
+      description "Script that translates the templates in the configuration-file using VNFR information
+                   Currently, we only use IP address translations.
+                   configuration will use connection point name instead of IP addresses.";
+      type string;
+    }
+  }
+  
+  container cm-config {
+    description "Service Orchestrator specific configuration";
+    rwpb:msg-new "SoConfig";
+    rwcli:new-mode "cm-config";
+
+    container ro-endpoint {
+      description "Resource Orchestrator endpoint ip address";
+      rwpb:msg-new "RoEndpoint";
+      uses ro-endpoint;
+    }
+    
+    //uses vnf-cfg-items;
+
+    list nsr {
+      key "id";
+      leaf id {
+        description "Indicates NSR bringup complete, now initiate configuration of the NSR";
+        type yang:uuid;
+      }
+    }
+  }// cm-config
+  
+  // =================== SHOW ==================
+  typedef record-state {
+    type enumeration {
+      enum init;
+      enum received;
+      enum cfg-delay;
+      enum cfg-process;
+      enum cfg-process-failed;
+      enum cfg-sched;
+      enum connecting;
+      enum failed-connection;
+      enum netconf-connected;
+      enum netconf-ssh-connected;
+      enum restconf-connected;
+      enum cfg-send;
+      enum cfg-failed;
+      enum ready-no-cfg;
+      enum ready;
+    }
+  }
+
+  // TBD: Do we need this typedef, currently not used anywhere
+  typedef cfg-type {
+    type enumeration {
+      enum none;
+      enum scriptconf;
+      enum netconf;
+      enum restconf;
+      enum jujuconf;
+    }
+  }
+
+
+  // This is also used by RO (Resource Orchestrator) to indicate NSR is ready
+  // It will only fill in IDs
+  container cm-state {
+    rwpb:msg-new "CmOpdata";
+    config false;
+    description "CM NS & VNF states";
+
+    leaf states {
+      description "CM various states";
+      type string;
+    }
+    
+    list cm-nsr {
+      description "List of NS Records";
+      key "id";
+      leaf id {
+        type yang:uuid;
+      }
+      leaf name {
+        description "NSR name.";
+        type string;
+      }
+      leaf state {
+        description "State of NSR";
+        type record-state;
+      }
+      
+      list cm-vnfr {
+        description "List of VNF Records within NS Record";
+        key "id";
+        leaf id {
+          type yang:uuid;
+        }
+        leaf name {
+          description "VNFR name.";
+          type string;
+        }
+        leaf state {
+          description "Last known state of this VNFR";
+          type record-state;
+        }
+        container mgmt-interface {
+          leaf ip-address {
+            type inet:ip-address;
+          }
+          leaf port {
+            type inet:port-number;
+          }
+        }
+        leaf cfg-type {
+          type string;
+        }
+        leaf cfg-location {
+          type inet:uri;
+        }
+        list connection-point {
+          key "name";
+          leaf name {
+            description "Connection Point name";
+            type string;
+          }
+          leaf ip-address {
+            description "IP address assigned to this connection point";
+            type inet:ip-address;
+          }
+        }
+      } // list VNFR
+    } // list NSR
+  } // cm-state
+  
+} // rw-conman

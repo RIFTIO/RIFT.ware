@@ -1,0 +1,45 @@
+#!/bin/bash
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Austin Cormier
+# Creation Date: 2015/10/15
+#
+# Helper script for invoking the Launchpad module test using the systest_wrapper
+
+set -o nounset
+set -u
+set -e
+
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PYTEST_DIR="${RIFT_INSTALL}/usr/rift/systemtest/pytest"
+SYSTEM_TEST_UTIL_DIR="${RIFT_INSTALL}/usr/rift/systemtest/util"
+DEMO_DIR=$RIFT_INSTALL/demos
+DEMO_TEST_DIR=$DEMO_DIR/tests
+
+TEST_NAME="TC_LAUNCHPAD_MODTEST_0100"
+SCRIPT_SYSTEM="${RIFT_INSTALL}/demos/launchpad.py"
+SCRIPT_TEST="py.test -s -v ${PYTEST_DIR}/launchpad/lp_test.py"
+RESULT_XML="launchpad_modtest.xml"
+wait_system=1000
+
+up_cmd="$SYSTEM_TEST_UTIL_DIR/wait_until_system_started.py \
+    --max-wait $wait_system"
+
+system_args="\
+    --use-xml-mode
+    --mode ethsim \
+    --ip-list=\"192.168.122.1\" \
+    --with-cntr-mgr"
+
+test_args="\
+    --junitprefix ${TEST_NAME} \
+    --junitxml ${RIFT_MODULE_TEST}/${RESULT_XML}"
+
+echo "Executing Launchpad Module test"
+
+# We must be in the pytest install directory to correctly include
+# conftest.py
+cd ${PYTEST_DIR}
+
+${SYSTEM_TEST_UTIL_DIR}/systest_wrapper.sh --system_cmd "${SCRIPT_SYSTEM} ${system_args}" --up_cmd "${up_cmd}" --test_cmd "${SCRIPT_TEST} ${test_args}"

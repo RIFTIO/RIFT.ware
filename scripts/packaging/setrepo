@@ -1,0 +1,11 @@
+#!/bin/bash
+
+
+if [ $# -ne 2 ]; then
+    echo "ARGS are build_num and repo_name, e.g. 3616 testing"
+    exit 1
+fi
+
+
+wget -O /dev/null -o /dev/null http://charm:8000/set_repo/$1/$2/
+

@@ -1,0 +1,15 @@
+#
+# the basic $RIFT_ROOT/scripts/ that a VM needs
+# --------------------------------------------------------------------
+#
+# symlinks are setup in the .spec file 
+#
+scripts/env/ssh_root
+scripts/env/id_grunt
+# launchpad uses these
+scripts/env/ppid_monitor.sh
+# pip stuff
+bin/pip-install
+bin/pip3-install
+bin/pip3-kilo-install
+scripts/cloud/UpdateHostsFile

@@ -1,0 +1,53 @@
+
+<vnfd:vnfd-catalog xmlns:vnfd="urn:ietf:params:xml:ns:yang:nfvo:vnfd">
+
+  <vnfd:vnfd>
+    <vnfd:id>47914a30-c474-11e5-990a-fa163eb18cb8</vnfd:id>
+    <vnfd:name>IMS-ALLIN1</vnfd:name>
+    <vnfd:description>IMS-ALLIN1</vnfd:description>
+    <vnfd:mgmt-interface>
+      <vnfd:vdu-id>47915d5e-c474-11e5-990a-fa163eb18cb8</vnfd:vdu-id>
+    </vnfd:mgmt-interface>
+    <vnfd:connection-point>
+      <vnfd:name>eth0</vnfd:name>
+      <vnfd:type>VPORT</vnfd:type>
+    </vnfd:connection-point>
+    <vnfd:vdu>
+      <vnfd:id>47915d5e-c474-11e5-990a-fa163eb18cb8</vnfd:id>
+      <vnfd:name>IMS-ALLIN1-VM</vnfd:name>
+      <vnfd:description>IMS-ALLIN1-VM</vnfd:description>
+      <vnfd:mgmt-vpci>0000:00:0a.0</vnfd:mgmt-vpci>
+      <manotypes:vm-flavor xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:vnfd">
+        <manotypes:vcpu-count>2</manotypes:vcpu-count>
+        <manotypes:memory-mb>4096</manotypes:memory-mb>
+        <manotypes:storage-gb>10</manotypes:storage-gb>
+      </manotypes:vm-flavor>
+      <manotypes:guest-epa xmlns:manotypes="urn:ietf:params:xml:ns:yang:nfvo:vnfd">
+        <manotypes:mempage-size>LARGE</manotypes:mempage-size>
+        <manotypes:cpu-pinning-policy>DEDICATED</manotypes:cpu-pinning-policy>
+        <manotypes:cpu-thread-pinning-policy>PREFER</manotypes:cpu-thread-pinning-policy>
+        <manotypes:numa-node-policy>
+          <manotypes:node-cnt>1</manotypes:node-cnt>
+          <manotypes:mem-policy>STRICT</manotypes:mem-policy>
+          <manotypes:node>
+            <manotypes:id>0</manotypes:id>
+            <manotypes:paired-threads>
+                <manotypes:num-paired-threads>1</manotypes:num-paired-threads>
+            </manotypes:paired-threads>
+          </manotypes:node>
+        </manotypes:numa-node-policy>
+      </manotypes:guest-epa>
+      <vnfd:image>/mnt/powervault/virtualization/vnfs/datatronics/allin1.qcow2</vnfd:image>
+      <vnfd:external-interface>
+        <vnfd:name>eth0</vnfd:name>
+        <vnfd:vnfd-connection-point-ref>eth0</vnfd:vnfd-connection-point-ref>
+        <vnfd:virtual-interface>
+          <vnfd:type>OM-MGMT</vnfd:type>
+          <vnfd:vpci>0000:00:0a.0</vnfd:vpci>
+          <vnfd:bandwidth>0</vnfd:bandwidth>
+        </vnfd:virtual-interface>
+      </vnfd:external-interface>
+    </vnfd:vdu>
+  </vnfd:vnfd>
+
+</vnfd:vnfd-catalog>

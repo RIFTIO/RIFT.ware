@@ -1,0 +1,2041 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+/**
+ * @file rw-dts.yang
+ * @author Grant Taylor
+ * @date 2014/8/1
+ * @brief RiftWare Yang data schema for the RW.Dts
+ */
+
+module rw-dts
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwdts";
+  prefix "rwdts";
+
+  import rw-base {
+    prefix rwbase;
+  }
+  // new mode et al
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rwvcs-types {
+    prefix "rwvcstypes";
+  }
+
+  import rw-notify-ext {
+    prefix "rwnotify";
+  }
+
+  import rw-log {
+    prefix "rwlog";
+  }
+
+
+  description "RW.DTS yang definitions";
+
+  revision 2014-10-01 {
+    description "Initial revision";
+    reference "None";
+  }
+
+  typedef state {
+    type enumeration {
+      enum null;
+      enum init;
+      enum regn_complete;
+      enum config;
+      enum run;
+    }
+  }
+
+  typedef audit-action {
+    type enumeration {
+      enum report_only;
+      enum reconcile;
+      enum recover;
+    }
+  }
+
+  typedef  audit-state {
+    type enumeration {
+      enum null;
+      enum begin;
+      enum fetch;
+      enum compare;
+      enum app-audit;
+      enum reconcile;
+      enum failed;
+      enum completed;
+    }
+  }
+
+  typedef  audit-status {
+    type enumeration {
+      enum null;
+      enum success;
+      enum failure;
+      enum aborted;
+    }
+  }
+
+  typedef audit-evt {
+    type enumeration {
+      enum null;
+      enum begin-audit;
+      enum fetch;
+      enum fetch-done;
+      enum fetch-failed;
+      enum comparison-done;
+      enum comparison-failed;
+      enum changes-occured;
+      enum app-audit;
+      enum app-audit-done;
+      enum app-audit-failed;
+      enum reconcile;
+      enum reconcile-done;
+      enum reconcile-failed;
+      enum abort;
+      enum report;
+      enum complete;
+    }
+  }
+
+  typedef registration-evt {
+    type enumeration {
+      enum begin-reg   { value 101; }
+      enum registered  { value 102; }
+      enum begin-sync  { value 103; }
+      enum solicit-req { value 104; }
+      enum solicit-rsp { value 105; }
+      enum advise      { value 106; }
+      enum reconcile   { value 107; }
+      enum ready       { value 108; }
+      enum deregister  { value 109; }
+    }
+  }
+
+  typedef registration-state {
+    type enumeration {
+      enum init          { value 201; }
+      enum registering   { value 202; }
+      enum waiting-sync  { value 203; }
+      enum in-sync       { value 204; }
+      enum reconcile     { value 205; }
+      enum reg-ready     { value 206; }
+      enum deregistering { value 207; }
+    }
+  }
+
+  typedef dts-reg-flags {
+    type enumeration {
+      enum publisher { value 1; }
+      enum subscriber{ value 2; }
+    }
+  }
+  typedef query-action{
+    type enumeration {
+      enum group;
+      enum create;
+      enum read;
+      enum update;
+      enum delete;
+      enum rpc;
+    }
+  }
+  typedef member-role {
+    type enumeration {
+      enum router;
+      enum member;
+      enum client;
+    }
+  }
+  typedef xact-level {
+    type enumeration {
+      enum singleresult;
+      enum query;
+      enum xact;
+    }
+  }
+  typedef bucket {
+    type enumeration{
+      enum bucket-64;
+      enum bucket-128;
+      enum bucket-256;
+      enum bucket-512;
+      enum bucket-1024;
+      enum bucket-2048;
+      enum bucket-4096;
+      enum bucket-65536;
+      enum bucket-1MB;
+      enum bucket-gigantic;
+    }
+  }
+
+  grouping router-memb-stats {
+    container stats {
+      rwpb:msg-new RouterMembStats;
+      description " DTS Router Member stats";
+      leaf reg-prepare-called{
+        type uint64;
+      }
+      leaf reg-precommit-called{
+        type uint64;
+      }
+      leaf  reg-commit-called{
+        type uint64;
+      }
+      leaf  reg-added{
+        type uint64;
+      }
+    }
+  }
+  /* See also struct rwdts-router-stats-s, which is the non-pb-ugly runtime version of this data */
+  grouping routerstats {
+    container stats {
+      rwpb:msg-new Routerstats;
+      description "DTS router statistics";
+
+      leaf topx-begin {
+        type uint64;
+      }
+
+      leaf topx-begin-tran {
+        type uint64;
+      }
+      leaf topx-begin-notran {
+        type uint64;
+      }
+      leaf topx-end {
+        type uint64;
+      }
+      leaf topx-end-notran-success {
+        type uint64;
+      }
+      leaf topx-end-notran-fail {
+        type uint64;
+      }
+      leaf topx-end-commit {
+        type uint64;
+      }
+      leaf topx-end-abort {
+        type uint64;
+      }
+      leaf topx-end-fail {
+        type uint64;
+      }
+      leaf topx-count-5s {
+        type uint64;
+      }
+      leaf topx-rate-5s {
+        type uint64;
+      }
+      leaf topx-latency-5s {
+        type uint64;
+      }
+      leaf topx-count-15s {
+        type uint64;
+      }
+      leaf topx-rate-15s {
+        type uint64;
+      }
+      leaf topx-latency-15s {
+        type uint64;
+      }
+      leaf topx-count-1m {
+        type uint64;
+      }
+      leaf topx-rate-1m {
+        type uint64;
+      }
+      leaf topx-latency-1m {
+        type uint64;
+      }
+      leaf topx-count-5m {
+        type uint64;
+      }
+      leaf topx-rate-5m {
+        type uint64;
+      }
+      leaf topx-latency-5m {
+        type uint64;
+      }
+      leaf-list topx-member-histo {
+//        min-elements 64;
+        max-elements 64;
+        rwpb:field-inline true;
+        type uint64;
+      }
+      leaf subx-begin {
+        type uint64;
+      }
+      leaf subx-begin-notran {
+        type uint64;
+      }
+      leaf subx-retry {
+        type uint64;
+      }
+      leaf-list subx-retry-histo {
+//        min-elements 64;
+        max-elements 64;
+        rwpb:field-inline true;
+        type uint64;
+      }
+      leaf subx-retry-success {
+        type uint64;
+      }
+      leaf subx-retry-failure {
+        type uint64;
+      }
+      leaf subx-end {
+        type uint64;
+      }
+      leaf subx-end-subcommit {
+        type uint64;
+      }
+      leaf subx-end-subabort {
+        type uint64;
+      }
+      leaf subx-end-suberr {
+        type uint64;
+      }
+      leaf subx-end-notran-success {
+        type uint64;
+      }
+      leaf subx-end-notran-fail {
+        type uint64;
+      }
+      leaf prep-query-member-included {
+        type uint64;
+      }
+      leaf prep-query-member-filtered {
+        type uint64;
+      }
+      leaf req-sent {
+        type uint64;
+      }
+      leaf req-bnc {
+        type uint64;
+      }
+      leaf req-bnc-imm {
+        type uint64;
+      }
+      leaf req-responded {
+        type uint64;
+      }
+      leaf req-responded-async {
+        type uint64;
+      }
+      leaf req-rcv-regist {
+        type uint64;
+      }
+      leaf req-rcv-execute {
+        type uint64;
+      }
+      leaf req-rcv-execute-topx {
+        type uint64;
+      }
+      leaf req-rcv-execute-append {
+        type uint64;
+      }
+      leaf req-rcv-execute-subx {
+        type uint64;
+      }
+      leaf-list req-blocks-histo {
+//        min-elements 64;
+        max-elements 64;
+        rwpb:field-inline true;
+        type uint64;
+      }
+      leaf req-rcv-end {
+        type uint64;
+      }
+      leaf req-rcv-abort {
+        type uint64;
+      }
+      leaf req-rcv-flush {
+        type uint64;
+      }
+      leaf req-rcv-update-fake-table {
+        type uint64;
+      }
+      leaf req-rcv-mbr-query-response {
+        type uint64;
+      }
+      leaf req-rcv-mbr-regist {
+        type uint64;
+      }
+      leaf more_sent {
+        type uint64;
+      }
+      leaf incorrect_clientidx {
+        type uint64;
+      }
+      leaf incorrect_routeridx {
+        type uint64;
+      }
+      leaf xact-life-less-50-ms {
+        type uint64;
+      }
+      leaf xact-life-less-100-ms {
+        type uint64;
+      }
+      leaf xact-life-less-500-ms {
+        type uint64;
+      }
+      leaf xact-life-less-1-sec {
+        type uint64;
+      }
+      leaf xact-life-more-1-sec {
+        type uint64;
+      }
+      leaf xact-prep-time-less-50-ms {
+        type uint64;
+      }
+      leaf xact-prep-time-less-100-ms {
+        type uint64;
+      }
+      leaf xact-prep-time-less-500-ms {
+        type uint64;
+      }
+      leaf xact-prep-time-less-1-sec {
+        type uint64;
+      }
+      leaf xact-prep-time-more-1-sec {
+        type uint64;
+      }
+      leaf xact-pcom-time-less-50-ms {
+        type uint64;
+      }
+      leaf xact-pcom-time-less-100-ms {
+        type uint64;
+      }
+      leaf xact-pcom-time-less-500-ms {
+        type uint64;
+      }
+      leaf xact-pcom-time-less-1-sec {
+        type uint64;
+      }
+      leaf xact-pcom-time-more-1-sec {
+        type uint64;
+      }
+      leaf xact-com-time-less-50-ms {
+        type uint64;
+      }
+      leaf xact-com-time-less-100-ms {
+        type uint64;
+      }
+      leaf xact-com-time-less-500-ms {
+        type uint64;
+      }
+      leaf xact-com-time-less-1-sec {
+        type uint64;
+      }
+      leaf xact-com-time-more-1-sec {
+        type uint64;
+      }
+      leaf xact-abort-time-less-50-ms {
+        type uint64;
+      }
+      leaf xact-abort-time-less-100-ms {
+        type uint64;
+      }
+      leaf xact-abort-time-less-500-ms {
+        type uint64;
+      }
+      leaf xact-abort-time-less-1-sec {
+        type uint64;
+      }
+      leaf xact-abort-time-more-1-sec {
+        type uint64;
+      }
+      leaf member-ct {
+        type uint64;
+      }
+      leaf xact-ct {
+        type uint64;
+      }
+    }
+  }
+
+  grouping routerxact {
+    list transaction {
+      rwpb:msg-new RouterXact;
+      description "DTS Router xact related state";
+      key "xid";
+      leaf xid {
+        rwpb:field-inline "true";
+        rwpb:field-string-max yang;
+        description "DTS Transaction id";
+        type string {
+          length "1..64";
+        }
+      }
+      leaf handle {
+        rwpb:field-inline "true";
+        rwpb:field-string-max yang;
+        description "DTS Transaction handle";
+        type string {
+          length "1..32";
+        }
+      }
+      leaf state {
+        description "DTS Transaction state";
+        type string {
+          length "1..32";
+        }
+      }
+      leaf debug-info {
+        description "DTS debug info";
+        type string {
+          length "1..128";
+        }
+      }
+      list trace-result {
+        rwpb:msg-new RouterXacttrace;
+        description "DTS Member xact related state";
+        key "id";
+
+        leaf id {
+          type uint32;
+          description "id";
+        }
+
+        leaf state-event {
+          type string;
+          rwpb:field-string-max 64;
+          description "xact-state-event";
+        }
+      }
+    }
+  }
+
+  grouping regstats {
+    list stats {
+      rwpb:msg-new Regstats;
+      rwpb:msg-flat "true";
+      description "DTS member registration statistics";
+      key "reg-id";
+
+      leaf reg-id {
+        rwpb:field-inline "true";
+        description "DTS registration id";
+        type uint32;
+      }
+      leaf num-prepare-rcvd {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-precommit-rcvd {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-commit-rcvd {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-abort-rcvd {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-prepare-cb-acked {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-prepare-cb-nacked {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-prepare-cb-async {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-get-reqt-sent {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-get-rsp-rcvd {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-prepare-cb-invoked {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-precommit-cb-invoked {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-commit-cb-invoked {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-abort-cb-invoked {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-advises {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-member-advise-rsp {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-xact-create-objects {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-xact-delete-objects {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-xact-update-objects {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-registrations {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-reg-updates {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf num-deregistrations {
+        rwpb:field-inline "true";
+        type uint64;
+      }
+      leaf out-of-order-queries {
+        type uint64;
+        description "Total out of order queries";
+      }
+      leaf error-drop-advice {
+        type uint64;
+        description "OOS advice drop";
+      }
+      leaf error-drop-read {
+        type uint64;
+        description "OOS read response drop";
+      }
+      leaf not_ended {
+        type uint64;
+      }
+      leaf num_response {
+        type uint64;
+      }
+      leaf num_na_response {
+        type uint64;
+      }
+      leaf num_ack_response {
+        type uint64;
+      }
+      leaf num_internal_response {
+        type uint64;
+      }
+      leaf num_nack_response {
+        type uint64;
+      }
+      leaf num_async_response {
+        type uint64;
+      }
+      leaf dispatch_async_response {
+        type uint64;
+      }
+      leaf dispatch_response_immediate {
+        type uint64;
+      }
+      leaf send_error {
+        type uint64;
+      }
+      container audit {
+        leaf num-objs-created {
+          type uint32;
+        }
+        leaf num-objs-updated {
+          type uint32;
+        }
+        leaf num-objs-deleted {
+          type uint32;
+        }
+        leaf missing-in-dts {
+          type uint32;
+        }
+        leaf missing-in-cache {
+          type uint32;
+        }
+        leaf mismatched-count {
+          type uint32;
+        }
+      }
+    }
+  }
+  grouping memberstats {
+    list stats {
+      rwpb:msg-new Memberstats;
+      description "DTS member statistics";
+      key "member-name";
+
+      leaf member-name {
+        type string;
+        rwpb:field-string-max 256;
+        description "Member Name";
+      }
+
+      leaf topx-begin {
+        description "member side transaction begin";
+        type uint64;
+      }
+      leaf topx-end {
+        description "member side transaction ended";
+        type uint64;
+      }
+      leaf internally-triggered {
+        description "Num transactions triggered by DTS";
+        type uint64;
+      }
+      leaf application-triggered {
+        description "Num transactions triggered by application";
+        type uint64;
+      }
+
+      leaf num-trans {
+       type uint64;
+       description "number of transactions";
+      }
+      leaf num-prepare {
+        type uint64;
+        description "prepare from router";
+      }
+      leaf num-pre-commit {
+        type uint64;
+        description "precommit from router";
+      }
+      leaf num-commit {
+        type uint64;
+        description "commit from router";
+      }
+      leaf num-abort {
+        type uint64;
+        description "abort from router";
+      }
+      leaf num-sub-commit {
+        type uint64;
+        description "sub commit from router";
+      }
+      leaf num-sub-abort {
+        type uint64;
+        description "sub abort from router";
+      }
+      leaf num-xact-create {
+        type uint64;
+        description "number of create transactions";
+      }
+      leaf num-xact-update {
+        type uint64;
+        description "number of updated transactions";
+      }
+      leaf num-xact-delete {
+        type uint64;
+        description "number of deleted transactions";
+      }
+      leaf num-commit-create {
+        type uint64;
+        description "number of create committed objects";
+      }
+      leaf num-commit-update {
+        type uint64;
+        description "number of updated committed objects";
+      }
+      leaf num-commit-delete {
+        type uint64;
+        description "number of deleted committed objects";
+      }
+      leaf num-reg {
+        type uint64;
+        description "number of registrations";
+      }
+      leaf num-reg-updates {
+        type uint64;
+        description "number of registration updates";
+      }
+      leaf num-dereg {
+        type uint64;
+        description "number of deregistrations";
+      }
+      leaf num-advice {
+        type uint64;
+        description "number of advises";
+      }
+      leaf num-regs-retrans {
+        type uint64;
+        description "number of reg retransmissions";
+      }
+      leaf num-advice-rsp {
+        type uint64;
+        description "number of advice response";
+      }
+      leaf num-advice-aborted {
+        type uint64;
+        description "number of advice aborts";
+      }
+      leaf num-advice-failed {
+        type uint64;
+        description "number of advice failures";
+      }
+      leaf num-advice-success {
+        type uint64;
+        description "number of advice success";
+      }
+      leaf num-prep-evt-init-state {
+        type uint64;
+        description "number of prepare events rcvd in init state";
+      }
+      leaf num-end-evt-init-state {
+        type uint64;
+        description "number of end events rcvd in init state";
+      }
+      leaf num-prep-evt-prep-state {
+        type uint64;
+        description "number of prepare events rcvd in prepare state";
+      }
+      leaf num-pcomm-evt-prep-state {
+        type uint64;
+        description "number of precommit events rcvd in prepare state";
+      }
+      leaf num-abort-evt-prep-state {
+        type uint64;
+        description "number of abort events rcvd in prepare state";
+      }
+      leaf num-qrsp-evt-prep-state {
+        type uint64;
+        description "number of query rsp events rcvd in prepare state";
+      }
+      leaf num-end-evt-prep-state {
+        type uint64;
+        description "number of end events rcvd in prepare state";
+      }
+      leaf num-prep-evt-pcomm-state {
+        type uint64;
+        description "number of prepare events rcvd in precommit state";
+      }
+      leaf num-pcom-evt-pcom-state {
+        type uint64;
+        description "number of precommit events rcvd in precommit state";
+      }
+      leaf num-com-evt-pcom-state {
+        type uint64;
+        description "number of commit events rcvd in precommit state";
+      }
+      leaf num-abor-evt-pcom-state {
+        type uint64;
+        description "number of abort events rcvd in precommit state";
+      }
+      leaf num-end-evt-comm-state {
+        type uint64;
+        description "number of end events rcvd in commit state";
+      }
+      leaf num-end-evt-abort-state {
+        type uint64;
+        description "number of end events rcvd in abort state";
+      }
+      leaf num-prepare-cb-exec {
+        type uint64;
+        description "number of prepare callbk executions";
+      }
+      leaf num-commit-cb-exec {
+        type uint64;
+        description "number of commit callbk executions";
+      }
+      leaf num-pcommit-cb-exec {
+        type uint64;
+        description "number of precommit callbk executions";
+      }
+      leaf num-end-exec {
+        type uint64;
+        description "number of end executions";
+      }
+      leaf total-nontrans-queries {
+        type uint64;
+        description "Total non-transactional queries";
+      }
+      leaf total-trans-queries {
+        type uint64;
+        description "Total transactional queries";
+      }
+      leaf num-async-response {
+        type uint64;
+        description "Total async responses";
+      }
+      leaf num-na-response {
+        type uint64;
+        description "Total NA responses";
+      }
+      leaf num-ack-response {
+        type uint64;
+        description "Total ACK responses";
+      }
+      leaf num-nack-response {
+        type uint64;
+        description "Total NACK responses";
+      }
+      leaf num-query-response {
+        type uint64;
+        description "Total query responses";
+      }
+      leaf num-xact-rsp-dispatched {
+        type uint64;
+        description "Total responses dispatched";
+      }
+      leaf member-reg-advise-sent {
+        type uint64;
+        description "Reg advice sent";
+      }
+      leaf member-reg-advise-done {
+        type uint64;
+        description "Reg advice cb called";
+      }
+      leaf member-reg-update-advise-done {
+        type uint64;
+        description "Reg advice update cb called";
+      }
+      leaf member-reg-advise-bounced {
+        type uint64;
+      }
+      leaf member-reg-update-advise-bounced {
+        type uint64;
+      }
+      leaf client-query-bounced {
+        type uint32;
+        description "bounce detected at query cb";
+      }
+      leaf more_received {
+        type uint64;
+      }
+      leaf sent_keep_alive {
+        type uint64;
+      }
+      leaf sent_credits {
+        type uint64;
+      }
+      leaf reroot_done {
+        type uint64;
+      }
+      leaf num-notif-rsp-count {
+        type uint64;
+      }
+    }
+  }
+  grouping payloadstats {
+    container payload-stats {
+      description "Payload stats";
+      list role {
+        max-elements 5;
+        description "Max 5 actions";
+        key "role-name";
+        leaf role-name {
+          type member-role;
+        }
+        list action {
+          max-elements 3;
+          description "Max 3 levels";
+          key "action-name";
+          leaf action-name {
+            type query-action;
+          }
+          list levels {
+            max-elements 8;
+            description "Max 8 buckets";
+            key "level-name";
+            leaf level-name {
+              type xact-level;
+            }
+            list buckets {
+              key "bucket-name";
+              leaf bucket-name {
+                type bucket;
+              }
+              leaf stat {
+                type uint64;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping tracert {
+    description "DTS Member tracert configuration";
+    list trace {
+      rwpb:msg-new Tracert;
+      key "id";
+      leaf id {
+        type uint32;
+        description "An identification for this trace element. ";
+      }
+
+      choice type {
+        // keyspec parameter
+        case key {
+          container keyspec {
+            presence true;
+            description "Trace transaction based on the keyspec used in the transaction.";
+
+            leaf path {
+              mandatory true;
+              rwpb:field-inline "true";
+              rwpb:field-string-max yang;
+              description "The keyspec which is used for the transaction";
+              type string {
+                length "1..256";
+              }
+            }
+
+            leaf print {
+              type empty;
+              description "Print a trace of the transaction on the console";
+            }
+            container break-at {
+              leaf start {
+                type empty;
+                description "Break at the start of a transaction that matches this keypsec";
+              }
+              leaf prepare {
+                type empty;
+                description "Break when the prepare calback is executed for this keyspec";
+              }
+              leaf end {
+                type empty;
+                description "Break when the transaction with this keyspec ends";
+              }
+            }
+          }
+        }
+
+        // tasklet parameters
+        case client {
+          leaf client {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            type string {
+              length "2..256";
+            }
+            description "The name of the client. All transaction started by this client is traced.
+                              The name is a substring of the client name of the DTS member";
+          }
+        }
+      }
+      // shard parameters?
+      // sampling parameters?
+      // ??
+
+      // leaf target { enum  printf, logging, trace, dedicated queriable buffer, ?? }
+    }
+  }
+  /* Member state and start */
+
+  container dts {
+    config true;
+    rwcli:new-mode "dts";
+    list member {
+      config false;
+      key "name";
+      rwpb:msg-new MemberInfo;
+      max-elements 128;
+      description "DTS Member related stats and state";
+
+      leaf name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max yang;
+        description "DTS Member name";
+        type string {
+          length "1..64";
+        }
+      }
+      leaf dts-state {
+        type state;
+      }
+
+      container state {
+       rwpb:msg-new MemberState;
+        description "Member related state";
+        list transaction {
+          rwpb:msg-new MemberXact;
+          description "DTS Member xact related state";
+          key "id";
+          leaf id {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS Transaction id";
+            type string {
+              length "1..64";
+            }
+          }
+          leaf handle {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS Transaction handle";
+            type string {
+              length "1..32";
+            }
+          }
+          leaf state {
+            description "DTS Transaction state";
+            type string {
+              length "1..32";
+            }
+          }
+          leaf debug-info {
+            description "DTS debug info";
+            type string {
+              length "1..128";
+            }
+          }
+          list queries {
+            rwpb:msg-new Queries;
+            description "Related Queries";
+            key "query-id";
+            leaf query-id {
+              description "Query index";
+              type uint32;
+            }
+            leaf num_responses {
+              description "Number of responses";
+              type uint32;
+            }
+            list match-reg {
+              rwpb:msg-new MatchReg;
+              description "Matched registrations";
+              key "reg-id";
+              leaf reg-id {
+                description "DTS Reg id";
+                type uint32;
+              }
+              leaf keystr {
+                rwpb:field-inline "true";
+                rwpb:field-string-max yang;
+                     description "DTS registration keyspec";
+                     type string {
+                       length "1..256";
+                     }
+              }
+            }
+          }
+        }
+        list registration {
+          rwpb:msg-new MemberRegn;
+          description "DTS Member registration related state";
+          rwcli:show-key-keyword;
+          key "id keyspec flags";
+          leaf id {
+            description "DTS registration id";
+            type uint32;
+          }
+          leaf keyspec {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS registration keyspec";
+            type string {
+              length "1..256";
+            }
+          }
+          leaf flags {
+            description "In DTS registration flags";
+            type dts-reg-flags;
+          }
+          leaf regflags {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS registration flags";
+            type string {
+              length "1..8";
+            }
+          }
+          leaf handle {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS registration handle";
+            type string {
+              length "1..32";
+            }
+          }
+          leaf descriptor {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS registration descriptor";
+            type string {
+              length "1..32";
+            }
+          }
+          leaf num-objects {
+            description "Number of objects associated with this registration";
+            type uint64;
+          }
+          list cache-entry {
+            rwpb:msg-new MemberCacheEntry;
+            description "Each entry";
+            key "pb";
+            leaf pb {
+              type string;
+              rwpb:field-string-max 1024;
+            }
+            leaf keyspec {
+              rwpb:field-inline "true";
+              rwpb:field-string-max yang;
+              description "Cache stored keyspec";
+              type string {
+                length "1..256";
+              }
+            }
+          }
+
+          container audit-status {
+            rwpb:field-inline "true";
+            rwpb:msg-flat true;
+            leaf state {
+              type audit-state;
+            }
+            leaf status {
+              type audit-status;
+            }
+            leaf status-message {
+               rwpb:field-inline "true";
+               rwpb:field-string-max 128;
+               type string;
+            }
+            container statistics {
+              leaf num-audits-started {
+                type uint32;
+              }
+              leaf num-audits-succeeded {
+                type uint32;
+              }
+              leaf num-audits-failed {
+                type uint32;
+              }
+              leaf num-audit-fetches {
+                type uint32;
+              }
+              leaf num-objs-missing-in-dts {
+                type uint32;
+              }
+              leaf num-objs-missing-in-cache {
+                type uint32;
+              }
+              leaf num-objs-from-dts {
+                type uint32;
+              }
+              leaf num-objs-in-cache {
+                type uint32;
+              }
+              leaf num-objs-mismatched-contents {
+                type uint32;
+              }
+            }
+            list audit-errors {
+              max-elements 16;
+              leaf status {
+                type uint32;
+              }
+              leaf error-str {
+                 rwpb:field-inline "true";
+                 rwpb:field-string-max 128;
+                 type string;
+              }
+            }
+            list audit-traces {
+              max-elements 12;
+              leaf state {
+                type audit-state;
+              }
+              leaf event {
+                type audit-evt;
+              }
+            }
+          }
+
+          uses regstats;
+        }
+     }
+     list xact-trace {
+      rwpb:msg-new Memberxacttrace;
+      description "DTS xact trace";
+      key "xact-id";
+
+      list trace-result {
+          rwpb:msg-new MemberXacttrace;
+          description "DTS Member xact related state";
+          key "id";
+
+          leaf id {
+           type uint32;
+           description "xact-id";
+          }
+
+          leaf state-event {
+           type string;
+           rwpb:field-string-max 64;
+           description "xact-state-event";
+          }
+      }
+
+      leaf xact-id {
+        rwpb:field-inline "true";
+        rwpb:field-string-max yang;
+        description "Xact id";
+        type string {
+          length "1..256";
+        }
+      }
+
+    }
+     uses memberstats;
+     uses payloadstats;
+    }
+    list routers {
+      config false;
+      rwpb:msg-new Routerinfo;
+      max-elements 128;
+      description "DTS Router Status";
+      key "name";
+      leaf name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max yang;
+        type string {
+          length "1..64";
+        }
+      }
+      list member-info {
+        rwpb:msg-new RouterMemberInfo;
+        description "DTS Member info at the router";
+        key "name";
+        leaf name {
+          rwpb:field-inline "true";
+          rwpb:field-string-max yang;
+          description "DTS Member name";
+          type string {
+            length "1..64";
+          }
+        }
+        list registration {
+          rwpb:msg-new RouterRegn;
+          description "DTS Router registration related state";
+          key "id";
+          leaf id {
+            description "DTS registration id";
+            type uint64;
+          }
+          leaf keyspec {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS registration keyspec";
+            type string {
+              length "1..256";
+            }
+          }
+          leaf handle {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS registration handle";
+            type string {
+              length "1..32";
+            }
+          }
+          leaf flags {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS registration flags";
+            type string {
+              length "1..8";
+            }
+          }
+          leaf descriptor {
+            rwpb:field-inline "true";
+            rwpb:field-string-max yang;
+            description "DTS registration descriptor";
+            type string {
+              length "1..32";
+            }
+          }
+          leaf num-objects {
+            description "Number of objects associated with this registration";
+            type uint64;
+          }
+          container audit-status {
+            rwpb:field-inline "true";
+            rwpb:msg-flat true;
+            leaf state {
+              type audit-state;
+            }
+          }
+        }
+        uses router-memb-stats;
+      }
+      uses routerstats;
+      uses routerxact;
+      uses payloadstats;
+    }
+    uses tracert;
+    uses audit-summary;
+  }
+
+  grouping rtr-ret-values {
+    list rtr-reg {
+       rwpb:msg-new RouterReg;
+       description "DTS Router registration id";
+       key "rtr-reg-id";
+
+      leaf rtr-reg-id {
+        type uint64;
+      }
+    }
+
+    leaf rtr-id {
+      type uint64;
+    }
+
+    leaf client-id {
+      type uint64;
+    }
+  }
+
+  grouping memb-reg-store {
+    leaf rtr-id {
+      type uint64;
+    }
+
+    leaf client-id {
+      type uint64;
+    }
+  }
+
+  typedef shard-flavor {
+    type enumeration {
+      enum IDENT  { value 1;}
+      enum OPAQUE { value 2;}
+      enum RANGE  { value 3;}
+      enum HASH   { value 4;}
+      enum CONSISTENT {value 5;}
+      enum NULL       {value  6;}
+    }
+  }
+
+  grouping shard-params {
+    leaf flavor {
+      type shard-flavor;
+    }
+    leaf minikey {
+      type binary;
+    }
+    leaf index {
+      type int32;
+    }
+    leaf start {
+      type int64;
+    }
+    leaf stop {
+      type int64;
+    }
+  }
+
+  grouping regist {
+    leaf rtr-reg-id {
+       rwpb:field-inline "true";
+       description "DTS router assigned registration id";
+       type uint64;
+     }
+     leaf keyspec {
+       description "DTS registration keyspec";
+       type binary;
+     }
+     leaf keystr {
+       description "DTS registration keystr";
+       type string;
+     }
+     leaf flags {
+       rwpb:field-inline "true";
+       description "DTS registration flags";
+       type uint32;
+     }
+
+     uses shard-params;
+
+     leaf descriptor {
+       rwpb:field-inline "true";
+       rwpb:field-string-max yang;
+       description "DTS registration descriptor";
+       type string {
+         length "1..32";
+       }
+     }
+  }
+
+  grouping regist-reg-id {
+    list registration {
+       rwpb:msg-new RouterInitRegnid;
+       description "DTS Router registration related state";
+       key "rtr-reg-id rtr-id";
+
+       uses regist;
+       uses memb-reg-store;
+     }
+  }
+
+  grouping regist-keyspec {
+    list registration {
+       rwpb:msg-new RouterInitRegnkey;
+       description "DTS Router registration related state";
+       key "keystr flags";
+
+       uses regist;
+    }
+  }
+
+  container rtr-init-reg-id {
+    config false;
+    list member {
+      key "name";
+      rwpb:msg-new RtrInitMemberInfoid;
+      max-elements 128;
+      description "DTS Member related stats and state";
+      config false;
+
+      leaf name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max yang;
+        description "DTS Member name";
+        type string {
+          length "1..64";
+        }
+      }
+
+      leaf all-regs {
+        type empty;
+      }
+
+      uses regist-reg-id;
+
+    }
+  }
+
+  grouping member-info {
+    leaf name {
+      rwpb:field-inline "true";
+      rwpb:field-string-max yang;
+      description "DTS Member name";
+      type string {
+        length "1..64";
+      }
+    }
+    leaf state {
+      type state;
+    }
+  }
+
+  grouping rtr-reg-keyspec {
+    list member {
+      key "name";
+      rwpb:msg-new RtrMemberInfokey;
+      max-elements 128;
+      description "DTS Member related stats and state";
+      config false;
+
+      uses member-info;
+
+      leaf all-regs {
+        type empty;
+      }
+
+      leaf recovery-action {
+        type rwvcstypes:recovery-type;
+      }
+
+      leaf transactional-reg {
+        type boolean;
+      }
+
+      uses regist-keyspec;
+      uses memb-reg-store;
+
+      leaf promote-sub {
+        type empty;
+      }
+    }
+  }
+
+  container rtr-init-reg-keyspec {
+    config false;
+    uses rtr-reg-keyspec;
+  }
+
+  container rtr-peer-reg-keyspec {
+    config false;
+    list router {
+      key "name";
+      rwpb:msg-new RtrPeerRouterInfokey;
+      max-elements 128;
+      description "DTS Router related stats and state";
+      config false;
+
+      leaf name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max yang;
+        description "DTS Router name";
+        type string {
+          length "1..64";
+        }
+      }
+      uses rtr-reg-keyspec;
+    }
+  }
+
+  container member-info-bcast {
+    config false;
+    uses member-info;
+  }
+
+  typedef audit-trail-event {
+    type enumeration {
+      enum application;
+      enum recovery;
+      // enum reconciliation;
+      enum transaction;
+    }
+  }
+
+  typedef audit-trail-action {
+    type enumeration {
+      enum obj-create;
+      enum obj-update;
+      enum obj-delete;
+      enum obj-read;
+    }
+  }
+
+  grouping object-details {
+    description "A grouping with details of a DTS  object";
+    leaf obj-key {
+      description "object key as a string";
+      type string;
+    }
+    leaf obj-contents {
+      description "object contents as a string";
+      type string;
+    }
+    list audit-trail {
+      description "An audit trail of this object";
+      leaf updated-by {
+        description "who last updated this object?";
+        type audit-trail-event;
+      }
+      leaf action {
+        description "What action was done on the object";
+        type audit-trail-action;
+      }
+      leaf event-time {
+        description "At what time was this operation done";
+        type string;
+      }
+    }
+  }
+
+  grouping audit-summary {
+    list audit-summary {
+      config false;
+      rwpb:msg-new AuditSummary;
+      key "member-name";
+
+      leaf member-name {
+        description "Name of the member";
+        type string;
+      }
+      leaf reg-failed-audit {
+        description "Number of registrations failed due to audit failue";
+        type uint32;
+      }
+      leaf reg-succeeded-audit {
+        description "Number of registrations failed due to audit failue";
+        type uint32;
+      }
+
+      list failed-reg {
+        rwpb:msg-new AuditSummaryFailedReg;
+        key "reg-id";
+        description "List of registrations failed audit";
+        leaf reg-id {
+          description "registration id";
+          type uint32;
+        }
+        leaf reg-key {
+          description "registration key";
+          type string;
+        }
+        list  obj-cache {
+          rwpb:msg-new AuditSummaryFailedRegObjCache;
+          description "objects from cache";
+          uses object-details;
+        }
+        list  obj-dts {
+          rwpb:msg-new AuditSummaryFailedRegObjDts;
+          description "objects from DTS";
+          uses object-details;
+        }
+      }
+    }
+  }
+
+  rpc start-dts {
+    input {
+      container audit {
+        description "Start DTS audit";
+          rwpb:field-inline "true";
+          rwpb:msg-flat true;
+          choice member-selection {
+            case member-by-name {
+              list member {
+                key "name";
+                max-elements 1;
+                rwpb:field-inline "true";
+                rwpb:msg-flat true;
+                leaf name {
+                  rwpb:field-inline "true";
+                  rwpb:field-string-max yang;
+                  description "DTS Member name";
+                  type string {
+                    length "1..64";
+                  }
+                }
+                choice reg-selection {
+                  case registration-id {
+                    leaf registration-id {
+                      description "DTS registration id";
+                      type uint32;
+                    }
+                  }
+                  case registration-all {
+                    leaf all {
+                      description "select all registrations";
+                      type empty;
+                    }
+                  }
+                }
+              }
+            }
+            case member-all {
+              leaf all {
+                description "select all members";
+                type empty;
+              }
+            }
+          }
+          leaf action {
+            description "DTS Audit action";
+            type audit-action;
+          }
+        }
+        container tracing {
+          description "Trace the next transaction started at specified member";
+
+          leaf member {
+            description "Name of the DTS member that needs to be traced";
+            type string;
+          }
+
+
+          leaf one-time {
+            description "Tracing will be for the next ONE
+                              transaction.";
+              type empty;
+          }
+        }
+      }
+
+    output {
+      container audit-status {
+         rwpb:field-inline "true";
+         rwpb:msg-flat true;
+         leaf state {
+           type uint32;
+         }
+         leaf status {
+            type uint32;
+         }
+         leaf status-message {
+            rwpb:field-inline "true";
+            rwpb:field-string-max 128;
+            type string;
+         }
+       }
+
+      container tracing {
+        leaf-list member-name {
+          description "Names of members that have started tracing";
+          type string;
+        }
+      }
+      uses audit-summary;
+    }
+  }
+
+  rpc stop-dts {
+    description "Stop an ongoing DTS operation";
+    input {
+      container tracing {
+        description "Stop an ongoing DTS tracing operation";
+
+        leaf member {
+          description "A substring that should match the member name, tracing on
+                            which will stop. If no member name is specfied, all
+                            tracing that was started by using a dts-start command
+                            will stop";
+          type string;
+        }
+      }
+    }
+  }
+
+  rpc clear-dts {
+    description "Clear the member/router DTS stats";
+    input {
+      container stats {
+        choice clear-role {
+          case clear-member {
+            container member {
+              choice clear-choice {
+                case clear-all {
+                  leaf all {
+                    type empty;
+                  }
+                }
+                case member {
+                  leaf name {
+                    type string {
+                      length "1..64";
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          case clear-router {
+            container router {
+              choice clear-choice {
+                case clear-all {
+                  leaf all {
+                    type empty;
+                  }
+                }
+                case router {
+                  leaf name {
+                    type string {
+                      length "1..64";
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping publisher-id {
+    leaf member-id {
+      type uint64;
+      description "Identifies the member uniquely";
+    }
+    leaf router-id {
+      type uint64;
+      description "Identifier from the router";
+    }
+    leaf pub-id {
+      type uint64;
+      description "Identifier associated with the publisher";
+    }
+  }
+
+  rpc solicit-advise {
+    description "solicit advise from a publisher";
+    input {
+      list paths {
+        key "keyspec";
+
+        leaf keyspec {
+         type binary;
+         description "The requested keyspec as a binary path";
+        }
+        leaf keyspec-str {
+          type string;
+          description "The requested keyspec as a string";
+        }
+
+        list serials {
+          key "member-id router-id pub-id";
+
+          uses publisher-id;
+
+          leaf serial-num {
+            type uint64;
+            description "serial number the final advise with this member";
+          }
+
+        }
+      }
+    }
+    output {
+      list publishers {
+        key "member-id router-id pub-id";
+
+        uses publisher-id;
+
+        leaf-list committed-serials {
+          type uint64;
+          description "A list of committed serials in sorted order - Everything less than the first committed serial is committed";
+        }
+        leaf-list running-serials {
+          type uint64;
+          description "A list of serials  of ongoing transactions";
+        }
+      }
+    }
+  }
+
+  typedef journal-mode {
+    type enumeration {
+      enum journal-disabled;
+      enum journal-in-use;
+      enum journal-live;
+    }
+  }
+
+  typedef xact-done-evt {
+    type enumeration {
+      enum xact-evt-undef;
+      enum xact-evt-prepare;
+      enum xact-query-rsp;
+      enum xact-evt-precommit;
+      enum xact-evt-commit;
+      enum xact-evt-commit-rsp;
+      enum xact-evt-abort;
+      enum xact-evt-abort-rsp;
+      enum xact-evt-end;
+      enum xact-evt-unk;
+    }
+  }
+  container journal-info {
+    config false;
+    list subs {
+      key path;
+      leaf path {
+        type string;
+      }
+      list reg-info {
+        key id;
+        leaf id {
+          type uint32;
+          description "Key is reg-id";
+        }
+        leaf keystr {
+          type string;
+        }
+        leaf journal-mode {
+          type journal-mode;
+        }
+        list pub-list {
+          key "member-id router-id pub-id";
+          leaf member-id {
+            type uint64;
+          }
+          leaf router-id {
+            type uint64;
+          }
+          leaf pub-id {
+            type uint64;
+          }
+          leaf least-inflt-serial {
+            type uint64;
+          }
+          leaf least-done-serial {
+            type uint64;
+          }
+          list inflt-query {
+            key "xact-id query-idx";
+            leaf xact-id {
+              type string;
+            }
+            leaf query-idx {
+              type uint32;
+            }
+            leaf query-action {
+              type query-action;
+            }
+            leaf query-keystr {
+              type string;
+            }
+            leaf corrid {
+              type uint64;
+            }
+            leaf serial {
+              type uint64;
+            }
+          }
+          list done-q {
+            key "xact-id query-idx";
+            leaf xact-id {
+              type string;
+            }
+            leaf query-idx {
+              type uint32;
+            }
+            leaf query-action {
+              type query-action;
+            }
+            leaf query-keystr {
+              type string;
+            }
+            leaf corrid {
+              type uint64;
+            }
+            leaf serial {
+              type uint64;
+            }
+            leaf done-event {
+              type xact-done-evt;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  list mode-change-info {
+    config false;
+    key rwvm-instance-name;
+    leaf rwvm-instance-name {
+      type string;
+    }
+    list instances {
+      key instance-name;
+      leaf instance-name {
+        type string;
+      }
+      leaf vm-state {
+        type rwvcstypes:vm-state;
+      }
+    }
+  }
+} // module rw-dts

@@ -1,0 +1,86 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rwvld-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwvld";
+  prefix "rwvld-d";
+
+  import rw-manifest-d {
+    prefix "rwmani";
+  }
+
+  import rwvnfd-d {
+    prefix "rwvnfd-d";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix rwt;
+  }
+
+  import ietf-inet-types {
+    prefix "inet";
+  }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  revision 2015-04-19 {
+    description
+      "Initial revision. This YANG file defines 
+       the Virtual Link Descriptor (VLD)";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  container vld {
+    leaf name {
+      description "Virtual Link Descriptor name.";
+      type string;
+    }
+
+    leaf vld-id {
+      description "UUID of the VLD.";
+      type yang:uuid;
+    }
+
+    leaf vendor {
+      description "Vendor.";
+      type string;
+    }
+
+    leaf description {
+      description "Description of the virtual link.";
+      type string;
+    }
+
+    leaf version {
+      description "Version";
+      type string;
+    }
+
+    leaf max-end-points {
+      description "Maximum number of endpoints in this virtual link descriptor";
+      type uint16;
+    }
+
+    list connection-points {
+      key id;
+      leaf id {
+        type leafref {
+          path "/rwvnfd-d:vnfd/rwvnfd-d:connection-points/rwvnfd-d:id";
+        }
+      }
+    }
+  }
+}

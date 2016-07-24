@@ -1,0 +1,41 @@
+name: mwc16_traffic_generator
+description: Traffic generator connected to the demo environment
+topology:
+  nodes:
+    mwc16gen__1:
+      type: VNF
+      VNF model: mwc16gen
+    mwc:
+      type: external_network
+      model: mwc
+    mgmt:
+      type: external_network
+      model: mgmt
+    mwc16data1:
+      type: external_network
+      model: "mwc16data1:3000"
+    mwc16data2:
+      type: external_network
+      model: "mwc16data2:3000"
+  connections:
+    connection 0:
+      type: link
+      nodes:
+        - mwc: "0"
+        - mwc16gen__1: eth0
+    connection 1:
+      type: link
+      nodes:
+        - mgmt: "0"
+        - mwc16gen__1: eth1
+    connection 2:
+      type: link
+      nodes:
+        - mwc16data1: "0"
+        - mwc16gen__1: xe0
+    connection 3:
+      type: link
+      nodes:
+        - mwc16data2: "0"
+        - mwc16gen__1: xe2
+

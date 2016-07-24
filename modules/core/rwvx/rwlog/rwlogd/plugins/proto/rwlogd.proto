@@ -1,0 +1,75 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rwlogd.proto
+ * @author Sameer Nayak
+ * @date 2014/12/01
+ * @brief rwlogd tasklet service definitions
+ */
+
+import "descriptor.proto";
+import "rwpbapi.proto";
+
+message RwlogdStatus {
+  option (rw_msgopts) = {flat:true };
+  enum Msgstatus {
+    SUCCESS         = 0; /*!< Used to indicate a successful operation */
+    FAILURE         = 1; /*!< Used to indicate a failed operation */
+    DUPLICATE       = 2; /*!< Used to indicate a duplicate operation */
+    NOTFOUND        = 3; /*!< Used to indicate that data was not found */
+    BOUNDS          = 4; /*!< Used to indicate that limits exceeded */
+    BACKPRESSURE    = 5; /*!< Used to indicate backpressure, typically EAGAIN */
+    TIMEOUT         = 6; /*!< Used to indicate a timeout */
+    EXISTS          = 7; /*!< Used to indicate that entry already exists */
+    NOTEMPTY        = 8; /*!< Used to indicate that entry is not empty */
+    NOTCONNECTED    = 9; /*!< Used to indicate that item is not connected */
+  }
+  required Msgstatus status = 1;
+}
+
+message RwlogdRegisterReq {
+  required string my_key = 1;
+}
+
+message RwlogdRegisterRsp {
+  required string my_key = 1;
+}
+
+service rwlogd {
+  option (rw_srvopts) = { srvnum:100 };
+  rpc RegisterClient(RwlogdRegisterReq) returns(RwlogdRegisterRsp) {
+    option (rw_methopts) = { methno:1 blocking:false};
+  };
+}
+
+message RwlogdFileSendLogReq {
+  required string my_key = 1;
+  required string sink_name = 2;
+}
+
+message RwlogdFileSendLogRsp {
+  required string my_key = 1;
+}
+
+message RwlogdSendLogReq {
+  required bytes log_msg = 1;
+}
+
+service RwlogdPeerAPI {
+  option (rw_srvopts) = { srvnum:150 };
+
+  rpc file_send_log(RwlogdFileSendLogReq) returns(RwlogdFileSendLogRsp) {
+    option (rw_methopts) = {methno:1 pri:RW_METHPRI_MEDIUM blocking:false};
+  }
+
+  rpc send_log(RwlogdSendLogReq) returns(RwlogdStatus) {
+    option (rw_methopts) = {methno:2 pri:RW_METHPRI_MEDIUM blocking:false};
+  }
+}

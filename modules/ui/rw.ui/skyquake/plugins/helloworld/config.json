@@ -1,0 +1,19 @@
+{
+    "root": "public",
+    "name": "Hello World Plugin",
+    "dashboard" : "./helloWorldDashboard.jsx",
+    "routes": [
+    {
+        "label": "Hello World Component 1",
+        "route": "hello",
+        "component": "./helloWorldOne.jsx",
+        "path": "",
+        "type": "internal"
+    },{
+        "label": "Hello World Component 2",
+        "route": "goodbye",
+        "component": "./helloWorldTwo.jsx",
+        "path": "",
+        "type": "internal"
+    }]
+}

@@ -1,0 +1,75 @@
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+header.header-app-component {
+    padding: 20px 0px;
+    display:flex;
+    flex-direction:column;
+    .header-app-main {
+        display:flex;
+        flex-direction:row;
+        justify-content:space-between;
+        align-items:center;
+    }
+    h1 {
+        background: url('../../style/img/header-logo.png') no-repeat;
+        background-size:contain;
+        height: 51px;
+        line-height: 51px;
+        margin-left: 20px;
+        padding-left: 100px;
+        left: 0;
+        text-transform: uppercase;
+        font-size: 1.625rem;
+        font-weight: 400;
+        position:relative;
+        flex: 1 0 auto;
+
+    }
+    ul {
+            display:flex;
+        }
+        li {
+            display:flex;
+             flex:1 1 auto;
+             border-right:1px solid #e5e5e5;
+             padding: 0 1rem;
+            &:last-child {
+                border:none;
+            }
+            a {
+                cursor:pointer;
+                // padding: 0.125rem;
+                // border-bottom:1px solid black;
+                text-decoration:underline;
+            }
+        }
+    .header-app-nav {
+        display:flex;
+        margin-left: 0.25rem;
+        a,span {
+            text-transform:uppercase;
+        }
+        a {
+            cursor: pointer;
+            margin-left: 0.5rem;
+            font-weight: normal;
+            color: black;
+        }
+
+        .spacer {
+
+        }
+        .current {
+            font-weight: bold;
+        }
+    }
+    nav {
+        display:flex;
+        flex:0 1 auto;
+        align-items:center;
+    }
+}

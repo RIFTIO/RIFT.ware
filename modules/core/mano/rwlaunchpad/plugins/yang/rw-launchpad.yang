@@ -1,0 +1,143 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+
+
+/**
+ * @file rw-launchpad.yang
+ * @author Joshua Downer
+ * @date 2015/09/14
+ * @brief Launchpad Yang
+ */
+
+module rw-launchpad
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-launchpad";
+  prefix "rw-launchpad";
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rwcal {
+    prefix "rwcal";
+  }
+
+  import rw-vnfd {
+    prefix "rw-vnfd";
+  }
+
+  import vld {
+    prefix "vld";
+  }
+
+  import rw-nsd {
+    prefix "rw-nsd";
+  }
+
+  import rw-cloud {
+    prefix "rw-cloud";
+  }
+
+  import rw-nsr {
+    prefix "rw-nsr";
+  }
+
+  import rw-conman {
+    prefix "rw-conman";
+  }
+
+  import rw-config-agent {
+    prefix "rw-config-agent";
+  }
+
+  import rw-monitor {
+    prefix "rw-monitor";
+  }
+
+
+  revision 2015-09-14 {
+    description
+      "Initial revision.";
+  }
+
+  container datacenters {
+    description "OpenMano data centers";
+
+    rwpb:msg-new DataCenters;
+    config false;
+
+    list cloud-accounts {
+      description
+          "A list of OpenMano cloud accounts that have data centers associated
+          with them";
+
+      rwpb:msg-new CloudAccount;
+      key "name";
+
+      leaf name {
+        description "The name of the cloud account";
+        type leafref {
+          path "/rw-cloud:cloud/rw-cloud:account/rw-cloud:name";
+        }
+      }
+
+      list datacenters {
+        rwpb:msg-new DataCenter;
+        leaf uuid {
+          description "The UUID of the data center";
+          type yang:uuid;
+        }
+
+        leaf name {
+          description "The name of the data center";
+          type string;
+        }
+      }
+    }
+  }
+
+  container launchpad-config {
+    leaf public-ip {
+      description
+          "An IP address that can, at least, be reached by the host that the
+          launchpad is running on. This is not a mandatory but is required for
+          alarms to function correctly.";
+      type string;
+    }
+
+    leaf operational-mode {
+      description
+          "The mode in which this launchpad is running
+              STANDALONE  : This launchpad was started in the standalone mode.
+              MC_MANAGED  : This lauchpad  is managed by mission control.
+          ";
+      type enumeration {
+        enum STANDALONE {
+          value 1;
+        }
+        enum MC_MANAGED {
+          value 2;
+        }
+      }
+      default STANDALONE;
+    }
+  }
+}

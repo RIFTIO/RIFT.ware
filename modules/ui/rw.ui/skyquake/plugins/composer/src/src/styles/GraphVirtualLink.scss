@@ -1,0 +1,32 @@
+@import "main";
+
+.DescriptorGraph {
+
+	/* colors are defined in ColorGroups and assigned in the graph code. */
+
+	.VirtualLink {
+
+		@extend .descriptor;
+
+		path.icon {
+			pointer-events: none;
+		}
+
+		&.-is-selected,
+		&.-selected {
+			circle.badge {
+				stroke: red;
+			}
+		}
+
+	}
+
+	&.-is-dragging-connection-point {
+		.-is-valid-drop-target.-is-drag-over {
+			circle.badge {
+				stroke: red;
+			}
+		}
+	}
+
+}

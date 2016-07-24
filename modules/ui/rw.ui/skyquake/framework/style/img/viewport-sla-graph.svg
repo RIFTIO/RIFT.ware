@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid" width="176" height="176" viewBox="0 0 176 176">
+  <defs>
+    <style>
+
+      .cls-3 {
+        stroke: #7cc118;
+        stroke-width: 16px;
+        fill: none;
+      }
+
+      .cls-4 {
+        font-size: 48px;
+      }
+
+      .cls-5 {
+        fill: #333333;
+        font-size: 48px;
+        font-family: "Roboto-Light";
+      }
+
+      .cls-6 {
+        font-size: 14px;
+      }
+
+      .cls-7 {
+        fill: #333333;
+        font-size: 14px;
+        font-family: "Roboto-Bold";
+        font-weight: bold;
+      }
+
+      .cls-8 {
+        fill: #ffffff;
+        stroke: #bcbec0;
+        stroke-width: 1px;
+      }
+    </style>
+  </defs>
+  <g id="circle-chart">
+    <circle id="circle-1" class="cls-3" cx="88" cy="88" r="80"/>
+    <text class="cls-4" x="45px" y="105px"><tspan class="cls-5">100</tspan></text>
+    <text class="cls-6" x="121px" y="104px"><tspan class="cls-7">%</tspan></text>
+    <path d="M85.500,0.500 C85.500,0.500 75.500,0.500 75.500,0.500 C75.500,0.500 75.500,31.500 75.500,31.500 C75.500,31.500 80.500,37.500 80.500,37.500 C80.500,37.500 85.500,30.500 85.500,30.500 C85.500,30.500 85.500,0.500 85.500,0.500 Z" id="path-1" class="cls-8" fill-rule="evenodd"/>
+  </g>
+</svg>

@@ -1,0 +1,1901 @@
+[
+  {
+    "id": "GUID-1",
+    "name": "RIFT.ware™ NS Descriptors Catalog",
+    "short-name": "rift.ware-nsd-cat",
+    "description": "RIFT.ware™, an open source NFV development and deployment software platform that makes it simple to create, deploy and manage hyper-scale Virtual network functions and applications.",
+    "vendor": "RIFT.io",
+    "version": "",
+    "created-on": "",
+    "type": "nsd",
+    "meta": {
+      "icon-svg": "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22iso-8859-1%22%3F%3E%0A%3C!--%20Generator%3A%20Adobe%20Illustrator%2018.0.0%2C%20SVG%20Export%20Plug-In%20.%20SVG%20Version%3A%206.00%20Build%200)%20%20--%3E%0A%3C!DOCTYPE%20svg%20PUBLIC%20%22-%2F%2FW3C%2F%2FDTD%20SVG%201.1%2F%2FEN%22%20%22http%3A%2F%2Fwww.w3.org%2FGraphics%2FSVG%2F1.1%2FDTD%2Fsvg11.dtd%22%3E%0A%3Csvg%20version%3D%221.1%22%20id%3D%22connection-icon-1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%20x%3D%220px%22%20y%3D%220px%22%0A%09%20viewBox%3D%220%200%2050%2050%22%20style%3D%22enable-background%3Anew%200%200%2050%2050%3B%22%20xml%3Aspace%3D%22preserve%22%3E%0A%09%3Cpath%20d%3D%22M15%2030c-2.8%200-5-2.2-5-5s2.2-5%205-5%205%202.2%205%205-2.2%205-5%205zm0-8c-1.7%200-3%201.3-3%203s1.3%203%203%203%203-1.3%203-3-1.3-3-3-3z%22%2F%3E%3Cpath%20d%3D%22M35%2020c-2.8%200-5-2.2-5-5s2.2-5%205-5%205%202.2%205%205-2.2%205-5%205zm0-8c-1.7%200-3%201.3-3%203s1.3%203%203%203%203-1.3%203-3-1.3-3-3-3z%22%2F%3E%3Cpath%20d%3D%22M35%2040c-2.8%200-5-2.2-5-5s2.2-5%205-5%205%202.2%205%205-2.2%205-5%205zm0-8c-1.7%200-3%201.3-3%203s1.3%203%203%203%203-1.3%203-3-1.3-3-3-3z%22%2F%3E%3Cpath%20d%3D%22M19.007%2025.885l12.88%206.44-.895%201.788-12.88-6.44z%22%2F%3E%3Cpath%20d%3D%22M30.993%2015.885l.894%201.79-12.88%206.438-.894-1.79z%22%2F%3E%3C%2Fsvg%3E"
+    },
+    "descriptors": [
+      {
+        "description": "VPNaaS Provider NSD for Corporation X",
+        "version": 1,
+        "constituent-vnfd": [
+          {
+            "vnf-configuration": {
+              "config-type": "netconf",
+              "config-template": "\n        <vnf-config xmlns=\"http://riftio.com/ns/riftware-1.0/mano-base\">\n      <vnf>\n        <name>trafgen</name>\n        <instance>0</instance>\n        <network-context xmlns=\"http://riftio.com/ns/riftware-1.0/rw-vnf-base-config\">\n          <name>trafgen-lb</name>\n          <interface>\n            <name>N1TenGi-1</name>\n            <bind>\n              <port>trafgen_vnfd/cp0</port>\n            </bind>\n          </interface>\n          <interface>\n              <name>vlan200</name>\n              <bind>\n                <port>trafgen_vnfd/cp0</port>\n                <vlan>200</vlan>\n              </bind>\n              <ip>\n                <address>200.1.1.1/24</address>\n              </ip>\n          </interface>\n        </network-context>\n        <port xmlns=\"http://riftio.com/ns/riftware-1.0/rw-vnf-base-config\">\n          <name>trafgen_vnfd/cp0</name>\n          <open/>\n          <application>\n            <rx>rw_trafgen</rx>\n            <tx>rw_trafgen</tx>\n          </application>\n          <receive-q-length>2</receive-q-length>\n          <vlan><id>200</id><open/></vlan>\n          <port-identity>\n          <ip-address><rw_connection_point_name trafgen_vnfd/cp0></ip-address>\n          <port-mode>direct</port-mode>\n          </port-identity>\n          <trafgen xmlns=\"http://riftio.com/ns/riftware-1.0/rw-trafgen\">\n            <transmit-params>\n              <tx-rate>10</tx-rate>\n              <transmit-mode>\n                <range/>\n              </transmit-mode>\n            </transmit-params>\n            <range-template>\n              <destination-mac>\n                <dynamic>\n                  <gateway>200.1.1.2</gateway>\n                </dynamic>\n              </destination-mac>\n              <source-ip>\n                <start>200.1.1.1</start>\n                <minimum>200.1.1.1</minimum>\n                <maximum>200.1.1.1</maximum>\n                <increment>1</increment>\n              </source-ip>\n              <destination-ip>\n                <start>50.1.1.1</start>\n                <minimum>50.1.1.1</minimum>\n                <maximum>50.1.1.1</maximum>\n                <increment>1</increment>\n              </destination-ip>\n              <source-port>\n                <start>10000</start>\n                <minimum>10000</minimum>\n                <maximum>10128</maximum>\n                <increment>1</increment>\n              </source-port>\n              <destination-port>\n                <start>5678</start>\n                <minimum>5678</minimum>\n                <maximum>5678</maximum>\n                <increment>1</increment>\n              </destination-port>\n              <packet-size>\n                <start>1024</start>\n                <minimum>1024</minimum>\n                <maximum>1024</maximum>\n                <increment>1</increment>\n              </packet-size>\n              <vlan>\n                <start>200</start>\n                <minimum>200</minimum>\n                <maximum>200</maximum>\n                <increment>1</increment>\n              </vlan>\n            </range-template>\n          </trafgen>\n        </port>\n      </vnf>\n    </vnf-config>\n    <logging xmlns=\"http://riftio.com/ns/riftware-1.0/rwlog-mgmt\">\n      <sink>\n        <name>syslog</name>\n        <server-address><rw_mgmt_ip></server-address>\n        <port>514</port>\n      </sink>\n    </logging>\n        ",
+              "input-params": {
+                "config-delay": 180,
+                "config-priority": 1
+              },
+              "netconf": {
+                "target": "running",
+                "port": 2022
+              }
+            },
+            "vnfd-id-ref": "2544951a-d6b5-11e5-9bb7-001b21b98a89",
+            "member-vnf-index": 1
+          },
+          {
+            "vnf-configuration": {
+              "input-params": {
+                "config-delay": 0,
+                "config-priority": 2
+              },
+              "config-type": "script",
+              "config-template": "\n#!/usr/bin/expect -f\nset login \"root\"\nset addr <rw_mgmt_ip>\nset pw \"6windos\"\nspawn ssh -1 $login@$addr\n\nset timeout 60\n\nexpect \"yes/no\" {\n    send \"yes\\r\"\n    expect \"*?assword:\" { send \"$pw\\r\" }\n    } \"*?assword:\" { send \"$pw\\r\" }\n\nexpect \"# \"\nsend \"cli\\r\"\nexpect \"{}\"\nsend \"edit conf running\\r\"\nexpect \"ing}\"\n\n# Setup eth1 config\nsend \"eth1\\r\"\nexpect \"eth1}\"\nsend \"ipaddress dhcpv4\\r\"\nexpect \"dhcpv4}\"\nsend \"dhcp enable\\r\"\nexpect \"dhcpv4}\"\nsend \"exit\\r\"\nexpect \"eth1}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n# Setup eth2 config\nsend \"eth2\\r\"\nexpect \"eth2}\"\nsend \"ipaddress dhcpv4\\r\"\nexpect \"dhcpv4}\"\nsend \"dhcp enable\\r\"\nexpect \"dhcpv4}\"\nsend \"exit\\r\"\nexpect \"eth2}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup loopback\nsend \"loopback0\\r\"\nexpect \"back0}\"\nsend \"ipaddress 2.2.2.2/32\\r\"\nexpect \"back0}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup VRF 2\nsend \"vrf2\\r\"\nexpect \"vrf2}\"\nsend \"forwarding ipv4 enable\\r\"\nexpect \"vrf2}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Applyconfig\nsend \"addrunning\\r\"\nexpect \"ing}\"\nsend \"exit\\r\"\nexpect \"{}\"\n\n# Get MAC of eth2\nsend \"show interface eth2\\r\"\nexpect -re {ether (\\S+)}\nset macaddr $expect_out(1,string)\nputs $macaddr\n\n# Enter into edit config mode again\nsend \"edit conf running\\r\"\n\n#Setup route for GRE tunnel\nsend \"rtg\\r\"\nexpect \"rtg}\"\nsend \"route 3.3.3.3/32 100.0.108.60\\r\"\nexpect \"rtg}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup VLAN on eth2 and vrf2\nsend \"vlan2\\r\"\nexpect \"vlan2}\"\nsend \"bind eth2 id 200\\r\"\nexpect \"vlan2}\"\nsend \"mac-address $macaddr\\r\"\nexpect \"vlan2}\"\nsend \"ipaddress 200.1.1.2/24\\r\"\nexpect \"vlan2}\"\nsend \"vrf-id 2\\r\"\nexpect \"vlan2}\"\nsend \"interface up\\r\"\nexpect \"vlan2}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup GRE on vrf2\nsend \"gre2\\r\"\nexpect \"gre2}\"\nsend \"bind 2.2.2.2 3.3.3.3 \\r\"\nexpect \"gre2}\"\nsend \"endpoints 5.1.1.1 5.1.1.2\\r\"\nexpect \"gre2}\"\nsend \"vrf-id 2\\r\"\nexpect \"gre2}\"\nsend \"checksum-input disable\\r\"\nexpect \"gre2}\"\nsend \"interface up\\r\"\nexpect \"gre2}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup routing in VRF2 for VLAN2 traffic\nsend \"rtg\\r\"\nexpect \"rtg}\"\nsend \"route 50.1.1.1/32 5.1.1.2 vrf-id 2\\r\"\nexpect \"rtg}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Applyconfig\nsend \"addrunning\\r\"\nexpect \"ing}\"\nsend \"exit\\r\"\nexpect \"{}\"\n        ",
+              "script": {
+                "script-type": "expect"
+              }
+            },
+            "vnfd-id-ref": "23028096-d6b5-11e5-8e3f-001b21b98a89",
+            "member-vnf-index": 2
+          },
+          {
+            "vnf-configuration": {
+              "input-params": {
+                "config-delay": 0,
+                "config-priority": 0
+              }
+            },
+            "vnfd-id-ref": "2407d7a2-d6b5-11e5-95d4-001b21b98a89",
+            "member-vnf-index": 3
+          },
+          {
+            "vnfd-id-ref": "23095c22-d6b5-11e5-9e33-001b21b98a89",
+            "member-vnf-index": 4
+          },
+          {
+            "vnfd-id-ref": "2329d470-d6b5-11e5-98fb-001b21b98a89",
+            "member-vnf-index": 5
+          }
+        ],
+        "short-name": "Vpn_Provider_Site_CorpA_nsd",
+        "vld": [
+          {
+            "description": "Corporate LAN for A,SRIOV based",
+            "type": "ELAN",
+            "version": 1,
+            "provider-network": {
+              "physical-network": "physnet3",
+              "overlay-type": "FLAT"
+            },
+            "short-name": "Corp-A Prov-link",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 1,
+                "vnfd-connection-point-ref": "trafgen_vnfd/cp0",
+                "vnfd-id-ref": "2544951a-d6b5-11e5-9bb7-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 2,
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp0",
+                "vnfd-id-ref": "23028096-d6b5-11e5-8e3f-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 3,
+                "vnfd-connection-point-ref": "cwims_vnfd/cp0",
+                "vnfd-id-ref": "2407d7a2-d6b5-11e5-95d4-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 4,
+                "vnfd-connection-point-ref": "Riverbed_SteelHead_vnfd/cp0",
+                "vnfd-id-ref": "23095c22-d6b5-11e5-9e33-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 5,
+                "vnfd-connection-point-ref": "F5_BigIP_vnfd/cp0",
+                "vnfd-id-ref": "2329d470-d6b5-11e5-98fb-001b21b98a89"
+              }
+            ],
+            "name": "Corp-A Prov-link",
+            "vendor": "RIFT.io",
+            "id": "28b2c8a2-d6b5-11e5-9a50-001b21b98a89"
+          },
+          {
+            "description": "HA link between BigIPs",
+            "type": "ELAN",
+            "version": 1,
+            "short-name": "Corp-A HA-link",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 5,
+                "vnfd-connection-point-ref": "F5_BigIP_vnfd/cp1",
+                "vnfd-id-ref": "2329d470-d6b5-11e5-98fb-001b21b98a89"
+              }
+            ],
+            "name": "Corp-A HA-link",
+            "vendor": "RIFT.io",
+            "id": "28b329be-d6b5-11e5-9a50-001b21b98a89"
+          },
+          {
+            "description": "Egress link between BigIPs",
+            "type": "ELAN",
+            "version": 1,
+            "short-name": "Corp-A Egress-link",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 5,
+                "vnfd-connection-point-ref": "F5_BigIP_vnfd/cp2",
+                "vnfd-id-ref": "2329d470-d6b5-11e5-98fb-001b21b98a89"
+              }
+            ],
+            "name": "Corp-A Egress-link",
+            "vendor": "RIFT.io",
+            "id": "28b33d32-d6b5-11e5-9a50-001b21b98a89"
+          },
+          {
+            "description": "External network VIRTIO based",
+            "type": "ELAN",
+            "version": 1,
+            "short-name": "multisite",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 2,
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp1",
+                "vnfd-id-ref": "23028096-d6b5-11e5-8e3f-001b21b98a89"
+              }
+            ],
+            "name": "multisite",
+            "vendor": "RIFT.io",
+            "id": "28b350ce-d6b5-11e5-9a50-001b21b98a89"
+          }
+        ],
+        "name": "Vpn_Provider_Site_CorpA_nsd",
+        "vendor": "RIFT.io",
+        "id": "28922610-d6b5-11e5-9a50-001b21b98a89",
+        "meta": {
+          "instance-ref-count": 0
+        }
+      },
+      {
+        "description": "VPNaaS Provider NSD for Corporation X",
+        "version": 1,
+        "constituent-vnfd": [
+          {
+            "vnf-configuration": {
+              "config-type": "netconf",
+              "config-template": "\n        <vnf-config xmlns=\"http://riftio.com/ns/riftware-1.0/mano-base\">\n      <vnf>\n        <name>trafgen</name>\n        <instance>0</instance>\n        <network-context xmlns=\"http://riftio.com/ns/riftware-1.0/rw-vnf-base-config\">\n          <name>trafgen-lb</name>\n          <interface>\n            <name>N1TenGi-1</name>\n            <bind>\n              <port>trafgen_vnfd/cp0</port>\n            </bind>\n          </interface>\n          <interface>\n              <name>vlan200</name>\n              <bind>\n                <port>trafgen_vnfd/cp0</port>\n                <vlan>200</vlan>\n              </bind>\n              <ip>\n                <address>200.1.1.1/24</address>\n              </ip>\n          </interface>\n        </network-context>\n        <port xmlns=\"http://riftio.com/ns/riftware-1.0/rw-vnf-base-config\">\n          <name>trafgen_vnfd/cp0</name>\n          <open/>\n          <application>\n            <rx>rw_trafgen</rx>\n            <tx>rw_trafgen</tx>\n          </application>\n          <receive-q-length>2</receive-q-length>\n          <vlan><id>200</id><open/></vlan>\n          <port-identity>\n          <ip-address><rw_connection_point_name trafgen_vnfd/cp0></ip-address>\n          <port-mode>direct</port-mode>\n          </port-identity>\n          <trafgen xmlns=\"http://riftio.com/ns/riftware-1.0/rw-trafgen\">\n            <transmit-params>\n              <tx-rate>10</tx-rate>\n              <transmit-mode>\n                <range/>\n              </transmit-mode>\n            </transmit-params>\n            <range-template>\n              <destination-mac>\n                <dynamic>\n                  <gateway>200.1.1.2</gateway>\n                </dynamic>\n              </destination-mac>\n              <source-ip>\n                <start>200.1.1.1</start>\n                <minimum>200.1.1.1</minimum>\n                <maximum>200.1.1.1</maximum>\n                <increment>1</increment>\n              </source-ip>\n              <destination-ip>\n                <start>50.1.1.1</start>\n                <minimum>50.1.1.1</minimum>\n                <maximum>50.1.1.1</maximum>\n                <increment>1</increment>\n              </destination-ip>\n              <source-port>\n                <start>10000</start>\n                <minimum>10000</minimum>\n                <maximum>10128</maximum>\n                <increment>1</increment>\n              </source-port>\n              <destination-port>\n                <start>5678</start>\n                <minimum>5678</minimum>\n                <maximum>5678</maximum>\n                <increment>1</increment>\n              </destination-port>\n              <packet-size>\n                <start>1024</start>\n                <minimum>1024</minimum>\n                <maximum>1024</maximum>\n                <increment>1</increment>\n              </packet-size>\n              <vlan>\n                <start>200</start>\n                <minimum>200</minimum>\n                <maximum>200</maximum>\n                <increment>1</increment>\n              </vlan>\n            </range-template>\n          </trafgen>\n        </port>\n      </vnf>\n    </vnf-config>\n    <logging xmlns=\"http://riftio.com/ns/riftware-1.0/rwlog-mgmt\">\n      <sink>\n        <name>syslog</name>\n        <server-address><rw_mgmt_ip></server-address>\n        <port>514</port>\n      </sink>\n    </logging>\n        ",
+              "input-params": {
+                "config-delay": 180,
+                "config-priority": 1
+              },
+              "netconf": {
+                "target": "running",
+                "port": 2022
+              }
+            },
+            "vnfd-id-ref": "2544951a-d6b5-11e5-9bb7-001b21b98a89",
+            "member-vnf-index": 1
+          },
+          {
+            "vnf-configuration": {
+              "input-params": {
+                "config-delay": 0,
+                "config-priority": 2
+              },
+              "config-type": "script",
+              "config-template": "\n#!/usr/bin/expect -f\nset login \"root\"\nset addr <rw_mgmt_ip>\nset pw \"6windos\"\nspawn ssh -1 $login@$addr\n\nset timeout 60\n\nexpect \"yes/no\" {\n    send \"yes\\r\"\n    expect \"*?assword:\" { send \"$pw\\r\" }\n    } \"*?assword:\" { send \"$pw\\r\" }\n\nexpect \"# \"\nsend \"cli\\r\"\nexpect \"{}\"\nsend \"edit conf running\\r\"\nexpect \"ing}\"\n\n# Setup eth1 config\nsend \"eth1\\r\"\nexpect \"eth1}\"\nsend \"ipaddress dhcpv4\\r\"\nexpect \"dhcpv4}\"\nsend \"dhcp enable\\r\"\nexpect \"dhcpv4}\"\nsend \"exit\\r\"\nexpect \"eth1}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n# Setup eth2 config\nsend \"eth2\\r\"\nexpect \"eth2}\"\nsend \"ipaddress dhcpv4\\r\"\nexpect \"dhcpv4}\"\nsend \"dhcp enable\\r\"\nexpect \"dhcpv4}\"\nsend \"exit\\r\"\nexpect \"eth2}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup loopback\nsend \"loopback0\\r\"\nexpect \"back0}\"\nsend \"ipaddress 2.2.2.2/32\\r\"\nexpect \"back0}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup VRF 2\nsend \"vrf2\\r\"\nexpect \"vrf2}\"\nsend \"forwarding ipv4 enable\\r\"\nexpect \"vrf2}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Applyconfig\nsend \"addrunning\\r\"\nexpect \"ing}\"\nsend \"exit\\r\"\nexpect \"{}\"\n\n# Get MAC of eth2\nsend \"show interface eth2\\r\"\nexpect -re {ether (\\S+)}\nset macaddr $expect_out(1,string)\nputs $macaddr\n\n# Enter into edit config mode again\nsend \"edit conf running\\r\"\n\n#Setup route for GRE tunnel\nsend \"rtg\\r\"\nexpect \"rtg}\"\nsend \"route 3.3.3.3/32 100.0.108.60\\r\"\nexpect \"rtg}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup VLAN on eth2 and vrf2\nsend \"vlan2\\r\"\nexpect \"vlan2}\"\nsend \"bind eth2 id 200\\r\"\nexpect \"vlan2}\"\nsend \"mac-address $macaddr\\r\"\nexpect \"vlan2}\"\nsend \"ipaddress 200.1.1.2/24\\r\"\nexpect \"vlan2}\"\nsend \"vrf-id 2\\r\"\nexpect \"vlan2}\"\nsend \"interface up\\r\"\nexpect \"vlan2}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup GRE on vrf2\nsend \"gre2\\r\"\nexpect \"gre2}\"\nsend \"bind 2.2.2.2 3.3.3.3 \\r\"\nexpect \"gre2}\"\nsend \"endpoints 5.1.1.1 5.1.1.2\\r\"\nexpect \"gre2}\"\nsend \"vrf-id 2\\r\"\nexpect \"gre2}\"\nsend \"checksum-input disable\\r\"\nexpect \"gre2}\"\nsend \"interface up\\r\"\nexpect \"gre2}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Setup routing in VRF2 for VLAN2 traffic\nsend \"rtg\\r\"\nexpect \"rtg}\"\nsend \"route 50.1.1.1/32 5.1.1.2 vrf-id 2\\r\"\nexpect \"rtg}\"\nsend \"exit\\r\"\nexpect \"ing}\"\n\n#Applyconfig\nsend \"addrunning\\r\"\nexpect \"ing}\"\nsend \"exit\\r\"\nexpect \"{}\"\n        ",
+              "script": {
+                "script-type": "expect"
+              }
+            },
+            "vnfd-id-ref": "23028096-d6b5-11e5-8e3f-001b21b98a89",
+            "member-vnf-index": 2
+          },
+          {
+            "vnf-configuration": {
+              "input-params": {
+                "config-delay": 0,
+                "config-priority": 0
+              }
+            },
+            "vnfd-id-ref": "2407d7a2-d6b5-11e5-95d4-001b21b98a89",
+            "member-vnf-index": 3
+          }
+        ],
+        "short-name": "Vpn_Provider_Site_CorpB_nsd",
+        "vld": [
+          {
+            "description": "Corporate LAN for B,SRIOV based",
+            "type": "ELAN",
+            "version": 1,
+            "provider-network": {
+              "physical-network": "physnet4",
+              "overlay-type": "FLAT"
+            },
+            "short-name": "Corp-B Prov-link",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 1,
+                "vnfd-connection-point-ref": "trafgen_vnfd/cp0",
+                "vnfd-id-ref": "2544951a-d6b5-11e5-9bb7-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 2,
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp0",
+                "vnfd-id-ref": "23028096-d6b5-11e5-8e3f-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 3,
+                "vnfd-connection-point-ref": "cwims_vnfd/cp0",
+                "vnfd-id-ref": "2407d7a2-d6b5-11e5-95d4-001b21b98a89"
+              }
+            ],
+            "name": "Corp-B Prov-link",
+            "vendor": "RIFT.io",
+            "id": "29405438-d6b5-11e5-a599-001b21b98a89"
+          },
+          {
+            "description": "External network VIRTIO based",
+            "type": "ELAN",
+            "version": 1,
+            "short-name": "multisite",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 2,
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp1",
+                "vnfd-id-ref": "23028096-d6b5-11e5-8e3f-001b21b98a89"
+              }
+            ],
+            "name": "multisite",
+            "vendor": "RIFT.io",
+            "id": "2940a00a-d6b5-11e5-a599-001b21b98a89"
+          }
+        ],
+        "name": "Vpn_Provider_Site_CorpB_nsd",
+        "vendor": "RIFT.io",
+        "id": "29212fb8-d6b5-11e5-a599-001b21b98a89",
+        "meta": {
+          "instance-ref-count": 0
+        }
+      },
+      {
+        "description": "NS Vrouter-Trafsink",
+        "version": 1,
+        "constituent-vnfd": [
+          {
+            "vnf-configuration": {
+              "config-type": "netconf",
+              "config-template": "\n        <vnf-config xmlns=\"http://riftio.com/ns/riftware-1.0/mano-base\">\n      <vnf>\n        <name>trafsink</name>\n        <instance>0</instance>\n        <network-context xmlns=\"http://riftio.com/ns/riftware-1.0/rw-vnf-base-config\">\n          <name>lb-trafsink</name>\n          <interface>\n            <name>N3TenGigi-1</name>\n            <bind>\n              <port>trafsink_vnfd/cp0</port>\n            </bind>\n            <ip>\n              <address>50.1.1.1/24</address>\n            </ip>\n          </interface>\n        </network-context>\n        <port xmlns=\"http://riftio.com/ns/riftware-1.0/rw-vnf-base-config\">\n          <name>trafsink_vnfd/cp0</name>\n          <open/>\n          <application>\n            <rx>rw_trafgen</rx>\n            <tx>rw_trafgen</tx>\n          </application>\n          <receive-q-length>2</receive-q-length>\n          <port-identity>\n          <ip-address><rw_connection_point_name trafsink_vnfd/cp0></ip-address>\n          <port-mode>direct</port-mode>\n          </port-identity>\n          <trafgen xmlns=\"http://riftio.com/ns/riftware-1.0/rw-trafgen\">\n            <receive-param>\n              <receive-echo>\n                <on/>\n              </receive-echo>\n            </receive-param>\n          </trafgen>\n        </port>\n      </vnf>\n    </vnf-config>\n    <logging xmlns=\"http://riftio.com/ns/riftware-1.0/rwlog-mgmt\">\n      <sink>\n        <name>syslog</name>\n        <server-address><rw_mgmt_ip></server-address>\n        <port>514</port>\n      </sink>\n    </logging>\n\n        ",
+              "input-params": {
+                "config-delay": 180,
+                "config-priority": 1
+              },
+              "netconf": {
+                "target": "running",
+                "port": 2022
+              },
+              "config-access": {
+                "password": "admin",
+                "username": "admin"
+              }
+            },
+            "vnfd-id-ref": "26a08568-d6b5-11e5-a5c6-001b21b98a89",
+            "member-vnf-index": 1
+          },
+          {
+            "vnf-configuration": {
+              "input-params": {
+                "config-delay": 0,
+                "config-priority": 2
+              },
+              "config-type": "script",
+              "config-template": "\n#!/usr/bin/expect -f\nset login \"vyatta\"\nset addr <rw_mgmt_ip>\nset pw \"vyatta\"\nspawn ssh $login@$addr\n\nset timeout 60\n\nexpect \"yes/no\" {\n    send \"yes\n\"\n    expect \"*?assword:\" { send \"$pw\n\" }\n    } \"*?assword:\" { send \"$pw\n\" }\n\nexpect \"$ \"\nsend \"configure\n\"\nexpect \"# \"\nsend \"set protocols static interface-route 50.1.1.0/24 next-hop-interface dp0s6\n\"\nexpect \"# \"\nsend \"set protocols static route 2.2.2.2/32 next-hop 100.0.108.5\n\"\nexpect \"# \"\nsend \"set interfaces loopback lo1 address 3.3.3.3/32\n\"\nexpect \"# \"\nsend \"set interfaces tunnel tun0 address 5.1.1.2/24\n\"\nexpect \"# \"\nsend \"set interfaces tunnel tun0 encapsulation gre\n\"\nexpect \"# \"\nsend \"set interfaces tunnel tun0 local-ip 3.3.3.3\n\"\nexpect \"# \"\nsend \"set interfaces tunnel tun0 remote-ip 2.2.2.2\n\"\nexpect \"# \"\nsend \"set protocols static route 200.1.1.1/32 next-hop 5.1.1.1\n\"\nexpect \"# \"\nsend \"commit\n\"\nexpect \"# \"\nsend \"exit \n\"\nexpect \"$ \"\n        ",
+              "script": {
+                "script-type": "expect"
+              }
+            },
+            "vnfd-id-ref": "a6ce0f96-d6cc-11e5-9540-001b21b98a89",
+            "member-vnf-index": 2
+          }
+        ],
+        "short-name": "Vpn_Remote_Site_nsd",
+        "vld": [
+          {
+            "description": "Corporate LAN for X,SRIOV based",
+            "type": "ELAN",
+            "version": 1,
+            "provider-network": {
+              "physical-network": "physnet3",
+              "overlay-type": "FLAT"
+            },
+            "short-name": "Corp-X Remote Site link",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 1,
+                "vnfd-connection-point-ref": "trafsink_vnfd/cp0",
+                "vnfd-id-ref": "26a08568-d6b5-11e5-a5c6-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 2,
+                "vnfd-connection-point-ref": "vrouter_vnfd/cp0",
+                "vnfd-id-ref": "a6ce0f96-d6cc-11e5-9540-001b21b98a89"
+              }
+            ],
+            "name": "Corp-X Remote Site link",
+            "vendor": "RIFT.io",
+            "id": "b83bb668-d6cf-11e5-99d1-001b21b98a89"
+          },
+          {
+            "description": "External network VIRTIO based",
+            "type": "ELAN",
+            "version": 1,
+            "short-name": "multisite",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 2,
+                "vnfd-connection-point-ref": "vrouter_vnfd/cp1",
+                "vnfd-id-ref": "a6ce0f96-d6cc-11e5-9540-001b21b98a89"
+              }
+            ],
+            "name": "multisite",
+            "vendor": "RIFT.io",
+            "id": "b83bff92-d6cf-11e5-99d1-001b21b98a89"
+          }
+        ],
+        "name": "Vpn_Remote_Site_nsd",
+        "vendor": "RIFT.io",
+        "id": "b81198ec-d6cf-11e5-99d1-001b21b98a89",
+        "meta": {
+          "instance-ref-count": 0
+        }
+      },
+      {
+        "description": "6wind turborouter only",
+        "version": 1,
+        "constituent-vnfd": [
+          {
+            "vnf-configuration": {
+              "initial-config-primitive": [
+                {
+                  "parameter": [
+                    {
+                      "name": "pass",
+                      "value": "6windos"
+                    },
+                    {
+                      "name": "user",
+                      "value": "root"
+                    },
+                    {
+                      "name": "vpe-router",
+                      "value": "<rw_mgmt_ip>"
+                    }
+                  ],
+                  "name": "config",
+                  "seq": 1
+                },
+                {
+                  "parameter": [
+                    {
+                      "name": "cidr",
+                      "value": "10.10.10.2/30"
+                    },
+                    {
+                      "name": "iface-name",
+                      "value": "eth1"
+                    }
+                  ],
+                  "name": "configure-interface",
+                  "seq": 2
+                }
+              ],
+              "config-type": "juju",
+              "input-params": {
+                "config-delay": 0,
+                "config-priority": 0
+              },
+              "juju": {
+                "charm": "vpe-router"
+              }
+            },
+            "vnfd-id-ref": "c49db92a-d6d8-11e5-9537-6cb3113b406f",
+            "member-vnf-index": 1
+          }
+        ],
+        "short-name": "tr_juju_nsd",
+        "vld": [
+          {
+            "description": "Link from TR to ELAN",
+            "type": "ELAN",
+            "version": 1,
+            "short-name": "Link1",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 1,
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp0",
+                "vnfd-id-ref": "c49db92a-d6d8-11e5-9537-6cb3113b406f"
+              }
+            ],
+            "name": "Link1",
+            "vendor": "RIFT.io",
+            "id": "c4f9dc50-d6d8-11e5-864f-6cb3113b406f"
+          }
+        ],
+        "config-primitive": [
+          {
+            "parameter": [
+              {
+                "data-type": "string",
+                "name": "Corporation Name",
+                "mandatory": "true"
+              },
+              {
+                "data-type": "integer",
+                "name": "Tunnel Key",
+                "default-value": 1,
+                "mandatory": "true"
+              }
+            ],
+            "name": "Add Corporation",
+            "parameter-group": [
+              {
+                "parameter": [
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Gateway",
+                    "default-value": "10.0.1.1",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Network",
+                    "default-value": "10.0.1.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Interface Name",
+                    "default-value": "eth3",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network",
+                    "default-value": "10.255.255.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network Area",
+                    "default-value": 0,
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "integer",
+                    "name": "Vlan ID",
+                    "default-value": 101,
+                    "mandatory": "true"
+                  }
+                ],
+                "name": "PE1",
+                "mandatory": "false"
+              },
+              {
+                "parameter": [
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Gateway",
+                    "default-value": "10.0.2.1",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Network",
+                    "default-value": "10.0.2.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Interface Name",
+                    "default-value": "eth3",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network",
+                    "default-value": "10.255.255.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network Area",
+                    "default-value": 0,
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "integer",
+                    "name": "Vlan ID",
+                    "default-value": 102,
+                    "mandatory": "true"
+                  }
+                ],
+                "name": "PE2",
+                "mandatory": "false"
+              },
+              {
+                "parameter": [
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Gateway",
+                    "default-value": "10.0.4.1",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Network",
+                    "default-value": "10.0.4.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Interface Name",
+                    "default-value": "eth4",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network",
+                    "default-value": "10.255.255.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network Area",
+                    "default-value": 0,
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "integer",
+                    "name": "Vlan ID",
+                    "default-value": 108,
+                    "mandatory": "true"
+                  }
+                ],
+                "name": "PE3",
+                "mandatory": "false"
+              }
+            ],
+            "user-defined-script": "/home/rift/.install/usr/bin/add_corporation.py"
+          },
+          {
+            "parameter": [
+              {
+                "data-type": "string",
+                "name": "Corporation Name",
+                "mandatory": "true"
+              },
+              {
+                "data-type": "integer",
+                "name": "Tunnel Key",
+                "default-value": 10,
+                "mandatory": "true"
+              }
+            ],
+            "name": "Add SP Test Corporation",
+            "parameter-group": [
+              {
+                "parameter": [
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Gateway",
+                    "default-value": "10.0.1.1",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Network",
+                    "default-value": "10.0.1.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Interface Name",
+                    "default-value": "eth3",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network",
+                    "default-value": "10.255.255.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network Area",
+                    "default-value": 0,
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "integer",
+                    "name": "Vlan ID",
+                    "default-value": 3000,
+                    "mandatory": "true"
+                  }
+                ],
+                "name": "PE1",
+                "mandatory": "false"
+              },
+              {
+                "parameter": [
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Gateway",
+                    "default-value": "10.0.2.1",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Network",
+                    "default-value": "10.0.2.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Interface Name",
+                    "default-value": "eth3",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network",
+                    "default-value": "10.255.255.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network Area",
+                    "default-value": 0,
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "integer",
+                    "name": "Vlan ID",
+                    "default-value": 3000,
+                    "mandatory": "true"
+                  }
+                ],
+                "name": "PE2",
+                "mandatory": "false"
+              },
+              {
+                "parameter": [
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Gateway",
+                    "default-value": "10.0.3.1",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Corp. Network",
+                    "default-value": "10.0.3.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Interface Name",
+                    "default-value": "eth3",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network",
+                    "default-value": "10.255.255.0/24",
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "string",
+                    "name": "Local Network Area",
+                    "default-value": 0,
+                    "mandatory": "true"
+                  },
+                  {
+                    "data-type": "integer",
+                    "name": "Vlan ID",
+                    "default-value": 3000,
+                    "mandatory": "true"
+                  }
+                ],
+                "name": "PE3",
+                "mandatory": "false"
+              }
+            ],
+            "user-defined-script": "/home/rift/.install/usr/bin/add_corporation.py"
+          }
+        ],
+        "name": "tr_juju_nsd",
+        "vendor": "6Wind",
+        "id": "c4f7fb6a-d6d8-11e5-864f-6cb3113b406f",
+        "meta": {
+          "instance-ref-count": 0
+        }
+      },
+      {
+        "description": "NS Clearewater IMS only",
+        "input-parameter-xpath": [
+          {
+            "label": "net-corp-vlan",
+            "default-value": 55,
+            "xpath": "/nsd:nsd-catalog/nsd:nsd[nsd:id=c719e6ba-d6d8-11e5-8962-6cb3113b406f]/nsd:vld[nsd:id=c71b347a-d6d8-11e5-8962-6cb3113b406f]/nsd:provider-network/manotypes:segmentation_id"
+          }
+        ],
+        "version": 1,
+        "constituent-vnfd": [
+          {
+            "vnf-configuration": {
+              "config-primitive": [
+                {
+                  "parameter": [
+                    {
+                      "data-type": "string",
+                      "name": "base_number"
+                    },
+                    {
+                      "data-type": "string",
+                      "name": "home_domain"
+                    },
+                    {
+                      "data-type": "integer",
+                      "name": "number_count"
+                    },
+                    {
+                      "data-type": "string",
+                      "name": "password"
+                    }
+                  ],
+                  "name": "config"
+                },
+                {
+                  "parameter": [
+                    {
+                      "data-type": "string",
+                      "name": "number",
+                      "mandatory": "true"
+                    },
+                    {
+                      "data-type": "string",
+                      "name": "password",
+                      "mandatory": "true"
+                    }
+                  ],
+                  "name": "create-update-user"
+                },
+                {
+                  "parameter": [
+                    {
+                      "data-type": "string",
+                      "name": "number",
+                      "mandatory": "true"
+                    }
+                  ],
+                  "name": "delete-user"
+                }
+              ],
+              "config-type": "juju",
+              "initial-config-primitive": [
+                {
+                  "parameter": [
+                    {
+                      "name": "proxied_ip",
+                      "value": "<rw_mgmt_ip>"
+                    }
+                  ],
+                  "name": "config",
+                  "seq": 1
+                }
+              ],
+              "input-params": {
+                "config-delay": 0,
+                "config-priority": 1
+              },
+              "juju": {
+                "charm": "clearwater-aio-proxy"
+              }
+            },
+            "vnfd-id-ref": "c663ea54-d6d8-11e5-9f1a-6cb3113b406f",
+            "member-vnf-index": 1
+          }
+        ],
+        "short-name": "cwims_juju_nsd",
+        "vld": [
+          {
+            "description": "Link from cwims to ELAN",
+            "type": "ELAN",
+            "version": 1,
+            "provider-network": {
+              "physical-network": "physnet1",
+              "overlay-type": "VLAN"
+            },
+            "short-name": "net-corp",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 1,
+                "vnfd-connection-point-ref": "cwims_vnfd/cp0",
+                "vnfd-id-ref": "c663ea54-d6d8-11e5-9f1a-6cb3113b406f"
+              }
+            ],
+            "name": "net-corp",
+            "vendor": "RIFT.io",
+            "id": "c71b347a-d6d8-11e5-8962-6cb3113b406f"
+          }
+        ],
+        "config-primitive": [
+          {
+            "name": "Add User",
+            "vnf-primitive-group": [
+              {
+                "vnfd-name": "cwims_vnfd",
+                "member-vnf-index-ref": 1,
+                "vnfd-id-ref": "c663ea54-d6d8-11e5-9f1a-6cb3113b406f",
+                "primitive": [
+                  {
+                    "index": 1,
+                    "name": "create-update-user"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Delete User",
+            "vnf-primitive-group": [
+              {
+                "vnfd-name": "cwims_vnfd",
+                "member-vnf-index-ref": 1,
+                "vnfd-id-ref": "c663ea54-d6d8-11e5-9f1a-6cb3113b406f",
+                "primitive": [
+                  {
+                    "index": 1,
+                    "name": "delete-user"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Update Domain",
+            "vnf-primitive-group": [
+              {
+                "vnfd-name": "cwims_vnfd",
+                "member-vnf-index-ref": 1,
+                "vnfd-id-ref": "c663ea54-d6d8-11e5-9f1a-6cb3113b406f",
+                "primitive": [
+                  {
+                    "index": 1,
+                    "name": "config"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "name": "cwims_juju_nsd",
+        "vendor": "RIFT.io",
+        "id": "c719e6ba-d6d8-11e5-8962-6cb3113b406f",
+        "meta": {
+          "instance-ref-count": 0
+        }
+      }
+    ]
+  },
+  {
+    "id": "GUID-2",
+    "name": "RIFT.ware™ VNF Descriptors Catalog",
+    "short-name": "rift.ware-vnfd-cat",
+    "description": "RIFT.ware™, an open source NFV development and deployment software platform that makes it simple to create, deploy and manage hyper-scale Virtual network functions and applications.",
+    "vendor": "RIFT.io",
+    "version": "",
+    "created-on": "",
+    "type": "vnfd",
+    "meta": {
+      "icon-svg": "data:image/svg+xml,<?xml version=\"1.0\" encoding=\"utf-8\"?> <!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0) --> <!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"> <svg version=\"1.1\" id=\"Layer_3\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" width=\"100px\" height=\"100px\" viewBox=\"0 0 100 100\" enable-background=\"new 0 0 100 100\" xml:space=\"preserve\"> <g> <path d=\"M58.852,62.447l-4.662-1.033c-0.047-3.138-0.719-6.168-1.996-9.007l3.606-2.92c0.858-0.695,0.99-1.954,0.296-2.813 l-4.521-5.584c-0.334-0.413-0.818-0.675-1.346-0.731c-0.525-0.057-1.056,0.102-1.468,0.435L45.25,43.64v0 c-2.486-1.907-5.277-3.259-8.297-4.019v-4.458c0-1.104-0.896-2-2-2H27.77c-1.104,0-2,0.896-2,2v4.461 c-3.08,0.777-5.922,2.171-8.447,4.144l-3.545-2.82c-0.415-0.33-0.94-0.479-1.472-0.422c-0.527,0.06-1.009,0.327-1.339,0.743 l-4.472,5.623c-0.688,0.864-0.544,2.123,0.32,2.81l3.642,2.896v0c-1.25,2.848-1.895,5.88-1.916,9.011l-4.666,1.078 c-1.076,0.249-1.747,1.322-1.499,2.398l1.616,7.001c0.249,1.077,1.325,1.747,2.399,1.499l4.813-1.111v0 c1.429,2.681,3.344,5.017,5.691,6.943l-2.17,4.55c-0.476,0.997-0.054,2.19,0.943,2.666l6.484,3.094 c0.271,0.129,0.566,0.195,0.861,0.195c0.226,0,0.451-0.038,0.668-0.115c0.5-0.177,0.909-0.545,1.138-1.024l2.198-4.611 c2.923,0.563,5.966,0.554,8.879-0.033l2.236,4.585c0.484,0.994,1.685,1.403,2.675,0.921l6.456-3.148 c0.992-0.484,1.405-1.682,0.921-2.674l-2.206-4.524c2.335-1.946,4.231-4.301,5.639-6.999l4.812,1.067 c1.076,0.237,2.146-0.441,2.385-1.52l1.556-7.014c0.115-0.518,0.02-1.06-0.266-1.508C59.82,62.878,59.369,62.562,58.852,62.447z M40.18,61.761c0,4.859-3.953,8.812-8.813,8.812c-4.858,0-8.811-3.953-8.811-8.812s3.952-8.812,8.811-8.812 C36.227,52.949,40.18,56.902,40.18,61.761z\"/> <path d=\"M64.268,45.324c0.746,0,1.463-0.42,1.806-1.139l1.054-2.208c1.826,0.353,3.736,0.345,5.551-0.021l1.07,2.195 c0.484,0.992,1.682,1.405,2.675,0.921l2.691-1.313c0.477-0.233,0.842-0.646,1.015-1.147c0.172-0.501,0.139-1.051-0.095-1.528 l-1.052-2.155c1.458-1.214,2.645-2.686,3.527-4.377l2.278,0.504c1.075,0.238,2.146-0.442,2.386-1.52l0.647-2.923 c0.238-1.078-0.442-2.146-1.521-2.385l-2.184-0.484c-0.028-1.962-0.449-3.857-1.248-5.632l1.673-1.355 c0.412-0.334,0.675-0.818,0.73-1.345s-0.102-1.056-0.436-1.468l-1.884-2.327c-0.697-0.859-1.957-0.99-2.813-0.295l-1.614,1.307 c-1.554-1.193-3.299-2.038-5.188-2.513v-2.039c0-1.104-0.896-2-2-2h-2.994c-1.104,0-2,0.896-2,2v2.04 c-1.927,0.486-3.703,1.358-5.28,2.592l-1.634-1.298c-0.862-0.687-2.12-0.543-2.81,0.32l-1.864,2.344 c-0.33,0.416-0.481,0.945-0.422,1.472c0.061,0.527,0.327,1.009,0.743,1.339l1.69,1.345c-0.78,1.779-1.184,3.676-1.197,5.636 l-2.189,0.505c-0.517,0.119-0.965,0.439-1.246,0.889c-0.281,0.45-0.372,0.993-0.252,1.51l0.675,2.918 c0.249,1.076,1.323,1.747,2.398,1.498l2.28-0.527c0.892,1.676,2.089,3.137,3.559,4.343l-1.035,2.17 c-0.228,0.479-0.257,1.028-0.08,1.528c0.178,0.5,0.546,0.91,1.024,1.138l2.703,1.289C63.686,45.261,63.979,45.324,64.268,45.324z M64.334,27.961c0-3.039,2.473-5.51,5.512-5.51c3.038,0,5.51,2.472,5.51,5.51c0,3.039-2.472,5.511-5.51,5.511 C66.807,33.472,64.334,31,64.334,27.961z\"/> <path d=\"M96.107,66.441l-2.182-0.484c-0.028-1.961-0.449-3.856-1.25-5.632l1.675-1.355c0.412-0.334,0.675-0.818,0.73-1.346 c0.056-0.527-0.102-1.056-0.436-1.468l-1.885-2.327c-0.695-0.859-1.956-0.99-2.813-0.295l-1.614,1.307 c-1.555-1.193-3.3-2.038-5.188-2.513v-2.039c0-1.104-0.896-2-2-2h-2.994c-1.104,0-2,0.896-2,2v2.041 c-1.929,0.486-3.706,1.358-5.282,2.592l-0.001,0l-1.631-1.298c-0.415-0.331-0.938-0.482-1.472-0.422 c-0.527,0.06-1.009,0.327-1.339,0.742l-1.863,2.343c-0.688,0.865-0.544,2.123,0.32,2.811l1.691,1.345 c-0.782,1.784-1.186,3.68-1.199,5.636l-2.188,0.505c-0.517,0.12-0.965,0.439-1.246,0.889c-0.281,0.45-0.372,0.993-0.252,1.51 l0.675,2.918c0.249,1.076,1.327,1.744,2.397,1.498l2.281-0.526c0.893,1.677,2.09,3.138,3.558,4.343h0.001l-1.035,2.168 c-0.229,0.479-0.258,1.029-0.081,1.529c0.178,0.5,0.546,0.909,1.024,1.138l2.702,1.289c0.278,0.132,0.571,0.195,0.86,0.195 c0.746,0,1.463-0.42,1.806-1.139l1.054-2.208c1.828,0.353,3.739,0.347,5.552-0.021l1.071,2.194 c0.484,0.992,1.682,1.405,2.675,0.921l2.69-1.312c0.477-0.233,0.842-0.645,1.014-1.147c0.173-0.501,0.14-1.051-0.093-1.528 l-1.052-2.155c1.459-1.215,2.645-2.688,3.525-4.377l2.278,0.505c0.52,0.116,1.061,0.02,1.508-0.266 c0.447-0.285,0.763-0.736,0.878-1.254l0.647-2.923C97.866,67.748,97.186,66.681,96.107,66.441z M85.162,66.174 c0,3.039-2.471,5.511-5.508,5.511c-3.039,0-5.512-2.472-5.512-5.511c0-3.039,2.473-5.511,5.512-5.511 C82.691,60.664,85.162,63.136,85.162,66.174z\"/> </g> </svg> "
+    },
+    "descriptors": [
+      {
+        "description": "This is a Benu ClientSim VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "clientsim_vnfd/cp0"
+              },
+              {
+                "name": "eth2",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "clientsim_vnfd/cp1"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 8192,
+              "storage-gb": 80,
+              "vcpu-count": 2
+            },
+            "name": "master",
+            "image": "clientsim-benu.qcow2",
+            "id": "19550ac8-c51c-11e5-b578-001b21b98a89",
+            "cloud-init": "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\nssh_pwauth: True\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ systemctl, start, --no-block, ngnix.service ]\n  - [ systemctl, start, --no-block, php-fpm.service ]\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "clientsim_vnfd/cp0",
+            "type": "VPORT"
+          },
+          {
+            "name": "clientsim_vnfd/cp1",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "19550ac8-c51c-11e5-b578-001b21b98a89",
+          "dashboard-params": {
+            "port": 8008,
+            "path": "/"
+          },
+          "port": 2022
+        },
+        "version": 1,
+        "short-name": "clientsim_vnfd",
+        "name": "clientsim_vnfd",
+        "vendor": "RIFT.io",
+        "id": "1953f58e-c51c-11e5-b578-001b21b98a89"
+      },
+      {
+        "description": "This is a 6Wind TurboRouter VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp0"
+              },
+              {
+                "name": "eth2",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp1"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "storage-gb": 40,
+              "vcpu-count": 2
+            },
+            "name": "iovdu",
+            "image": "turbo-router-riftio-4-sriov.img.qcow2",
+            "id": "2302e4c8-d6b5-11e5-8e3f-001b21b98a89",
+            "cloud-init": "#cloud-config\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "turborouter_vnfd/cp0",
+            "type": "VPORT"
+          },
+          {
+            "name": "turborouter_vnfd/cp1",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "2302e4c8-d6b5-11e5-8e3f-001b21b98a89",
+          "port": 80
+        },
+        "version": 1,
+        "short-name": "turborouter_vnfd",
+        "name": "turborouter_vnfd",
+        "vendor": "6Wind",
+        "id": "23028096-d6b5-11e5-8e3f-001b21b98a89"
+      },
+      {
+        "description": "This is a Riverbed Steelhead VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "Riverbed_SteelHead_vnfd/cp0"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "storage-gb": 40,
+              "vcpu-count": 2
+            },
+            "name": "iovdu",
+            "image": "riverbedimg",
+            "id": "2309cf5e-d6b5-11e5-9e33-001b21b98a89",
+            "cloud-init": "#cloud-config\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "Riverbed_SteelHead_vnfd/cp0",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "2309cf5e-d6b5-11e5-9e33-001b21b98a89",
+          "dashboard-params": {
+            "port": 80,
+            "path": "/"
+          },
+          "port": 80
+        },
+        "version": 1,
+        "short-name": "Riverbed_SteelHead_vnfd",
+        "name": "Riverbed_SteelHead_vnfd",
+        "vendor": "Riverbed",
+        "http-endpoint": [
+          {
+            "password": "password",
+            "polling_interval_secs": 2,
+            "path": "rest/info",
+            "username": "admin"
+          }
+        ],
+        "id": "23095c22-d6b5-11e5-9e33-001b21b98a89"
+      },
+      {
+        "description": "This is a F5 Big-IP load balancer VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "F5_BigIP_vnfd/cp0"
+              },
+              {
+                "name": "eth2",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "vnfd-connection-point-ref": "F5_BigIP_vnfd/cp1"
+              },
+              {
+                "name": "eth3",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "vnfd-connection-point-ref": "F5_BigIP_vnfd/cp2"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "storage-gb": 40,
+              "vcpu-count": 2
+            },
+            "name": "iovdu",
+            "image": "BIGIP-11.6.0.6.146.442.qcow2",
+            "id": "232a52ba-d6b5-11e5-98fb-001b21b98a89",
+            "cloud-init": "#cloud-config\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "F5_BigIP_vnfd/cp0",
+            "type": "VPORT"
+          },
+          {
+            "name": "F5_BigIP_vnfd/cp1",
+            "type": "VPORT"
+          },
+          {
+            "name": "F5_BigIP_vnfd/cp2",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "232a52ba-d6b5-11e5-98fb-001b21b98a89",
+          "dashboard-params": {
+            "https": "true",
+            "port": 443,
+            "path": "/"
+          },
+          "port": 80
+        },
+        "version": 1,
+        "short-name": "F5_BigIP_vnfd",
+        "name": "F5_BigIP_vnfd",
+        "vendor": "F5 Networks",
+        "http-endpoint": [
+          {
+            "password": "password",
+            "polling_interval_secs": 2,
+            "path": "rest/info",
+            "username": "admin"
+          }
+        ],
+        "id": "2329d470-d6b5-11e5-98fb-001b21b98a89"
+      },
+      {
+        "description": "This is a Clearwater IMS VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "cwims_vnfd/cp0"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "storage-gb": 40,
+              "vcpu-count": 2
+            },
+            "name": "iovdu",
+            "image": "cw-aio.qcow2",
+            "id": "2408452a-d6b5-11e5-95d4-001b21b98a89",
+            "cloud-init": "#cloud-config\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "cwims_vnfd/cp0",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "2408452a-d6b5-11e5-95d4-001b21b98a89",
+          "dashboard-params": {
+            "port": 80,
+            "path": "/"
+          },
+          "port": 80
+        },
+        "version": 1,
+        "short-name": "cwims_vnfd",
+        "name": "cwims_vnfd",
+        "vendor": "Clearwater",
+        "http-endpoint": [
+          {
+            "password": "vyatta",
+            "polling_interval_secs": 2,
+            "path": "rest/app/gui/dashboard/sysinfo",
+            "username": "vyatta"
+          }
+        ],
+        "id": "2407d7a2-d6b5-11e5-95d4-001b21b98a89"
+      },
+      {
+        "description": "This is a RIFT.ware Trafgen VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "trafgen_vnfd/cp0"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 16384,
+              "storage-gb": 32,
+              "vcpu-count": 4
+            },
+            "name": "iovdu",
+            "image": "rift-root-latest-trafgen-k2.qcow2",
+            "id": "2545bca6-d6b5-11e5-9bb7-001b21b98a89",
+            "cloud-init": "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\nssh_pwauth: True\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ systemctl, enable, trafgen.service ]\n  - [ systemctl, start, --no-block, trafgen.service ]\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "trafgen_vnfd/cp0",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "2545bca6-d6b5-11e5-9bb7-001b21b98a89",
+          "port": 2022
+        },
+        "version": 1,
+        "short-name": "trafgen_vnfd",
+        "name": "trafgen_vnfd",
+        "vendor": "RIFT.io",
+        "http-endpoint": [
+          {
+            "polling_interval_secs": 3,
+            "headers": [
+              {
+                "key": "Accept",
+                "value": "json"
+              },
+              {
+                "key": "Content-type",
+                "value": "application/vnd.yang.data+json"
+              }
+            ],
+            "port": 8008,
+            "password": "fedora",
+            "path": "api/operational/vnf-opdata/vnf/trafgen,0/port-state",
+            "username": "fedora"
+          }
+        ],
+        "id": "2544951a-d6b5-11e5-9bb7-001b21b98a89",
+        "monitoring-param": [
+          {
+            "json-query-params": {
+              "object-path": "$..*[@.portname is 'trafgen_vnfd/cp0'].counters.'tx-rate-mbps'"
+            },
+            "description": "Outgoing byte rate of interface",
+            "widget-type": "GAUGE",
+            "group-tag": "Group1",
+            "units": "mbps",
+            "value-type": "INT",
+            "name": "Cp0 Tx Rate",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 1000
+            },
+            "http-endpoint-ref": "api/operational/vnf-opdata/vnf/trafgen,0/port-state",
+            "id": 1,
+            "json-query-method": "OBJECTPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..*[@.portname is 'trafgen_vnfd/cp0'].counters.'rx-rate-mbps'"
+            },
+            "description": "Incoming byte rate of interface",
+            "widget-type": "GAUGE",
+            "group-tag": "Group1",
+            "units": "mbps",
+            "value-type": "INT",
+            "name": "Cp0 Rx Rate",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 1000
+            },
+            "http-endpoint-ref": "api/operational/vnf-opdata/vnf/trafgen,0/port-state",
+            "id": 2,
+            "json-query-method": "OBJECTPATH"
+          }
+        ]
+      },
+      {
+        "description": "This is a RIFT.ware Trafsink VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "trafsink_vnfd/cp0"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 16384,
+              "storage-gb": 32,
+              "vcpu-count": 4
+            },
+            "name": "iovdu",
+            "image": "rift-root-latest-trafgen-j.qcow2",
+            "id": "26a19e3a-d6b5-11e5-a5c6-001b21b98a89",
+            "cloud-init": "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\nssh_pwauth: True\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ systemctl, enable, trafsink.service ]\n  - [ systemctl, start, --no-block, trafsink.service ]\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "trafsink_vnfd/cp0",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "26a19e3a-d6b5-11e5-a5c6-001b21b98a89",
+          "port": 2022
+        },
+        "version": 1,
+        "short-name": "trafsink_vnfd",
+        "name": "trafsink_vnfd",
+        "vendor": "RIFT.io",
+        "http-endpoint": [
+          {
+            "polling_interval_secs": 3,
+            "headers": [
+              {
+                "key": "Accept",
+                "value": "json"
+              },
+              {
+                "key": "Content-type",
+                "value": "application/vnd.yang.data+json"
+              }
+            ],
+            "port": 8008,
+            "password": "fedora",
+            "path": "api/operational/vnf-opdata/vnf/trafsink,0/port-state",
+            "username": "fedora"
+          }
+        ],
+        "id": "26a08568-d6b5-11e5-a5c6-001b21b98a89",
+        "monitoring-param": [
+          {
+            "json-query-params": {
+              "object-path": "$..*[@.portname is 'trafsink_vnfd/cp0'].counters.'tx-rate-mbps'"
+            },
+            "description": "Outgoing bytes at interface",
+            "widget-type": "GAUGE",
+            "group-tag": "Group1",
+            "units": "mbps",
+            "value-type": "INT",
+            "name": "Cp0 Tx Rate",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 1000
+            },
+            "http-endpoint-ref": "api/operational/vnf-opdata/vnf/trafsink,0/port-state",
+            "id": 1,
+            "json-query-method": "OBJECTPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..*[@.portname is 'trafsink_vnfd/cp0'].counters.'rx-rate-mbps'"
+            },
+            "description": "Incoming bytes at interface",
+            "widget-type": "GAUGE",
+            "group-tag": "Group1",
+            "units": "mbps",
+            "value-type": "INT",
+            "name": "Cp0 Rx Rate",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 1000
+            },
+            "http-endpoint-ref": "api/operational/vnf-opdata/vnf/trafsink,0/port-state",
+            "id": 2,
+            "json-query-method": "OBJECTPATH"
+          }
+        ]
+      },
+      {
+        "description": "This is a Benu SSC VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "ssc_vnfd/cp0"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 8192,
+              "storage-gb": 48,
+              "vcpu-count": 2
+            },
+            "name": "master",
+            "image": "ssc-benu.qcow2",
+            "id": "2e981d3a-d00c-11e5-ab30-625662870761",
+            "cloud-init": "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\nssh_pwauth: True\nruncmd:\n  - [ service, startssc, start ]\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "ssc_vnfd/cp0",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "2e981d3a-d00c-11e5-ab30-625662870761",
+          "dashboard-params": {
+            "port": 80,
+            "path": "/"
+          },
+          "port": 2022
+        },
+        "version": 1,
+        "short-name": "ssc_vnfd",
+        "name": "ssc_vnfd",
+        "vendor": "RIFT.io",
+        "id": "2e9819f2-d00c-11e5-ab30-625662870761"
+      },
+      {
+        "description": "This is a Brocade vRouter VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth0",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "vrouter_vnfd/cp0"
+              },
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "vnfd-connection-point-ref": "vrouter_vnfd/cp1"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 8192,
+              "storage-gb": 40,
+              "vcpu-count": 4
+            },
+            "name": "iovdu",
+            "image": "vyatta-7.qcow2",
+            "id": "a6cf9a28-d6cc-11e5-9540-001b21b98a89",
+            "cloud-init": "#cloud-config\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "vrouter_vnfd/cp0",
+            "type": "VPORT"
+          },
+          {
+            "name": "vrouter_vnfd/cp1",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "a6cf9a28-d6cc-11e5-9540-001b21b98a89",
+          "dashboard-params": {
+            "port": 80,
+            "path": "/"
+          },
+          "port": 80
+        },
+        "version": 1,
+        "short-name": "vrouter_vnfd",
+        "name": "vrouter_vnfd",
+        "vendor": "Brocade",
+        "http-endpoint": [
+          {
+            "password": "vyatta",
+            "polling_interval_secs": 3,
+            "port": 80,
+            "path": "rest/app/gui/dashboard/interfaces",
+            "username": "vyatta"
+          },
+          {
+            "password": "vyatta",
+            "polling_interval_secs": 3,
+            "port": 80,
+            "path": "rest/app/gui/dashboard/sysinfo",
+            "username": "vyatta"
+          }
+        ],
+        "id": "a6ce0f96-d6cc-11e5-9540-001b21b98a89",
+        "monitoring-param": [
+          {
+            "json-query-params": {
+              "json-path": "$.system.mem_total"
+            },
+            "description": "Memory usage of vrouter",
+            "widget-type": "COUNTER",
+            "group-tag": "Group1",
+            "units": "KB",
+            "value-type": "INT",
+            "name": "Total memory",
+            "http-endpoint-ref": "rest/app/gui/dashboard/sysinfo",
+            "id": 1,
+            "json-query-method": "JSONPATH"
+          },
+          {
+            "json-query-params": {
+              "json-path": "$.system.mem"
+            },
+            "description": "Memory utilization of vrouter",
+            "widget-type": "GAUGE",
+            "group-tag": "Group1",
+            "units": "%",
+            "value-type": "DECIMAL",
+            "name": "Memory utilization",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 100
+            },
+            "http-endpoint-ref": "rest/app/gui/dashboard/sysinfo",
+            "id": 2,
+            "json-query-method": "JSONPATH"
+          },
+          {
+            "json-query-params": {
+              "json-path": "$.system.cpu[0].usage"
+            },
+            "description": "CPU utilization (all) of vrouter",
+            "widget-type": "GAUGE",
+            "group-tag": "Group1",
+            "units": "%",
+            "value-type": "DECIMAL",
+            "name": "CPU utilization",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 100
+            },
+            "http-endpoint-ref": "rest/app/gui/dashboard/sysinfo",
+            "id": 3,
+            "json-query-method": "JSONPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..interfaces[@.name is 'dp0s6']['in']"
+            },
+            "description": "Incoming bytes at interface",
+            "widget-type": "COUNTER",
+            "group-tag": "Group2",
+            "units": "bytes",
+            "value-type": "INT",
+            "name": "Interface[dp0s6] Rx",
+            "http-endpoint-ref": "rest/app/gui/dashboard/interfaces",
+            "id": 4,
+            "json-query-method": "OBJECTPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..interfaces[@.name is 'dp0s6']['out']"
+            },
+            "description": "Outgoing bytes at interface",
+            "widget-type": "COUNTER",
+            "group-tag": "Group2",
+            "units": "bytes",
+            "value-type": "INT",
+            "name": "Interface[dp0s6] Tx",
+            "http-endpoint-ref": "rest/app/gui/dashboard/interfaces",
+            "id": 5,
+            "json-query-method": "OBJECTPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..interfaces[@.name is 'tun0']['in']"
+            },
+            "description": "Incoming bytes at interface",
+            "widget-type": "COUNTER",
+            "group-tag": "Group2",
+            "units": "bytes",
+            "value-type": "INT",
+            "name": "Interface[tun0] Rx",
+            "http-endpoint-ref": "rest/app/gui/dashboard/interfaces",
+            "id": 6,
+            "json-query-method": "OBJECTPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..interfaces[@.name is 'tun0']['out']"
+            },
+            "description": "Outgoing bytes at interface",
+            "widget-type": "COUNTER",
+            "group-tag": "Group2",
+            "units": "bytes",
+            "value-type": "INT",
+            "name": "Interface[tun0] Tx",
+            "http-endpoint-ref": "rest/app/gui/dashboard/interfaces",
+            "id": 7,
+            "json-query-method": "OBJECTPATH"
+          }
+        ]
+      },
+      {
+        "description": "This is a Benu VSE-SI VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "vm-flavor": {
+              "memory-mb": 16384,
+              "storage-gb": 64,
+              "vcpu-count": 4
+            },
+            "name": "RW.VM.MASTER",
+            "image": "Benu_VSE_Image_02_09.qcow2",
+            "id": "c1bb1a92-aa48-4908-89b2-5a78ff324953",
+            "cloud-init": "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\nssh_pwauth: True\nwrite_files:\n  - path: /opt/rift/.vnf_start_conf\n    content: |\n        VNFNAME=\"vsesi\"\n        VDUNAME={{ vdu.name }}\n        MASTERIP= \nruncmd: \n  - [ systemctl, daemon-reload ]\n  - [ systemctl, enable, multivmvnf.service ]\n  - [ systemctl, start, --no-block, multivmvnf.service ]\n"
+          },
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "vsesi_vnfd/cp0"
+              },
+              {
+                "name": "eth2",
+                "virtual-interface": {
+                  "type": "SR-IOV"
+                },
+                "vnfd-connection-point-ref": "vsesi_vnfd/cp1"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 32768,
+              "storage-gb": 128,
+              "vcpu-count": 4
+            },
+            "name": "RW.VM.FASTPATH.LEAD",
+            "image": "Benu_VSE_Image_02_09.qcow2",
+            "id": "d1bb1a92-aa48-4908-89b2-5a78ff324953",
+            "cloud-init": "#cloud-config\npassword: fedora\nchpasswd: { expire: False }                                                                                                                 \nssh_pwauth: True\nwrite_files:\n  - path: /opt/rift/.vnf_start_conf\n    content: |\n        VNFNAME=\"vsesi\"\n        VDUNAME={{ vdu.name }}\n        MASTERIP= {{ vdu[c1bb1a92-aa48-4908-89b2-5a78ff324953].mgmt.ip }}\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ systemctl, enable, multivmvnf.service ]\n  - [ systemctl, start, --no-block, multivmvnf.service ]\n  - [ systemctl, enable, benuvnf.service ]\n  - [ systemctl, start, --no-block, benuvnf.service ]\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "vsesi_vnfd/cp0",
+            "type": "VPORT"
+          },
+          {
+            "name": "vsesi_vnfd/cp1",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "c1bb1a92-aa48-4908-89b2-5a78ff324953",
+          "port": 2022
+        },
+        "version": 1,
+        "short-name": "vsesi_vnfd",
+        "name": "vsesi_vnfd",
+        "vendor": "Benu",
+        "http-endpoint": [
+          {
+            "polling_interval_secs": 3,
+            "headers": [
+              {
+                "key": "Accept",
+                "value": "json"
+              },
+              {
+                "key": "Content-type",
+                "value": "application/vnd.yang.data+json"
+              }
+            ],
+            "port": 8008,
+            "password": "fedora",
+            "path": "api/operational/vnf-opdata/vnf/vsesi,0/port-state",
+            "username": "fedora"
+          }
+        ],
+        "id": "b1633f8c-ce8c-11e5-a62b-001b21b98a89",
+        "monitoring-param": [
+          {
+            "json-query-params": {
+              "object-path": "$..*[@.portname is 'vsesi/1/1'].counters.'tx-rate-mbps'"
+            },
+            "description": "Outgoing byte rate of interface",
+            "widget-type": "GAUGE",
+            "group-tag": "Group1",
+            "units": "mbps",
+            "value-type": "INT",
+            "name": "Cp0 Tx Rate",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 100
+            },
+            "http-endpoint-ref": "api/operational/vnf-opdata/vnf/vsesi,0/port-state",
+            "id": 1,
+            "json-query-method": "OBJECTPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..*[@.portname is 'vsesi/1/1'].counters.'rx-rate-mbps'"
+            },
+            "description": "Incoming byte rate of interface",
+            "widget-type": "GAUGE",
+            "group-tag": "Group1",
+            "units": "mbps",
+            "value-type": "INT",
+            "name": "Cp0 Rx Rate",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 100
+            },
+            "http-endpoint-ref": "api/operational/vnf-opdata/vnf/vsesi,0/port-state",
+            "id": 2,
+            "json-query-method": "OBJECTPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..*[@.portname is 'vsesi/1/2'].counters.'tx-rate-mbps'"
+            },
+            "description": "Outgoing byte rate of interface",
+            "widget-type": "GAUGE",
+            "group-tag": "Group2",
+            "units": "mbps",
+            "value-type": "INT",
+            "name": "Cp1 Tx Rate",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 100
+            },
+            "http-endpoint-ref": "api/operational/vnf-opdata/vnf/vsesi,0/port-state",
+            "id": 3,
+            "json-query-method": "OBJECTPATH"
+          },
+          {
+            "json-query-params": {
+              "object-path": "$..*[@.portname is 'vsesi/1/2'].counters.'rx-rate-mbps'"
+            },
+            "description": "Incoming byte rate of interface",
+            "widget-type": "GAUGE",
+            "group-tag": "Group2",
+            "units": "mbps",
+            "value-type": "INT",
+            "name": "Cp1 Rx Rate",
+            "numeric-constraints": {
+              "min-value": 0,
+              "max-value": 100
+            },
+            "http-endpoint-ref": "api/operational/vnf-opdata/vnf/vsesi,0/port-state",
+            "id": 4,
+            "json-query-method": "OBJECTPATH"
+          }
+        ]
+      },
+      {
+        "description": "This is a 6Wind TurboRouter VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp0"
+              },
+              {
+                "name": "eth2",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "vnfd-connection-point-ref": "turborouter_vnfd/cp1"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "storage-gb": 40,
+              "vcpu-count": 2
+            },
+            "name": "iovdu",
+            "image": "turbo-router-riftio-5.img.qcow2",
+            "id": "c49dffe8-d6d8-11e5-9537-6cb3113b406f",
+            "cloud-init": "#cloud-config\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "turborouter_vnfd/cp0",
+            "type": "VPORT"
+          },
+          {
+            "name": "turborouter_vnfd/cp1",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "c49dffe8-d6d8-11e5-9537-6cb3113b406f",
+          "port": 80
+        },
+        "version": 1,
+        "short-name": "turborouter_vnfd",
+        "name": "turborouter_vnfd",
+        "vendor": "6Wind",
+        "id": "c49db92a-d6d8-11e5-9537-6cb3113b406f"
+      },
+      {
+        "description": "This is a Clearwater IMS VNF",
+        "vdu": [
+          {
+            "count": 1,
+            "external-interface": [
+              {
+                "name": "eth1",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "vnfd-connection-point-ref": "cwims_vnfd/cp0"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "storage-gb": 40,
+              "vcpu-count": 2
+            },
+            "name": "iovdu",
+            "image": "cw-aio.qcow2",
+            "id": "c66438c4-d6d8-11e5-9f1a-6cb3113b406f",
+            "cloud-init": "#cloud-config\n"
+          }
+        ],
+        "connection-point": [
+          {
+            "name": "cwims_vnfd/cp0",
+            "type": "VPORT"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "c66438c4-d6d8-11e5-9f1a-6cb3113b406f",
+          "dashboard-params": {
+            "port": 80,
+            "path": "/"
+          },
+          "port": 80
+        },
+        "version": 1,
+        "short-name": "cwims_vnfd",
+        "name": "cwims_vnfd",
+        "vendor": "Clearwater",
+        "http-endpoint": [
+          {
+            "password": "vyatta",
+            "polling_interval_secs": 2,
+            "path": "rest/app/gui/dashboard/sysinfo",
+            "username": "vyatta"
+          }
+        ],
+        "id": "c663ea54-d6d8-11e5-9f1a-6cb3113b406f"
+      }
+    ]
+  },
+  {
+    "id": "GUID-3",
+    "name": "RIFT.ware™ PNF Descriptors Catalog",
+    "short-name": "rift.ware-pnfd-cat",
+    "description": "RIFT.ware™, an open source NFV development and deployment software platform that makes it simple to create, deploy and manage hyper-scale Virtual network functions and applications.",
+    "vendor": "RIFT.io",
+    "version": "",
+    "created-on": "",
+    "type": "pnfd",
+    "meta": {
+      "icon-svg": "data:image/svg+xml,<?xml version=\"1.0\" encoding=\"utf-8\"?> <!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0) --> <!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"> <svg version=\"1.1\" id=\"Layer_4\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" width=\"100px\" height=\"100px\" viewBox=\"0 0 100 100\" enable-background=\"new 0 0 100 100\" xml:space=\"preserve\"> <path d=\"M86.334,47.444V35.759H13.666v11.686h3.561v5.111h-3.561v11.686h72.668V52.556h-4.108v-5.111H86.334z M26.628,59.454h-5.051 v-4.941h5.051V59.454z M26.628,52.404h-5.051v-4.941h5.051V52.404z M26.628,45.486h-5.051v-4.941h5.051V45.486z M34.094,59.454 h-5.051v-4.941h5.051V59.454z M34.094,52.404h-5.051v-4.941h5.051V52.404z M34.094,45.486h-5.051v-4.941h5.051V45.486z M41.452,59.454h-5.051v-4.941h5.051V59.454z M41.452,52.404h-5.051v-4.941h5.051V52.404z M41.452,45.486h-5.051v-4.941h5.051 V45.486z M48.733,59.454h-5.051v-4.941h5.051V59.454z M48.733,52.404h-5.051v-4.941h5.051V52.404z M48.733,45.486h-5.051v-4.941 h5.051V45.486z M56.2,59.454h-5.051v-4.941H56.2V59.454z M56.2,52.404h-5.051v-4.941H56.2V52.404z M56.2,45.486h-5.051v-4.941H56.2 V45.486z M63.558,59.454h-5.05v-4.941h5.05V59.454z M63.558,52.404h-5.05v-4.941h5.05V52.404z M63.558,45.486h-5.05v-4.941h5.05 V45.486z M74.858,59.312h-6.521v-3.013h6.521V59.312z M71.572,50.854c-2.875,0-5.204-2.33-5.204-5.203s2.329-5.203,5.204-5.203 s5.204,2.33,5.204,5.203S74.446,50.854,71.572,50.854z M74.858,45.618c0,1.801-1.46,3.261-3.261,3.261 c-1.8,0-3.261-1.46-3.261-3.261s1.46-3.26,3.261-3.26C73.398,42.358,74.858,43.817,74.858,45.618z\"/> </svg>"
+    },
+    "descriptors": []
+  }
+]

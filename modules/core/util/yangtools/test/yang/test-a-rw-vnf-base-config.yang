@@ -1,0 +1,509 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module test-a-rw-vnf-base-config
+{
+  namespace "http://riftio.com/ns/riftware-1.0/test-a-rw-vnf-base-config";
+  prefix "rwvnfbase";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import test-a-mano-base {
+    prefix "manobase";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import test-a-rw-vnf-base-types {
+    prefix "rwvnfbasetypes";
+  }
+
+  revision 2015-08-25 {
+    description
+      "This conatins common objects for RIFT VNFs. The
+       RIFT VNFs augment this YANG model for configuration.";
+  }
+
+  grouping vm-identity{
+    leaf vm-identity{
+      type uint32;
+    }
+  }
+
+  grouping ip-config-family{
+    list route {
+      description "static IPv4 route configured";
+      rwpb:msg-new ConfigRoute;
+      key "prefix";
+      rwcli:new-mode "ip-route";          
+      leaf prefix {
+        description "static IPv4 route prefix";
+        type rwt:ip-prefix-non-canonical;
+        rwpb:field-string-max 46;
+      }
+      list nexthop {
+        rwpb:msg-new ConfigNexthop;
+
+        max-elements 10;
+
+        key "gateway interface-name";
+        leaf gateway {
+          rwpb:field-inline "true";
+          description "gateway address of the static route";
+          type rwt:ip-address;
+          rwpb:field-string-max 46;
+          rwpb:field-c-type "rw_ip_addr_t";
+        }
+        leaf interface-name {
+          rwpb:field-inline "true";
+          description "interface of the static route";
+          type string {
+            length "min..64";
+          }
+          rwpb:field-inline "true";
+        }
+      }
+    }
+    list neighbor {
+      key "address";
+
+      leaf address{
+        description "IPv4 address for the static arp entry";
+        type rwt:ip-address;
+        rwpb:field-string-max 46;
+        rwpb:field-c-type "rw_ip_addr_t";
+      }
+      leaf macaddress {
+        description "MAC address for the static arp entry";
+        type rwt:mac-address;
+        rwpb:field-string-max 18;
+        rwpb:field-c-type "rw_mac_addr_t";
+      }
+      leaf interface-name {
+        description "Interface Name for the static arp entry";
+        type string {
+          length "min..64";
+        }
+      }
+    }
+    list pool{
+      rwpb:msg-new ConfigPool;
+      rwcli:new-mode "ip-pool";
+      key "name";
+
+      leaf name{
+        description "pool name for the pool";
+        type string {
+          length "min..64";
+        }
+      }
+      leaf nat-pool{
+        type boolean;
+      }
+      list address{
+        rwpb:msg-new ConfigPoolAddress;
+        key "prefix";
+        leaf prefix {
+          description "prefix for the pool";
+          rwpb:field-inline "true";
+          type rwt:ip-prefix-non-canonical;
+          rwpb:field-string-max 46;
+          rwpb:field-c-type "rw_ip_prefix_t";
+        }
+      }
+    }
+    list nat-pool {
+      rwpb:msg-new ConfigNatPool;
+      rwcli:new-mode "ip-nat-pool";
+      key "name";
+      leaf name{
+        description "pool name for the nat-pool";
+        type string {
+          length "min..64";
+        }
+      }
+      list address{
+        rwpb:msg-new ConfigNatPoolAddress;
+        max-elements 10;
+        key "prefix";
+        leaf prefix {
+          description "prefix for the nat-pool";
+          rwpb:field-inline "true";
+          type rwt:ip-prefix-non-canonical;
+          rwpb:field-string-max 46;
+          rwpb:field-c-type "rw_ip_prefix_t";
+        }
+      }
+    }
+  }
+
+  grouping ipdomain{
+    list interface {
+      rwpb:msg-new ConfigIpInterface;
+      rwcli:new-mode "ip-interface";
+      key "name";
+
+      leaf name {
+        description "interface name";
+        type string {
+          length "min..64";
+        }
+        rwpb:field-inline "true";
+      }
+      leaf interface-type{
+        description "Interface type. defaults to an interface bound to port/vlan";
+        type rwvnfbasetypes:interface-type;
+      }
+
+      choice type{
+        case broadcast{
+          uses rwvnfbasetypes:bind-interface;
+        }
+        case tunnel{
+          uses rwvnfbasetypes:tunnel-params;
+        }
+      }
+
+      list ipv4 {
+        key "address";
+
+        leaf address {
+          description "ipv4 address assigned to the interface";
+          type rwt:ipv4-prefix-non-canonical;
+          rwpb:field-string-max 19;
+          rwpb:field-inline "true";
+          rwpb:field-c-type "rw_ip_prefix_t";
+        }
+      }
+      list ipv6 {
+        key "address";
+
+        leaf address {
+          description "ipv6 address assigned to the interface";
+          type rwt:ipv6-prefix-non-canonical;
+          rwpb:field-string-max 46;
+          rwpb:field-inline "true";
+          rwpb:field-c-type "rw_ip_prefix_t";
+        }
+      }
+    }
+
+    container ipv4 {
+      rwpb:msg-new ConfigIp;
+      uses ip-config-family;
+    }
+    container ipv6 {
+      rwpb:msg-new ConfigIpv6;
+      leaf forwarding{
+        type empty;
+      }
+      uses ip-config-family;
+    }
+
+    container packet-capture {
+      uses rwvnfbasetypes:fpath-packet-debug-params;
+    }
+    container packet-trace {
+      uses rwvnfbasetypes:fpath-packet-debug-params;
+    }
+  }
+
+//port groupings
+
+  augment /manobase:vnf-config/manobase:vnf {
+    description
+      "Container for VNF base configuration";
+    list network-context {
+      rwpb:msg-new ConfigNetworkContext;
+      rwcli:new-mode "network-context";
+      key "name";
+      leaf name {
+        description "Name of Network-context";
+        rwpb:field-inline "true";
+        type string {
+          length "min..64";
+        }
+      }
+      uses ipdomain;
+
+      list vrf {
+        rwpb:msg-new ConfigVrf;
+        rwcli:new-mode "vrf";
+
+        key "name";
+        max-elements 32;
+        leaf name {
+          description "Name of VRF";
+          rwpb:field-inline "true";
+          type string {
+            length "min..64";
+          }
+        }
+
+        uses ipdomain;
+      }
+    }
+
+    list port {
+      rwcli:new-mode " port";
+      rwpb:msg-new "PortConfig";
+      max-elements 64;
+      key "name";
+
+      leaf name {
+        description "Name of the port";
+        rwpb:field-inline "true";
+        type string {
+          length "min..64";
+        }
+      }
+      leaf port-type {
+        description "Type of port (ethernet/bundle-ether)";
+        type rwvnfbasetypes:port-type;
+      }
+
+      leaf descr-string {
+        description "description comment for port";
+        rwpb:field-inline "true";
+        type string {
+          length "min..32";
+        }
+      }
+
+      leaf open {
+        description "open the specified port";
+        type empty;
+      }
+      leaf mtu{
+        description "MTU of the port";
+        type uint32;
+      }
+      leaf shutdown {
+        description "Administrative shutdown of the port";
+        type empty;
+      }
+      leaf virtual-fabric {
+        type boolean;
+      }
+      choice porttype {
+        case ethernet {
+          container port-identity {
+            uses vm-identity;
+            choice type {
+              case ip-address {
+                leaf ip-address {
+                  description "Cloud assigned IP address for this port";
+                  rwpb:field-inline "true";
+                  type rwt:ip-address;
+                  rwpb:field-string-max 46;
+                  rwpb:field-c-type "rw_ip_addr_t";
+                }
+              }
+              case pci-address {
+                leaf pci-name {
+                  description "PCI address of the port";
+                  type string {
+                    length "min..12";
+                  }
+                }
+              }
+              case interface-name {
+                leaf interface-name {
+                  description "port name in the VM (shown in ifconfig)";
+                  type string {
+                    length "min..16";
+                  }
+                }
+              }
+              case private-name{
+                leaf private-name{
+                  description "Internal DPDK name of the port";
+                  type string;
+                }
+              }
+            }
+            leaf port-mode{
+              type rwvnfbasetypes:port-mode;
+            }
+          }
+          container application{
+            description "Application that is using this port. Default is IPFP";
+            leaf rx {
+              description "Application name receiving the packets on the port";
+              rwpb:field-inline "true";
+              type string {
+                length "min..32";
+              }
+            }
+            leaf tx {
+              description "Application name transmitting the packets on the port";
+              rwpb:field-inline "true";
+              type string {
+                length "min..32";
+              }
+            }
+          }
+          container bundle-member{
+            leaf name{
+              description "Name of the port";
+              rwpb:field-inline "true";
+              type string {
+                length "min..64";
+              }
+            }
+            leaf mode{
+              type rwvnfbasetypes:lacp-mode;
+            }
+            container port{
+              leaf priority{
+                type uint32;
+              }
+            }
+          }
+          container lacp{
+            leaf fast-switchover{
+              description "Used to diable the wait-while timer in LACP state machine";
+              type empty;
+            }
+            leaf rate{
+              type rwvnfbasetypes:lacp-rate;
+            }
+          }
+          leaf receive-q-length {
+            description "No of receive queues for the port. default is 2";
+            type uint32;
+          }
+
+          container descriptors {
+            leaf rx-size {
+              description "Size of rx descriptor ring. default is 256";
+              type uint32;
+            }
+            leaf tx-size {
+              description "Size of tx descriptor ring. default is 256";
+              type uint32;
+            }
+          }
+          leaf numa-socket{
+            type int32;
+            description "CPU numa socket where the port is attached";
+          }
+
+          // Flow control configuration for the port
+          uses rwvnfbasetypes:flow-control;
+        }
+        case lag {
+          container lacp-attributes{
+            leaf priority{
+              description "configure the lacp priority for the system(colony)";
+              type uint32;
+            }
+            leaf mac{
+              description "MAC address used by the Link Aggregation Group";
+              type rwt:mac-address;
+              rwpb:field-string-max 18;
+              rwpb:field-c-type "rw_mac_addr_t";
+            }
+          }
+          container minimum-active{
+            leaf links{
+              description "Minimum number of active links to bring up the bundle";
+              type uint32;
+            }
+          }
+          container maximum-active{
+            leaf links{
+              description "Maximum number of active links in the bundle";
+              type uint32;
+            }
+          }
+          leaf load-balance{
+            description "packet contents to use for load-balancing";
+            type rwvnfbasetypes:lag-lb-mode;
+          }
+          leaf mac-mode{
+            description "Mac-mode for 1:1 redundancy";
+            type rwvnfbasetypes:mac-mode;
+          }
+        }
+      }
+
+      list vlan{
+        key "id";
+        rwcli:new-mode "  vlan";
+        rwpb:msg-new "VlanConfig";
+        max-elements 32;
+
+        leaf id {
+          type uint32;
+        }
+        leaf descr-string {
+          description "description comment for port";
+          rwpb:field-inline "true";
+          type string {
+            length "min..32";
+          }
+        }
+
+        leaf open {
+          description "open the specified port";
+          type empty;
+        }
+
+        leaf shutdown {
+          description "Administrative shutdown of the port";
+          type empty;
+        }
+        leaf virtual-fabric {
+          type boolean;
+        }
+      }
+    }
+
+    container virtual-fabric {
+      list network {
+        key "address";
+
+        leaf address {
+          description "ipv4 address assigned to the interface";
+          type rwt:ip-prefix;
+          rwpb:field-string-max 46;
+          rwpb:field-inline "true";
+          rwpb:field-c-type "rw_ip_prefix_t";
+        }
+      }
+    }
+
+    /*Temporary*/
+    container cat {
+      rwpb:msg-new RwCat;
+      leaf host {
+        type rwt:ip-address;
+        rwpb:field-string-max 46;
+        description "Host address of CAT instance";
+      }
+    }
+
+    container noisy-neighbor {
+      rwpb:msg-new RwNoisyNeighbor;
+      leaf enable {
+        type boolean;
+        description "Enable the noisy neighbor on this colony";
+      }
+    }
+
+  }
+}

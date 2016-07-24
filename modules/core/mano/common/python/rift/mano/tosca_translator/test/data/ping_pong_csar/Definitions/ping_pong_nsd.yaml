@@ -1,0 +1,390 @@
+tosca_definitions_version: tosca_simple_profile_for_nfv_1_0_0
+description: Toy NS
+metadata:
+  ID: ping_pong_nsd
+  vendor: RIFT.io
+  version: 1.0
+data_types:
+  tosca.datatypes.network.riftio.vnf_configuration:
+    properties:
+      config_delay:
+        constraints:
+        - greater_or_equal: 0
+        default: 0
+        required: no
+        type: integer
+      config_details:
+        type: map
+      config_priority:
+        constraints:
+        - greater_than: 0
+        type: integer
+      config_template:
+        required: no
+        type: string
+      config_type:
+        type: string
+capability_types:
+  tosca.capabilities.riftio.mgmt_interface_type:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      dashboard_params:
+        type: map
+      vdu:
+        type: string
+  tosca.capabilities.riftio.http_endpoint_type:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      path:
+        type: string
+      polling_interval:
+        type: integer
+  tosca.capabilities.riftio.monitoring_param:
+    derived_from: tosca.capabilities.nfv.Metric
+    properties:
+      description:
+        type: string
+      group_tag:
+        default: Group1
+        type: string
+      http_endpoint_ref:
+        type: string
+      id:
+        type: integer
+      json_query_method:
+        default: NAMEKEY
+        type: string
+      name:
+        type: string
+      units:
+        type: string
+      value_type:
+        default: INT
+        type: string
+      widget_type:
+        default: COUNTER
+        type: string
+node_types:
+  tosca.nodes.riftio.CP1:
+    derived_from: tosca.nodes.nfv.CP
+    properties:
+      cp_type:
+        description: Type of the connection point
+        type: string
+      name:
+        description: Name of the connection point
+        type: string
+      vdu_intf_name:
+        description: Name of the interface on VDU
+        type: string
+      vdu_intf_type:
+        description: Type of the interface on VDU
+        type: string
+  tosca.nodes.riftio.VL1:
+    derived_from: tosca.nodes.nfv.VL.ELAN
+    properties:
+      description:
+        type: string
+  tosca.nodes.riftio.VNF1:
+    derived_from: tosca.nodes.nfv.VNF
+    properties:
+      port:
+        constraints:
+        - in_range: [1, 65535]
+        type: integer
+      vnf_configuration:
+        type: tosca.datatypes.network.riftio.vnf_configuration
+      start_by_default:
+        type: boolean
+        default: true
+    capabilities:
+      http_endpoint:
+        type: tosca.capabilities.riftio.http_endpoint_type
+      mgmt_interface:
+        type: tosca.capabilities.riftio.mgmt_interface_type
+      monitoring_param_0:
+        type: tosca.capabilities.riftio.monitoring_param
+      monitoring_param_1:
+        type: tosca.capabilities.riftio.monitoring_param
+    requirements:
+    - vdus:
+        node: tosca.nodes.riftio.VDU1
+        occurences: [1, UNBOUND]
+        relationship: tosca.relationships.nfv.VirtualLinksTo
+        type: tosca.capabilities.nfv.VirtualLinkable
+  tosca.nodes.riftio.VDU1:
+    derived_from: tosca.nodes.nfv.VDU
+    properties:
+      cloud_init:
+        default: #cloud-config
+        type: string
+      count:
+        default: 1
+        type: integer
+    capabilities:
+      virtualLink:
+        type: tosca.capabilities.nfv.VirtualLinkable
+group_types:
+  tosca.groups.riftio.ConfigPrimitives:
+    derived_from: tosca.policies.Root
+    properties:
+      primitive: map
+policy_types:
+  tosca.policies.riftio.InitialConfigPrimitive:
+    derived_from: tosca.policies.Root
+    properties:
+      name:
+        type: string
+      parameter:
+        type: map
+      seq:
+        type: integer
+      user_defined_script:
+        type: string
+  tosca.policies.riftio.ScalingGroup:
+    derived_from: tosca.policies.Root
+    properties:
+      config_actions:
+        type: map
+      max_instance_count:
+        type: integer
+      min_instance_count:
+        type: integer
+      name:
+        type: string
+      vnfd_members:
+        type: map
+topology_template:
+  policies:
+  - scaling_group_descriptor:
+      config_actions:
+        post_scale_out: ping config
+      max_instance_count: 10
+      min_instance_count: 1
+      name: ping_group
+      type: tosca.policies.riftio.ScalingGroup
+      vnfd_members:
+        ping_vnfd: 1
+  - initial_config_primitive:
+      name: start traffic
+      seq: 1
+      type: tosca.policies.riftio.InitialConfigPrimitive
+      user_defined_script: start_traffic.py
+  groups:
+    config_primitive:
+      type: tosca.groups.riftio.ConfigPrimitives
+      members:
+      - ping_vnfd
+      - pong_vnfd
+      properties:
+        primitives:
+          ping config:
+            user_defined_script: ping_config.py
+  inputs:
+    vendor:
+      type: string
+      description: Translated from YANG
+  node_templates:
+    ping_vnfd:
+      type: tosca.nodes.riftio.VNF1
+      properties:
+        id: 1
+        port: 18888
+        start_by_default: false
+        vendor: RIFT.io
+        version: 1.0
+        vnf_configuration:
+          config_delay: 0
+          config_details:
+            script_type: bash
+          config_priority: 2
+          config_template: "\n#!/usr/bin/bash\n\n# Rest API config\nping_mgmt_ip=<rw_mgmt_ip>\n\
+            ping_mgmt_port=18888\n\n# VNF specific configuration\npong_server_ip=<rw_connection_point_name\
+            \ pong_vnfd/cp0>\nping_rate=5\nserver_port=5555\n\n# Make rest API calls\
+            \ to configure VNF\ncurl -D /dev/stdout \\\n    -H \"Accept: application/vnd.yang.data+xml\"\
+            \ \\\n    -H \"Content-Type: application/vnd.yang.data+json\" \\\n   \
+            \ -X POST \\\n    -d \"{\\\"ip\\\":\\\"$pong_server_ip\\\", \\\"port\\\
+            \":$server_port}\" \\\n    http://${ping_mgmt_ip}:${ping_mgmt_port}/api/v1/ping/server\n\
+            rc=$?\nif [ $rc -ne 0 ]\nthen\n    echo \"Failed to set server info for\
+            \ ping!\"\n    exit $rc\nfi\n\ncurl -D /dev/stdout \\\n    -H \"Accept:\
+            \ application/vnd.yang.data+xml\" \\\n    -H \"Content-Type: application/vnd.yang.data+json\"\
+            \ \\\n    -X POST \\\n    -d \"{\\\"rate\\\":$ping_rate}\" \\\n    http://${ping_mgmt_ip}:${ping_mgmt_port}/api/v1/ping/rate\n\
+            rc=$?\nif [ $rc -ne 0 ]\nthen\n    echo \"Failed to set ping rate!\"\n\
+            \    exit $rc\nfi\n\nexit 0\n"
+          config_type: script
+      capabilities:
+        http_endpoint:
+          properties:
+            path: api/v1/ping/stats
+            polling_interval: 2
+            port: 18888
+            protocol: http
+        mgmt_interface:
+          properties:
+            dashboard_params:
+              path: api/v1/ping/stats
+              port: 18888
+            port: 18888
+            protocol: tcp
+            vdu: ping_vnfd_iovdu_0
+        monitoring_param_0:
+          properties:
+            description: no of ping requests
+            group_tag: Group1
+            http_endpoint_ref: api/v1/ping/stats
+            id: 1
+            json_query_method: NAMEKEY
+            name: ping-request-tx-count
+            units: packets
+            value_type: INT
+            widget_type: COUNTER
+        monitoring_param_1:
+          properties:
+            description: no of ping responses
+            group_tag: Group1
+            http_endpoint_ref: api/v1/ping/stats
+            id: 2
+            json_query_method: NAMEKEY
+            name: ping-response-rx-count
+            units: packets
+            value_type: INT
+            widget_type: COUNTER
+      requirements:
+      - vdus:
+          node: ping_vnfd_iovdu_0
+    pong_vnfd_iovdu_0:
+      type: tosca.nodes.riftio.VDU1
+      properties:
+        cloud_init: "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\n\
+          ssh_pwauth: True\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ systemctl,\
+          \ enable, pong.service ]\n  - [ systemctl, start, --no-block, pong.service\
+          \ ]\n  - [ ifup, eth1 ]\n"
+        count: 1
+      capabilities:
+        host:
+          properties:
+            disk_size: 4 GB
+            mem_size: 512 MB
+            num_cpus: 1
+      artifacts:
+        pong_vnfd_iovdu_0_vm_image:
+          file: ../images/Fedora-x86_64-20-20131211.1-sda-pong.qcow2
+          image_checksum: 1234567890abcdefg
+          type: tosca.artifacts.Deployment.Image.riftio.QCOW2
+      interfaces:
+        Standard:
+          create: pong_vnfd_iovdu_0_vm_image
+    pong_vnfd_cp0:
+      type: tosca.nodes.riftio.CP1
+      properties:
+        cp_type: VPORT
+        name: pong_vnfd/cp0
+        vdu_intf_name: eth0
+        vdu_intf_type: VIRTIO
+      requirements:
+      - virtualBinding:
+          node: pong_vnfd_iovdu_0
+      - virtualLink:
+          node: ping_pong_vld
+    ping_pong_vld:
+      type: tosca.nodes.riftio.VL1
+      properties:
+        description: Toy VL
+        vendor: RIFT.io
+    ping_vnfd_cp0:
+      type: tosca.nodes.riftio.CP1
+      properties:
+        cp_type: VPORT
+        name: ping_vnfd/cp0
+        vdu_intf_name: eth0
+        vdu_intf_type: VIRTIO
+      requirements:
+      - virtualBinding:
+          node: ping_vnfd_iovdu_0
+      - virtualLink:
+          node: ping_pong_vld
+    pong_vnfd:
+      type: tosca.nodes.riftio.VNF1
+      properties:
+        id: 2
+        port: 18889
+        vendor: RIFT.io
+        version: 1.0
+        vnf_configuration:
+          config_delay: 60
+          config_details:
+            script_type: bash
+          config_priority: 1
+          config_template: "\n#!/usr/bin/bash\n\n# Rest API configuration\npong_mgmt_ip=<rw_mgmt_ip>\n\
+            pong_mgmt_port=18889\n# username=<rw_username>\n# password=<rw_password>\n\
+            \n# VNF specific configuration\npong_server_ip=<rw_connection_point_name\
+            \ pong_vnfd/cp0>\nserver_port=5555\n\n# Make Rest API calls to configure\
+            \ VNF\ncurl -D /dev/stdout \\\n    -H \"Accept: application/vnd.yang.data+xml\"\
+            \ \\\n    -H \"Content-Type: application/vnd.yang.data+json\" \\\n   \
+            \ -X POST \\\n    -d \"{\\\"ip\\\":\\\"$pong_server_ip\\\", \\\"port\\\
+            \":$server_port}\" \\\n    http://${pong_mgmt_ip}:${pong_mgmt_port}/api/v1/pong/server\n\
+            rc=$?\nif [ $rc -ne 0 ]\nthen\n    echo \"Failed to set server(own) info\
+            \ for pong!\"\n    exit $rc\nfi\n\nexit 0\n"
+          config_type: script
+      capabilities:
+        http_endpoint:
+          properties:
+            path: api/v1/pong/stats
+            polling_interval: 2
+            port: 18889
+            protocol: http
+        mgmt_interface:
+          properties:
+            dashboard_params:
+              path: api/v1/pong/stats
+              port: 18889
+            port: 18889
+            protocol: tcp
+            vdu: pong_vnfd_iovdu_0
+        monitoring_param_0:
+          properties:
+            description: no of ping requests
+            group_tag: Group1
+            http_endpoint_ref: api/v1/pong/stats
+            id: 1
+            json_query_method: NAMEKEY
+            name: ping-request-rx-count
+            units: packets
+            value_type: INT
+            widget_type: COUNTER
+        monitoring_param_1:
+          properties:
+            description: no of ping responses
+            group_tag: Group1
+            http_endpoint_ref: api/v1/pong/stats
+            id: 2
+            json_query_method: NAMEKEY
+            name: ping-response-tx-count
+            units: packets
+            value_type: INT
+            widget_type: COUNTER
+      requirements:
+      - vdus:
+          node: pong_vnfd_iovdu_0
+    ping_vnfd_iovdu_0:
+      type: tosca.nodes.riftio.VDU1
+      properties:
+        cloud_init: "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\n\
+          ssh_pwauth: True\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ systemctl,\
+          \ enable, ping.service ]\n  - [ systemctl, start, --no-block, ping.service\
+          \ ]\n  - [ ifup, eth1 ]\n"
+        count: 1
+      capabilities:
+        host:
+          properties:
+            disk_size: 4 GB
+            mem_size: 512 MB
+            num_cpus: 1
+      artifacts:
+        ping_vnfd_iovdu_0_vm_image:
+          file: ../images/Fedora-x86_64-20-20131211.1-sda-ping.qcow2
+          image_checksum: 1234567890abcdefg
+          type: tosca.artifacts.Deployment.Image.riftio.QCOW2
+      interfaces:
+        Standard:
+          create: ping_vnfd_iovdu_0_vm_image

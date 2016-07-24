@@ -1,0 +1,166 @@
+#! /bin/bash
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Creation Date: 04/28/2015
+# 
+
+# This script is used for installation of VMs for
+# the small demo setup
+
+set -e
+
+function print_usage() {
+    echo "Usage: $0"
+    echo "       Optional arguments"
+    echo "       -l|--launch-vms Launch VMs"
+    echo "       -d|--delete-vms Delete VMs"
+    echo "       -s|--setup Setup quotas and flavors"
+    echo "       -c|--cleanup Delete quotas and flavors"
+    exit 1
+}
+
+##
+# Specifically deletes flavors etc
+##
+function cleanup() {
+
+ 
+    ssh -o StrictHostKeyChecking=no $CONTROLLER_NODE bash -c "
+
+         # delete all flavors
+         $CLOUDTOOL flavor list | grep 'rw.' | awk '{print \$1}' |
+         while read f; do
+             echo Deleting flavor \$f
+             $CLOUDTOOL flavor delete -n \$f
+         done
+
+    "
+}
+
+
+##
+# This function setups openstack quotas and flavors
+##
+function setup() {
+    # Setup quotas and flavors
+
+    ssh -o StrictHostKeyChecking=no $CONTROLLER_NODE bash -c "
+
+        # install the vm image
+        if ! $CLOUDTOOL image getid -n $IMAGENAME; then
+          echo 'install image'
+          $CLOUDTOOL image create -n $IMAGENAME -f $IMAGEFILE
+        fi
+
+        #cpuset quotas
+        echo 'Setting quotas'
+        $CLOUDTOOL quota set --project demo --memory 786432 --vcpus 100 --vms 64 --ips 64
+        # set rules
+        echo 'Setting rules'
+        $CLOUDTOOL rules set || true
+        $CLOUDTOOL flavor create -n rw.demo_2pci -m 32768 -d 10 -v 5 -p 2 -B large	
+        $CLOUDTOOL flavor create -n rw.demo_1pci -m 16384 -d 10 -v 2 -p 1 -B large	
+        $CLOUDTOOL flavor create -n rw.demo_nopci -m 16384 -d 10 -v 1 	
+        "
+
+}
+
+##
+# This function lauches the VMs
+##
+
+function launch_vms() {
+    # Launch the VMs 
+    ssh -o StrictHostKeyChecking=no $CONTROLLER_NODE bash -c "
+        $CLOUDTOOL vm create -n rw_demo_2pci_vm1 -i $IMAGENAME -f rw.demo_2pci
+        $CLOUDTOOL vm create -n rw_demo_2pci_vm2 -i $IMAGENAME -f rw.demo_2pci
+        $CLOUDTOOL vm create -n rw_demo_2pci_vm3 -i $IMAGENAME -f rw.demo_2pci
+        $CLOUDTOOL vm create -n rw_demo_2pci_vm4 -i $IMAGENAME -f rw.demo_2pci
+
+        $CLOUDTOOL vm create -n rw_demo_vm5 -i $IMAGENAME -f rw.demo_nopci
+        $CLOUDTOOL vm create -n rw_demo_vm6 -i $IMAGENAME -f rw.demo_nopci
+
+        $CLOUDTOOL vm create -n rw_demo_1pci_vm7 -i $IMAGENAME -f rw.demo_1pci
+        $CLOUDTOOL vm create -n rw_demo_1pci_vm8 -i $IMAGENAME -f rw.demo_1pci
+        $CLOUDTOOL vm create -n rw_demo_1pci_vm9 -i $IMAGENAME -f rw.demo_1pci
+        $CLOUDTOOL vm create -n rw_demo_1pci_vm10 -i $IMAGENAME -f rw.demo_1pci
+
+
+    "
+}
+
+
+function delete_vms() {
+    ssh -o StrictHostKeyChecking=no $CONTROLLER_NODE bash -c "
+        $CLOUDTOOL vm destroy -n rw_demo_2pci_vm1
+        $CLOUDTOOL vm destroy -n rw_demo_2pci_vm2
+        $CLOUDTOOL vm destroy -n rw_demo_2pci_vm3
+        $CLOUDTOOL vm destroy -n rw_demo_2pci_vm4
+        $CLOUDTOOL vm destroy -n rw_demo_vm5
+        $CLOUDTOOL vm destroy -n rw_demo_vm6
+        $CLOUDTOOL vm destroy -n rw_demo_1pci_vm7
+        $CLOUDTOOL vm destroy -n rw_demo_1pci_vm8
+        $CLOUDTOOL vm destroy -n rw_demo_1pci_vm9
+        $CLOUDTOOL vm destroy -n rw_demo_1pci_vm10
+
+    "
+}
+
+
+# Specify the controller node and compute nodes
+CONTROLLER_NODE=10.66.4.33
+#COMPUTE_NODE_LIST=(10.66.4.33 10.66.4.34 10.66.4.35 10.66.4.36 10.66.4.37 10.66.4.38)
+
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CLOUDTOOL=$BASEDIR/cloudtool
+IMAGENAME=rwopenstack_vm
+IMAGEFILE=/net/boson/home1/common/vm/rift-root-current.qcow2
+SSH_ROOT=/usr/rift/bin/ssh_root
+DO_CLOUD=/usr/rift/scripts/cloud/docloud
+LAUNCH_VMS=false
+DELETE_VMS=false
+SETUP=false
+CLEANUP=false
+
+##
+# Parse options
+##
+while [[ $# > 0 ]]
+do
+key="$1"
+shift
+case $key in
+    -l|--launch-vms)
+    LAUNCH_VMS=true
+    ;;
+    -d|--delete-vms)
+    DELETE_VMS=true
+    ;;
+    -s|--setup)
+    SETUP=true
+    ;;
+    -c|--cleanup)
+    CLEANUP=true
+    ;;
+    *)
+    print_usage
+    ;;
+esac
+done
+
+# done
+
+if $LAUNCH_VMS; then
+    launch_vms
+
+elif $DELETE_VMS; then
+    delete_vms
+
+elif $SETUP; then
+    setup
+
+elif $CLEANUP; then
+    cleanup
+fi

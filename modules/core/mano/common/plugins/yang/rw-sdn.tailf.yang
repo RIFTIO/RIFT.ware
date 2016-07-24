@@ -1,0 +1,28 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-sdn-annotation
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-sdn-annotation";
+  prefix "rw-sdn-ann";
+
+  import rw-sdn {
+    prefix rw-sdn;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/rw-sdn:sdn-account/rw-sdn:connection-status" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-sdn:update-sdn-status" {
+    tailf:actionpoint rw_actionpoint;
+  }
+}

@@ -1,0 +1,281 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file testycli-ia.yang
+ * @author Tom Seidenberg
+ * @date 2014/03/16
+ * @brief Interactive CLI testing for rw_yang::BaseCli
+ */
+
+module testycli-ia
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testycli-ia";
+  prefix "tycia";
+
+  import testncx-base { prefix "tnb"; }
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description
+    "Top-level yang for testing libncx.";
+
+  revision 2014-03-05 {
+    description "Initial version"; }
+
+  typedef relative-ufnt {
+    type tnb:ufnt {
+      range "-10000000..10000000";
+    }
+    description "A few months, either way";
+  }
+
+  extension ext-a-uses {
+    argument "xyz";
+  }
+
+  typedef enum_eplus {
+    type tnb:enum_e;
+    description "Renamed enum_e";
+  }
+
+  typedef flags {
+    type bits {
+      bit a { position 0; description "armadillo";}
+      bit b { position 1; description "bonobo"; }
+      bit c { position 2; description "cheetah"; }
+      bit d { position 3; description "dolphin"; }
+    }
+    description "Some bits";
+  }
+
+  identity google {
+    base tnb:company;
+    description "Google";
+  }
+
+  notification you-cant-see-me-in-cli {
+    leaf n1 { type int8 {range "-12..14";} description "Commander Riker"; }
+    leaf n2 { type int16 {range "100..200|300|400..500";} description "This is a dirty word"; }
+    leaf n3 { type int32; description "Got the bronze"; }
+  }
+
+  grouping group-top {
+    leaf n1 {config true; type int8 {range "-12..14";} description "Commander Riker"; }
+    leaf n2 { type int16 {range "100..200|300|400..500";} config true; description "This is a dirty word"; }
+    leaf n3 { type int32; config false; description "Got the bronze"; }
+    leaf n4 { type int64; config false; description "Didn't place"; }
+    leaf n5 { type uint8; config true; description "Number 5"; }
+    leaf n6 { type uint16; config true; description "Not a good number"; }
+    leaf n7 { type uint32; config false; description "A lucky number"; }
+    leaf n8 { type uint64; config false; description "This has got to be computer related, right?"; }
+
+    leaf iref1 { type identityref { base "tnb:company"; } description "Probably doesn't work"; }
+    leaf bin1 { type binary {length "2..5";} description "Might work"; }
+    leaf bits1 { type flags; description "Not yet supported"; }
+    leaf bool1 { type boolean; description "File not found"; }
+    leaf dec1 { type decimal64 { fraction-digits 18; } description "The poor man's floating point"; }
+    leaf e1 { type empty; description "Nothing to see here"; }
+    leaf s1 { type string{length "2..5";} description "Random characters"; }
+
+    // ATTN: no anyxml in tail-f: anyxml axml { config true; description "Likely to explode"; }
+
+    leaf u1 {
+      description "The state of this union is... sketchy";
+      type union {
+        type string {length "2";pattern "[p-r]*";}
+        type tycia:flags;
+        type identityref { base "tnb:company"; }
+        type int8 {range "100..110";}
+        type tycia:relative-ufnt;
+        type decimal64 {fraction-digits "14";}
+      }
+    }
+
+    // ATTN: leafref
+    // ATTN: instance-identifier
+  }
+
+  // Blows up yangdump to XSD
+  augment "/tnb:top" {
+    leaf some-more { type string; }
+  }
+
+  container foo {
+    description "this is the foo command";
+    uses tnb:group-a;
+  }
+
+  container bar {
+    rwpb:msg-new TycliBar;
+    description
+     "A bar is a place where you go to have a drink.
+      This is an extended description that should not appear in the
+      short help because it is both too long and contains newlines.";
+    uses tnb:group-a {
+      augment "cont-in-a" {
+        leaf aug1 { type string; description "An augment"; }
+      }
+    }
+  }
+
+  container baz {
+    description "baz is an odd word, don't you think?";
+    uses tnb:group-b;
+  }
+
+  container foobar {
+    description "foobar is not just foo plus bar. It is better.";
+    leaf c {
+      description "c spot run";
+      type identityref { base "tnb:company"; }
+    }
+  }
+
+  container fungo {
+    description "fungo, wungo, is that some sort of incantation?";
+    uses group-top {
+      refine "n1" { config false; }
+      refine "n2" { config false; }
+      refine "n3" { config true; }
+      refine "n4" { config true; }
+      refine "n5" { config false; }
+      refine "n6" { config false; }
+      refine "n7" { config true; }
+      refine "n8" { config true; }
+    }
+  }
+
+  container elephant {
+    description "Call me mister big ears";
+    uses group-top;
+  }
+
+  container element {
+    description "Not an elephant";
+    leaf with-ns { type tycia:relative-ufnt; }
+    leaf without-ns { type relative-ufnt; }
+  }
+
+  container zoo {
+    description "The elephant should live here, but it doesn't.";
+    leaf ge1 { type tnb:enum_e; }
+    leaf ge2 { type tycia:enum_eplus; }
+    leaf ge3 { type enum_eplus; }
+    leaf ge4 {
+      type enumeration {
+        enum I_E_A { value 991; }
+        enum I_E_B { value 992; }
+        enum I_E_C { value 993; }
+      }
+    }
+  }
+
+  container xthis {
+    config true;
+    description "or that";
+    container thing {
+      description "a whoosywahtsit";
+      container goes {
+        presence true;
+        description "powered by energizer";
+        container pretty {
+          description "definitely a 10";
+          container deep {
+            description "thought provoking";
+            container into {
+              description "i have many hobbies";
+              container the {
+                description "definite article 'the'";
+                container schema {
+                  description "or parse tree";
+                  leaf mkay { mandatory true; type string; description "oh, look, the bottom"; }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  container load {
+    config false;
+    description "Load configuration changes from a file";
+
+    choice file-type {
+      container config {
+        description "Load a CLI-formatted configuration file";
+        leaf file {
+          // ATTN: should support URL
+          description "The path to a CLI-formatted configuration file";
+          mandatory true;
+          type string;
+        }
+      }
+
+      container manifest {
+        description "Load a XML-formatted configuration file";
+        leaf file {
+          // ATTN: should support URL
+          description "The path to a XML-formatted configuration file";
+          mandatory true;
+          type string;
+        }
+      }
+    }
+
+    leaf strict {
+      description
+        "Strict error checking; unrecognized commands or XML node
+         provoke an error and terminate parsing";
+      type empty;
+    }
+  }
+
+  rpc test-rpc {
+    description "Test RPC";
+    input {
+      leaf data {
+        description "argument to the RPC";
+        type string;
+      }
+    }
+    output {
+      list response {
+        leaf x {
+          description "x coordinate";
+          type uint64;
+        }
+        leaf y {
+          description "y coordinate";
+          type uint64;
+        }
+      }
+    }
+  }
+
+  container help {
+    config false;
+    presence "full help";
+    description "Show help";
+    leaf command {
+      description "Show help for a specific command";
+      type string;
+    }
+  }
+
+  container uses-ext-test {
+    description "test a uses that makes use of an extension";
+    uses tnb:group-b {
+      tycia:ext-a-uses "lets see if this works";
+    }
+  }
+
+}
+

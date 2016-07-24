@@ -1,0 +1,297 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-log-c
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-log";
+  prefix "rwlog";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-notify-ext {
+    prefix "rwnotify";
+  }
+
+  revision 2014-05-29 {
+    description
+      "Initial revision. This YANG file defines common groupings, typedefs, and
+       containers available on Riftware for logging";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  // gah, this becomes RW_LOG_LOG_SEVERITY_mumble
+  typedef log-severity {
+    type enumeration {
+      enum emergency;
+      enum alert;
+      enum critical;
+      enum error;
+      enum warning;
+      enum notice;
+      enum info;
+      enum debug;
+    }
+  }
+
+  typedef direction_type {
+    type enumeration {
+      enum INBOUND;
+      enum OUTBOUND;
+    }
+  }
+
+  typedef protocol_type {
+    type enumeration {
+      enum IP;
+      enum TCP;
+      enum UDP;
+      enum ETHERNET;
+      enum GTP;
+    }
+  }
+
+  grouping packet-info {
+    container pkt-info {
+    rwpb:field-inline "true";
+    description "Different protocol prints need different arguments. This
+        container holds all the fields needed by various protocol print
+        functions";
+      leaf packet-direction {
+        description "Either inbound or outbound direction";
+        type direction_type;
+      }
+      leaf packet-type {
+        description "Packet protocol type";
+        type protocol_type;
+      }
+      leaf sport {
+        description "Source port needed for GTP print";
+        type uint16;
+      }
+      leaf dport {
+        description "Destination port for GTP print";
+        type uint16;
+      }
+      leaf ip-header {
+        description "IP header pointer needed for TCP/UDP prints";
+        type uint64;
+      }
+      leaf fragment {
+        description "Whether packet is fragmented or not. Needed for tcp and udp
+            prints";
+        type uint32;
+      }
+    }
+  }
+
+  typedef pointer {
+    description "A pointer is an often logged object. This generic type allows
+                 for pointers to be displayed differently by netconf clients";
+    type uint64;
+  }
+  
+// ATTN: update rwlog_category_list.h as well while adding new category here 
+// Event Log ID namespace Conventions:
+// Leaving adequate gaps for expansion or allocation to newer apps
+// rw-log           : 00000000 - 00000099 
+// rw-fpath         : 00001000 - 00001999 
+// rw-vcs           : 00010000 - 00010999 
+// rw-appmgr        : 00020000 - 00020999
+// rw-dts-api       : 00030000 - 00030999
+// rw-dts-rtr       : 00040000 - 00040999
+// rwvcs-heartbeat  : 00050000 - 00050999
+// rw-logger        : 00060000 - 00060099
+// rw-netns-log     : 00061000 - 00061099
+
+// rw-mgmt*         : 00070000 - 00079999
+  // rw-mgmtagent   : 00070000 - 00070999
+
+
+  typedef log-category {
+    type enumeration {
+      enum all;
+      enum rw-fpath-log;
+      enum rw-vcs;
+      enum rw-appmgr-log;
+      enum rw-dts-api-log;
+      enum rw-dts-router-log;
+      enum rw-logtest;
+      enum rw-logger;
+      enum rw-vcs-heartbeat-log;
+      enum rw-netns-log;
+      enum rw-mgmtagt-log;
+      enum rw_last;
+    }
+  }
+
+  grouping common-attrs  {
+    leaf version  {
+      rwpb:field-inline "true";
+      type uint32;
+      rwnotify:log-common;
+    }
+    leaf sequence {
+      rwpb:field-inline "true";
+      type uint64;
+      rwnotify:log-common;
+    }
+    leaf sec {
+      rwpb:field-inline "true";
+      type uint32;
+      rwnotify:log-common;
+    }
+    leaf usec {
+      rwpb:field-inline "true";
+      type uint32;
+      rwnotify:log-common;
+    }
+    leaf system-id{
+      rwpb:field-inline "true";
+      type uint32;
+      rwnotify:log-common;
+    }
+    leaf hostname {
+      type string;
+      rwnotify:log-common;
+      rwpb:field-inline "true";
+      rwpb:field-string-max "64";
+    }
+    leaf appname {
+      type string; 
+      rwnotify:log-common;
+      rwpb:field-inline "true";
+      rwpb:field-string-max "64";
+    }
+    leaf processid{
+      rwpb:field-inline "true";
+      type uint32;
+      rwnotify:log-common;
+    }
+    leaf threadid{
+      type uint32;
+      rwnotify:log-common;
+    }
+    leaf filename {
+      type string;
+      rwnotify:log-common;
+      rwpb:field-inline "true";
+      rwpb:field-string-max "64";
+    }
+    leaf linenumber{
+      rwpb:field-inline "true";
+      type uint32;
+      rwnotify:log-common;
+    }
+    leaf severity{
+      rwpb:field-inline "true";
+      type log-severity;
+    }
+  }
+
+  grouping severity-emergency {
+    container template_params {
+      rwpb:field-inline "true";
+      uses common-attrs {
+        refine severity {default emergency;}
+      }
+    }
+  }
+  grouping severity-alert {
+    container template_params {
+      rwpb:field-inline "true";
+      uses common-attrs {
+        refine severity {default alert;}
+      }
+    }
+  }
+  grouping severity-critical {
+    container template_params {
+      rwpb:field-inline "true";
+      uses common-attrs {
+        refine severity {default critical;}
+      }
+    }
+  }
+  grouping severity-error {
+    container template_params {
+      rwpb:field-inline "true";
+      uses common-attrs {
+        refine severity {default error;}
+      }
+    }
+  }
+  grouping severity-warning {
+    container template_params {
+      rwpb:field-inline "true";
+      uses common-attrs {
+        refine severity {default warning;}
+      }
+    }
+  }
+  grouping severity-notice {
+    container template_params {
+      rwpb:field-inline "true";
+      uses common-attrs {
+        refine severity {default notice;}
+      }
+    }
+  }
+  grouping severity-info {
+    container template_params {
+      rwpb:field-inline "true";
+      uses common-attrs {
+        refine severity {default info;}
+      }
+    }
+  }
+  grouping severity-debug {
+    container template_params {
+      rwpb:field-inline "true";
+      uses common-attrs {
+        refine severity {default debug;}
+      }
+    }
+  }
+
+  grouping group-call-id {
+    container call-identifier {
+      rwpb:field-inline "true";
+      description "Each call in Riftware is assigned a callid which is unique
+                   in the context of the entity making the assignment. The
+                   same call-id could be assigned by different entities - in
+                   which case, the group-call-id is used in conjunction with
+                   call id to provide uniqueness";
+      leaf callid {
+        description "The callid is defined as a grouping with a leaf that represents
+                 the callid. This helps in RIFTWARE use a common tag for call-id
+                 in all further uses of this grouping.";
+
+        type uint64;
+      }
+      leaf groupcallid {
+        description "The group call id is used to uniquely identify the assigner of
+                 a call id. Each entity generating call id within RIFTWARE uses
+                 group ids that are different from each other. A single entity
+                 could use multiple group ids - The caveat being that none of
+                 these group ids should be avaialble for other entities to use";
+        type uint64;
+      }
+    }
+  }
+        
+  notification ev_template {
+    rwpb:msg-new EvTemplate;
+    leaf eventid{type uint32; }
+      description
+         "EventLog for pretty Print";
+      uses severity-debug;
+  }
+}

@@ -1,0 +1,50 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module reuse-grouping-rwmanifest
+{
+  namespace "http://riftio.com/ns/riftware-1.0/reuse_grouping_rwmanifest";
+  prefix "reuse-rwmanifest";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import other-rwmanifest { prefix "rwm"; }
+
+  revision 2014-03-12 {
+    description
+      "Initial implementation";
+    reference
+      "RW.VX Software Component Document";
+  }
+
+  container test-reuse {
+    rwpb:msg-new RwTestReuse;
+
+    uses rwm:rwvcs-sequence;
+    uses rwm:rwvcs-variable-list;
+    uses rwm:rwvcs-event-list;
+    uses rwm:rwvcs-zookeeper;
+    uses rwm:rwvcs-rwcolony;
+    uses rwm:rwvcs-rwvm;
+    uses rwm:rwvcs-component-list;
+    uses rwm:bootstrap-phase;
+    uses rwm:init-phase;
+    uses rwm:multi-node-test;
+    uses rwm:leaf-test;
+  }
+/*
+  container test-reuse1 {
+    rwpb:msg-new RwTestReuse1;
+    uses rwm:init-phase {
+      refine init-phase {
+        description "This refines the description in other-rwmanifest";
+      }
+    }
+    uses rwm:leaf-test;
+  }
+  */
+}

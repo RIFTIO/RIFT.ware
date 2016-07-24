@@ -1,0 +1,332 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rwlog.yang
+ * @date 11/18/2014
+ * @brief RiftWare CLI for Event log subsystem
+ */
+
+module rwlog-mgmt-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwlog-mgmt";
+  prefix "rwlog-mgmt";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+  import rw-log-d {
+    prefix "rwlog";
+  }
+  import rw-yang-types {
+    prefix "rwt";
+  }
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+  revision 2014-08-11 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Event Logging Subsystem";
+  }
+
+  grouping event-filter {
+    leaf event-name {
+        description "event name ";
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+    } 
+  }
+
+  grouping event-rate {
+    leaf value {
+      description " number of logs per second";
+      type uint32;
+    }
+//    leaf verbosity {
+//     description "Event verbosity level ";
+//      type rwlog:log-severity;
+//    }
+  }
+
+  grouping attribute-filter {
+    leaf name {
+      description "attribute name";
+      type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+      leaf value {
+        description "value for matching the attribute";
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+  }
+    
+  grouping category-filter {
+
+//
+// category name and its log level settings filter
+// All filter settings are under a specific category name
+//
+      leaf name {
+        description "Log Category name";
+        type rwlog:log-category;
+       // rwpb:field-inline "true";
+       // rwpb:field-string-max 64;
+      }
+
+//
+// Allow all events whose attribute matches this value. 
+// Example - allow all events matching this subscriber identity attribute
+//
+      list attribute {
+        description "attribute name, value pair for filter";
+        key "name";
+        uses attribute-filter;
+      }
+//
+// Allow rules for this category
+//
+      container allow {
+//
+// Allow this event ID regardless of general log level settings for this category
+//
+        list event {
+          description "event symbolic name";
+          key "event-name";
+          uses event-filter;
+        }
+      } // allow
+
+//
+// Deny rules for this category
+//
+
+      container deny {
+//
+// Supress this Event ID even if allowed by general severity settings 
+//
+        list event {
+         description "event symbolic name";
+         key "event-name";
+         uses event-filter;
+        }
+      } // deny 
+
+      container packet {
+        leaf protocol {
+          description "Protocol";
+          type string;
+          rwpb:field-string-max 46;
+        }
+
+        leaf src-port {
+          description "Source port number";
+          type int32;
+        }
+
+        leaf dst-port {
+          description "Destination port number";
+          type int32;
+        }
+
+        leaf src-net {
+          description "Source net address";
+          type rwt:ip-address;
+          rwpb:field-string-max 46;
+         }
+
+         leaf dst-net {
+           description "Destination net address";
+           type rwt:ip-address;
+           rwpb:field-string-max 46;
+         }
+      }
+
+      leaf severity {
+        description "level symbolic name";
+        type rwlog:log-severity;
+      }
+  } // category-filter
+
+  container logging {
+    rwcli:new-mode "logging";
+    description "Riftware Logging";
+
+    container default-severity {
+      rwpb:msg-new LoggingDefaultSeverity;
+      description "Default severity settings";
+      leaf severity {
+        type rwlog:log-severity;
+      }
+      leaf category {
+        type rwlog:log-category;
+      }
+    }
+
+    list sink {
+      rwcli:new-mode "sink";
+      key "name";
+       leaf  name {
+         description "name of syslog sink";
+         rwpb:field-inline "true";
+         rwpb:field-string-max 64;
+         type string;
+       }
+       choice method {
+        case syslog {
+          leaf server-address {
+            description "Server IP address";
+            type rwt:ip-address;
+            rwpb:field-string-max 46;
+           }
+           leaf port {
+            description "Server port";
+            type uint32;
+           }
+        }
+        case file {
+          description "local file - used internally for
+              debugging/tracing";
+            leaf filename {
+              type string;
+            }
+        }
+      }
+      container filter {
+        description "rwlog filter settings";
+        list category {
+          key "name";
+          uses category-filter;
+        }
+        leaf callid {
+          type uint64;
+        }
+        leaf groupcallid {
+          type uint64;
+        }
+      } // list category
+    } // list sink
+  }
+
+  rpc show-logs {
+    description "Fetches Log events";
+    input {
+      container filter {
+        description "rwlog filter settings";
+        list category {
+          key "name";
+          uses category-filter;
+        }
+        leaf callid {
+         type uint64;
+        }
+        leaf groupcallid {
+         type uint64;
+        }
+      }
+      leaf start-time {
+        type rwt:date-and-time;
+      }
+      leaf end-time {
+        type rwt:date-and-time;
+      }
+      leaf verbosity {
+        type int32 {
+          range "0..5";
+        }
+        description "PDU Verbosity";
+      }
+      leaf all {
+        type empty;
+      }
+      leaf count {
+        type uint32 {
+          range "1..10000";
+        }
+        description "Maximum number of Logs to be displayed. Default 100. Range
+            1 to 10000";
+      }
+    }
+    output {
+      list logs{
+        key "msg-id";
+        leaf msg-id {
+          type string;
+          description "log-id" ;
+        }
+        leaf msg {
+          type string;
+          description "Log-String";
+        }
+        leaf pdu-detail {
+          type string;
+          description "PDU detail";
+        }
+        leaf pdu-hex {
+          type string;
+          description "PDU as hex";
+        }
+      }
+      leaf log-count {
+        type uint32;
+        description "Number of logs printed";
+      }
+      leaf time-spent {
+        type int64;
+        description "Time spent in fetching logs";
+      }
+      leaf logs-muted {
+        type uint64;
+        description "Number of logs that did not match filter";
+      }
+      leaf trailing-timestamp {
+        type string;
+        description "Timestamp of last event considered";
+      }
+    }
+  }
+
+  rpc log-event {
+    description "Enable/Disable logging";
+    input {
+      choice method {
+        case on {
+          description "Enable Logging";
+          leaf on {
+            type empty;
+          }
+        }
+        case off {
+          description "Disable Logging";
+          leaf off {
+            type empty;
+          }
+        }
+      }
+      container filter {
+        description "rwlog filter settings";
+        list category {
+          key "name";
+          uses category-filter;
+        }
+        leaf callid {
+          type uint64;
+        }
+        leaf groupcallid {
+          type uint64;
+        }
+      } // list category
+    }
+  }
+}

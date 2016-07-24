@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <cm-config xmlns="http://riftio.com/ns/riftware-1.0/rw-conman">
+      <initiate-nsr-cfg></initiate-nsr-cfg>
+    </cm-config>
+  </data>
+</rpc-reply>

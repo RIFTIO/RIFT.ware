@@ -1,0 +1,20 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module config_root-b
+{
+  namespace "http://riftio.com/ns/riftware-1.0/config_root";
+  prefix "root";
+
+  revision 2013-03-21 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT root configuration";
+  }
+} // module config_root

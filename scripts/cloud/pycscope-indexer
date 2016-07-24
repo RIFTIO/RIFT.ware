@@ -1,0 +1,117 @@
+#! /bin/sh
+###############################################################################
+#
+# File:         pycscope-indexer
+# RCS:          ./rift/scripts/cloud/pycscope-indexer,v 1.0 2015/05/20 WW
+# Description:  Script to index files for pycscope.py
+#               This script is based on cscope-indexer from Darryl Okahata(darrylo@soco.agilent.com)
+#
+#		This script generates a list of python source files to index
+#		(pycscope.files), which is then (optionally) used to
+#		generate a pycscope database(pycscope.out).  
+#
+#
+###############################################################################
+#
+# Usage:
+#
+#     pycscope-indexer [ -v ] [-f database_file ] [-i list_file ] [ -l ] [ -r ]
+#
+# where:
+#
+#     -f database_file
+#          Specifies the cscope database file (default: cscope.out).
+#
+#     -i list_file
+#          Specifies the name of the file into which the list of files
+#          to index is placed (default: cscope.files).
+#
+#     -l
+#          Suppress the generation/updating of the cscope database
+#          file.  Only a list of files is generated.
+#
+#     -v
+#          Be verbose.  Output simple progress messages.
+#
+#
+###############################################################################
+set -e
+
+# May have to edit this:
+PATH="/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin:$PATH"
+export PATH
+
+LIST_ONLY=
+DIR='.'
+LIST_FILE='pycscope.files'
+DATABASE_FILE='pycscope.out'
+RECURSE=
+VERBOSE=
+export DIR RECURSE			# Need to pass these to subprocesses
+
+while [ -n "$1" ]
+do
+    case "$1" in
+    -f)
+	if [ "X$2" = "X" ]
+	then
+	    echo "$0: No database file specified" >&2
+	    exit 1
+	fi
+	DATABASE_FILE="$2"
+	shift
+	;;
+    -i)
+	if [ "X$2" = "X" ]
+	then
+	    echo "$0: No list file specified" >&2
+	    exit 1
+	fi
+	LIST_FILE="$2"
+	shift
+	;;
+    -l)
+	LIST_ONLY=1
+	;;
+    -v)
+	VERBOSE=1
+	;;
+    *)
+	DIR="$1"
+	;;
+    esac
+    shift
+done
+
+cd $DIR
+
+if [ "X$VERBOSE" != "X" ]
+then
+    echo "Creating list of files to index ..."
+fi
+
+find $DIR \( -type f -name '*.py' \) | egrep -v '/venv/|.git|.install|.build' | sort > $LIST_FILE
+
+if [ "X$VERBOSE" != "X" ]
+then
+    echo "Creating list of files to index ... done"
+fi
+
+if [ "X$LIST_ONLY" != "X" ]
+then
+    exit 0
+fi
+
+if [ "X$VERBOSE" != "X" ]
+then
+    echo "Indexing files ..."
+fi
+
+pycscope -i $LIST_FILE -f $DATABASE_FILE
+
+if [ "X$VERBOSE" != "X" ]
+then
+    echo "Indexing files ... done"
+fi
+
+exit 0

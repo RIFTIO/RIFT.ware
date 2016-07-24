@@ -1,0 +1,14 @@
+RIFT.core, go-pkgs/src/github.com/armon/circbuf, Golang Circular Ring Buffer, MIT, https://github.com/armon/circbuf.git
+RIFT.core, go-pkgs/src/github.com/armon/go-metrics, A Golang Library for Exporting Performance and Runtime Metrics, MIT, https://github.com/armon/go-metrics.git
+RIFT.core, go-pkgs/src/github.com/hashicorp/go-msgpack, Msgpack Library for Go, BSD-like, https://github.com/hashicorp/go-msgpack.git
+RIFT.core, go-pkgs/src/github.com/hashicorp/go.net, Portable Interface for Network I/O, BSD-like, https://github.com/hashicorp/go.net.git
+RIFT.core, go-pkgs/src/github.com/hashicorp/go-syslog, Interface to the System Log Service:, MIT,  https://github.com/hashicorp/go-syslog.git
+RIFT.core, go-pkgs/src/github.com/hashicorp/logutils, Utilities for Logging in Go (Golang), Mozzilla Public License 2.0, https://github.com/hashicorp/logutils.git 
+RIFT.core, go-pkgs/src/github.com/hashicorp/mdns, Multicast DNS Service Discovery, MIT, https://github.com/hashicorp/mdns.git 
+RIFT.core, go-pkgs/src/github.com/hashicorp/memberlist, Golang Package for Gossip Based Membership and Failure Detection, Mozzilla Public License 2.0, https://github.com/hashicorp/memberlist.git
+RIFT.core, go-pkgs/src/github.com/miekg/dns, DNS Library in Go ,  BSD-like,  https://github.com/miekg/dns.git'
+RIFT.core, go-pkgs/src/github.com/mitchellh/cli, Package for Building Command Line Apps in Go., MIT, https://github.com/mitchellh/cli.git 
+RIFT.core, go-pkgs/src/github.com/mitchellh/mapstructure, Go Library for Decoding Generic Map Values into Native Go Structures, MIT, https://github.com/mitchellh/mapstructure.git
+RIFT.core, go-pkgs/src/github.com/ryanuber/columnize, Easy Column Formatted Output for Golang, MIT, https://github.com/ryanuber/columnize.git
+RIFT.core, go-pkgs/src/github.com/hashicorp/serf, Decentralized Solution for Cluster Membership, Mozzilla Public License 2.0, https://github.com/hashicorp/serf.git 
+RIFT.core, go-pkgs/src/code.google.com/p/go.net, code.google.com, BSD-like, code.google.com/p/go.net

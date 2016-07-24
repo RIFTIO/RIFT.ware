@@ -1,0 +1,50 @@
+---
+vnf:
+    name:        tidgenMWC_2sriov_no_ctrlnet
+    description: tidgen for MWC2016; 12G 10 cores
+    class:       TID
+    external-connections:
+    -   name:              eth0
+        type:              bridge
+        VNFC:              tidgenMWC-VM
+        local_iface_name:  eth0
+        description:       Bridge interface, request for dhcp
+    -   name:              xe0
+        type:              data
+        VNFC:              tidgenMWC-VM
+        local_iface_name:  xe0
+        description:       Data interface 1
+    -   name:              xe1
+        type:              data
+        VNFC:              tidgenMWC-VM
+        local_iface_name:  xe1
+        description:       Data interface 2
+    VNFC:                              # Virtual machine array
+    -   name:        tidgenMWC-VM       # name of Virtual Machine
+        disk: 10
+        description: tidgen for MWC 12G 10 cores
+        # VNFC image: /mnt/powervault/virtualization/vnfs/tid/tidgenMWC.qcow2
+        VNFC image: tidgenMWC
+        image metadata: {"use_incremental": "no" }  #is already incremental
+        processor:                     #Optional, leave it
+            model: Intel(R) Xeon(R) CPU E5-4620 0 @ 2.20GHz
+            features: ["64b", "iommu", "lps", "tlbps", "hwsv", "dioc", "ht"]
+        hypervisor:                    #Optional, leave it
+            type: QEMU-kvm
+            version: "10002|12001|2.6.32-358.el6.x86_64"
+        numas:
+        -   paired-threads: 5          # "cores", "paired-threads", "threads"
+            memory:         12         # GBytes
+            interfaces:
+            -   name:      xe0
+                vpci:      "0000:00:10.0"
+                dedicated: "no"         # "yes"(passthrough), "no"(sriov)
+                bandwidth: 10 Gbps
+            -   name:      xe1
+                vpci:      "0000:00:11.0"
+                dedicated: "no"
+                bandwidth: 10 Gbps
+        bridge-ifaces:
+        -   name:      eth0
+            vpci:      "0000:00:0a.0"
+            bandwidth: 1 Mbps

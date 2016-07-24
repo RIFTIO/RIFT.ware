@@ -1,0 +1,12 @@
+#
+# files listed should be relative to the RIFT_ROOT
+#
+.gitmodules
+.gitmodules.deps
+rift-bashrc
+rift_env.py
+rift-prompt
+rift-shell
+RELEASE
+LICENSE
+RIFTWARE_COMPILATION_LICENSE

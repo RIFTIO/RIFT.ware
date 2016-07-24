@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>GIPropertyInfo</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<link rel="home" href="index.html" title="GObject Introspection Reference Manual">
+<link rel="up" href="gi-repository-structs.html" title="GIRepository structs">
+<link rel="prev" href="gi-GIFieldInfo.html" title="GIFieldInfo">
+<link rel="next" href="gi-GIVFuncInfo.html" title="GIVFuncInfo">
+<meta name="generator" content="GTK-Doc V1.18.1 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="gi-GIFieldInfo.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="gi-repository-structs.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">GObject Introspection Reference Manual</th>
+<td><a accesskey="n" href="gi-GIVFuncInfo.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#gi-GIPropertyInfo.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#gi-GIPropertyInfo.description" class="shortcut">Description</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="gi-GIPropertyInfo"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="gi-GIPropertyInfo.top_of_page"></a>GIPropertyInfo</span></h2>
+<p>GIPropertyInfo — Struct representing a property</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="gi-GIPropertyInfo.synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">#define             <a class="link" href="gi-GIPropertyInfo.html#GI-IS-PROPERTY-INFO:CAPS" title="GI_IS_PROPERTY_INFO()">GI_IS_PROPERTY_INFO</a>                 (info)
+typedef             <a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo">GIPropertyInfo</a>;
+<span class="returnvalue">GParamFlags</span>         <a class="link" href="gi-GIPropertyInfo.html#g-property-info-get-flags" title="g_property_info_get_flags ()">g_property_info_get_flags</a>           (<em class="parameter"><code><a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GITypeInfo.html#GITypeInfo" title="GITypeInfo"><span class="returnvalue">GITypeInfo</span></a> *        <a class="link" href="gi-GIPropertyInfo.html#g-property-info-get-type" title="g_property_info_get_type ()">g_property_info_get_type</a>            (<em class="parameter"><code><a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a> *info</code></em>);
+<a class="link" href="gi-GIArgInfo.html#GITransfer" title="enum GITransfer"><span class="returnvalue">GITransfer</span></a>          <a class="link" href="gi-GIPropertyInfo.html#g-property-info-get-ownership-transfer" title="g_property_info_get_ownership_transfer ()">g_property_info_get_ownership_transfer</a>
+                                                        (<em class="parameter"><code><a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a> *info</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="gi-GIPropertyInfo.description"></a><h2>Description</h2>
+<p>
+GIPropertyInfo represents a property. A property belongs to
+either a <a class="link" href="gi-GIObjectInfo.html#GIObjectInfo" title="GIObjectInfo"><span class="type">GIObjectInfo</span></a> or a <a class="link" href="gi-GIInterfaceInfo.html#GIInterfaceInfo" title="GIInterfaceInfo"><span class="type">GIInterfaceInfo</span></a>.
+</p>
+<p>
+</p>
+<div class="refsect1">
+<a name="gi-gipropertyinfo.struct-hierarchy"></a><h2>Struct hierarchy</h2>
+<pre class="synopsis">
+  <a class="link" href="gi-GIBaseInfo.html" title="GIBaseInfo">GIBaseInfo</a>
+   +----GIPropertyInfo
+</pre>
+</div>
+<p>
+</p>
+</div>
+<div class="refsect1">
+<a name="gi-GIPropertyInfo.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="GI-IS-PROPERTY-INFO:CAPS"></a><h3>GI_IS_PROPERTY_INFO()</h3>
+<pre class="programlisting">#define             GI_IS_PROPERTY_INFO(info)</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GIPropertyInfo"></a><h3>GIPropertyInfo</h3>
+<pre class="programlisting">typedef GIBaseInfo GIPropertyInfo;
+</pre>
+<p>
+Represents a property of a <a class="link" href="gi-GIObjectInfo.html#GIObjectInfo" title="GIObjectInfo"><span class="type">GIObjectInfo</span></a> or a <a class="link" href="gi-GIInterfaceInfo.html#GIInterfaceInfo" title="GIInterfaceInfo"><span class="type">GIInterfaceInfo</span></a>.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-property-info-get-flags"></a><h3>g_property_info_get_flags ()</h3>
+<pre class="programlisting"><span class="returnvalue">GParamFlags</span>         g_property_info_get_flags           (<em class="parameter"><code><a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the flags for this property info. See <span class="type">GParamFags</span> for
+more information about possible flag values.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the flags</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-property-info-get-type"></a><h3>g_property_info_get_type ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GITypeInfo.html#GITypeInfo" title="GITypeInfo"><span class="returnvalue">GITypeInfo</span></a> *        g_property_info_get_type            (<em class="parameter"><code><a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the type information for the property <em class="parameter"><code>info</code></em>.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the <a class="link" href="gi-GITypeInfo.html#GITypeInfo" title="GITypeInfo"><span class="type">GITypeInfo</span></a>, free it with
+<a class="link" href="gi-GIBaseInfo.html#g-base-info-unref" title="g_base_info_unref ()"><code class="function">g_base_info_unref()</code></a> when done. <span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-property-info-get-ownership-transfer"></a><h3>g_property_info_get_ownership_transfer ()</h3>
+<pre class="programlisting"><a class="link" href="gi-GIArgInfo.html#GITransfer" title="enum GITransfer"><span class="returnvalue">GITransfer</span></a>          g_property_info_get_ownership_transfer
+                                                        (<em class="parameter"><code><a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a> *info</code></em>);</pre>
+<p>
+Obtain the ownership transfer for this property. See <a class="link" href="gi-GIArgInfo.html#GITransfer" title="enum GITransfer"><span class="type">GITransfer</span></a> for more
+information about transfer values.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>info</code></em> :</span></p></td>
+<td>a <a class="link" href="gi-GIPropertyInfo.html#GIPropertyInfo" title="GIPropertyInfo"><span class="type">GIPropertyInfo</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the transfer</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.18.1</div>
+</body>
+</html>

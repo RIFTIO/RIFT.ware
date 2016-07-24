@@ -1,0 +1,43 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file test-json-schema-aug-base.yang
+ * @brief Base yang for testing Json output for augments
+ */
+
+module test-json-schema-aug-base {
+  namespace "http://riftio.com/ns/riftware-1.0/test-json-schema-aug-base.yang";
+  prefix "tjsab";
+
+  description
+        "Base yang for testing Json output for augments.";
+
+  revision 2016-02-15 {
+        description "Initial version"; 
+  }
+
+  container base-cont {
+    list person {
+      key "name";
+
+      leaf name {
+        description
+          "Name of the person";
+        type string;
+      }
+      
+      leaf phone-no {
+        description
+          "Phone number of the person";
+        type string;
+      }
+    }
+  }
+}

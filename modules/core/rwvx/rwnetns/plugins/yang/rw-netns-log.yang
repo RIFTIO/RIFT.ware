@@ -1,0 +1,160 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rw-netns-log.yang
+ * @author Austin Cormier
+ * @date 12/22/2014
+ * @brief RiftWare CLI for Netns Logging
+ */
+
+module rw-netns-log
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwnetns-log";
+  prefix "rwnetnslog";
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rw-notify-ext {
+    prefix "rwnotify";
+  }
+
+  import rw-log {
+    prefix "rwlog";
+  }
+
+  revision 2014-12-22 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Network Namespace Logging";
+  }
+
+  grouping netns_params {
+    leaf netns_name { type string; }
+    leaf resolv_conf_path { type string; }
+  }
+
+  notification log_debug {
+    rwpb:msg-new LogDebug;
+    rwnotify:log-event-id 61000;
+    description "Netns Debug Logging";
+    uses rwlog:severity-debug;
+    uses netns_params;
+    leaf content { type string; }
+    leaf log  { type string; }
+  }
+
+  notification entering_netns {
+    rwpb:msg-new EnteringNetns;
+    rwnotify:log-event-id 61001;
+    description "Attempting to enter into a netns";
+    uses rwlog:severity-debug;
+    uses netns_params;
+  }
+
+  notification exiting_netns {
+    rwpb:msg-new ExitingNetns;
+    rwnotify:log-event-id 61002;
+    description "Attempting to exit a netns";
+    uses rwlog:severity-debug;
+    uses netns_params;
+  }
+
+  notification mounting_resolv_conf {
+    rwpb:msg-new MountingResolvConf;
+    rwnotify:log-event-id 61003;
+    description "Attempting to mount bind a netns resolv.conf";
+    uses rwlog:severity-debug;
+    uses netns_params;
+    leaf content { type string; }
+  }
+
+  notification unmounting_resolv_conf {
+    rwpb:msg-new UnmountingResolvConf;
+    rwnotify:log-event-id 61004;
+    description "Attempting to unmount bind a netns resolv.conf";
+    uses rwlog:severity-debug;
+    uses netns_params;
+  }
+
+  notification mounting_resolv_conf_failed {
+    rwpb:msg-new MountingResolvConfFailed;
+    rwnotify:log-event-id 61005;
+    description "Unable to mount bind a netns resolv.conf";
+    uses rwlog:severity-error;
+    uses netns_params;
+    leaf rc { type int32; }
+  }
+
+  notification unmounting_resolv_conf_failed {
+    rwpb:msg-new UnmountingResolvConfFailed;
+    rwnotify:log-event-id 61006;
+    description "Unable to unmount a netns resolv.conf";
+    uses rwlog:severity-error;
+    uses netns_params;
+    leaf rc { type int32; }
+  }
+
+  notification missing_resolv_conf {
+    rwpb:msg-new MissingResolvConf;
+    rwnotify:log-event-id 61007;
+    description "Network namespace resolv.conf file does not exist";
+    uses rwlog:severity-error;
+    uses netns_params;
+  }
+
+  notification multiple_netns {
+    rwpb:msg-new MultipleNetnsError;
+    rwnotify:log-event-id 61008;
+    description "Cannot enter more than a single netns at one time.";
+    uses rwlog:severity-error;
+    uses netns_params;
+    leaf current_netns_name { type string; }
+  }
+
+  notification change_netns_failed {
+    rwpb:msg-new ChangeNetnsFailed;
+    rwnotify:log-event-id 61009;
+    description "Encountered an error attempting to change netns";
+    uses rwlog:severity-error;
+    uses netns_params;
+    leaf rc { type int32; }
+  }
+
+  notification change_netns_fd_failed {
+    rwpb:msg-new ChangeNetnsFdFailed;
+    rwnotify:log-event-id 61010;
+    description "Encountered an error attempting to change back into previous netns fd";
+    uses rwlog:severity-error;
+    uses netns_params;
+    leaf fd { type int32; }
+    leaf rc { type int32; }
+  }
+
+  notification get_netns_fd_failed {
+    rwpb:msg-new GetNetnsFdFailed;
+    rwnotify:log-event-id 61011;
+    description "Encountered an error attempting to get current netns fd";
+    uses rwlog:severity-error;
+    uses netns_params;
+    leaf rc { type int32; }
+  }
+}
+

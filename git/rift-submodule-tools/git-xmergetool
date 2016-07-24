@@ -1,0 +1,52 @@
+#!/bin/bash
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Austin Cormier
+# Creation Date: 2014/05/22
+
+# This script simplifies a multi-submodule merge conflict.
+# Runs git mergetool across all submodules with merge conflicts.
+# Usually meant to be run after a xpull (or xpush that calls xpull) fails.
+
+# Recursive submodules are NOT supported.
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$DIR/git-common-functions.sh"
+
+# Returns 0 if there is a merge conflict.
+# Otherwise returns non-zero
+function has_unmerged_file(){
+  while read line; do
+    # `git help status` has the following list of unmerged status codes:
+    #  D           D    unmerged, both deleted
+    #  A           U    unmerged, added by us
+    #  U           D    unmerged, deleted by them
+    #  U           A    unmerged, added by them
+    #  D           U    unmerged, deleted by us
+    #  A           A    unmerged, both added
+    #  U           U    unmerged, both modified
+    if [[ $line == *U* || $line == "AA" || $line == "DD" ]]; then
+      log "INFO: Detected Merge conflict."
+      return 0
+    fi
+  done < <(git status --porcelain | cut -d ' ' -f 1)
+
+  return 1
+}
+
+foreach_initialized_submodule | while read line; do
+    pushd "$line" > /dev/null
+      has_unmerged_file
+      if [ $? -eq 0 ]; then
+        log "INFO - Running git mergetool in submodule: $line"
+        git mergetool -y
+        if [ $? -ne 0 ]; then
+          log "ERROR: Mergetool failed in submodule: $line"
+        fi
+      fi
+    popd > /dev/null
+done
+
+echo "INFO - git xmergetool finished.  Please run git-xcommit to commit all submodule merge resolutions."
+

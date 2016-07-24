@@ -1,0 +1,16 @@
+{
+	"test_name":"FIX_INSTALL_PERMISSIONS_9001",
+	"commandline":"chown -R {user}:{user} {rift_root}/{{.install,.artifacts}}",
+	"test_description":"Fix the root owned permissions in the current workspace",
+    "run_as_root": true,
+	"target_vm": "VM",
+	"status":"working",
+	"keywords":[],
+	"timelimit": 300,
+	"networks":[],
+	"vms":[
+		{
+			"name": "VM"
+		}
+	]
+}

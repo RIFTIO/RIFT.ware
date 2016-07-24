@@ -1,0 +1,37 @@
+{
+	"nsd": {
+		"primary": "#6c71c4",
+		"secondary": "#6c71c4"
+	},
+	"vld": {
+		"primary": "#073642",
+		"secondary": "#073642"
+	},
+	"internal-vld": {
+		"primary": "#073642",
+		"secondary": "#073642"
+	},
+	"vdu": {
+		"primary": "#859900",
+		"secondary": "#859900"
+	},
+	"vnfd": {
+		"primary": "#268bd2",
+		"secondary": "#268bd2"
+	},
+	"constituent-vnfd": {
+		"primary": "#268bd2",
+		"secondary": "#268bd2"
+	},
+	"vnffgd": {
+		"primary": "#2aa198",
+		"secondary": "#2aa198"
+	},
+	"common": {
+		"primary": "black",
+		"secondary": "white",
+		"background": "white",
+		"foreground": "black"
+	}
+
+}

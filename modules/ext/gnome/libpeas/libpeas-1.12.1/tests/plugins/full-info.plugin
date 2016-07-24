@@ -1,0 +1,13 @@
+[Plugin]
+Module=full-info
+Depends=something;something-else
+Builtin=true
+Name=Full Info
+Description=Has full info.
+Authors=Garrett Regier
+Copyright=Copyright © 2010 Garrett Regier
+Website=https://wiki.gnome.org/Projects/Libpeas
+Icon=gtk-ok
+Version=1.0
+Help=Help Me!
+X-External=external data

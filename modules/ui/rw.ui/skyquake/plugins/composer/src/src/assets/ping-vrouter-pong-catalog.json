@@ -1,0 +1,504 @@
+[
+  {
+    "id": "GUID-1",
+    "name": "RIFT.ware™ NS Descriptors Catalog",
+    "short-name": "rift.ware-nsd-cat",
+    "description": "RIFT.ware™, an open source NFV development and deployment software platform that makes it simple to create, deploy and manage hyper-scale Virtual network functions and applications.",
+    "vendor": "RIFT.io",
+    "version": "",
+    "created-on": "",
+    "type": "nsd",
+    "descriptors": [
+      {
+        "description": "Toy NS Ping-Vrouter-Pong",
+        "constituent-vnfd": [
+          {
+            "member-vnf-index": 1,
+            "vnfd-id-ref": "7cae6ff6-9263-11e5-b7df-001b21b98a89"
+          },
+          {
+            "member-vnf-index": 2,
+            "vnfd-id-ref": "a4dea522-9263-11e5-ad06-001b21b98a89"
+          },
+          {
+            "member-vnf-index": 3,
+            "vnfd-id-ref": "7cb0375a-9263-11e5-b7df-001b21b98a89"
+          }
+        ],
+        "version": 1,
+        "vld": [
+          {
+            "description": "Link from ping to vrouter",
+            "type": "ELAN",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 1,
+                "vnfd-connection-point-ref": "ping_vnfd/cp0",
+                "vnfd-id-ref": "7cae6ff6-9263-11e5-b7df-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 2,
+                "vnfd-connection-point-ref": "vrouter_vnfd/cp0",
+                "vnfd-id-ref": "a4dea522-9263-11e5-ad06-001b21b98a89"
+              }
+            ],
+            "version": 1,
+            "vendor": "RIFT.io",
+            "name": "Link1",
+            "short-name": "Link1",
+            "id": "23afa0c8-92d1-11e5-9a9f-001b21b98a89"
+          },
+          {
+            "description": "Link from vrouter to pong",
+            "type": "ELAN",
+            "vnfd-connection-point-ref": [
+              {
+                "member-vnf-index-ref": 2,
+                "vnfd-connection-point-ref": "vrouter_vnfd/cp1",
+                "vnfd-id-ref": "a4dea522-9263-11e5-ad06-001b21b98a89"
+              },
+              {
+                "member-vnf-index-ref": 3,
+                "vnfd-connection-point-ref": "pong_vnfd/cp0",
+                "vnfd-id-ref": "7cb0375a-9263-11e5-b7df-001b21b98a89"
+              }
+            ],
+            "version": 1,
+            "vendor": "RIFT.io",
+            "name": "Link2",
+            "short-name": "Link2",
+            "id": "23afe542-92d1-11e5-9a9f-001b21b98a89"
+          }
+        ],
+        "vendor": "RIFT.io",
+        "name": "ping_vrouter_pong_nsd",
+        "short-name": "ping_vrouter_pong_nsd",
+        "id": "23a28e4c-92d1-11e5-9a9f-001b21b98a89"
+      }
+    ]
+  },
+  {
+    "id": "GUID-2",
+    "name": "RIFT.ware™ VNF Descriptors Catalog",
+    "short-name": "rift.ware-vnfd-cat",
+    "description": "RIFT.ware™, an open source NFV development and deployment software platform that makes it simple to create, deploy and manage hyper-scale Virtual network functions and applications.",
+    "vendor": "RIFT.io",
+    "version": "",
+    "created-on": "",
+    "type": "vnfd",
+    "descriptors": [
+      {
+        "vdu": [
+          {
+            "image": "Fedora-x86_64-20-20131211.1-sda-ping.qcow2",
+            "host-epa": {
+              "cpu-socket-count": "PREFER_TWO",
+              "cpu-vendor": "PREFER_INTEL",
+              "cpu-feature": [
+                "PREFER_AES",
+                "PREFER_CAT"
+              ],
+              "cpu-arch": "PREFER_X86_64",
+              "cpu-model": "PREFER_SANDYBRIDGE"
+            },
+            "hypervisor-epa": {
+              "type": "PREFER_KVM"
+            },
+            "external-interface": [
+              {
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "name": "eth0",
+                "vnfd-connection-point-ref": "ping_vnfd/cp0"
+              }
+            ],
+            "count": 2,
+            "internal-interface": [
+              {
+                "vdu-internal-connection-point-ref": "7cafe53e-9263-11e5-b7df-001b21b98a89",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "name": "eth0"
+              }
+            ],
+            "cloud-init": "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\nssh_pwauth: True\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ systemctl, enable, ping.service ]\n  - [ systemctl, start, --no-block, ping.service ]\n  - [ ifup, eth1 ]\n  - [ ifup, eth2 ]\n",
+            "internal-connection-point": [
+              {
+                "type": "VPORT",
+                "id": "7cafe53e-9263-11e5-b7df-001b21b98a89"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "vcpu-count": 2,
+              "storage-gb": 40
+            },
+            "guest-epa": {
+              "mempage-size": "PREFER_LARGE",
+              "cpu-thread-pinning-policy": "AVOID",
+              "trusted-execution": "true",
+              "numa-node-policy": {
+                "node": [
+                  {
+                    "vcpu": [
+                      0,
+                      1
+                    ],
+                    "memory-mb": 8192,
+                    "id": 0
+                  },
+                  {
+                    "vcpu": [
+                      2,
+                      3
+                    ],
+                    "memory-mb": 8192,
+                    "id": 1
+                  }
+                ],
+                "node-cnt": 2,
+                "mem-policy": "PREFERRED"
+              },
+              "cpu-pinning-policy": "DEDICATED"
+            },
+            "name": "iovdu",
+            "vswitch-epa": {
+              "ovs-acceleration": "DISABLED",
+              "ovs-offload": "DISABLED"
+            },
+            "id": "7caf476e-9263-11e5-b7df-001b21b98a89"
+          }
+        ],
+        "description": "This is an example RIFT.ware VNF",
+        "connection-point": [
+          {
+            "type": "VPORT",
+            "name": "ping_vnfd/cp0"
+          }
+        ],
+        "monitoring-param": [
+          {
+            "units": "packets",
+            "description": "no of ping requests",
+            "current-value": 0,
+            "min-value": 0,
+            "path": "api/v1/ping/stats",
+            "id": 1,
+            "widget-type": "COUNTER",
+            "name": "ping-request-tx-count",
+            "max-value": 4292967295,
+            "group-tag": "Group1"
+          },
+          {
+            "units": "packets",
+            "description": "no of ping responses",
+            "current-value": 0,
+            "min-value": 0,
+            "path": "api/v1/ping/stats",
+            "id": 2,
+            "widget-type": "COUNTER",
+            "name": "ping-response-rx-count",
+            "max-value": 4292967295,
+            "group-tag": "Group1"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "7caf476e-9263-11e5-b7df-001b21b98a89",
+          "port": 18888
+        },
+        "version": 1,
+        "internal-vld": [
+          {
+            "description": "Virtual link for internal fabric",
+            "type": "ELAN",
+            "internal-connection-point-ref": [
+              "7cafe53e-9263-11e5-b7df-001b21b98a89"
+            ],
+            "name": "fabric",
+            "short-name": "fabric",
+            "id": "7caead0e-9263-11e5-b7df-001b21b98a89"
+          }
+        ],
+        "vendor": "RIFT.io",
+        "name": "ping_vnfd",
+        "short-name": "ping_vnfd",
+        "id": "7cae6ff6-9263-11e5-b7df-001b21b98a89"
+      },
+      {
+        "vdu": [
+          {
+            "image": "Fedora-x86_64-20-20131211.1-sda-pong.qcow2",
+            "host-epa": {
+              "cpu-socket-count": "PREFER_TWO",
+              "cpu-vendor": "PREFER_INTEL",
+              "cpu-feature": [
+                "PREFER_AES",
+                "PREFER_CAT"
+              ],
+              "cpu-arch": "PREFER_X86_64",
+              "cpu-model": "PREFER_SANDYBRIDGE"
+            },
+            "hypervisor-epa": {
+              "type": "PREFER_KVM"
+            },
+            "external-interface": [
+              {
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "name": "eth0",
+                "vnfd-connection-point-ref": "pong_vnfd/cp0"
+              }
+            ],
+            "count": 2,
+            "internal-interface": [
+              {
+                "vdu-internal-connection-point-ref": "7cb0ab18-9263-11e5-b7df-001b21b98a89",
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "name": "eth0"
+              }
+            ],
+            "cloud-init": "#cloud-config\npassword: fedora\nchpasswd: { expire: False }\nssh_pwauth: True\nruncmd:\n  - [ systemctl, daemon-reload ]\n  - [ systemctl, enable, pong.service ]\n  - [ systemctl, start, --no-block, pong.service ]\n  - [ ifup, eth1 ]\n  - [ ifup, eth2 ]\n",
+            "internal-connection-point": [
+              {
+                "type": "VPORT",
+                "id": "7cb0ab18-9263-11e5-b7df-001b21b98a89"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "vcpu-count": 2,
+              "storage-gb": 40
+            },
+            "guest-epa": {
+              "mempage-size": "PREFER_LARGE",
+              "cpu-thread-pinning-policy": "AVOID",
+              "trusted-execution": "true",
+              "numa-node-policy": {
+                "node": [
+                  {
+                    "vcpu": [
+                      0,
+                      1
+                    ],
+                    "memory-mb": 8192,
+                    "id": 0
+                  },
+                  {
+                    "vcpu": [
+                      2,
+                      3
+                    ],
+                    "memory-mb": 8192,
+                    "id": 1
+                  }
+                ],
+                "node-cnt": 2,
+                "mem-policy": "PREFERRED"
+              },
+              "cpu-pinning-policy": "DEDICATED"
+            },
+            "name": "iovdu",
+            "vswitch-epa": {
+              "ovs-acceleration": "DISABLED",
+              "ovs-offload": "DISABLED"
+            },
+            "id": "7cb0832c-9263-11e5-b7df-001b21b98a89"
+          }
+        ],
+        "description": "This is an example RIFT.ware VNF",
+        "connection-point": [
+          {
+            "type": "VPORT",
+            "name": "pong_vnfd/cp0"
+          }
+        ],
+        "monitoring-param": [
+          {
+            "units": "packets",
+            "description": "no of ping requests",
+            "current-value": 0,
+            "min-value": 0,
+            "path": "api/v1/pong/stats",
+            "id": 1,
+            "widget-type": "COUNTER",
+            "name": "ping-request-rx-count",
+            "max-value": 4292967295,
+            "group-tag": "Group1"
+          },
+          {
+            "units": "packets",
+            "description": "no of ping responses",
+            "current-value": 0,
+            "min-value": 0,
+            "path": "api/v1/pong/stats",
+            "id": 2,
+            "widget-type": "COUNTER",
+            "name": "ping-response-tx-count",
+            "max-value": 4292967295,
+            "group-tag": "Group1"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "7cb0832c-9263-11e5-b7df-001b21b98a89",
+          "port": 18889
+        },
+        "version": 1,
+        "internal-vld": [
+          {
+            "description": "Virtual link for internal fabric",
+            "type": "ELAN",
+            "internal-connection-point-ref": [
+              "7cb0ab18-9263-11e5-b7df-001b21b98a89"
+            ],
+            "name": "fabric",
+            "short-name": "fabric",
+            "id": "7cb048bc-9263-11e5-b7df-001b21b98a89"
+          }
+        ],
+        "vendor": "RIFT.io",
+        "name": "pong_vnfd",
+        "short-name": "pong_vnfd",
+        "id": "7cb0375a-9263-11e5-b7df-001b21b98a89"
+      },
+      {
+        "vdu": [
+          {
+            "image": "vyatta_snp.qcow2",
+            "host-epa": {
+              "cpu-socket-count": "PREFER_TWO",
+              "cpu-vendor": "PREFER_INTEL",
+              "cpu-feature": [
+                "PREFER_AES",
+                "PREFER_CAT"
+              ],
+              "cpu-arch": "PREFER_X86_64",
+              "cpu-model": "PREFER_SANDYBRIDGE"
+            },
+            "hypervisor-epa": {
+              "type": "PREFER_KVM"
+            },
+            "cloud-init": "#cloud-config\n",
+            "external-interface": [
+              {
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "name": "eth0",
+                "vnfd-connection-point-ref": "vrouter_vnfd/cp0"
+              },
+              {
+                "virtual-interface": {
+                  "type": "VIRTIO"
+                },
+                "name": "eth1",
+                "vnfd-connection-point-ref": "vrouter_vnfd/cp1"
+              }
+            ],
+            "vm-flavor": {
+              "memory-mb": 4096,
+              "vcpu-count": 2,
+              "storage-gb": 40
+            },
+            "guest-epa": {
+              "mempage-size": "PREFER_LARGE",
+              "cpu-thread-pinning-policy": "AVOID",
+              "trusted-execution": "true",
+              "numa-node-policy": {
+                "node": [
+                  {
+                    "vcpu": [
+                      0,
+                      1
+                    ],
+                    "memory-mb": 8192,
+                    "id": 0
+                  },
+                  {
+                    "vcpu": [
+                      2,
+                      3
+                    ],
+                    "memory-mb": 8192,
+                    "id": 1
+                  }
+                ],
+                "node-cnt": 2,
+                "mem-policy": "PREFERRED"
+              },
+              "cpu-pinning-policy": "DEDICATED"
+            },
+            "name": "iovdu",
+            "count": 2,
+            "vswitch-epa": {
+              "ovs-acceleration": "DISABLED",
+              "ovs-offload": "DISABLED"
+            },
+            "id": "a4df6142-9263-11e5-ad06-001b21b98a89"
+          }
+        ],
+        "description": "This is a Brocade vRouter VNF",
+        "connection-point": [
+          {
+            "type": "VPORT",
+            "name": "vrouter_vnfd/cp0"
+          },
+          {
+            "type": "VPORT",
+            "name": "vrouter_vnfd/cp1"
+          }
+        ],
+        "monitoring-param": [
+          {
+            "units": "packets",
+            "description": "no of tx pkts",
+            "current-value": 0,
+            "min-value": 0,
+            "path": "api/v1/ping/stats",
+            "id": 1,
+            "widget-type": "COUNTER",
+            "name": "tx-count",
+            "max-value": 4292967295,
+            "group-tag": "Group1"
+          },
+          {
+            "units": "packets",
+            "description": "no of rx packets",
+            "current-value": 0,
+            "min-value": 0,
+            "path": "api/v1/ping/stats",
+            "id": 2,
+            "widget-type": "COUNTER",
+            "name": "rx-count",
+            "max-value": 4292967295,
+            "group-tag": "Group1"
+          }
+        ],
+        "mgmt-interface": {
+          "vdu-id": "a4df6142-9263-11e5-ad06-001b21b98a89",
+          "port": 18888
+        },
+        "version": 1,
+        "vendor": "Brocade",
+        "name": "vrouter_vnfd",
+        "short-name": "vrouter_vnfd",
+        "id": "a4dea522-9263-11e5-ad06-001b21b98a89"
+      }
+    ]
+  },
+  {
+    "id": "GUID-3",
+    "name": "RIFT.ware™ PNF Descriptors Catalog",
+    "short-name": "rift.ware-pnfd-cat",
+    "description": "RIFT.ware™, an open source NFV development and deployment software platform that makes it simple to create, deploy and manage hyper-scale Virtual network functions and applications.",
+    "vendor": "RIFT.io",
+    "version": "",
+    "created-on": "",
+    "type": "pnfd",
+    "descriptors": []
+  }
+]

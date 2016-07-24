@@ -1,0 +1,92 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import '../../style/_colors.scss';
+
+  .input-range-slider_horizontal{
+    display:flex;
+    align-items:baseline;
+    &-info {
+      margin:0 0.5rem;
+    }
+  }
+
+
+.rangeslider {
+  margin: 20px 0;
+  position: relative;
+  background: #e6e6e6;
+  display:flex;
+  flex:1;
+  .rangeslider__fill, .rangeslider__handle {
+    position: absolute;
+  }
+  &, .rangeslider__fill {
+    display: block;
+    box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  .rangeslider__handle {
+    background: #fff;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    display: inline-block;
+    position: absolute;
+    &:active {
+      background: #999;
+    }
+  }
+}
+
+/**
+ * Rangeslider - Horizontal slider
+ */
+.rangeslider-horizontal {
+  height: 1rem;
+  margin-bottom: 2.5rem;
+  .rangeslider__fill {
+    height: 100%;
+    background: $light-blue;
+    top: 0;
+  }
+  .rangeslider__handle {
+    width: 0.5rem;
+    height: 2rem;
+    top: -0.5rem;
+    left:-10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    >div{
+          width: 5rem;
+          margin-top: 2rem;
+          text-align: center;
+    }
+  }
+}
+
+/**
+ * Rangeslider - Vertical slider
+ */
+.rangeslider-vertical {
+  margin: 20px auto;
+  height: 150px;
+  max-width: 10px;
+  background: none;
+  .rangeslider__fill {
+    width: 100%;
+    background: $light-blue;
+    box-shadow: none;
+    bottom: 0;
+  }
+  .rangeslider__handle {
+    width: 30px;
+    height: 10px;
+    left: -10px;
+    &:active {
+      box-shadow: none;
+    }
+  }
+}

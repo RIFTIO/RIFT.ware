@@ -1,0 +1,166 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module vlr
+{
+  namespace "urn:ietf:params:xml:ns:yang:nfvo:vlr";
+  prefix "vlr";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import ietf-inet-types {
+    prefix "inet";
+  }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  import vld {
+    prefix "vld";
+  }
+
+  revision 2015-09-10 {
+    description
+      "Initial revision. This YANG file defines
+       the Virtual Link Record (VLR)";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  container vlr-catalog {
+    config false;
+
+    list vlr {
+      key "id";
+      unique "name";
+
+      leaf id {
+        description "Identifier for the VLR.";
+        type yang:uuid;
+      }
+
+      leaf name {
+        description "VLR name.";
+        type string;
+      }
+
+      leaf nsr-id-ref {
+        description 
+            "NS instance identifier. 
+             This is a leafref /nsr:ns-instance-config/nsr:nsr/nsr:id";
+        type yang:uuid;
+      }
+
+      leaf res-id {
+        description "Identifier for resmgr id mapping";
+        type yang:uuid;
+      }
+
+      leaf short-name {
+        description "Short name for VLR for UI";
+        type string;
+      }
+
+      leaf vendor {
+        description "Provider of the VLR.";
+        type string;
+      }
+
+      leaf description {
+        description "Description of the VLR.";
+        type string;
+      }
+
+      leaf version {
+        description "Version of the VLR";
+        type string;
+      }
+
+      leaf type {
+        type manotypes:virtual-link-type;
+      }
+
+      leaf root-bandwidth {
+        description
+            "For ELAN this is the aggregate bandwidth.";
+        type uint64;
+      }
+
+      leaf leaf-bandwidth {
+        description
+            "For ELAN this is the bandwidth of branches.";
+        type uint64;
+      }
+
+      leaf create-time {
+        description
+          "Creation timestamp of this Virtual Link.
+          The timestamp is expressed as seconds 
+          since unix epoch - 1970-01-01T00:00:00Z";
+
+        type uint32;
+      }
+
+      leaf vld-ref {
+        description "Reference to VLD";
+        type leafref {
+          path "/vld:vld-catalog/vld:vld/vld:id";
+        }
+      }
+
+      leaf network-id {
+        description 
+            "Identifier for the allocated network resource.";
+        type string;
+      }
+
+      // replicate for pnfd container here
+
+      uses manotypes:provider-network;
+
+      leaf status {
+        description
+            "Status of the virtual link record.";
+        type enumeration {
+          enum LINK_UP;
+          enum DEGRADED;
+          enum LINK_DOWN;
+        }
+      }
+      leaf operational-status {
+        description
+          "The operational status of the Virtual Link
+            init                 : The VL is in init stat.
+            vl-alloc-pending     : The VL alloc is pending in VIM
+            running              : The VL is up  and running in VM
+            vl-terminate-pending : The VL is being terminated in VIM.
+            terminated           : The VL is terminated in the VM.
+            failed               : The VL instantiation failed in VIM.
+          ";
+
+        type enumeration {
+          rwpb:enum-type "VlOperationalStatus";
+          enum init;
+          enum vl-alloc-pending;
+          enum running;
+          enum vl-terminate-pending;
+          enum terminated;
+          enum failed;
+        }
+      }
+    }
+  }
+}
+

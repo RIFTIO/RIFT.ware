@@ -1,0 +1,44 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module ut-types {
+
+  namespace "http://riftio.com/ns/core/mgmt/rwuagent/test/types";
+  prefix types;
+
+  description "Common Types definition ";
+
+  revision "2015-10-31" {
+    description "Initial revision";
+  }
+
+  typedef prefixLengthIPv4 {
+    type int32 {
+      range "0..32";
+    }
+  }
+
+  typedef prefixLengthIPv6 {
+    type int32 {
+      range "0..128";
+    }
+  }
+
+  typedef interfaceName {
+    type string {
+      length "1..30";
+      pattern "[A-Za-z][^/:.]*";
+    }
+  }
+
+  typedef interfaceLogicalUnit {
+    type int32 {
+      range "0..9999";
+    }
+  }
+}

@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+
+
+progs="/bin/pip3 /bin/python3-pip"
+for prog in $progs; do
+    if [ -f $prog ]; then
+        PIP3=$prog
+        break
+    fi
+done
+
+if [ -z "$PIP3" ]; then
+    echo "FATAL ERROR cannot locate pip3 installer -- tried $progs" >&2
+    exit 1
+fi
+
+$PIP3 install --use-wheel --no-index --trusted-host wheel.riftio.com --find-links=http://wheel.riftio.com/mirrors/python3_kilo_wheelhouse "$@"
+
+

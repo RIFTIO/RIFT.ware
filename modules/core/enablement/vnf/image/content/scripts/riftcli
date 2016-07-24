@@ -1,0 +1,4 @@
+#!/bin/bash
+cd /home/rift
+./rift-shell -- .install/usr/bin/zsh --username admin --passwd admin
+

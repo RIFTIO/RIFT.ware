@@ -1,0 +1,7 @@
+RIFT.core, glib, Gnome General-Purpose Library, LGPLv2, git://git.gnome.org/glib
+RIFT.core, gi, Gnome GObject Introspection Library, LGPLv2, git://git.gnome.org/gobject-introspection
+RIFT.core, libpeas, Libpeas GObject Plugin Engine, LGPLv2, git://git.gnome.org/libpeas
+RIFT.core, pygobject, Python Bindings for GObject, LGPLv2, http://live.gnome.org/PyGObject
+RIFT.core, lgi, LUA Bindings for GObject, MIT, https://github.com/pavouk/lgi
+RIFT.core, vala, Compiler for VALA Language, LGPLv2, git://git.gnome.org/vala
+

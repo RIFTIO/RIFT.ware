@@ -1,0 +1,397 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module test-rwapis
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/test-rwapis";
+  prefix "test-rwapis";
+
+  description
+    "RW.Manifest definition.
+    A RiftWare manifest is used to bootstrap a running instance of RiftWare.";
+
+  revision 2014-03-12 {
+    description
+      "Initial implementation of RW.Manifest.";
+    reference
+      "RW.VX Software Component Document";
+  }
+
+  grouping rwvcs-variable-list {
+    leaf-list variable {
+      description "List of Python variable assignments";
+      type string;
+    }
+  }
+
+  grouping rwvcs-sequence {
+    list action {
+      description "This section contains a sequence of RW.VCS actions";
+      key "name";
+      //rwpb:msg-new RwMVcsAction;
+
+      leaf name {
+	description "Name of the action within the sequence";
+	type string;
+      }
+
+      choice action {
+        case annex {
+	  container annex {
+	    leaf component-name {
+	      description "Name of the component type in the inventory";
+	      type string;
+	    }
+	    leaf instance-id {
+	      description "ID of the component instance in the inventory";
+	      type string;
+	    }
+	    leaf instance-name {
+	      description "Name of the component instance in the inventory";
+	      type string;
+	    }
+	  }
+	}
+        case start {
+	  container start {
+	    uses rwvcs-variable-list;
+	    leaf component-name {
+	      description "Name of the component type in the inventory";
+	      type string;
+	    }
+	    leaf instance-id {
+	      description "ID of the component instance in the inventory";
+	      type string;
+	    }
+	    leaf instance-name {
+	      description "Name of the component instance in the inventory";
+	      type string;
+	    }
+	  }
+	}
+      } // choice action
+    } // list action
+  } // grouping rwvcs-sequence
+
+  grouping rwvcs-event-list {
+    container event-list {
+      description "";
+      //rwpb:msg-new RwMVcsEventList;
+
+      list event {
+	description "This section contains a list of RW.VCS events";
+	key "name";
+        //rwpb:msg-new RwMVcsEvent;
+
+	leaf name {
+	  description "Name of the event";
+	  type string;
+	}
+
+	container match {
+	  description "This section identifies match criteria needed to perform this sequence";
+          //rwpb:msg-new RwMEventMatch;
+
+	  leaf component-name {
+	    description "Rule to match the currently running component";
+	    mandatory false;
+	    type string;
+	  }
+	}
+
+	uses rwvcs-sequence;
+      } // list event
+    } // container event-list
+  } // grouping rwvcs-event-list
+
+  grouping rwvcs-zookeeper {
+    container zookeeper {
+      description "This section defines a RW.VCS zookeeper component";
+      //rwpb:msg-new RwMVcsZookeeper;
+
+      leaf enable {
+	description "";
+	type boolean;
+      }
+    }
+  }
+
+  grouping rwvcs-rwcolony {
+    container rwcolony {
+      description "This section defines a RW.VCS rwcolony component";
+      //rwpb:msg-new RwMVcsRwColony;
+
+      uses rwvcs-event-list;
+    }
+  }
+
+  grouping rwvcs-rwvm {
+    container rwvm {
+      description "This section defines a RW.VCS rwvm component";
+      ////rwpb:msg-new RwMVcsRwVm;
+
+      uses rwvcs-event-list;
+    }
+  }
+
+  grouping rwvcs-component-list {
+    list component {
+      description "This section defines the RiftWare virtual components";
+      key "component-name";
+
+      leaf component-name {
+	description "";
+	type string;
+      }
+
+      choice component {
+        case zookeeper {
+	  uses rwvcs-zookeeper;
+        }
+        case rwvcs-rwcolony {
+	  uses rwvcs-rwcolony;
+        }
+        case rwvcs-rwvm {
+	  uses rwvcs-rwvm;
+        }
+      }
+    } // list component
+  } // grouping rwvcs-component-list
+
+  grouping bootstrap-phase {
+    container bootstrap-phase {
+      description "This section contains the bootstrap phase configuration";
+      //rwpb:msg-new RwMBootstrapPhase;
+
+      container rwtasklet {
+        description "";
+        //rwpb:msg-new RwMTasklet;
+
+        leaf plugin-directory {
+          description "";
+          type string;
+        }
+
+        leaf plugin-name {
+          description "";
+          type string;
+        }
+
+        leaf plugin-version {
+          description "";
+          type string;
+        }
+      } // container rwtasklet
+
+      container rwtrace {
+        description "";
+        //rwpb:msg-new RwMTrace;
+
+        leaf enable {
+          description "";
+          mandatory false;
+          type boolean;
+        }
+        choice destination {
+          case console {}
+          case file {
+            leaf file {
+              description "";
+              type string;
+            }
+          }
+          case memory-ring {}
+          case syslog {}
+        }
+        leaf level {
+          description "";
+          mandatory false;
+          type uint32 { range "0..7"; }
+        }
+        container filter {
+          leaf file {
+            description "";
+            mandatory false;
+            type string;
+          }
+          leaf line {
+            description "";
+            mandatory false;
+            type uint32;
+          }
+        }
+      } // container rwtrace
+    } // container bootstrap-phase
+  } // grouping bootstrap-phase
+
+  grouping init-phase {
+    container init-phase {
+      description "This section contains the init phase configuration";
+      //rwpb:msg-new RwMInitPhase;
+
+      container environment {
+        description "This section contains all of the manifest environment variables";
+        //rwpb:msg-new RwMEnvironment;
+
+        uses rwvcs-variable-list;
+        uses rwvcs-sequence;
+      }
+
+      container inventory {
+        description "This section contains all of the manifest inventory items";
+        //rwpb:msg-new RwMInventory;
+
+        list component {
+          description "";
+          key "name";
+          //rwpb:msg-new RwMIComponent;
+
+          leaf name {
+            description "";
+            type string;
+          }
+
+          choice component {
+            container rwlibrary {
+              //rwpb:msg-new RwMICLibrary;
+              leaf so-file {
+                description "";
+                type string;
+              }
+            }
+
+            container rwtasklet {
+              //rwpb:msg-new RwMICTasklet;
+              description "";
+
+              leaf plugin-directory {
+                description "";
+                type string;
+              }
+
+              leaf plugin-name {
+                description "";
+                type string;
+              }
+
+              leaf plugin-version {
+                description "";
+                type string;
+              }
+            } // container rwtasklet
+          } // choice component
+        } // list component
+      } // container inventory
+
+      container rwvcs {
+        description "";
+        ////rwpb:msg-new RwMVcs;
+
+        uses rwvcs-component-list;
+      } // container rwvcs
+
+      container settings {
+        description "This section contains the init phase settings for each RiftWare component";
+        //rwpb:msg-new RwMSettings;
+
+        container rwinit {
+          description "";
+          //rwpb:msg-new RwMInit;
+
+          container startup-sequence {
+            description "This section contains an ordered set of RW components to start";
+            //rwpb:msg-new RwMStartupSequence;
+
+            list component {
+              key "name";
+              //rwpb:msg-new RwMSSComponent;
+
+              leaf name {
+                description "";
+                type string;
+              }
+
+              container arguments {
+                description "Additional configuration arguments for the component";
+
+                leaf-list arg {
+                  description "An argument";
+                  type string;
+                }
+              } // container arguments
+            } // list component
+          } // container startup-sequence
+        } // container rwinit
+
+        container rwtrace {
+          description "";
+        } // container rwtrace
+
+        container rwvcs {
+          description "This section contains the init phase settings for each RiftWare component";
+          //rwpb:msg-new RwMSettingsRwvcs;
+
+          leaf collapse-each-rwvm {
+            description "This configures each rwvm to collapse into a single real VM";
+            type boolean;
+          }
+
+          leaf collapse-each-rwprocess {
+            description "This configures each rwprocess to collapse into a single real process";
+            type boolean;
+          }
+        } // container rwvcs
+      } // container settings
+    } // container init-phase
+  } // grouping init-phase
+
+  grouping multi-node-test {
+    container node1 {
+      //rwpb:msg-new Node1;
+      description "node1";
+    } // container node1
+    container node2 {
+      //rwpb:msg-new Node2;
+      description "node2";
+    } // container node2
+  }
+
+  grouping leaf-test {
+    leaf leaf1 {
+      type uint32;
+      description "node1";
+    } // container node1
+  }
+  
+  container config {
+    container manifest {
+      description "This section contains the entire manifest";
+      //rwpb:msg-new RwManifest;
+
+      leaf profile-name {
+	description "The name of the profile to use within the manifest";
+	type string;
+      }
+
+      list profile {
+	description "This list of manifest profiles";
+	key name;
+        //rwpb:msg-new RwMProfile;
+	
+	leaf name {
+	  description "The name of this manifest profile";
+	  type string;
+	}
+
+	uses bootstrap-phase;
+	uses init-phase;
+      } // container manifest
+    } // container manifest
+  } // container config
+
+}

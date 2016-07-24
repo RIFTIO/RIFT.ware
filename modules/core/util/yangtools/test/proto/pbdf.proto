@@ -1,0 +1,166 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+/**
+ * @file pbdf.proto
+ * @author Sujithra Periasamy
+ * @date 2014/09/17
+ * @brief Test protobuf message field delete operations.
+ */
+
+import "descriptor.proto";
+import "rwpbapi.proto";
+option cc_generic_services = true;
+
+package pbdf;
+
+enum EnumeA {
+  AVALUE1 = 1;
+  AVALUE2 = 2;
+  AVALUE3 = 3;
+  AVALUE4 = 4;
+};
+
+enum EnumeB {
+  BVALUE4 = 4;
+  BVALUE5 = 5;
+  BVALUE6 = 6;
+  BVALUE7 = 7;
+  BVALUE8 = 8;
+  BVALUE9 = 9;
+};
+
+
+//Contains only required fields
+message MsgA {
+  required string s1 = 1;
+  required bytes  b1 = 2;
+  required int32  i1 = 3;
+  required EnumeA e1 = 5;
+};
+
+//Contains only optional fields, not inlined and no default
+message MsgB {
+  optional int32  	i1   = 100;
+  optional string 	s1   = 101;
+  optional bytes  	b1   = 102;
+  optional EnumeB  	e1   = 103;
+  optional double 	d1   = 104;
+  optional float  	f1   = 105;
+  optional int64  	i2   = 106;
+  optional uint32 	ui   = 107;
+  optional uint64 	ui2  = 108;
+  optional sint32 	si   = 109;
+  optional sint64 	si2  = 110;
+  optional fixed32 	fi   = 111;
+  optional fixed64 	fi2  = 112;
+  optional sfixed32 	sfi  = 113;
+  optional sfixed64 	sfi2 = 114;
+  optional bool 	bo   = 115;
+  optional MsgA         ma   = 116;
+};
+
+//Contains only optional fields, not inlined but has default.
+message MsgC {
+  optional int32  	i1   = 300  [ default=8765432 ];
+  optional string 	s1   = 301  [ default="defstring" ];
+  optional bytes  	b1   = 302  [ default=""];
+  optional EnumeB  	e1   = 303  [ default=BVALUE5 ];
+  optional double 	d1   = 304  [ default=3.45678901234567 ];
+  optional float  	f1   = 305  [ default=6.78901 ];
+  optional int64  	i2   = 306  [ default=98765432109876 ];
+  optional uint32 	ui   = 307  [ default=9876543 ];
+  optional uint64 	ui2  = 308  [ default=8765432109876 ];
+  optional sint32 	si   = 309  [ default=-87654 ];
+  optional sint64 	si2  = 310  [ default=-987654321098 ];
+  optional fixed32 	fi   = 311  [ default=76543210 ];
+  optional fixed64 	fi2  = 312  [ default=765432109876543 ];
+  optional sfixed32 	sfi  = 313  [ default=-654321098 ];
+  optional sfixed64 	sfi2 = 314  [ default=-6543210987654 ];
+  optional bool 	bo   = 315  [ default=false ];
+  optional MsgA         ma   = 316;
+};
+
+//Contains only repeated fields, not inlined.
+message MsgD {
+  repeated int32  	i1   = 400; 
+  repeated string 	s1   = 401; 
+  repeated bytes  	b1   = 402; 
+  repeated EnumeB  	e1   = 403; 
+  repeated double 	d1   = 404; 
+  repeated float  	f1   = 405; 
+  repeated int64  	i2   = 406; 
+  repeated uint32 	ui   = 407; 
+  repeated uint64 	ui2  = 408; 
+  repeated sint32 	si   = 409; 
+  repeated sint64 	si2  = 410; 
+  repeated fixed32 	fi   = 411; 
+  repeated fixed64 	fi2  = 412; 
+  repeated sfixed32 	sfi  = 413; 
+  repeated sfixed64 	sfi2 = 414; 
+  repeated bool 	bo   = 415; 
+  repeated MsgA         ma   = 416;
+};
+
+//Contains only optional fields, inlined and default.
+message MsgE {
+  optional int32  	i1   = 600  [ default=8765432 ];
+  optional string 	s1   = 601  [ default="", (rw_fopts) = {inline:true string_max:128} ];
+  optional bytes  	b1   = 602  [ default="", (rw_fopts) = {inline:true string_max:50} ];
+  optional MsgA         ma   = 603  [ (rw_fopts) = {inline:true} ];
+};
+
+//Contains only repeated fields, inlined.
+message MsgF {
+  repeated int32  	i1   = 500  [ (rw_fopts) = {inline:true inline_max:4} ];
+  repeated string 	s1   = 501  [ (rw_fopts) = {inline:true inline_max:4 string_max:32} ];
+  repeated bytes  	b1   = 502  [ (rw_fopts) = {inline:true inline_max:4 string_max:30} ];
+  repeated EnumeB  	e1   = 503  [ (rw_fopts) = {inline:true inline_max:4} ];
+  repeated double 	d1   = 504  [ (rw_fopts) = {inline:true inline_max:4} ];
+  repeated sfixed64 	sfi2 = 506  [ (rw_fopts) = {inline:true inline_max:4} ];
+  repeated bool 	bo   = 507  [ (rw_fopts) = {inline:true inline_max:4} ]; 
+  repeated MsgA         ma   = 508  [ (rw_fopts) = {inline:true inline_max:4} ];
+  optional uint32       ui   = 509;
+};
+
+//SubMsg of MsgF (tag-compatible).
+message MsgFSub {
+  repeated int32  	i1   = 500  [ (rw_fopts) = {inline:true inline_max:4} ];
+  repeated string 	s1   = 501  [ (rw_fopts) = {inline:true inline_max:4 string_max:32} ];
+  repeated bytes  	b1   = 502  [ (rw_fopts) = {inline:true inline_max:4 string_max:30} ];
+  repeated EnumeB  	e1   = 503  [ (rw_fopts) = {inline:true inline_max:4} ];
+};
+
+message MsgFlat {
+  option (rw_msgopts) = {flat:true };
+  required string s1 = 1            [ (rw_fopts) = {inline:true string_max:32} ];
+  required bytes  b1 = 2            [ (rw_fopts) = {inline:true string_max:32} ];
+  required int32  i1 = 3;
+  required EnumeA e1 = 5;
+};
+
+message MsgGFlat {
+  option (rw_msgopts) = {flat:true };
+  required int32     i1   = 700;
+  optional string    name = 701    [ (rw_fopts) = {inline:true string_max:32} ];
+  repeated MsgFlat   ma   = 702    [ (rw_fopts) = {inline:true inline_max:4} ];
+};
+
+message MsgBase {
+  required int32  i1 = 1;
+  required string s1 = 2           [ (rw_fopts) = {inline:true string_max:32} ];
+  optional double d1 = 3;
+};
+
+message MsgBaseExtend {
+  required int32  i1 = 1;
+  required string s1 = 2           [ (rw_fopts) = {inline:true string_max:32} ];
+  optional double d1 = 3;
+  required bool   b1 = 4;
+  optional float  f1 = 5;
+};

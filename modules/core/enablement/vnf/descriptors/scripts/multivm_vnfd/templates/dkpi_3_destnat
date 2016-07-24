@@ -1,0 +1,2 @@
+VNF vnfname=slb, ext_port_type=sriov, fab_port_type=virtio, config_file=dkpi_3_destnat_cfg, config_priority=3, config_delay=5,  monitor1=ports:0:40000
+VDU1 vduname=RW.VDU.LEAD.DDPL,  fabric_port=1, external_port=2, epa_cpu_pinning=DEDICATED, vcpu=5, image=rift-root-latest-multivm-vnf.qcow2

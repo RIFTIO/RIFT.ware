@@ -1,0 +1,66 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rw-vnfm.yang
+ * @author Rajesh Velandy
+ * @date 2015/10/07
+ * @brief VNFM  yang
+ */
+
+module rw-vnfm
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-vnfm";
+  prefix "rw-vnfm";
+
+  import vld {
+    prefix "vld";
+  }
+
+  import vlr {
+    prefix "vlr";
+  }
+
+  import rw-vlr {
+    prefix "rw-vlr";
+  }
+
+  import rw-vns {
+    prefix "rw-vns";
+  }
+
+  import rw-vnfd {
+    prefix "rw-vnfd";
+  }
+
+  import rw-vnfr {
+    prefix "rw-vnfr";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rw-manifest {
+    prefix "rw-manifest";
+  }
+
+  import rw-resource-mgr {
+    prefix "rw-resource-mgr";
+  }
+
+  import rw-launchpad {
+    prefix "rw-launchpad";
+  }
+
+  revision 2015-10-07 {
+    description
+      "Initial revision.";
+  }
+}

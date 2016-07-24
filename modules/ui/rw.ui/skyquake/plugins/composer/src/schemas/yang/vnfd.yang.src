@@ -1,0 +1,479 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module vnfd
+{
+  namespace "urn:ietf:params:xml:ns:yang:nfvo:vnfd";
+  prefix "vnfd";
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import ietf-inet-types {
+    prefix "inet";
+  }
+
+  revision 2015-09-10 {
+    description
+      "Initial revision. This YANG file defines
+       the Virtual Network Function (VNF)";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  grouping common-connection-point {
+    leaf name {
+      description "Name of the connection point";
+      type string;
+    }
+    
+    leaf id {
+      description "Identifier for the internal connection points";
+      type string;
+    }
+
+    leaf short-name {
+      description "Short name of the connection point";
+      type string;
+    }
+    
+    leaf type {
+      description "Type of the connection point.";
+      type manotypes:connection-point-type;
+    }
+  }
+  
+  grouping virtual-interface {
+    container virtual-interface {
+      description
+          "Container for the virtual interface properties";
+
+      leaf type {
+        description
+            "Specifies the type of virtual interface
+             between VM and host.
+             VIRTIO          : Use the traditional VIRTIO interface.
+             PCI-PASSTHROUGH : Use PCI-PASSTHROUGH interface.
+             SR-IOV          : Use SR-IOV interface.
+             OM-MGMT         : Used to specify openmano mgmt external-connection type";
+
+        type enumeration {
+          enum OM-MGMT;
+          enum PCI-PASSTHROUGH;
+          enum SR-IOV;
+          enum VIRTIO;
+        }
+        default "VIRTIO";
+      }
+
+      leaf vpci {
+        description
+            "Specifies the virtual PCI address. Expressed in
+             the following format dddd:dd:dd.d. For example
+             0000:00:12.0. This information can be used to
+             pass as metadata during the VM creation.";
+        type string;
+      }
+
+      leaf bandwidth {
+        description
+            "Aggregate bandwidth of the NIC.";
+        type uint64;
+      }
+    }
+  }
+
+  container vnfd-catalog {
+
+    description
+        "Virtual Network Function Descriptor (VNFD).";
+
+    list vnfd {
+      key "id";
+
+      leaf id {
+        description "Identifier for the VNFD.";
+        type string;
+      }
+
+      leaf name {
+        description "VNFD name.";
+        mandatory true;
+        type string;
+      }
+
+      leaf short-name {
+        description "VNFD short name.";
+        type string;
+      }
+
+      leaf vendor {
+        description "Vendor of the VNFD.";
+        type string;
+      }
+
+      leaf logo {
+        description
+            "Vendor logo for the Virtual Network Function";
+        type string;
+      }
+
+      leaf description {
+        description "Description of the VNFD.";
+        type string;
+      }
+
+      leaf version {
+        description "Version of the VNFD";
+        type string;
+      }
+
+      container mgmt-interface {
+        description
+            "Interface over which the VNF is managed.";
+
+        uses manotypes:vnf-configuration;
+        
+        choice endpoint-type {
+          description
+              "Indicates the type of management endpoint.";
+
+          case ip {
+            description
+                "Specifies the static IP address for managing the VNF.";
+            leaf ip-address {
+              type inet:ip-address;
+            }
+          }
+
+          case vdu-id {
+            description
+                "Use the default management interface on this VDU.";
+            leaf vdu-id {
+              type leafref {
+                path "/vnfd:vnfd-catalog/vnfd:vnfd/vnfd:vdu/vnfd:id";
+              }
+            }
+          }
+
+          case cp {
+            description
+                "Use the ip address associated with this connection point.";
+            leaf cp {
+              type leafref {
+                path "/vnfd:vnfd-catalog/vnfd:vnfd/vnfd:connection-point/vnfd:name";
+              }
+            }
+          }
+        }
+
+        leaf port {
+          description
+              "Port for the management interface.";
+          type inet:port-number;
+        }
+
+        container dashboard-params {
+          description "Parameters for the VNF dashboard";
+
+          leaf path {
+            description "The HTTP path for the dashboard";
+            type string;
+          }
+
+          leaf https {
+            description "Pick HTTPS instead of HTTP , Default is false";
+            type boolean;
+          }
+
+          leaf port {
+            description "The HTTP port for the dashboard";
+            type inet:port-number;
+          }
+        }
+      }
+
+      list internal-vld {
+        key "id";
+        description
+            "List of Internal Virtual Link Descriptors (VLD).
+            The internal VLD describes the basic topology of
+            the connectivity (e.g. E-LAN, E-Line, E-Tree)
+            between internal VNF components of the system.";
+
+        leaf id {
+          description "Identifier for the VLD";
+          type string;
+        }
+
+        leaf name {
+          description "Name of the internal VLD";
+          type string;
+        }
+
+        leaf short-name {
+          description "Short name of the internal VLD";
+          type string;
+        }
+
+        leaf description {
+          type string;
+        }
+
+        leaf type {
+          type manotypes:virtual-link-type;
+        }
+
+        leaf root-bandwidth {
+          description
+              "For ELAN this is the aggregate bandwidth.";
+          type uint64;
+        }
+
+        leaf leaf-bandwidth {
+          description
+              "For ELAN this is the bandwidth of branches.";
+          type uint64;
+        }
+
+        leaf-list internal-connection-point-ref {
+          type leafref {
+            path "../../vdu/internal-connection-point/id";
+          }
+        }
+
+        uses manotypes:provider-network;
+      }
+
+      list connection-point {
+        key "name";
+        description
+            "List for external connection points. Each VNF has one
+            or more external connection points. As the name
+            implies that external connection points are used for
+            connecting the VNF to other VNFs or to external networks.
+            Each VNF exposes these connection points to the
+            orchestrator. The orchestrator can construct network
+            services by connecting the connection points between
+            different VNFs. The NFVO will use VLDs and VNFFGs at
+            the network service level to construct network services.";
+
+        uses common-connection-point;
+      }
+
+      list vdu {
+        description "List of Virtual Deployment Units";
+        key "id";
+
+        leaf id {
+          description "Unique id for the VDU";
+          type string;
+        }
+
+        leaf name {
+          description "Unique name for the VDU";
+          type string;
+        }
+
+        leaf description {
+            description "Description of the VDU.";
+            type string;
+        }
+
+        leaf count {
+          description "Number of instances of VDU";
+          type uint64;
+        }
+
+        leaf mgmt-vpci {
+          description
+              "Specifies the virtual PCI address. Expressed in
+             the following format dddd:dd:dd.d. For example
+             0000:00:12.0. This information can be used to
+             pass as metadata during the VM creation.";
+          type string;
+        }
+
+        uses manotypes:vm-flavor;
+        uses manotypes:guest-epa;
+        uses manotypes:vswitch-epa;
+        uses manotypes:hypervisor-epa;
+        uses manotypes:host-epa;
+
+        list alarm {
+          key "alarm-id";
+
+          uses manotypes:alarm;
+        }
+
+        leaf image {
+          description
+            "Image name for the software image.
+             If the image name is found within the VNF packaage it will
+             be uploaded to all cloud accounts during onboarding process.
+             Otherwise, the image must be added to the cloud account with
+             the same name as entered here.
+            ";
+          mandatory true;
+          type string;
+        }
+
+        leaf image-checksum {
+          description
+            "Image md5sum for the software image.
+            The md5sum, if provided, along with the image name uniquely
+            identifies an image uploaded to the CAL.
+            ";
+          type string;
+        }
+
+        leaf cloud-init {
+          description "Content of cloud-init script";
+          type string;
+        }
+
+        list internal-connection-point {
+          key "id";
+          description
+              "List for internal connection points. Each VNFC
+              has zero or more internal connection points.
+              Internal connection points are used for connecting
+              the VNF components internal to the VNF. If a VNF
+              has only one VNFC, it may not have any internal
+              connection points.";
+
+          uses common-connection-point;
+
+          leaf internal-vld-ref {
+            type leafref {
+              path "../../../internal-vld/id";
+            }
+          }
+        }
+
+        list internal-interface {
+          description
+              "List of internal interfaces for the VNF";
+          key name;
+
+          leaf name {
+            description
+                "Name of internal interface. Note that this
+                name has only local significance to the VDU.";
+            type string;
+          }
+
+          leaf vdu-internal-connection-point-ref {
+            type leafref {
+              path "../../internal-connection-point/id";
+            }
+          }
+          uses virtual-interface;
+        }
+
+        list external-interface {
+          description
+              "List of external interfaces for the VNF.
+              The external interfaces enable sending
+              traffic to and from VNF.";
+          key name;
+
+          leaf name {
+            description
+                "Name of the external interface. Note that
+                this name has only local significance.";
+            type string;
+          }
+
+          leaf vnfd-connection-point-ref {
+            description
+              "Name of the external connection point.";
+            type leafref {
+              path "../../../connection-point/name";
+            }
+          }
+          uses virtual-interface;
+        }
+      }
+
+      list vdu-dependency {
+        description
+            "List of VDU dependencies.";
+
+        key vdu-source-ref;
+        leaf vdu-source-ref {
+          type leafref {
+            path "../../vdu/id";
+          }
+        }
+
+        leaf vdu-depends-on-ref {
+          description
+              "Reference to the VDU that
+              source VDU depends.";
+          type leafref {
+            path "../../vdu/id";
+          }
+        }
+      }
+
+      leaf service-function-chain {
+        description "Type of node in Service Function Chaining Architecture";
+
+        type enumeration {
+          enum UNAWARE;
+          enum CLASSIFIER;
+          enum SF;
+          enum SFF;
+        }
+        default "UNAWARE";
+      }
+
+      leaf service-function-type {
+        description
+            "Type of Service Function.
+             NOTE: This needs to map with Service Function Type in ODL to
+             support VNFFG. Service Function Type is manadatory param in ODL
+             SFC. This is temporarily set to string for ease of use";
+            type string;
+      }
+
+      uses manotypes:monitoring-param;
+
+      list placement-groups {
+        description "List of placement groups at VNF level";
+
+        key "name";
+        uses manotypes:placement-group-info;
+        
+        list member-vdus {
+          description
+              "List of VDUs that are part of this placement group";
+          key "member-vdu-ref";
+        
+          leaf member-vdu-ref {
+            type leafref {
+              path "../../../vdu/id";
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// vim: sw=2

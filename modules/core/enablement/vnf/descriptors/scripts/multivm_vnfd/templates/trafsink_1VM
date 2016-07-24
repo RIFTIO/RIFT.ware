@@ -1,0 +1,2 @@
+VNF vnfname=trafsink, ext_port_type=virtio, fab_port_type=virtio, config_file=tg_ts_trafsink, config_priority=1, config_delay=120, monitor1=ports:0:2000
+VDU1 vduname=RW.VDU.LEAD.DDPL, fabric_port=0, external_port=1, epa=0, image=rift-root-latest-multivm-vnf.qcow2

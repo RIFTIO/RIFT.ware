@@ -1,0 +1,59 @@
+// specify the sub"modules that each submodule depends on
+// for example
+// "modules/core/util" -> "modules/ext/gnome"
+
+strict digraph dependencies {
+        // modules/core/util dependencies
+        "modules/core/util" -> "modules/ext/mgmt"
+        "modules/core/util" -> "modules/ext/util"
+        "modules/core/util" -> "modules/ext/yang"
+        "modules/core/util" -> "modules/ext/go"
+        "modules/core/util" -> "modules/ext/cloud"
+        "modules/core/util" -> "modules/automation/core"
+
+        "modules/ext/util" -> "modules/ext/gnome"
+        "modules/ext/util" -> "modules/ext/ipc"
+        "modules/ext/yang" -> "modules/ext/util"
+
+        "modules/core/rwvx" -> "modules/core/util"
+
+        "modules/core/mgmt" -> "modules/core/rwvx"
+
+<<<<<<< HEAD
+        "modules/core/mano" -> "modules/core/mgmt"
+        "modules/core/mano" -> "modules/ui/rw.ui"
+        "modules/core/mano" -> "modules/ui/composer"
+=======
+        "modules/app/ipsec" -> "modules/core/mgmt"
+        "modules/core/fpath" -> "modules/core/mgmt"
+        "modules/ext/diameter" -> "modules/core/util"
+
+        // Seagull depends on fpath and mgmt
+        "modules/app/appmgr" -> "modules/core/fpath"
+        "modules/app/appmgr" -> "modules/ext/seagull"
+
+        "modules/app/strongswan" -> "modules/core/fpath"
+        "modules/app/strongswan" -> "modules/ext/openssl-async"
+
+        // nwEPC depends on seagull
+        "modules/ext/nwepc"  -> "modules/app/appmgr"
+
+        // openssl-async depends on intel_qat
+        "modules/ext/openssl-async" -> "modules/ext/intel-qat"
+
+        // This needs to depend on all submodules
+        "modules/automation/systemtest" -> "modules/ext/nwepc"
+        "modules/automation/systemtest" -> "modules/app/strongswan"
+        "modules/automation/systemtest" -> "modules/core/mano"
+
+        "modules/core/mano" -> "modules/core/mgmt"
+        "modules/core/mano" -> "modules/ui/rw.ui"
+
+        "modules/core/enablement" -> "modules/core/mgmt"
+        "modules/core/enablement" -> "modules/core/util"
+        "modules/core/enablement" -> "modules/core/mano"
+
+        "modules/ext/vnfs" -> "modules/core/mano"
+        "modules/ext/vnfs" -> "modules/core/enablement"
+>>>>>>> osm1
+}

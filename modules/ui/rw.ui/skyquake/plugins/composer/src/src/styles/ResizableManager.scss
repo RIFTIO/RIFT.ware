@@ -1,0 +1,38 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+.-is-show-resize-cursor-col-resize {
+	cursor: col-resize !important;
+	*:hover {
+		cursor: inherit !important;
+	}
+}
+.-is-show-resize-cursor-row-resize {
+	cursor: row-resize !important;
+	*:hover {
+		cursor: inherit !important;
+	}
+}
+.-is-show-resize-cursor-nesw-resize {
+	cursor: nesw-resize !important;
+	*:hover {
+		cursor: inherit !important;
+	}
+}
+.-is-show-resize-cursor-nwse-resize {
+	cursor: nwse-resize !important;
+	*:hover {
+		cursor: inherit !important;
+	}
+}
+
+body.resizing * {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}

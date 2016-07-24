@@ -1,0 +1,4 @@
+TOSCA-Meta-File-Version: 1.0
+CSAR-Version: 1.1
+Created-By: RIFT.io
+Entry-Definitions: Definitions/ping_pong_nsd.yaml

@@ -1,0 +1,26 @@
+Details on pristine tracking of GIT upstream libcloud repository:
+
+Upstream for packages being maintained in publically accessible git
+repositories may be directly imported, tracked, and merged using the
+git subtree utility.  (Note that this is not the 'git merge -s
+subtree' merge strategy).
+
+Should upstream cease to be available in GIT, we can revert to manual
+creation of a pristine branch for the package and feed it with
+tarballs.
+
+Import a new upstream project's HEAD on branch master into the
+repository-local path libcloud/libcloud, as a single changeset (the
+--squash):
+
+  git subtree add --prefix=libcloud/libcloud -m 'Initial port of libcloud' --squash https://git-wip-us.apache.org/repos/asf/libcloud.git HEAD
+
+Merge any new changes since the import or last merge into the local libcloud work:
+
+  git subtree pull --prefix=libcloud/libcloud -m 'Merge libcloud version X.XX' --squash https://git-wip-us.apache.org/repos/asf/libcloud.git HEAD
+
+For more details: 
+
+  /usr/share/doc/git/contrib/subtree/git-subtree.txt
+  https://github.com/apenwarr/git-subtree/blob/master/git-subtree.txt
+

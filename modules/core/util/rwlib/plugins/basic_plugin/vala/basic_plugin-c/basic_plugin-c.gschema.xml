@@ -1,0 +1,9 @@
+<schemalist>
+  <schema id="org.riftio.modules.core.util.plugins.basic_plugin-c" path="/org/riftio/modules/core/util/plugins/basic_plugin-c/">
+    <key name="a-setting" type="s">
+      <default>'Blah'</default>
+      <summary>Just a setting.</summary>
+      <description>Just a setting.</description>
+    </key>
+  </schema>
+</schemalist>

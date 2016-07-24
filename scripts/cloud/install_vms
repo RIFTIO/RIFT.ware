@@ -1,0 +1,212 @@
+#!/bin/bash
+
+    
+HERE=`dirname $0`
+export RIFT_ROOT=${RIFT_ROOT:-/usr/rift}
+
+CLOUDTOOL=${RIFT_ROOT}/scripts/cloud/cloudtool
+test -d /home/stack && sudo chmod 777 /home/stack
+
+if [ ! -f $CLOUDTOOL ]; then
+    echo $CLOUDTOOL not found
+    exit 1
+fi
+
+# devstack should be run on the target and the host should be sepcified by IP (not name)
+# ./devstack -h 10.64.1.31 
+#
+# todo -- make sure nova-compute is running
+# todo -- set the quotas for the demo project
+
+# creating a image 
+# make rw.world NOT_DEVELOPER_BUILD=TRUE
+# 
+# there is a make target for this but it does not seem to work
+# mkdir tmp
+# sudo ./scripts/cloud/mkvmimage -d -b tmp -o qcow2
+
+ 
+
+IMAGENAME=rwopenstack_vm
+IMAGEFILE=/net/boson/home1/common/vm/rift-root-current.qcow2
+FLAVOR=rw.medium
+MEM=8192
+DISK=8
+VMS=24
+NODES=1
+nwtool=''
+
+usage() { 
+    cat <<EOF
+    
+USAGE: $0 [-N nodes ] [ -n imagename ] [ -i imagefile ] [ -f flavorname ] [ -m memory (in MB)] [ -d DISK (in GB) ] [ -v VMS ] [ -H ] [ -g num ] 
+
+defaults are
+imagename $IMAGENAME
+imagefile $IMAGEFILE
+flavorname $FLAVOR
+memory $MEM MB
+disk $DISK GB
+VMS $VMS
+nodes $NODES -- number of compute nodes
+
+-H skip hostname check
+-g set grunt number for subnetting
+
+EOF
+    exit 1
+}
+
+ 
+
+HOSTCHECK=1
+GRUNTNUM=""
+while getopts "n:i:f:m:d:v:Hg:N:h" opt; do
+    case $opt in
+        n) IMAGENAME=$OPTARG;;
+        i) IMAGEFILE=$OPTARG;;
+        f) FLAVOR=$OPTARG;;
+        m) MEM=$OPTARG;;
+        d) DISK=$OPTARG;;
+        v) VMS=$OPTARG;;
+	    H) HOSTCHECK=0;;
+	    g) GRUNTNUM=$OPTARG;;
+        N) NODES=$OPTARG;;
+        h) usage;;
+        *) usage;;
+    esac
+done
+
+if [ -d /home/stack ]; then
+    sudo chmod 777 /home/stack
+    rcfile=/home/stack/devstack/accrc/admin/admin
+    FETCH="sudo sudo -u stack glance-cache-prefetcher"
+else
+    sudo chmod 755 /root
+    sudo chmod 755 /root/keystone* 
+    rcfile=/root/keystonerc_admin
+    FETCH="sudo glance-cache-prefetcher"
+fi
+if [ ! -f "$rcfile" ]; then
+    echo "$rcfile not found"
+    exit 1
+fi
+sudo chmod 544 /etc/nova/nova.conf
+. $rcfile
+
+if keystone service-list | grep -q neutron; then
+    nwtool='neutron'
+else
+    nwtool='sudo nova-manage'
+fi
+
+
+hostname=`hostname -s`
+if [ $HOSTCHECK ]; then
+	if [[ ! $hostname =~ grunt([0-9]+) ]]; then
+		echo "This script is only meant to be run on a grunt"
+		usage
+		exit 1
+	fi
+	gruntnum=${BASH_REMATCH[1]}
+fi
+if [ -n "$GRUNTNUM" ]; then
+	gruntnum=$GRUNTNUM
+fi
+if [ -z "$gruntnum" ]; then
+	echo "Gruntnum not set"
+	usage
+fi
+
+
+
+
+announce() { 
+    echo -e "\n$*\n" >&2
+}
+CLOUDTOOL() { 
+    announce cloudtool $*
+    $CLOUDTOOL $*
+}
+
+set -e
+trap 'exit 1' 2
+
+# create the bridges
+if [ "$nwtool" = "neutron" ]; then
+    tenant_id=`keystone tenant-list  | awk '/demo/ { print $2; }'`
+    for nw in "private2 11.0.0.0" "private3 12.0.0.0" "private4 176.0.0.0"; do
+        set $nw
+        if ! neutron net-list | grep -q $1; then
+            neutron net-create --tenant-id $tenant_id $1
+            neutron subnet-create --tenant-id $tenant_id $1 $2/8 --name ${1}_subnet --dns-nameservers list=true 10.66.0.1
+        fi
+    done
+
+
+else
+
+    if ! $nwtool network list | grep -q 11.0; then
+        announce create bridge br110
+        $nwtool network create private2 --fixed_range_v4=11.0.${gruntnum}.0/24 --bridge=br110
+
+
+    fi
+    if ! $nwtool network list | grep -q 12.0; then
+        announce create bridge br120
+        $nwtool network create private3 --fixed_range_v4=12.0.${gruntnum}.0/24 --bridge=br120
+    fi
+    if ! $nwtool network list | grep -q 176.0.0.0; then
+        announce create bridge br176
+        $nwtool network create private4 --fixed_range_v4=176.0.0.0/24 --bridge=br176
+    fi
+fi
+
+announce "disabling NAT"
+sudo /usr/rift/scripts/setup/scripts/disable_nat || true
+
+# install the vm image
+if ! CLOUDTOOL image getid -n $IMAGENAME; then  
+	announce install image
+	CLOUDTOOL image create -n $IMAGENAME -f $IMAGEFILE
+fi
+
+announce set quotas
+# reserve 8 GB for the host
+ram=`free | awk '/Mem:/ { print int( $2 / 1024 ) - 8096 ; }' `
+ram=`expr $ram \* $NODES`
+cpus=`expr 24 \* $NODES`
+
+if [ "$nwtool"  == "neutron" ]; then
+    neutron quota-update --tenant-id $tenant_id --port 250
+fi
+
+if [ $ram -lt 0 ]; then
+    echo "Not enough memory for VMs"
+else
+    CLOUDTOOL quota set  --memory $ram --ips $cpus --vms $cpus --vcpus $cpus
+fi
+
+announce set access rights this may fail
+CLOUDTOOL rules set || true
+
+# create the flavor
+if ! $CLOUDTOOL flavor list | grep $FLAVOR; then
+    announce create flavor
+    CLOUDTOOL flavor create -n $FLAVOR -m $MEM -d $DISK
+fi
+
+# pre-fetch the image
+announce fetch image
+id=`$CLOUDTOOL image getid -n $IMAGENAME`
+glance-cache-manage queue-image -f $id
+$FETCH
+
+
+if [ $VMS -gt 0 ]; then
+    # start the VMs
+    announce create vms
+    CLOUDTOOL vm create -c $VMS -i $IMAGENAME -f $FLAVOR -s
+fi
+
+sudo $RIFT_ROOT/scripts/cloud/fix_nova_fabric

@@ -1,0 +1,94 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-cloud
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-cloud";
+  prefix "rw-cloud";
+
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rwcal {
+    prefix "rwcal";
+  }
+
+  import rw-sdn {
+    prefix "rw-sdn";
+  }
+   
+  revision 2015-09-14 {
+    description
+      "Initial revision.";
+  }
+
+  container cloud {
+    rwpb:msg-new CloudConfig;
+    list account {
+      rwpb:msg-new CloudAccount;
+      description "Configure Cloud Accounts";
+
+      max-elements 16;
+      key "name";
+
+      leaf name {
+        mandatory true;
+        type string {
+            length "1..255";
+        }
+      }
+
+      leaf sdn-account {
+        description "Configured SDN account associated with this cloud account";
+        type leafref {
+          path "/rw-sdn:sdn-account/rw-sdn:name";
+        }
+      }
+
+      uses rwcal:provider-auth;
+      uses rwcal:connection-status;
+    }
+  }
+
+  rpc update-cloud-status {
+    description "Begin cloud account connection status";
+    input {
+      leaf cloud-account {
+        mandatory true;
+        description
+          "The cloud account name to update connection status for";
+        type string;
+      }
+    }
+  }
+
+  notification cloud-notif {
+    description "Notification for cloud account credentials";
+    leaf name {
+      description "Cloud account name";
+      type string;
+    }
+
+    leaf message {
+      description "Notification message";
+      type string;
+    }
+  }
+
+}
+

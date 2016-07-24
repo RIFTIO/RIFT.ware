@@ -1,0 +1,2 @@
+VNF vnfname=trafgen, ext_port_type=sriov, fab_port_type=virtio, config_file=dkpi_3_trafgen_cfg, config_priority=2, config_delay=5, monitor1=ports:0:40000, monitor2=ports-latency
+VDU1 vduname=RW.VDU.LEAD.DDPL, fabric_port=0, external_port=1, epa=0, vcpu=8, image=rift-root-latest-multivm-vnf.qcow2

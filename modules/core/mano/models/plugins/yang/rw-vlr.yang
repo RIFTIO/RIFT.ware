@@ -1,0 +1,60 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-vlr
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-vlr";
+  prefix "rw-vlr";
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  import vlr {
+    prefix "vlr";
+  }
+
+  import rw-cloud {
+    prefix "rwcloud";
+  }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  revision 2015-09-30 {
+    description
+      "Initial revision. This YANG file augments
+       the base MANO VNFD";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  augment /vlr:vlr-catalog/vlr:vlr {
+    leaf cloud-account {
+      description
+        "The cloud account to use when requesting resources for
+         this vlr";
+      type leafref {
+        path "/rwcloud:cloud/rwcloud:account/rwcloud:name";
+      }
+    }
+
+    leaf network_pool {
+      description "The network pool the resource was allocated from.";
+      type string;
+    }
+
+    leaf assigned-subnet {
+      description "Subnet added for the VL";
+      type string;
+    }
+  }
+}
+
+// vim: sw=2

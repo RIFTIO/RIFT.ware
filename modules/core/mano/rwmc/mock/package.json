@@ -1,0 +1,15 @@
+{
+  "name": "rw.mc.dts.mock",
+  "version": "1.0.0",
+  "description": "This is node js mission control dts mock client.",
+  "main": "mc_mock_client.js",
+  "scripts": {
+    "start": "node mc_mock_client"
+  },
+  "author": "AustinCormier",
+  "license": "ISC",
+  "dependencies": {
+    "autobahn": "~0.9.6"
+  },
+  "devDependencies": {}
+}

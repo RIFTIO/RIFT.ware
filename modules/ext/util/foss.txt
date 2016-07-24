@@ -1,0 +1,31 @@
+RIFT.core, cflite, Apple CoreFoundation Library, APSL2.0, https://github.com/nickhutchinson/CFLite
+RIFT.core, ck, Concurrency Kit, BSD & APL2.0, https://github.com/concurrencykit/ck
+RIFT.core, curl, Command Line Tool for Transferring Data with URL Syntax, BSD-like, https://github.com/bagder/curl
+RIFT.fastpath, dpdk, Data Plane Development Kit, BSD 3-Clause, http://dpdk.org/download
+RIFT.core, libtimer/estw/, Embedded Single Timer Wheel (eSTW) - Timer Wheel Library, MIT, http://sourceforge.net/projects/estw/
+RIFT.automation, gmock, Google Mock Framework for Unit Testing, BSD 3-Clause, https://code.google.com/p/googlemock/
+RIFT.core, gperftools, Multi-threaded Malloc and Performance Analysis Tools, BSD 3-Clause, https://code.google.com/p/gperftools/
+RIFT.core, libBlocksRuntime, Runtime Library fir C Blocks Support, MIT, http://sourceforge.net/projects/blocksruntime/
+RIFT.core, libdispatch, Apple's Concurrency Library, APLv2.0, https://github.com/nickhutchinson/libdispatch
+RIFT.core, libedit, Command Line Editor, BSD 3-Clause, http://download.openpkg.org/components/cache/libedit/libedit-20121213-3.0.tar.gz
+RIFT.core, libkqueue, Library for Kernel Event Notification, MIT, http://soureforge.net/projects/libkqueue/
+RIFT.core, libpthread_workqueue/libpthread_workqueue-0.8.2, Thread Pool for Libdispatch, BSD 2-Clause, http://sourceforge.net/projects/libpwq/?source=navbar
+RIFT.core, libuinet, User space port of FreeBSD TCP/IP Stack, BSD 2-Clause, https://github.com/pkelsey/libuinet.git
+RIFT.core, libunwind, Library for Obtaining C Stack Trace, MIT, http://download.savannah.gnu.org/releases/libunwind/
+RIFT.core, lua/packages/clidebugger/, LUA Debugger, MIT, https://github.com/ToddWegner/clidebugger
+RIFT.core, lua/packages/luaunit/luaunit/, Unit Testing Framework for LUA, BSD, https://github.com/bluebird75/luaunit.git
+RIFT.core, lua/packages/struct/, Library for Converting Data to and from C Structs for Lua, MIT, http://www.inf.puc-rio.br/~roberto/struct/struct-0.2.tar.gz
+RIFT.app, stream, Benchmark for measuring memory bandwidth, XXX, http://www.cs.virginia.edu/stream/ref.html
+RIFT.core, talloc, Hierarchical Reference Counted Memory Pool System, LGPL, https://talloc.samba.org/talloc/doc/html/index.html
+RIFT.core, tcpdump, Command Line Packet Analyzer, BSD 3-Cluase, http://www.tcpdump.org/
+RIFT.core, urcu, Userspace RCU Library, LGPLv2, git://git.lttng.org/userspace-rcu.git
+RIFT.core, uthash, Hash Table for C Structures, BSD, http://troydhanson.github.com/uthash/
+RIFT.core, vtune, Kernel Module for Perfomance Analysis, GPLv2,
+RIFT.core, xerces-c, XML Parser, APLv2.0, http://xerces.apache.org/xerces-c/
+#
+#
+# 
+RIFT.core, fm10k/fm10k-0.15.2, Linux* Base Driver README for Intel(R) FM10XXX Ethernet Host Interface, GPL, Intel Provided (pre-pre-alpha)
+RIFT.core, ovs, OVS is not built with riftware. This repo is used to track all the changes that were done for riftware., Multi, RIFT modified http://openvswitch.org Source ???
+RIFT.core, coredumper, google-coredumper, BSD 3-Clause, https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/google-coredumper/coredumper-1.2.1.tar.gz
+RIFT.ext, sipp, SIP load tester, GPLv2, https://github.com/SIPp/sipp.git

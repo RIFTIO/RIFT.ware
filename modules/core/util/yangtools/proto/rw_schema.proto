@@ -1,0 +1,302 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+/**
+ * @file rw_schema.proto
+ * @author Tom Seidenberg
+ * @date 2014/08/29
+ * @brief RiftWare schema support
+ *
+   Schema - the entire virtual DOM that RiftWare implements.
+   Element - a schema element in the virtual DOM, regardless of
+     location, and independent of any particular DOM.
+   Node - a particular node in the virtual DOM, with a value, and
+     possibly Keys (for list Elements).
+   Key - a particular node in the virtual DOM
+ */
+
+import "descriptor.proto";
+import "rwpbapi.proto";
+
+option cc_generic_services = true;
+option (rw_fileopts) = { gen_gi:true };
+
+/**
+ * Tag values of various fields in the keyspec,
+ * for use in the keyspec APIs.
+ * This has to be updated whenever the tag values
+ * are changed or new fields are added.
+ */
+enum RwSchemaTags {
+  option allow_alias = true;
+  RW_SCHEMA_TAG_KEYSPEC_DOMPATH = 1;
+  RW_SCHEMA_TAG_KEYSPEC_BINPATH = 2;
+  RW_SCHEMA_TAG_KEYSPEC_STRPATH = 99;
+  RW_SCHEMA_TAG_PATH_ENTRY_ROOT = 98;
+  RW_SCHEMA_TAG_PATH_ENTRY_MODULE_ROOT = 99;
+  RW_SCHEMA_TAG_PATH_ENTRY_START = 100;
+  RW_SCHEMA_TAG_PATH_ENTRY_END = 129;
+  RW_SCHEMA_TAG_ELEMENT_ID = 1;
+  RW_SCHEMA_TAG_ELEMENT_KEY_START = 100;
+  RW_SCHEMA_TAG_ELEMENT_KEY_END = 108;
+  RW_SCHEMA_TAG_SYSTEM_NS_ID = 1;
+  RW_SCHEMA_TAG_ELEMENT_TAG = 2;
+  RW_SCHEMA_TAG_ELEMENT_TYPE = 3;
+  RW_SCHEMA_TAG_KEYSPEC_ROOTED = 1;
+  RW_SCHEMA_TAG_KEYSPEC_CATEGORY = 2;
+  RW_SCHEMA_TAG_STRING_KEY = 1;
+};
+
+/**
+ * Schema Element type. This specifies whether the schema
+ * element is a container or list. If it is a list, it also
+ * identifies the number of keys associated with the list element.
+ */
+enum RwSchemaElementType {
+  RW_SCHEMA_ELEMENT_TYPE_ROOT             = 0;
+  RW_SCHEMA_ELEMENT_TYPE_MODULE_ROOT      = 1;
+  RW_SCHEMA_ELEMENT_TYPE_CONTAINER        = 2;
+  RW_SCHEMA_ELEMENT_TYPE_LEAF             = 3;
+  RW_SCHEMA_ELEMENT_TYPE_LEAF_LIST        = 4;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_0          = 5;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1          = 6;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_FLOAT    = 7;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_DOUBLE   = 8;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_INT32    = 9;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_SFIXED32 = 10;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_SINT32   = 11;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_UINT32   = 12;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_FIXED32  = 13;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_INT64    = 14;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_SINT64   = 15;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_SFIXED64 = 16;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_UINT64   = 17;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_FIXED64  = 18;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_BOOL     = 19;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_BYTES    = 20;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_1_STRING   = 21;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_2          = 22;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_3          = 23;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_4          = 24;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_5          = 25;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_6          = 26;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_7          = 27;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_8          = 28;
+  RW_SCHEMA_ELEMENT_TYPE_LISTY_9          = 29;
+};
+
+/**
+ * Keyspec categories.  These define a kind of class mechanism for
+ * limiting DTS registrations and keyspec matches.
+ */
+enum RwSchemaCategory {
+  RW_SCHEMA_CATEGORY_ANY = 0;
+  RW_SCHEMA_CATEGORY_DATA = 1;
+  RW_SCHEMA_CATEGORY_CONFIG = 2;
+  RW_SCHEMA_CATEGORY_RPC_INPUT = 3;
+  RW_SCHEMA_CATEGORY_RPC_OUTPUT = 4;
+  RW_SCHEMA_CATEGORY_NOTIFICATION = 5;
+};
+
+
+/**
+ * Schema element identifier.  This identifies an element in the
+ * schema, relative to some parent element or module root.  The node is
+ * ambiguous - this message alone is insufficient to identify an
+ * arbitrary node in the schema.  However, paths composed of these
+ * messages can uniquely identify a node in the schema.
+ */
+message RwSchemaElementId {
+  /**
+   * The riftware-instance unique namespace identifier.  These are
+   * runtime values that are unique across a riftware instance.  The
+   * values are not necessarily consistent between riftware instances.
+   * ATTN: Allocated/Looked up in the RWNS library
+   */
+  required uint32 system_ns_id = 1;
+
+  /**
+   * The element tag for the node.  (ATTN: Probably maps to protobuf
+   * tag number, but not necessarily so).
+   */
+  required uint32 element_tag = 2;
+
+  /*
+   * The Element type. Indicates whether the schema element is
+   * container or listy.
+   */
+  required RwSchemaElementType element_type = 3;
+};
+
+/**
+ * DOM node key.  Base message, representing any arbitrary key in a
+ * yang list element.  Actual yang lists have their own message
+ * descriptors for their specific keys, and those types should be
+ * understood as variations of this message.  This type just gives a
+ * convenient handle for the APIs and other base types to hold onto.
+ * When used in the yang mapping, the field tag for the actual key
+ * value will be the same field tag as the field within the list
+ * itself.
+ */
+message RwSchemaKey {
+  /**
+   * String conversion of the key's value.  Not normally populated,
+   * unless the keyspec is string based.
+   */
+  optional string string_key = 1;
+};
+
+    
+
+/**
+ * DOM node path element.  This identifies a node in the virtual DOM,
+ * relative to a parent node or the root, including the keys if the
+ * node is a yang list element.  By itself, this entry is ambiguous -
+ * it is insufficient to uniquely identify any arbitrary node in the
+ * virtual DOM.  However, paths composed of these messages can uniquely
+ * identify any arbitrary node in the DOM.
+ *
+ * Every yang-derived generated proto will contain a message definition
+ * for each list in the yang file, which is both tag- and
+ * name-compatible with this message.  The generated messages will
+ * define the fields with list-specific types that allow direct key
+ * access.  The generated messages should be understood as variations
+ * of this message.  This message just gives a convenient handle for
+ * the APIs and other base types to hold onto.
+ */
+message RwSchemaPathEntry {
+
+  option (rw_msgopts) = { base_typename:"rw_keyspec_entry_t" };
+  /**
+   * The element id.
+   */
+  required RwSchemaElementId element_id = 1;
+
+  /**
+   * Key values are appended for list elements.  This is not defined as
+   * repeated so that the concrete, yang-derived, generated versions of
+   * this message can define explicitly typed keys.
+   */
+  optional RwSchemaKey key00 = 100;
+  optional RwSchemaKey key01 = 101;
+  optional RwSchemaKey key02 = 102;
+  optional RwSchemaKey key03 = 103;
+  optional RwSchemaKey key04 = 104;
+  optional RwSchemaKey key05 = 105;
+  optional RwSchemaKey key06 = 106;
+  optional RwSchemaKey key07 = 107;
+  optional RwSchemaKey key08 = 108;
+
+  /*
+   * To add more keys, they must be consecutive.  Please don't
+   * otherwise extend this message, except with tags below 100, or very
+   * large tags.
+   */
+};
+
+/**
+ * A message that contains only an element-based schema path.  This is
+ * a separate message so that the message can be encoded independently
+ * from the other styles of path in RwSchemaPathSpec.
+ */
+message RwSchemaPathDom {
+  /**
+   * The path is rooted.
+   */
+  required bool rooted = 1;
+
+  /**
+   * The path category.
+   */
+  optional RwSchemaCategory category = 2;
+
+  /*
+     ATTN May need some indication of keyspec namespace:
+      - data
+      - config
+      - rpc
+      - notif
+     ATTN: Should this replace rooted, or is it in addition to rooted?
+     Should rooted become optional, depending on namespace?
+   */
+
+  /**
+   * The list of path entries.  The first entry is the highest node in
+   * the schema.  If the path is rooted, then the first node is also a
+   * root node in it's source yang module.  Otherwise, it may be any
+   * node in the entire schema.
+   */
+  optional RwSchemaPathEntry path_root = 98;
+  optional RwSchemaPathEntry path_module = 99;
+  optional RwSchemaPathEntry path000 = 100;
+  optional RwSchemaPathEntry path001 = 101;
+  optional RwSchemaPathEntry path002 = 102;
+  optional RwSchemaPathEntry path003 = 103;
+  optional RwSchemaPathEntry path004 = 104;
+  optional RwSchemaPathEntry path005 = 105;
+  optional RwSchemaPathEntry path006 = 106;
+  optional RwSchemaPathEntry path007 = 107;
+  optional RwSchemaPathEntry path008 = 108;
+  optional RwSchemaPathEntry path009 = 109;
+  optional RwSchemaPathEntry path010 = 110;
+  optional RwSchemaPathEntry path011 = 111;
+  optional RwSchemaPathEntry path012 = 112;
+  optional RwSchemaPathEntry path013 = 113;
+  optional RwSchemaPathEntry path014 = 114;
+  optional RwSchemaPathEntry path015 = 115;
+  optional RwSchemaPathEntry path016 = 116;
+  optional RwSchemaPathEntry path017 = 117;
+  optional RwSchemaPathEntry path018 = 118;
+  optional RwSchemaPathEntry path019 = 119;
+  optional RwSchemaPathEntry path020 = 120;
+  optional RwSchemaPathEntry path021 = 121;
+  optional RwSchemaPathEntry path022 = 122;
+  optional RwSchemaPathEntry path023 = 123;
+  optional RwSchemaPathEntry path024 = 124;
+  optional RwSchemaPathEntry path025 = 125;
+  optional RwSchemaPathEntry path026 = 126;
+  optional RwSchemaPathEntry path027 = 127;
+  optional RwSchemaPathEntry path028 = 128;
+  optional RwSchemaPathEntry path029 = 129;
+
+  /*
+   * To add more depth, they must be consecutive.  Please don't
+   * otherwise extend this message, except below 100, or very large
+   * tags.
+   */
+};
+
+/**
+ * A path to a DOM node or subtree.  May be rooted.  If not rooted,
+ * then it is relative to some other, unspecified, path.  One of fields
+ * must be set in order to get a useful result in any DTS API.  If more
+ * than one field is set, the fields will be preferred in tag order.
+ * The preferred format is dompath.
+ */
+message RwSchemaPathSpec {
+
+  option (rw_msgopts) = { base_typename:"rw_keyspec_path_t" };
+
+  /**
+   * The element-based path.
+   */
+  optional RwSchemaPathDom dompath = 1;
+
+  /**
+   * The binary path.  This is the serialized version of dompath,
+   * suitable for memcmp and the like.
+   */
+  optional bytes binpath = 2;
+
+  /**
+   * ATTN: Temporary!
+   * The string-based path.
+   */
+  optional string strpath = 99;
+};
+

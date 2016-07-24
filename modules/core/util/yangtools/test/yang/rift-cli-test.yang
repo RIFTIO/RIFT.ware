@@ -1,0 +1,440 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file testycli-lib
+ * @author Vinod Kamalaraj
+ * @date 2014/03/27
+ * @brief Testing of ParseNodes, BaseCLI etc from yangcli.*
+ */
+
+
+module rift-cli-test
+{
+  namespace "http://riftio.com/ns/yangtools/rift-cli-test";
+  prefix "cli";
+
+  import rw-cli-ext {
+    prefix "rift";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import flat-conversion {
+    prefix "flat-conversion";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import test-ydom-top {
+    prefix "tyt";
+  }
+
+  revision 2014-04-11 {
+    description "suppress warnings by having a revision";
+  }
+
+  identity network-type {
+  }
+  identity ethernet {
+    base network-type;
+  }
+  identity vlan {
+    base network-type;
+  }
+  identity vxlan {
+    base network-type;
+  }
+  
+
+  container general-container {
+    container g-container {
+      rwpb:msg-new RctGenCntnr;
+
+      leaf gc-name {
+        type string;
+        description "Name of general-container";
+      }
+
+      leaf-list gc-leaf-list-unit8{
+        type uint8;
+        description "A list of uint8s";
+      }
+
+      container gc-sub-container {
+        leaf gc-sub-cont-int {
+          type uint16;
+          description "Unit16 within gc-sub-container";
+        }
+      }
+
+      choice gc-sub-choice {
+        case gc-choice-first-case {
+          leaf int32-leaf {
+            type int16;
+            description "Have to try out atleast one of each";
+          }
+        }
+        leaf-list int32-list {
+          type int8;
+          description "One more type done";
+        }
+      }
+      list double-key {
+        key "index";
+        leaf index {
+          type uint32;
+        }
+        leaf second {
+          type string;
+        }
+        leaf name {
+          type enumeration {
+            enum first;
+            enum second;
+            enum seventh
+            {
+              value 7;
+            }
+          }
+        }
+      }
+    }
+
+    list g-list {
+      key "index";
+      leaf index {
+        type int32;
+        description "A really large list could fit in here";
+      }
+      container gcl-container {
+        leaf gclc-empty {
+          type empty;
+          description "Easy one to test";
+        }
+        leaf gclc-bits {
+          type bits {
+            bit first {
+              position 0;
+            }
+            bit second {
+              position 2;
+            }
+          }
+        }
+        leaf having_a_bool {
+          type boolean;
+          description "Evey container needs to contain 2 things";
+        }
+      }
+    }
+  }
+
+
+  container general-show {
+    rwpb:msg-new RctGenShow;
+    config false;
+    container g-container {
+      leaf gc-name {
+        type string;
+        description "Name of general-container";
+      }
+    }
+  }
+
+  // Testing the idref
+  list network {
+    key "network-id";
+    leaf network-id {
+      type uint32;
+    }
+
+    leaf net-type {
+      type identityref {
+        base network-type;
+      }
+    }
+
+    leaf company {
+      type identityref {
+        base tyt:company;
+      }
+    }
+  }
+
+  // For mandatory field check
+  rpc avengers {
+    input {
+      list cast {
+        key "name";
+        leaf name {
+          type string;
+          description "Name of the character";
+        }
+        leaf type {
+          type enumeration {
+            enum super_hero;
+            enum hyper_hero;
+            enum super_villain;
+            enum everyone_else;
+          }
+          description "Character type";
+          mandatory true;
+        }
+        leaf actor {
+          type string;
+          description "Played by actor";
+        }
+        container abilities {
+          // Presence allows the container to exists as a standalone node
+          // otherwise abilities also becomes mandatory since power is mandatory
+          presence "null";
+          leaf power {
+            type string;
+            mandatory true;
+          }
+          leaf weapon {
+            type string;
+            mandatory true;
+          }
+          leaf vehicle {
+            type string;
+          }
+        }
+      }
+      container shield {
+        leaf director {
+          type string;
+        }
+        container helicarrier {
+          leaf jet-fighters {
+            type uint32;
+          }
+          leaf turbines {
+            type uint32;
+          }
+          leaf missiles {
+            type uint32;
+          }
+        }
+        leaf executive-director {
+          type string;
+        }
+        leaf agents {
+          type uint32;
+        }
+      }
+    }
+  }
+
+  // Lists to start of rpc output
+  rpc list-output{
+    output {
+      list cars {
+        key make;
+
+        leaf make {
+          type string;
+        }
+        
+        leaf seats {
+          type string;
+        }
+      }
+    }
+  }
+        
+  rpc both-args {
+    input {
+      rwpb:msg-new RctRpcIn;
+      leaf int-arg {
+        type int32;
+      }
+    }
+    output {
+      rwpb:msg-new RctRpcOut;
+      container op {
+        leaf str-arg {
+          type string;
+        }
+      }
+    }
+  }
+
+  // test choice and case
+  container test-choice {
+    leaf choice-top-sib-str {
+      description "A string from b";
+      type string;
+    }
+
+    leaf choice-top-sib-num {
+      description "A number from b";
+      type int8;
+    }
+
+    choice choice-top {
+      description " The problem of choice";
+      case case-top-1 {
+        leaf case-top-1-1 {
+          description "Comes with many cases";
+          type string;
+        }
+        leaf case-top-1-2 { type string; }
+      }
+      case case-top-2 {
+        leaf case-top-2-1 { type string; }
+        leaf case-top-2-3 { type string; }
+        choice choice-mid {
+          case case-mid-1 {
+            leaf case-mid-1-1 {type string; }
+          }
+          case case-mid-2 {
+            leaf case-mid-2-1{type string;}
+          }
+        }
+      }
+
+
+      case case-top-3 {
+        container case-top-3-1 {
+          choice choice-bot {
+            case case-bot-1 {
+              leaf case-bot-1-1 {type string; }
+            }
+            case case-bot-2 {
+              leaf case-bot-2-1{type string;}
+            }
+          }
+          leaf case-top-3-2 { type string; }
+
+        }
+      }
+    }
+  }
+
+  notification you-cant-see-me-in-cli {
+    leaf n1 { type int8 {range "-12..14";} description "Commander Riker"; }
+    leaf n2 { type int16 {range "100..200|300|400..500";} description "This is a dirty word"; }
+    leaf n3 { type int32; description "Got the bronze"; }
+  }
+
+  container ip-addrs {
+    leaf-list ip {
+      type string;
+    }
+    leaf port {
+      type uint16;
+    }
+  }
+
+  list key-test {
+    rift:new-mode "key-test";
+    key "key1 key2 key3";
+    leaf key1 {
+      type string;
+      description "First Key";
+    }
+    leaf key2 {
+      type string;
+      description "Second Key";
+    }
+    leaf key3 {
+      type uint16;
+      description "Thrid Key (Integer)";
+    }
+    leaf non-key1 {
+      type string;
+      description "String non-key";
+    }
+    leaf non-key2 {
+      type uint16;
+      description "Integer non-key";
+    }
+    list list-nkey {
+      key "name";
+      config false;
+      leaf name {
+        type string;
+      }
+      container counters {
+        leaf x {
+          type uint32;
+        }
+        leaf y {
+          type uint32;
+        }
+      }
+    }
+  }
+
+  list key-test-ext {
+    rift:new-mode "key-show-test";
+    rift:show-key-keyword;
+    key "key1";
+    leaf key1 {
+      type string;
+      description "First Key";
+    }
+    leaf non-key1 {
+      type string;
+      description "String non-key";
+    }
+    leaf non-key2 {
+      type uint16;
+      description "Integer non-key";
+    }
+  }
+
+  list ip-application {
+    rwpb:msg-new ConfigApp;
+    rwpb:field-inline "true";
+    rwpb:msg-flat true;
+    rwpb:field-inline-max yang;
+
+     key "name";
+     max-elements 32;
+
+     leaf name {
+       description "Name of App";
+       rwpb:field-string-max 256;
+       type string;
+     }
+
+     leaf descr-string {
+       description "description comment for app";
+       rwpb:field-string-max 32;
+       type string;
+     }
+
+     leaf ip-address {
+       description "Address of the application";
+       type rwt:ip-address;
+       rwpb:field-string-max 46;
+     }
+
+     leaf ip-proto {
+       description "Layer 4 protocol for IP";
+       type enumeration {
+         enum udp { value 0; }
+         enum tcp  { value 1; }
+         enum gre {value 2; }
+       }
+     }
+
+  }
+
+}
+
+
+

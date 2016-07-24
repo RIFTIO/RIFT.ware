@@ -1,0 +1,131 @@
+## Process this file with automake to produce Makefile.in
+
+BUILT_SOURCES += 		\
+	scannerparser.c		\
+	scannerparser.h 	\
+	scannerlexer.c 		\
+	scannerlexer.h
+
+AM_YFLAGS = -d -t
+
+# Why do I have to do this automake?
+scannerlexer.h: scannerlexer.c
+
+noinst_LTLIBRARIES += libgiscanner.la
+
+libgiscanner_la_SOURCES = \
+	giscanner/sourcescanner.c				\
+	giscanner/sourcescanner.h				\
+	giscanner/scannerlexer.l				\
+	giscanner/scannerparser.y
+libgiscanner_la_CPPFLAGS = -I$(top_srcdir)/girepository -I$(top_srcdir)/giscanner
+libgiscanner_la_LIBADD = $(GOBJECT_LIBS) $(GIO_LIBS)
+libgiscanner_la_CFLAGS = $(GOBJECT_CFLAGS) $(GIO_CFLAGS)
+
+# Python module
+pkgpyexecdir = $(pkglibdir)/giscanner
+pkgpyexec_LTLIBRARIES = _giscanner.la
+pkgpyexec_PYTHON = 			\
+	giscanner/__init__.py		\
+	giscanner/annotationmain.py	\
+	giscanner/annotationparser.py	\
+	giscanner/ast.py		\
+	giscanner/cachestore.py		\
+	giscanner/ccompiler.py		\
+	giscanner/codegen.py		\
+	giscanner/docmain.py		\
+	giscanner/docwriter.py		\
+	giscanner/dumper.py		\
+	giscanner/introspectablepass.py	\
+	giscanner/girparser.py		\
+	giscanner/girwriter.py		\
+	giscanner/gdumpparser.py 	\
+	giscanner/libtoolimporter.py	\
+	giscanner/maintransformer.py	\
+	giscanner/message.py		\
+	giscanner/shlibs.py		\
+	giscanner/scannermain.py	\
+	giscanner/sectionparser.py	\
+	giscanner/sourcescanner.py	\
+	giscanner/testcodegen.py	\
+	giscanner/transformer.py	\
+	giscanner/utils.py		\
+	giscanner/xmlwriter.py
+
+collectionsdir = $(pkgpyexecdir)/collections
+collections_PYTHON =		\
+	giscanner/collections/__init__.py	\
+	giscanner/collections/counter.py	\
+	giscanner/collections/ordereddict.py
+
+templatedir = $(pkglibdir)
+nobase_dist_template_DATA =		\
+	giscanner/doctemplates/base.tmpl	\
+	giscanner/doctemplates/class.tmpl	\
+	giscanner/doctemplates/namespace.tmpl	\
+	giscanner/doctemplates/C/callback.tmpl 	\
+	giscanner/doctemplates/C/class.tmpl	\
+	giscanner/doctemplates/C/constructor.tmpl	\
+	giscanner/doctemplates/C/default.tmpl	\
+	giscanner/doctemplates/C/enum.tmpl	\
+	giscanner/doctemplates/C/function.tmpl	\
+	giscanner/doctemplates/C/field.tmpl 	\
+	giscanner/doctemplates/C/interface.tmpl	\
+	giscanner/doctemplates/C/method.tmpl		\
+	giscanner/doctemplates/C/namespace.tmpl	\
+	giscanner/doctemplates/C/property.tmpl	\
+	giscanner/doctemplates/C/record.tmpl	\
+	giscanner/doctemplates/C/signal.tmpl	\
+	giscanner/doctemplates/C/vfunc.tmpl	\
+	giscanner/doctemplates/Python/callback.tmpl 	\
+	giscanner/doctemplates/Python/class.tmpl	\
+	giscanner/doctemplates/Python/constructor.tmpl	\
+	giscanner/doctemplates/Python/default.tmpl	\
+	giscanner/doctemplates/Python/enum.tmpl	\
+	giscanner/doctemplates/Python/function.tmpl	\
+	giscanner/doctemplates/Python/field.tmpl 	\
+	giscanner/doctemplates/Python/interface.tmpl	\
+	giscanner/doctemplates/Python/method.tmpl	\
+	giscanner/doctemplates/Python/namespace.tmpl	\
+	giscanner/doctemplates/Python/property.tmpl	\
+	giscanner/doctemplates/Python/record.tmpl	\
+	giscanner/doctemplates/Python/signal.tmpl	\
+	giscanner/doctemplates/Python/vfunc.tmpl	\
+	giscanner/doctemplates/Gjs/callback.tmpl 	\
+	giscanner/doctemplates/Gjs/class.tmpl	\
+	giscanner/doctemplates/Gjs/constructor.tmpl	\
+	giscanner/doctemplates/Gjs/default.tmpl	\
+	giscanner/doctemplates/Gjs/enum.tmpl	\
+	giscanner/doctemplates/Gjs/function.tmpl	\
+	giscanner/doctemplates/Gjs/field.tmpl 	\
+	giscanner/doctemplates/Gjs/interface.tmpl	\
+	giscanner/doctemplates/Gjs/method.tmpl	\
+	giscanner/doctemplates/Gjs/namespace.tmpl	\
+	giscanner/doctemplates/Gjs/property.tmpl	\
+	giscanner/doctemplates/Gjs/record.tmpl	\
+	giscanner/doctemplates/Gjs/signal.tmpl	\
+	giscanner/doctemplates/Gjs/vfunc.tmpl
+
+_giscanner_la_CFLAGS = \
+	$(PYTHON_INCLUDES) \
+	$(GOBJECT_CFLAGS) \
+	-I$(top_srcdir)/giscanner
+_giscanner_la_LIBADD = libgiscanner.la $(GOBJECT_LIBS)
+
+_giscanner_la_LDFLAGS = \
+	-module -avoid-version -export-symbols-regex init_giscanner
+
+if OS_WIN32
+# Windows requires Python extension modules to be explicitly
+# linked to libpython. Extension modules are shared libaries
+# (.dll files), but need to be called .pyd for Python to load
+# them as extension modules.
+_giscanner_la_LIBADD += \
+	$(PYTHON_LIBS)
+
+_giscanner_la_LDFLAGS += \
+	-no-undefined \
+	-shrext ".pyd"
+endif
+
+_giscanner_la_SOURCES = giscanner/giscannermodule.c

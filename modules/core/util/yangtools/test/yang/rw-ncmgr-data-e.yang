@@ -1,0 +1,185 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-ncmgr-data-e
+{
+    namespace "http://riftio.com/ns/riftware-1.0/rw-ncmgr-data";
+    prefix "rw-ncmgr";
+
+    import rw-base-e {
+        prefix rwbase;
+    }
+    import rw-pb-ext {
+        prefix "rwpb";
+    }
+    import rw-yang-types {
+        prefix "rwt";
+    }
+    import rw-fpath-e {
+        prefix rwfpath;
+    }
+    revision 2014-11-21 {
+        description
+            "Initial revision.";
+        reference
+            "RIFT Ncmgr Operational Data";
+    }
+
+    augment /rwbase:colony {        
+        list network-context-state{
+            config false;
+            key "name";
+            rwpb:msg-new NetworkContextState;
+            leaf name{
+                rwpb:field-inline "true";
+                rwpb:field-string-max 64;
+                type string;
+            }
+            leaf context-id{
+                type uint32;
+            }
+            leaf ncmgr-instance{
+                type uint32;
+            }
+            list vrf{
+                config false;
+                key "name";
+                rwpb:msg-new NetworkContextVrf;
+
+                leaf name{
+                    rwpb:field-inline "true";
+                    rwpb:field-string-max 64;
+                    type string;
+                }
+                container info {
+                    rwpb:msg-new NetworkContextVrfInfo;
+                    leaf vrf-context-id{
+                        type uint32;
+                    }
+                    leaf ncmgr-instance{
+                        type uint32;
+                    }   
+                    leaf context-name{
+                        rwpb:field-inline "true";
+                        rwpb:field-string-max 64;
+                        type string;
+                    }
+                    leaf platform-name{
+                        description "Network Namespace name";
+                        type string;
+                        rwpb:field-inline "true";
+                        rwpb:field-string-max 64;
+                    }
+                    leaf ipv6-forwarding{
+                        type uint32;
+                    }
+                    leaf vsap_id{
+                        type uint32;
+                    }
+                    leaf local-fastpath-instance{
+                        type uint32;
+                    }
+                }
+                list acl
+                {
+                    max-elements 32;
+                  
+                    key "name";
+                  
+                    leaf name {
+                        type string;
+                        rwpb:field-string-max 64;
+                    }
+                }
+                list filter{
+                    key "type inode-id lport-id";
+
+                    leaf type{
+                        type rwfpath:filter-type;
+                    }
+                    
+                    leaf inode-id{
+                        type uint32;
+                    }
+
+                    leaf lport-id{
+                        type uint32;
+                    }
+
+                    leaf instance{
+                        type uint32;
+                    }
+
+                    list bpf-instruction{
+                        rwpb:field-inline "true";
+                        max-elements 256;
+                        leaf code{
+                            type uint32;
+                        }
+                        leaf jt{
+                            type uint32;
+                        }
+                        leaf jf{
+                            type uint32;
+                        }
+                        leaf k{
+                            type uint32;
+                        }
+                    }
+                }
+                uses rwfpath:vrf-info;
+                list interface{
+                    max-elements 32;
+                    rwpb:msg-new IpIntfInfo;
+                    key "name";
+                    
+                    leaf lportid {
+                        description "Ifindex of the Interface in the kernel";
+                        type uint32;
+                    }
+                    leaf name{
+                        description "Configured Name of the Interface";
+                        type string;
+                        rwpb:field-string-max 64;
+                        rwpb:field-inline "true";
+                    }
+                    leaf platform-name{
+                        description "Interface Name in the kernel";
+                        type string;
+                        rwpb:field-inline "true";
+                        rwpb:field-string-max 64;
+                    }
+                    leaf state{
+                        description "State of the Interface";
+                        type string;
+                        rwpb:field-inline "true";
+                        rwpb:field-string-max 32;
+                    }
+                    uses rwfpath:bind-interface;
+                    list ip {
+                        rwpb:msg-flat true;
+                        rwpb:field-inline "true";
+                        rwpb:field-inline-max yang;
+                        max-elements 32;
+
+                        key "address";
+                        
+                        leaf address{
+                            description "IP address of the interface";
+                            type rwt:ip-address;
+                            rwpb:field-string-max 46;
+                        }
+                        leaf mask{
+                            type uint32;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

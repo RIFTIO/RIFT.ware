@@ -1,0 +1,5 @@
+NS  nsname=tg_ts_raw
+VNF1 pkgname=trafgen_raw_vnfd.tar.gz, vnf_index=1, config_file=tg_ts_trafgen, config_priority=1, config_delay=120
+VNF2 pkgname=trafsink_raw_vnfd.tar.gz, vnf_index=2, config_file=tg_ts_trafsink, config_priority=2, config_delay=5
+VLD1 linkname=Link1, cp1=VNF1:1, cp2=VNF2:1, type=VIRTIO, provider=physnet1, overlay=VLAN
+NSP1 nspname=TrafgenTraffic

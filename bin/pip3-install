@@ -1,0 +1,24 @@
+#!/usr/bin/bash
+
+
+if [ "$1" == "ALL" ]; then
+    set -- -r /usr/rift/scripts/setup/PIP3
+fi
+
+progs="/bin/pip3 /bin/python3-pip"
+for prog in $progs; do
+    if [ -f $prog ]; then
+        PIP3=$prog
+        break
+    fi
+done
+
+if [ -z "$PIP3" ]; then
+    echo "FATAL ERROR cannot locate pip3 installer -- tried $progs" >&2
+    exit 1
+fi
+
+rm -f /root/.pip/pip.conf
+$PIP3 install --use-wheel --no-index --find-links=https://wheel.riftio.com/mirrors/python3_wheelhouse "$@"
+
+

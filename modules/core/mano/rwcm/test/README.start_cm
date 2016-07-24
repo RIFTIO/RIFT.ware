@@ -1,0 +1,4 @@
+# Following example command line to launch the system in collapse mode.
+# Please tailor for expanded mode or any other requirements
+
+./start_cm_system.py -m ethsim -c --skip-prepare-vm

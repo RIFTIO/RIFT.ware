@@ -1,0 +1,4508 @@
+{
+ "synth": "source",
+ "name": "rw-vnfd",
+ "schema": {
+  "module": {
+   "rw-vnfd": {
+    "namespace": "http://riftio.com/ns/riftware-1.0/rw-vnfd",
+    "prefix": "rw-vnfd",
+    "import": {
+     "vnfd": {
+      "prefix": "vnfd"
+     },
+     "rwvcs-types": {
+      "prefix": "rwvcstypes"
+     },
+     "rw-pb-ext": {
+      "prefix": "rwpb"
+     },
+     "ietf-yang-types": {
+      "prefix": "yang"
+     },
+     "mano-types": {
+      "prefix": "manotypes"
+     }
+    },
+    "revision": {
+     "2015-09-10": {
+      "description": "Initial revision. This YANG file augments\nthe base MANO VNFD",
+      "reference": "Derived from earlier versions of base YANG files"
+     }
+    },
+    "augment": {
+     "/vnfd:vnfd-catalog/vnfd:vnfd": {
+      "uses": {},
+      "leaf": {
+       "meta": {
+        "description": "Any meta-data needed by the UI",
+        "type": "string"
+       }
+      },
+      "list": {
+       "component": {
+        "description": "This section defines the RIFT.ware\nvirtual components",
+        "key": "component-name",
+        "leaf": {
+         "component-name": {
+          "description": "",
+          "type": "string"
+         },
+         "component-type": {
+          "description": "",
+          "type": "rwvcstypes:component_type",
+          "mandatory": true
+         }
+        },
+        "choice": {
+         "component": {
+          "case": {
+           "rwvcs-rwcollection": {
+            "container": {
+             "rwcollection": {
+              "description": "This section defines a RW.VCS\nrwollection component",
+              "leaf": {
+               "collection-type": {
+                "description": "Collection type",
+                "type": "string"
+               }
+              },
+              "container": {
+               "event-list": {
+                "description": "",
+                "list": {
+                 "event": {
+                  "description": "This section contains a list\nof RW.VCS events",
+                  "key": "name",
+                  "leaf": {
+                   "name": {
+                    "description": "Name of the event",
+                    "type": "string"
+                   }
+                  },
+                  "list": {
+                   "action": {
+                    "description": "This section contains a sequence\nof RW.VCS actions",
+                    "key": "name",
+                    "leaf": {
+                     "name": {
+                      "description": "Name of the action within the sequence",
+                      "type": "string"
+                     },
+                     "python-loop-expression": {
+                      "description": "Python expression",
+                      "type": "string"
+                     },
+                     "python-loop-iterate": {
+                      "description": "Python iteration",
+                      "type": "string"
+                     }
+                    },
+                    "grouping": {
+                     "rwvcs-python-loop": {
+                      "leaf": {
+                       "python-loop-expression": {
+                        "description": "Python expression",
+                        "type": "string"
+                       },
+                       "python-loop-iterate": {
+                        "description": "Python iteration",
+                        "type": "string"
+                       }
+                      }
+                     }
+                    },
+                    "choice": {
+                     "action": {
+                      "case": {
+                       "annex": {
+                        "container": {
+                         "annex": {
+                          "leaf": {
+                           "component-name": {
+                            "description": "Name of the component type\nin the inventory",
+                            "type": {
+                             "leafref": {
+                              "path": "../../../../../../../component/component-name"
+                             }
+                            }
+                           },
+                           "instance-id": {
+                            "description": "ID of the component instance\nin the inventory",
+                            "type": "string"
+                           }
+                          }
+                         }
+                        }
+                       },
+                       "start": {
+                        "container": {
+                         "start": {
+                          "leaf": {
+                           "component-name": {
+                            "description": "Name of the component type in\nthe inventory",
+                            "type": {
+                             "leafref": {
+                              "path": "../../../../../../../component/component-name"
+                             }
+                            }
+                           },
+                           "instance-id": {
+                            "description": "ID of the component instance\nin the inventory",
+                            "type": "string"
+                           },
+                           "config-ready": {
+                            "description": "Config readiness check enable",
+                            "type": "boolean",
+                            "default": "true"
+                           },
+                           "recovery-action": {
+                            "description": "Define recovery action if this component fail",
+                            "type": "recovery-type"
+                           }
+                          },
+                          "leaf-list": {
+                           "python-variable": {
+                            "description": "List of Python variable assignments",
+                            "type": "string"
+                           }
+                          }
+                         }
+                        }
+                       },
+                       "sleep": {
+                        "container": {
+                         "sleep": {
+                          "leaf": {
+                           "wait-time-usec": {
+                            "description": "Time to wait while sleeping",
+                            "type": "uint32"
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "rwvcs-rwvm": {
+            "container": {
+             "rwvm": {
+              "description": "This section defines a RW.VCS\nrwvm component",
+              "leaf": {
+               "pool-name": {
+                "description": "Name of the pool from which to\nallocate the VM",
+                "type": "string"
+               },
+               "leader": {
+                "description": "True if this VM is designated as a leader for\nthe parent collection.",
+                "type": "boolean"
+               }
+              },
+              "uses": {},
+              "container": {
+               "event-list": {
+                "description": "",
+                "list": {
+                 "event": {
+                  "description": "This section contains a list\nof RW.VCS events",
+                  "key": "name",
+                  "leaf": {
+                   "name": {
+                    "description": "Name of the event",
+                    "type": "string"
+                   }
+                  },
+                  "list": {
+                   "action": {
+                    "description": "This section contains a sequence\nof RW.VCS actions",
+                    "key": "name",
+                    "leaf": {
+                     "name": {
+                      "description": "Name of the action within the sequence",
+                      "type": "string"
+                     },
+                     "python-loop-expression": {
+                      "description": "Python expression",
+                      "type": "string"
+                     },
+                     "python-loop-iterate": {
+                      "description": "Python iteration",
+                      "type": "string"
+                     }
+                    },
+                    "grouping": {
+                     "rwvcs-python-loop": {
+                      "leaf": {
+                       "python-loop-expression": {
+                        "description": "Python expression",
+                        "type": "string"
+                       },
+                       "python-loop-iterate": {
+                        "description": "Python iteration",
+                        "type": "string"
+                       }
+                      }
+                     }
+                    },
+                    "choice": {
+                     "action": {
+                      "case": {
+                       "annex": {
+                        "container": {
+                         "annex": {
+                          "leaf": {
+                           "component-name": {
+                            "description": "Name of the component type\nin the inventory",
+                            "type": {
+                             "leafref": {
+                              "path": "../../../../../../../component/component-name"
+                             }
+                            }
+                           },
+                           "instance-id": {
+                            "description": "ID of the component instance\nin the inventory",
+                            "type": "string"
+                           }
+                          }
+                         }
+                        }
+                       },
+                       "start": {
+                        "container": {
+                         "start": {
+                          "leaf": {
+                           "component-name": {
+                            "description": "Name of the component type in\nthe inventory",
+                            "type": {
+                             "leafref": {
+                              "path": "../../../../../../../component/component-name"
+                             }
+                            }
+                           },
+                           "instance-id": {
+                            "description": "ID of the component instance\nin the inventory",
+                            "type": "string"
+                           },
+                           "config-ready": {
+                            "description": "Config readiness check enable",
+                            "type": "boolean",
+                            "default": "true"
+                           },
+                           "recovery-action": {
+                            "description": "Define recovery action if this component fail",
+                            "type": "recovery-type"
+                           }
+                          },
+                          "leaf-list": {
+                           "python-variable": {
+                            "description": "List of Python variable assignments",
+                            "type": "string"
+                           }
+                          }
+                         }
+                        }
+                       },
+                       "sleep": {
+                        "container": {
+                         "sleep": {
+                          "leaf": {
+                           "wait-time-usec": {
+                            "description": "Time to wait while sleeping",
+                            "type": "uint32"
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "valgrind": {
+                "leaf": {
+                 "enable": {
+                  "description": "Run the component under valgrind",
+                  "type": "boolean"
+                 }
+                },
+                "leaf-list": {
+                 "opts": {
+                  "description": "Command line options to pass to valgrind",
+                  "type": "string"
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "rwvcs-rwproc": {
+            "container": {
+             "rwproc": {
+              "description": "This section defines a RW.VCS\nrwproc component",
+              "leaf": {
+               "run-as": {
+                "description": "Host OS user that should run this\nprocess, requires sudo -E access\nand non-collapsed processes",
+                "type": "string"
+               }
+              },
+              "list": {
+               "tasklet": {
+                "description": "List of tasklets to be run within\nthis process",
+                "key": "name",
+                "leaf": {
+                 "name": {
+                  "description": "Local description of the tasklet",
+                  "type": "string"
+                 },
+                 "component-name": {
+                  "description": "Component name of the tasklet",
+                  "mandatory": true,
+                  "type": "string"
+                 },
+                 "instance-id": {
+                  "description": "If specified, the desired instance-id of\ntasklet component instance",
+                  "type": "uint32"
+                 },
+                 "config-ready": {
+                  "description": "Config readiness check enable",
+                  "type": "boolean",
+                  "default": "true"
+                 },
+                 "recovery-action": {
+                  "description": "Define recovery action if this component fail",
+                  "type": "recovery-type"
+                 }
+                },
+                "leaf-list": {
+                 "python-variable": {
+                  "description": "List of Python variable assignments",
+                  "type": "string"
+                 }
+                }
+               }
+              },
+              "container": {
+               "valgrind": {
+                "leaf": {
+                 "enable": {
+                  "description": "Run the component under valgrind",
+                  "type": "boolean"
+                 }
+                },
+                "leaf-list": {
+                 "opts": {
+                  "description": "Command line options to pass to valgrind",
+                  "type": "string"
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "native-proc": {
+            "container": {
+             "native-proc": {
+              "leaf": {
+               "run-as": {
+                "description": "Host OS user that should run this\nprocess, requires sudo -E access",
+                "type": "string"
+               },
+               "environment": {
+                "description": "Runtime environment for native process",
+                "type": "string"
+               },
+               "exe-path": {
+                "description": "Path to native process executable",
+                "type": "string"
+               },
+               "args": {
+                "description": "Arguments to pass to native process",
+                "type": "string"
+               },
+               "network-namespace": {
+                "description": "Namespace to start process in",
+                "type": "string"
+               },
+               "stdout": {
+                "description": "Redirect stdout to the file at the\nspecified path",
+                "type": "string"
+               },
+               "stderr": {
+                "description": "Redirect stderr to the file at the\nspecified path. Optionally, 'stdout'\nmay be used to redirect to the same\nfile as stdout",
+                "type": "string"
+               },
+               "interactive": {
+                "description": "Native process is interactive and needs\nterminal control",
+                "type": "empty"
+               }
+              },
+              "container": {
+               "valgrind": {
+                "leaf": {
+                 "enable": {
+                  "description": "Run the component under valgrind",
+                  "type": "boolean"
+                 }
+                },
+                "leaf-list": {
+                 "opts": {
+                  "description": "Command line options to pass to valgrind",
+                  "type": "string"
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "rwvcs-rwtasklet": {
+            "container": {
+             "rwtasklet": {
+              "description": "This section defines a RW.VCS\nrwtasklet component",
+              "leaf": {
+               "plugin-directory": {
+                "description": "",
+                "type": "string"
+               },
+               "plugin-name": {
+                "description": "",
+                "type": "string"
+               },
+               "plugin-version": {
+                "description": "",
+                "type": "string"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       },
+       "control-param": {
+        "description": "List of control parameters to manage and\nupdate the running configuration of the VNF",
+        "key": "id",
+        "leaf": {
+         "id": {
+          "type": "string"
+         },
+         "name": {
+          "type": "string"
+         },
+         "description": {
+          "type": "string"
+         },
+         "group-tag": {
+          "description": "A simple tag to group control parameters",
+          "type": "string"
+         },
+         "min-value": {
+          "description": "Minimum value for the parameter",
+          "type": "uint64"
+         },
+         "max-value": {
+          "description": "Maxium value for the parameter",
+          "type": "uint64"
+         },
+         "current-value": {
+          "description": "Current value for the parameter",
+          "type": "uint64"
+         },
+         "step-value": {
+          "description": "Step value for the parameter",
+          "type": "uint64"
+         },
+         "units": {
+          "type": "string"
+         },
+         "widget-type": {
+          "type": "manotypes:widget-type"
+         },
+         "url": {
+          "description": "This is the URL where to perform the operation",
+          "type": "inet:uri"
+         },
+         "method": {
+          "description": "This is the method to be performed at the uri.\nPOST by default for action",
+          "type": "manotypes:http-method",
+          "default": "POST"
+         },
+         "payload": {
+          "description": "This is the operation payload or payload template as stringified\nJSON. This field provides the data  to be sent for this operation\ncall",
+          "type": "string"
+         }
+        }
+       },
+       "action-param": {
+        "description": "List of action parameters to\ncontrol VNF",
+        "key": "id",
+        "leaf": {
+         "id": {
+          "type": "string"
+         },
+         "name": {
+          "type": "string"
+         },
+         "description": {
+          "type": "string"
+         },
+         "group-tag": {
+          "description": "A simple tag to group monitoring parameter",
+          "type": "string"
+         },
+         "url": {
+          "description": "This is the URL where to perform the operation",
+          "type": "inet:uri"
+         },
+         "method": {
+          "description": "This is the method to be performed at the uri.\nPOST by default for action",
+          "type": "manotypes:http-method",
+          "default": "POST"
+         },
+         "payload": {
+          "description": "This is the operation payload or payload template to be sent in\nthe data for this operation call",
+          "type": "string"
+         }
+        }
+       }
+      }
+     },
+     "/vnfd:vnfd-catalog/vnfd:vnfd/vnfd:vdu": {
+      "leaf": {
+       "vcs-component-ref": {
+        "description": "This defines the software components using the\nRIFT.ware Virtual Component System (VCS). This\nalso allows specifying a state machine during\nthe VM startup.\nNOTE: This is an significant addition to MANO,\nsince MANO doesn't clearly specify a method to\nidentify various software components in a VM.\nAlso using a state machine is not something that\nis well described in MANO.",
+        "type": {
+         "leafref": {
+          "path": "/vnfd:vnfd-catalog/vnfd:vnfd/rw-vnfd:component/rw-vnfd:component-name"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "dependencies": {
+  "vnfd": {
+   "module": {
+    "vnfd": {
+     "namespace": "urn:ietf:params:xml:ns:yang:nfvo:vnfd",
+     "prefix": "vnfd",
+     "import": {
+      "mano-types": {
+       "prefix": "manotypes"
+      },
+      "rw-pb-ext": {
+       "prefix": "rwpb"
+      },
+      "ietf-yang-types": {
+       "prefix": "yang"
+      },
+      "ietf-inet-types": {
+       "prefix": "inet"
+      }
+     },
+     "revision": {
+      "2015-09-10": {
+       "description": "Initial revision. This YANG file defines\nthe Virtual Network Function (VNF)",
+       "reference": "Derived from earlier versions of base YANG files"
+      }
+     },
+     "grouping": {
+      "common-connection-point": {
+       "leaf": {
+        "name": {
+         "description": "Name of the connection point",
+         "type": "string"
+        },
+        "id": {
+         "description": "Identifier for the internal connection points",
+         "type": "string"
+        },
+        "short-name": {
+         "description": "Short name of the connection point",
+         "type": "string"
+        },
+        "type": {
+         "description": "Type of the connection point.",
+         "type": "manotypes:connection-point-type"
+        }
+       }
+      },
+      "virtual-interface": {
+       "container": {
+        "virtual-interface": {
+         "description": "Container for the virtual interface properties",
+         "leaf": {
+          "type": {
+           "description": "Specifies the type of virtual interface\nbetween VM and host.\nVIRTIO          : Use the traditional VIRTIO interface.\nPCI-PASSTHROUGH : Use PCI-PASSTHROUGH interface.\nSR-IOV          : Use SR-IOV interface.\nOM-MGMT         : Used to specify openmano mgmt external-connection type",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "OM-MGMT": null,
+              "PCI-PASSTHROUGH": null,
+              "SR-IOV": null,
+              "VIRTIO": null
+             }
+            }
+           },
+           "default": "VIRTIO"
+          },
+          "vpci": {
+           "description": "Specifies the virtual PCI address. Expressed in\nthe following format dddd:dd:dd.d. For example\n0000:00:12.0. This information can be used to\npass as metadata during the VM creation.",
+           "type": "string"
+          },
+          "bandwidth": {
+           "description": "Aggregate bandwidth of the NIC.",
+           "type": "uint64"
+          }
+         }
+        }
+       }
+      }
+     },
+     "container": {
+      "vnfd-catalog": {
+       "description": "Virtual Network Function Descriptor (VNFD).",
+       "list": {
+        "vnfd": {
+         "key": "id",
+         "leaf": {
+          "id": {
+           "description": "Identifier for the VNFD.",
+           "type": "string"
+          },
+          "name": {
+           "description": "VNFD name.",
+           "mandatory": "true",
+           "type": "string"
+          },
+          "short-name": {
+           "description": "VNFD short name.",
+           "type": "string"
+          },
+          "vendor": {
+           "description": "Vendor of the VNFD.",
+           "type": "string"
+          },
+          "logo": {
+           "description": "Vendor logo for the Virtual Network Function",
+           "type": "string"
+          },
+          "description": {
+           "description": "Description of the VNFD.",
+           "type": "string"
+          },
+          "version": {
+           "description": "Version of the VNFD",
+           "type": "string"
+          },
+          "service-function-chain": {
+           "description": "Type of node in Service Function Chaining Architecture",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "UNAWARE": null,
+              "CLASSIFIER": null,
+              "SF": null,
+              "SFF": null
+             }
+            }
+           },
+           "default": "UNAWARE"
+          },
+          "service-function-type": {
+           "description": "Type of Service Function.\nNOTE: This needs to map with Service Function Type in ODL to\nsupport VNFFG. Service Function Type is manadatory param in ODL\nSFC. This is temporarily set to string for ease of use",
+           "type": "string"
+          }
+         },
+         "container": {
+          "mgmt-interface": {
+           "description": "Interface over which the VNF is managed.",
+           "uses": "manotypes:vnf-configuration",
+           "choice": {
+            "endpoint-type": {
+             "description": "Indicates the type of management endpoint.",
+             "case": {
+              "ip": {
+               "description": "Specifies the static IP address for managing the VNF.",
+               "leaf": {
+                "ip-address": {
+                 "type": "inet:ip-address"
+                }
+               }
+              },
+              "vdu-id": {
+               "description": "Use the default management interface on this VDU.",
+               "leaf": {
+                "vdu-id": {
+                 "type": {
+                  "leafref": {
+                   "path": "/vnfd:vnfd-catalog/vnfd:vnfd/vnfd:vdu/vnfd:id"
+                  }
+                 }
+                }
+               }
+              },
+              "cp": {
+               "description": "Use the ip address associated with this connection point.",
+               "leaf": {
+                "cp": {
+                 "type": {
+                  "leafref": {
+                   "path": "/vnfd:vnfd-catalog/vnfd:vnfd/vnfd:connection-point/vnfd:name"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "leaf": {
+            "port": {
+             "description": "Port for the management interface.",
+             "type": "inet:port-number"
+            }
+           },
+           "container": {
+            "dashboard-params": {
+             "description": "Parameters for the VNF dashboard",
+             "leaf": {
+              "path": {
+               "description": "The HTTP path for the dashboard",
+               "type": "string"
+              },
+              "https": {
+               "description": "Pick HTTPS instead of HTTP , Default is false",
+               "type": "boolean"
+              },
+              "port": {
+               "description": "The HTTP port for the dashboard",
+               "type": "inet:port-number"
+              }
+             }
+            }
+           }
+          }
+         },
+         "list": {
+          "internal-vld": {
+           "key": "id",
+           "description": "List of Internal Virtual Link Descriptors (VLD).\nThe internal VLD describes the basic topology of\nthe connectivity (e.g. E-LAN, E-Line, E-Tree)\nbetween internal VNF components of the system.",
+           "leaf": {
+            "id": {
+             "description": "Identifier for the VLD",
+             "type": "string"
+            },
+            "name": {
+             "description": "Name of the internal VLD",
+             "type": "string"
+            },
+            "short-name": {
+             "description": "Short name of the internal VLD",
+             "type": "string"
+            },
+            "description": {
+             "type": "string"
+            },
+            "type": {
+             "type": "manotypes:virtual-link-type"
+            },
+            "root-bandwidth": {
+             "description": "For ELAN this is the aggregate bandwidth.",
+             "type": "uint64"
+            },
+            "leaf-bandwidth": {
+             "description": "For ELAN this is the bandwidth of branches.",
+             "type": "uint64"
+            }
+           },
+           "leaf-list": {
+            "internal-connection-point-ref": {
+             "type": {
+              "leafref": {
+               "path": "../../vdu/internal-connection-point/id"
+              }
+             }
+            }
+           },
+           "uses": "manotypes:provider-network"
+          },
+          "connection-point": {
+           "key": "name",
+           "description": "List for external connection points. Each VNF has one\nor more external connection points. As the name\nimplies that external connection points are used for\nconnecting the VNF to other VNFs or to external networks.\nEach VNF exposes these connection points to the\norchestrator. The orchestrator can construct network\nservices by connecting the connection points between\ndifferent VNFs. The NFVO will use VLDs and VNFFGs at\nthe network service level to construct network services.",
+           "uses": "common-connection-point"
+          },
+          "vdu": {
+           "description": "List of Virtual Deployment Units",
+           "key": "id",
+           "leaf": {
+            "id": {
+             "description": "Unique id for the VDU",
+             "type": "string"
+            },
+            "name": {
+             "description": "Unique name for the VDU",
+             "type": "string"
+            },
+            "description": {
+             "description": "Description of the VDU.",
+             "type": "string"
+            },
+            "count": {
+             "description": "Number of instances of VDU",
+             "type": "uint64"
+            },
+            "mgmt-vpci": {
+             "description": "Specifies the virtual PCI address. Expressed in\nthe following format dddd:dd:dd.d. For example\n0000:00:12.0. This information can be used to\npass as metadata during the VM creation.",
+             "type": "string"
+            },
+            "image": {
+             "description": "Image name for the software image.\nIf the image name is found within the VNF packaage it will\nbe uploaded to all cloud accounts during onboarding process.\nOtherwise, the image must be added to the cloud account with\nthe same name as entered here.\n",
+             "mandatory": "true",
+             "type": "string"
+            },
+            "image-checksum": {
+             "description": "Image md5sum for the software image.\nThe md5sum, if provided, along with the image name uniquely\nidentifies an image uploaded to the CAL.\n",
+             "type": "string"
+            },
+            "cloud-init": {
+             "description": "Content of cloud-init script",
+             "type": "string"
+            }
+           },
+           "uses": {
+            "manotypes:vm-flavor": null,
+            "manotypes:guest-epa": null,
+            "manotypes:vswitch-epa": null,
+            "manotypes:hypervisor-epa": null,
+            "manotypes:host-epa": null
+           },
+           "list": {
+            "alarm": {
+             "key": "alarm-id",
+             "uses": "manotypes:alarm"
+            },
+            "internal-connection-point": {
+             "key": "id",
+             "description": "List for internal connection points. Each VNFC\nhas zero or more internal connection points.\nInternal connection points are used for connecting\nthe VNF components internal to the VNF. If a VNF\nhas only one VNFC, it may not have any internal\nconnection points.",
+             "uses": "common-connection-point",
+             "leaf": {
+              "internal-vld-ref": {
+               "type": {
+                "leafref": {
+                 "path": "../../../internal-vld/id"
+                }
+               }
+              }
+             }
+            },
+            "internal-interface": {
+             "description": "List of internal interfaces for the VNF",
+             "key": "name",
+             "leaf": {
+              "name": {
+               "description": "Name of internal interface. Note that this\nname has only local significance to the VDU.",
+               "type": "string"
+              },
+              "vdu-internal-connection-point-ref": {
+               "type": {
+                "leafref": {
+                 "path": "../../internal-connection-point/id"
+                }
+               }
+              }
+             },
+             "uses": "virtual-interface"
+            },
+            "external-interface": {
+             "description": "List of external interfaces for the VNF.\nThe external interfaces enable sending\ntraffic to and from VNF.",
+             "key": "name",
+             "leaf": {
+              "name": {
+               "description": "Name of the external interface. Note that\nthis name has only local significance.",
+               "type": "string"
+              },
+              "vnfd-connection-point-ref": {
+               "description": "Name of the external connection point.",
+               "type": {
+                "leafref": {
+                 "path": "../../../connection-point/name"
+                }
+               }
+              }
+             },
+             "uses": "virtual-interface"
+            }
+           }
+          },
+          "vdu-dependency": {
+           "description": "List of VDU dependencies.",
+           "key": "vdu-source-ref",
+           "leaf": {
+            "vdu-source-ref": {
+             "type": {
+              "leafref": {
+               "path": "../../vdu/id"
+              }
+             }
+            },
+            "vdu-depends-on-ref": {
+             "description": "Reference to the VDU that\nsource VDU depends.",
+             "type": {
+              "leafref": {
+               "path": "../../vdu/id"
+              }
+             }
+            }
+           }
+          },
+          "placement-groups": {
+           "description": "List of placement groups at VNF level",
+           "key": "name",
+           "uses": "manotypes:placement-group-info",
+           "list": {
+            "member-vdus": {
+             "description": "List of VDUs that are part of this placement group",
+             "key": "member-vdu-ref",
+             "leaf": {
+              "member-vdu-ref": {
+               "type": {
+                "leafref": {
+                 "path": "../../../vdu/id"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         },
+         "uses": "manotypes:monitoring-param"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "mano-types": {
+   "module": {
+    "mano-types": {
+     "namespace": "urn:ietf:params:xml:ns:yang:nfvo:mano-types",
+     "prefix": "manotypes",
+     "import": {
+      "ietf-inet-types": {
+       "prefix": "inet"
+      },
+      "rw-pb-ext": {
+       "prefix": "rwpb"
+      }
+     },
+     "revision": {
+      "2015-04-23": {
+       "description": "Initial revision. This YANG file defines\nthe reusable base types for VNF Management\nand Orchestration (MANO).",
+       "reference": "Derived from earlier versions of base YANG files"
+      }
+     },
+     "typedef": {
+      "parameter-data-type": {
+       "type": {
+        "enumeration": {
+         "enum": {
+          "STRING": {
+           "value": 0
+          },
+          "INTEGER": {
+           "value": 1
+          },
+          "BOOLEAN": {
+           "value": 2
+          }
+         }
+        }
+       }
+      },
+      "virtual-link-type": {
+       "description": "Type of virtual link\nELAN: A multipoint service connecting a set of VNFs\n// ELINE: For a simple point to point connection\n//        between a VNF and the existing network.\n// ETREE: A multipoint service connecting one or\n//        more roots and a set of leaves, but\n//        preventing inter-leaf communication.",
+       "type": {
+        "enumeration": {
+         "enum": "ELAN"
+        }
+       }
+      },
+      "http-method": {
+       "description": "Type of HTTP operation",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "POST": {
+           "value": 0
+          },
+          "PUT": {
+           "value": 1
+          },
+          "GET": {
+           "value": 2
+          },
+          "DELETE": {
+           "value": 3
+          },
+          "OPTIONS": {
+           "value": 4
+          },
+          "PATCH": {
+           "value": 5
+          }
+         }
+        }
+       }
+      },
+      "api-type": {
+       "description": "Type of API to fetch monitoring params",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "HTTP": {
+           "value": 0
+          },
+          "NETCONF": {
+           "value": 1
+          },
+          "SOAP": {
+           "value": 2
+          }
+         }
+        }
+       }
+      },
+      "json-query-method": {
+       "description": "The method to extract a value from a JSON response\n\nNAMEKEY - Use the name as the key for a non-nested value.\nJSONPATH - Use jsonpath-rw implemenation to extract a value.\nOBJECTPATH - Use objectpath implemenation to extract a value.",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "NAMEKEY": {
+           "value": 0
+          },
+          "JSONPATH": {
+           "value": 1
+          },
+          "OBJECTPATH": {
+           "value": 2
+          }
+         }
+        }
+       }
+      },
+      "param-value-type": {
+       "description": "The type of the parameter value",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "INT": {
+           "value": 0
+          },
+          "DECIMAL": {
+           "value": 1
+          },
+          "STRING": {
+           "value": 2
+          }
+         }
+        }
+       }
+      },
+      "connection-point-type": {
+       "description": "Type of connection point\nVPORT: Virtual Port\n// VNIC_ADDR: Virtual NIC Address\n// PNIC_ADDR: Physical NIC Address\n// PPORT: Phsical Port.",
+       "type": {
+        "enumeration": {
+         "enum": "VPORT"
+        }
+       }
+      },
+      "widget-type": {
+       "description": "Type of the widget, typically used by the UI.",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "HISTOGRAM": {
+           "value": 0
+          },
+          "BAR": {
+           "value": 1
+          },
+          "GAUGE": {
+           "value": 2
+          },
+          "SLIDER": {
+           "value": 3
+          },
+          "COUNTER": {
+           "value": 4
+          },
+          "TEXTBOX": {
+           "value": 5
+          }
+         }
+        }
+       }
+      },
+      "cpu-feature-type": {
+       "description": "Enumeration for CPU features.\n\nAES: CPU supports advanced instruction set for\nAES (Advanced Encryption Standard).\n\nCAT: Cache Allocation Technology (CAT) allows\nan Operating System, Hypervisor, or similar\nsystem management agent to specify the amount\nof L3 cache (currently the last-level cache\nin most server and client platforms) space an\napplication can fill (as a hint to hardware\nfunctionality, certain features such as power\nmanagement may override CAT settings).\n\nCMT: Cache Monitoring Technology (CMT) allows\nan Operating System, Hypervisor, or similar\nsystem management agent to determine the\nusage of cache based on applications running\non the platform. The implementation is\ndirected at L3 cache monitoring (currently\nthe last-level cache in most server and\nclient platforms).\n\nDDIO: Intel Data Direct I/O (DDIO) enables\nEthernet server NICs and controllers talk\ndirectly to the processor cache without a\ndetour via system memory. This enumeration\nspecifies if the VM requires a DDIO\ncapable host.",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "PREFER_AES": {
+           "value": 0
+          },
+          "REQUIRE_AES": {
+           "value": 1
+          },
+          "PREFER_CAT": {
+           "value": 2
+          },
+          "REQUIRE_CAT": {
+           "value": 3
+          },
+          "PREFER_CMT": {
+           "value": 4
+          },
+          "REQUIRE_CMT": {
+           "value": 5
+          },
+          "PREFER_DDIO": {
+           "value": 6
+          },
+          "REQUIRE_DDIO": {
+           "value": 7
+          },
+          "REQUIRE_VME": {
+           "value": 8
+          },
+          "PREFER_VME": {
+           "value": 9
+          },
+          "REQUIRE_DE": {
+           "value": 10
+          },
+          "PREFER_DE": {
+           "value": 11
+          },
+          "REQUIRE_PSE": {
+           "value": 12
+          },
+          "PREFER_PSE": {
+           "value": 13
+          },
+          "REQUIRE_TSC": {
+           "value": 14
+          },
+          "PREFER_TSC": {
+           "value": 15
+          },
+          "REQUIRE_MSR": {
+           "value": 16
+          },
+          "PREFER_MSR": {
+           "value": 17
+          },
+          "REQUIRE_PAE": {
+           "value": 18
+          },
+          "PREFER_PAE": {
+           "value": 19
+          },
+          "REQUIRE_MCE": {
+           "value": 20
+          },
+          "PREFER_MCE": {
+           "value": 21
+          },
+          "REQUIRE_CX8": {
+           "value": 22
+          },
+          "PREFER_CX8": {
+           "value": 23
+          },
+          "REQUIRE_APIC": {
+           "value": 24
+          },
+          "PREFER_APIC": {
+           "value": 25
+          },
+          "REQUIRE_SEP": {
+           "value": 26
+          },
+          "PREFER_SEP": {
+           "value": 27
+          },
+          "REQUIRE_MTRR": {
+           "value": 28
+          },
+          "PREFER_MTRR": {
+           "value": 29
+          },
+          "REQUIRE_PGE": {
+           "value": 30
+          },
+          "PREFER_PGE": {
+           "value": 31
+          },
+          "REQUIRE_MCA": {
+           "value": 32
+          },
+          "PREFER_MCA": {
+           "value": 33
+          },
+          "REQUIRE_CMOV": {
+           "value": 34
+          },
+          "PREFER_CMOV": {
+           "value": 35
+          },
+          "REQUIRE_PAT": {
+           "value": 36
+          },
+          "PREFER_PAT": {
+           "value": 37
+          },
+          "REQUIRE_PSE36": {
+           "value": 38
+          },
+          "PREFER_PSE36": {
+           "value": 39
+          },
+          "REQUIRE_CLFLUSH": {
+           "value": 40
+          },
+          "PREFER_CLFLUSH": {
+           "value": 41
+          },
+          "REQUIRE_DTS": {
+           "value": 42
+          },
+          "PREFER_DTS": {
+           "value": 43
+          },
+          "REQUIRE_ACPI": {
+           "value": 44
+          },
+          "PREFER_ACPI": {
+           "value": 45
+          },
+          "REQUIRE_MMX": {
+           "value": 46
+          },
+          "PREFER_MMX": {
+           "value": 47
+          },
+          "REQUIRE_FXSR": {
+           "value": 48
+          },
+          "PREFER_FXSR": {
+           "value": 49
+          },
+          "REQUIRE_SSE": {
+           "value": 50
+          },
+          "PREFER_SSE": {
+           "value": 51
+          },
+          "REQUIRE_SSE2": {
+           "value": 52
+          },
+          "PREFER_SSE2": {
+           "value": 53
+          },
+          "REQUIRE_SS": {
+           "value": 54
+          },
+          "PREFER_SS": {
+           "value": 55
+          },
+          "REQUIRE_HT": {
+           "value": 56
+          },
+          "PREFER_HT": {
+           "value": 57
+          },
+          "REQUIRE_TM": {
+           "value": 58
+          },
+          "PREFER_TM": {
+           "value": 59
+          },
+          "REQUIRE_IA64": {
+           "value": 60
+          },
+          "PREFER_IA64": {
+           "value": 61
+          },
+          "REQUIRE_PBE": {
+           "value": 62
+          },
+          "PREFER_PBE": {
+           "value": 63
+          },
+          "REQUIRE_RDTSCP": {
+           "value": 64
+          },
+          "PREFER_RDTSCP": {
+           "value": 65
+          },
+          "REQUIRE_PNI": {
+           "value": 66
+          },
+          "PREFER_PNI": {
+           "value": 67
+          },
+          "REQUIRE_PCLMULQDQ": {
+           "value": 68
+          },
+          "PREFER_PCLMULQDQ": {
+           "value": 69
+          },
+          "REQUIRE_DTES64": {
+           "value": 70
+          },
+          "PREFER_DTES64": {
+           "value": 71
+          },
+          "REQUIRE_MONITOR": {
+           "value": 72
+          },
+          "PREFER_MONITOR": {
+           "value": 73
+          },
+          "REQUIRE_DS_CPL": {
+           "value": 74
+          },
+          "PREFER_DS_CPL": {
+           "value": 75
+          },
+          "REQUIRE_VMX": {
+           "value": 76
+          },
+          "PREFER_VMX": {
+           "value": 77
+          },
+          "REQUIRE_SMX": {
+           "value": 78
+          },
+          "PREFER_SMX": {
+           "value": 79
+          },
+          "REQUIRE_EST": {
+           "value": 80
+          },
+          "PREFER_EST": {
+           "value": 81
+          },
+          "REQUIRE_TM2": {
+           "value": 82
+          },
+          "PREFER_TM2": {
+           "value": 83
+          },
+          "REQUIRE_SSSE3": {
+           "value": 84
+          },
+          "PREFER_SSSE3": {
+           "value": 85
+          },
+          "REQUIRE_CID": {
+           "value": 86
+          },
+          "PREFER_CID": {
+           "value": 87
+          },
+          "REQUIRE_FMA": {
+           "value": 88
+          },
+          "PREFER_FMA": {
+           "value": 89
+          },
+          "REQUIRE_CX16": {
+           "value": 90
+          },
+          "PREFER_CX16": {
+           "value": 91
+          },
+          "REQUIRE_XTPR": {
+           "value": 92
+          },
+          "PREFER_XTPR": {
+           "value": 93
+          },
+          "REQUIRE_PDCM": {
+           "value": 94
+          },
+          "PREFER_PDCM": {
+           "value": 95
+          },
+          "REQUIRE_PCID": {
+           "value": 96
+          },
+          "PREFER_PCID": {
+           "value": 97
+          },
+          "REQUIRE_DCA": {
+           "value": 98
+          },
+          "PREFER_DCA": {
+           "value": 99
+          },
+          "REQUIRE_SSE4_1": {
+           "value": 100
+          },
+          "PREFER_SSE4_1": {
+           "value": 101
+          },
+          "REQUIRE_SSE4_2": {
+           "value": 102
+          },
+          "PREFER_SSE4_2": {
+           "value": 103
+          },
+          "REQUIRE_X2APIC": {
+           "value": 104
+          },
+          "PREFER_X2APIC": {
+           "value": 105
+          },
+          "REQUIRE_MOVBE": {
+           "value": 106
+          },
+          "PREFER_MOVBE": {
+           "value": 107
+          },
+          "REQUIRE_POPCNT": {
+           "value": 108
+          },
+          "PREFER_POPCNT": {
+           "value": 109
+          },
+          "REQUIRE_TSC_DEADLINE_TIMER": {
+           "value": 110
+          },
+          "PREFER_TSC_DEADLINE_TIMER": {
+           "value": 111
+          },
+          "REQUIRE_XSAVE": {
+           "value": 112
+          },
+          "PREFER_XSAVE": {
+           "value": 113
+          },
+          "REQUIRE_AVX": {
+           "value": 114
+          },
+          "PREFER_AVX": {
+           "value": 115
+          },
+          "REQUIRE_F16C": {
+           "value": 116
+          },
+          "PREFER_F16C": {
+           "value": 117
+          },
+          "REQUIRE_RDRAND": {
+           "value": 118
+          },
+          "PREFER_RDRAND": {
+           "value": 119
+          },
+          "REQUIRE_FSGSBASE": {
+           "value": 120
+          },
+          "PREFER_FSGSBASE": {
+           "value": 121
+          },
+          "REQUIRE_BMI1": {
+           "value": 122
+          },
+          "PREFER_BMI1": {
+           "value": 123
+          },
+          "REQUIRE_HLE": {
+           "value": 124
+          },
+          "PREFER_HLE": {
+           "value": 125
+          },
+          "REQUIRE_AVX2": {
+           "value": 126
+          },
+          "PREFER_AVX2": {
+           "value": 127
+          },
+          "REQUIRE_SMEP": {
+           "value": 128
+          },
+          "PREFER_SMEP": {
+           "value": 129
+          },
+          "REQUIRE_BMI2": {
+           "value": 130
+          },
+          "PREFER_BMI2": {
+           "value": 131
+          },
+          "REQUIRE_ERMS": {
+           "value": 132
+          },
+          "PREFER_ERMS": {
+           "value": 133
+          },
+          "REQUIRE_INVPCID": {
+           "value": 134
+          },
+          "PREFER_INVPCID": {
+           "value": 135
+          },
+          "REQUIRE_RTM": {
+           "value": 136
+          },
+          "PREFER_RTM": {
+           "value": 137
+          },
+          "REQUIRE_MPX": {
+           "value": 138
+          },
+          "PREFER_MPX": {
+           "value": 139
+          },
+          "REQUIRE_RDSEED": {
+           "value": 140
+          },
+          "PREFER_RDSEED": {
+           "value": 141
+          },
+          "REQUIRE_ADX": {
+           "value": 142
+          },
+          "PREFER_ADX": {
+           "value": 143
+          },
+          "REQUIRE_SMAP": {
+           "value": 144
+          },
+          "PREFER_SMAP": {
+           "value": 145
+          }
+         }
+        }
+       }
+      },
+      "alarm-severity-type": {
+       "description": "An indication of the importance or ugency of the alarm",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "LOW": {
+           "value": 0
+          },
+          "MODERATE": {
+           "value": 1
+          },
+          "CRITICAL": {
+           "value": 2
+          }
+         }
+        }
+       }
+      },
+      "alarm-metric-type": {
+       "description": "The type of metrics to register the alarm for",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "CPU_UTILIZATION": {
+           "value": 0
+          },
+          "MEMORY_UTILIZATION": {
+           "value": 1
+          },
+          "STORAGE_UTILIZATION": {
+           "value": 2
+          }
+         }
+        }
+       }
+      },
+      "alarm-statistic-type": {
+       "description": "The type of statistic to used to measure a metric to determine\nthreshold crossing for an alarm.",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "AVERAGE": {
+           "value": 0
+          },
+          "MINIMUM": {
+           "value": 1
+          },
+          "MAXIMUM": {
+           "value": 2
+          },
+          "COUNT": {
+           "value": 3
+          },
+          "SUM": {
+           "value": 4
+          }
+         }
+        }
+       }
+      },
+      "alarm-operation-type": {
+       "description": "The relational operator used to define whether an alarm should be\ntriggered when, say, the metric statistic goes above or below a\nspecified value.",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "GE": {
+           "value": 0
+          },
+          "LE": {
+           "value": 1
+          },
+          "GT": {
+           "value": 2
+          },
+          "LT": {
+           "value": 3
+          },
+          "EQ": {
+           "value": 4
+          }
+         }
+        }
+       }
+      },
+      "cloud-account-type": {
+       "description": "cloud account type",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "aws": {
+           "value": 0
+          },
+          "cloudsim": {
+           "value": 1
+          },
+          "cloudsim_proxy": {
+           "value": 2
+          },
+          "mock": {
+           "value": 3
+          },
+          "openmano": {
+           "value": 4
+          },
+          "openstack": {
+           "value": 5
+          },
+          "vsphere": {
+           "value": 6
+          }
+         }
+        }
+       }
+      }
+     },
+     "grouping": {
+      "primitive-parameter": {
+       "leaf": {
+        "name": {
+         "description": "Name of the parameter.",
+         "type": "string"
+        },
+        "data-type": {
+         "description": "Data type associated with the name.",
+         "type": "manotypes:parameter-data-type"
+        },
+        "mandatory": {
+         "description": "Is this field mandatory",
+         "type": "boolean",
+         "default": "false"
+        },
+        "default-value": {
+         "description": "The default value for this field",
+         "type": "string"
+        },
+        "parameter-pool": {
+         "description": "NSD Parameter pool name to use for this paramter",
+         "type": "string"
+        },
+        "read-only": {
+         "description": "The value should be greyed out by the UI.\nOnly applies to parameters with default values.",
+         "type": "boolean"
+        },
+        "hidden": {
+         "description": "The value should be hidden by the UI.\nOnly applies to parameters with default values.",
+         "type": "boolean"
+        }
+       }
+      },
+      "vnf-configuration": {
+       "container": {
+        "vnf-configuration": {
+         "description": "Information regarding the VNF configuration\nis captured here. ",
+         "choice": {
+          "config-method": {
+           "description": "Defines the configuration method for the VNF.",
+           "case": {
+            "netconf": {
+             "description": "Use NETCONF for configuring the VNF.",
+             "container": {
+              "netconf": {
+               "leaf": {
+                "target": {
+                 "description": "Netconf configuration target",
+                 "type": {
+                  "enumeration": {
+                   "enum": {
+                    "running": {
+                     "value": 0
+                    },
+                    "candidate": {
+                     "value": 1
+                    }
+                   }
+                  }
+                 }
+                },
+                "protocol": {
+                 "description": "Protocol to use for netconf (e.g. ssh)",
+                 "type": {
+                  "enumeration": {
+                   "enum": {
+                    "None": {
+                     "value": 0
+                    },
+                    "ssh": {
+                     "value": 1
+                    }
+                   }
+                  }
+                 }
+                },
+                "port": {
+                 "description": "Port for the netconf server.",
+                 "type": "inet:port-number"
+                }
+               }
+              }
+             }
+            },
+            "rest": {
+             "description": "Use REST for configuring the VNF.",
+             "container": {
+              "rest": {
+               "leaf": {
+                "port": {
+                 "description": "Port for the REST server.",
+                 "type": "inet:port-number"
+                }
+               }
+              }
+             }
+            },
+            "script": {
+             "description": "Use custom script for configuring the VNF.\nThis script is executed in the context of\nOrchestrator.",
+             "container": {
+              "script": {
+               "leaf": {
+                "script-type": {
+                 "description": "Script type - currently supported : bash, expect",
+                 "type": {
+                  "enumeration": {
+                   "enum": {
+                    "bash": {
+                     "value": 0
+                    },
+                    "expect": {
+                     "value": 1
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "juju": {
+             "description": "Configure the VNF through Juju.",
+             "container": {
+              "juju": {
+               "leaf": {
+                "charm": {
+                 "description": "Juju charm to use with the VNF.",
+                 "type": "string"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         },
+         "container": {
+          "config-access": {
+           "leaf": {
+            "mgmt-ip-address": {
+             "description": "IP address to be used to configure this VNF,\noptional if it is possible to resolve dynamically.",
+             "type": "inet:ip-address"
+            },
+            "username": {
+             "description": "username for configuration.",
+             "type": "string"
+            },
+            "password": {
+             "description": "Password for configuration access authentication.",
+             "type": "string"
+            }
+           }
+          },
+          "config-attributes": {
+           "description": "Miscelaneous input parameters to be considered\nwhile processing the NSD to apply configuration",
+           "leaf": {
+            "config-priority": {
+             "description": "Configuration priority - order of confgiration\nto be applied to each VNF in this NS,\nlow number gets precedence over high number",
+             "type": "uint64"
+            },
+            "config-delay": {
+             "description": "Wait (seconds) before applying the configuration to VNF",
+             "type": "uint64"
+            }
+           }
+          }
+         },
+         "list": {
+          "config-primitive": {
+           "description": "List of configuration primitives supported by the\nconfiguration agent for this VNF.",
+           "key": "name",
+           "leaf": {
+            "name": {
+             "description": "Name of the configuration primitive.",
+             "type": "string"
+            }
+           },
+           "list": {
+            "parameter": {
+             "description": "List of parameters to the configuration primitive.",
+             "key": "name",
+             "leaf": {
+              "name": {
+               "description": "Name of the parameter.",
+               "type": "string"
+              },
+              "data-type": {
+               "description": "Data type associated with the name.",
+               "type": "manotypes:parameter-data-type"
+              },
+              "mandatory": {
+               "description": "Is this field mandatory",
+               "type": "boolean",
+               "default": "false"
+              },
+              "default-value": {
+               "description": "The default value for this field",
+               "type": "string"
+              },
+              "parameter-pool": {
+               "description": "NSD Parameter pool name to use for this paramter",
+               "type": "string"
+              },
+              "read-only": {
+               "description": "The value should be greyed out by the UI.\nOnly applies to parameters with default values.",
+               "type": "boolean"
+              },
+              "hidden": {
+               "description": "The value should be hidden by the UI.\nOnly applies to parameters with default values.",
+               "type": "boolean"
+              }
+             }
+            }
+           }
+          },
+          "initial-config-primitive": {
+           "description": "Initial set of configuration primitives.",
+           "key": "seq",
+           "leaf": {
+            "seq": {
+             "description": "Sequence number for the configuration primitive.",
+             "type": "uint64"
+            },
+            "name": {
+             "description": "Name of the configuration primitive.",
+             "type": "string"
+            }
+           },
+           "list": {
+            "parameter": {
+             "key": "name",
+             "leaf": {
+              "name": {
+               "type": "string"
+              },
+              "value": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         },
+         "leaf": {
+          "config-template": {
+           "description": "Configuration template for each VNF",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "named-value": {
+       "leaf": {
+        "name": {
+         "type": "string"
+        },
+        "value": {
+         "type": "string"
+        }
+       }
+      },
+      "vm-flavor": {
+       "container": {
+        "vm-flavor": {
+         "leaf": {
+          "vcpu-count": {
+           "description": "Number of vcpus for the VM.",
+           "type": "uint16"
+          },
+          "memory-mb": {
+           "description": "Amount of memory in MB.",
+           "type": "uint64"
+          },
+          "storage-gb": {
+           "description": "Amount of disk space in GB.",
+           "type": "uint64"
+          }
+         }
+        }
+       }
+      },
+      "vswitch-epa": {
+       "container": {
+        "vswitch-epa": {
+         "leaf": {
+          "ovs-acceleration": {
+           "description": "Specifies Open vSwitch acceleration mode.\nMANDATORY: OVS acceleration is required\nPREFERRED: OVS acceleration is preferred",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "MANDATORY": {
+               "value": 0
+              },
+              "PREFERRED": {
+               "value": 1
+              },
+              "DISABLED": {
+               "value": 2
+              }
+             }
+            }
+           }
+          },
+          "ovs-offload": {
+           "description": "Specifies Open vSwitch hardware offload mode.\nMANDATORY: OVS offload is required\nPREFERRED: OVS offload is preferred",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "MANDATORY": {
+               "value": 0
+              },
+              "PREFERRED": {
+               "value": 1
+              },
+              "DISABLED": {
+               "value": 2
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "hypervisor-epa": {
+       "container": {
+        "hypervisor-epa": {
+         "leaf": {
+          "type": {
+           "description": "Specifies the type of hypervisor.\nKVM: KVM\nXEN: XEN",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_KVM": {
+               "value": 0
+              },
+              "REQUIRE_KVM": {
+               "value": 1
+              }
+             }
+            }
+           }
+          },
+          "version": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "host-epa": {
+       "container": {
+        "host-epa": {
+         "description": "Specifies the host level EPA attributes.",
+         "leaf": {
+          "cpu-model": {
+           "description": "Host CPU model. Examples include: SandyBridge,\nIvyBridge",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_WESTMERE": {
+               "value": 0
+              },
+              "REQUIRE_WESTMERE": {
+               "value": 1
+              },
+              "PREFER_SANDYBRIDGE": {
+               "value": 2
+              },
+              "REQUIRE_SANDYBRIDGE": {
+               "value": 3
+              },
+              "PREFER_IVYBRIDGE": {
+               "value": 4
+              },
+              "REQUIRE_IVYBRIDGE": {
+               "value": 5
+              },
+              "PREFER_HASWELL": {
+               "value": 6
+              },
+              "REQUIRE_HASWELL": {
+               "value": 7
+              },
+              "PREFER_BROADWELL": {
+               "value": 8
+              },
+              "REQUIRE_BROADWELL": {
+               "value": 9
+              },
+              "PREFER_NEHALEM": {
+               "value": 10
+              },
+              "REQUIRE_NEHALEM": {
+               "value": 11
+              },
+              "PREFER_PENRYN": {
+               "value": 12
+              },
+              "REQUIRE_PENRYN": {
+               "value": 13
+              },
+              "PREFER_CONROE": {
+               "value": 14
+              },
+              "REQUIRE_CONROE": {
+               "value": 15
+              },
+              "PREFER_CORE2DUO": {
+               "value": 16
+              },
+              "REQUIRE_CORE2DUO": {
+               "value": 17
+              }
+             }
+            }
+           }
+          },
+          "cpu-arch": {
+           "description": "Host CPU architecture.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_X86": {
+               "value": 0
+              },
+              "REQUIRE_X86": {
+               "value": 1
+              },
+              "PREFER_X86_64": {
+               "value": 2
+              },
+              "REQUIRE_X86_64": {
+               "value": 3
+              },
+              "PREFER_I686": {
+               "value": 4
+              },
+              "REQUIRE_I686": {
+               "value": 5
+              },
+              "PREFER_IA64": {
+               "value": 6
+              },
+              "REQUIRE_IA64": {
+               "value": 7
+              },
+              "PREFER_ARMV7": {
+               "value": 8
+              },
+              "REQUIRE_ARMV7": {
+               "value": 9
+              },
+              "PREFER_ARMV8": {
+               "value": 10
+              },
+              "REQUIRE_ARMV8": {
+               "value": 11
+              }
+             }
+            }
+           }
+          },
+          "cpu-vendor": {
+           "description": "Host CPU Vendor.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_INTEL": {
+               "value": 0
+              },
+              "REQUIRE_INTEL": {
+               "value": 1
+              },
+              "PREFER_AMD": {
+               "value": 2
+              },
+              "REQUIRE_AMD": {
+               "value": 3
+              }
+             }
+            }
+           }
+          },
+          "cpu-socket-count": {
+           "description": "Number of sockets on the host.",
+           "type": "uint64"
+          },
+          "cpu-core-count": {
+           "description": "Number of cores on the host.",
+           "type": "uint64"
+          },
+          "cpu-core-thread-count": {
+           "description": "Number of threads per cores on the host.",
+           "type": "uint64"
+          },
+          "om-cpu-model-string": {
+           "description": "Openmano CPU model string",
+           "type": "string"
+          }
+         },
+         "leaf-list": {
+          "cpu-feature": {
+           "description": "List of CPU features.",
+           "type": "manotypes:cpu-feature-type"
+          },
+          "om-cpu-feature": {
+           "description": "Openmano CPU features",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "guest-epa": {
+       "description": "EPA attributes for the guest",
+       "container": {
+        "guest-epa": {
+         "leaf": {
+          "trusted-execution": {
+           "description": "This VM should be allocated from trusted pool",
+           "type": "boolean"
+          },
+          "mempage-size": {
+           "description": "Memory page allocation size. If a VM requires\nhugepages, it should choose LARGE or SIZE_2MB\nor SIZE_1GB. If the VM prefers hugepages it\nshould chose PREFER_LARGE.\nLARGE        : Require hugepages (either 2MB or 1GB)\nSMALL        : Doesn't require hugepages\nSIZE_2MB     : Requires 2MB hugepages\nSIZE_1GB     : Requires 1GB hugepages\nPREFER_LARGE : Application perfers hugepages",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "LARGE": {
+               "value": 0
+              },
+              "SMALL": {
+               "value": 1
+              },
+              "SIZE_2MB": {
+               "value": 2
+              },
+              "SIZE_1GB": {
+               "value": 3
+              },
+              "PREFER_LARGE": {
+               "value": 4
+              }
+             }
+            }
+           }
+          },
+          "cpu-pinning-policy": {
+           "description": "CPU pinning policy describes association\nbetween virtual CPUs in guest and the\nphysical CPUs in the host.\nDEDICATED : Virtual CPUs are pinned to\n            physical CPUs\nSHARED    : Multiple VMs may share the\n            same physical CPUs.\nANY       : Any policy is acceptable for the VM",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "DEDICATED": {
+               "value": 0
+              },
+              "SHARED": {
+               "value": 1
+              },
+              "ANY": {
+               "value": 2
+              }
+             }
+            }
+           },
+           "default": "ANY"
+          },
+          "cpu-thread-pinning-policy": {
+           "description": "CPU thread pinning policy describes how to\nplace the guest CPUs when the host supports\nhyper threads:\nAVOID   : Avoids placing a guest on a host\n          with threads.\nSEPARATE: Places vCPUs on separate cores,\n          and avoids placing two vCPUs on\n          two threads of same core.\nISOLATE : Places each vCPU on a different core,\n          and places no vCPUs from a different\n          guest on the same core.\nPREFER  : Attempts to place vCPUs on threads\n          of the same core.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "AVOID": {
+               "value": 0
+              },
+              "SEPARATE": {
+               "value": 1
+              },
+              "ISOLATE": {
+               "value": 2
+              },
+              "PREFER": {
+               "value": 3
+              }
+             }
+            }
+           }
+          }
+         },
+         "list": {
+          "pcie-device": {
+           "description": "List of pcie passthrough devices.",
+           "key": "device-id",
+           "leaf": {
+            "device-id": {
+             "description": "Device identifier.",
+             "type": "string"
+            },
+            "count": {
+             "description": "Number of devices to attach to the VM.",
+             "type": "uint64"
+            }
+           }
+          }
+         },
+         "choice": {
+          "numa-policy": {
+           "case": {
+            "numa-unware": {
+             "leaf": {
+              "numa-unware": {
+               "type": "empty"
+              }
+             }
+            },
+            "numa-aware": {
+             "container": {
+              "numa-node-policy": {
+               "description": "This policy defines numa topology of the\nguest. Specifically identifies if the guest\nshould be run on a host with one numa\nnode or multiple numa nodes. As an example\na guest may want 8 vcpus and 4 GB of\nmemory. But may want the vcpus and memory\ndistributed across multiple numa nodes.\nThe NUMA node 1 may run with 6 vcpus and\n3GB, and NUMA node 2 may run with 2 vcpus\nand 1GB.",
+               "leaf": {
+                "node-cnt": {
+                 "description": "The number of numa nodes to expose to the VM.",
+                 "type": "uint16"
+                },
+                "mem-policy": {
+                 "description": "This policy specifies how the memory should\nbe allocated in a multi-node scenario.\nSTRICT    : The memory must be allocated\n            strictly from the memory attached\n            to the NUMA node.\nPREFERRED : The memory should be allocated\n            perferentially from the memory\n            attached to the NUMA node",
+                 "type": {
+                  "enumeration": {
+                   "enum": {
+                    "STRICT": {
+                     "value": 0
+                    },
+                    "PREFERRED": {
+                     "value": 1
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "list": {
+                "node": {
+                 "key": "id",
+                 "leaf": {
+                  "id": {
+                   "description": "NUMA node identification. Typically\nit's 0 or 1",
+                   "type": "uint64"
+                  },
+                  "memory-mb": {
+                   "description": "Memory size expressed in MB\nfor this NUMA node.",
+                   "type": "uint64"
+                  }
+                 },
+                 "leaf-list": {
+                  "vcpu": {
+                   "description": "List of vcpus to allocate on\nthis numa node.",
+                   "type": "uint64"
+                  }
+                 },
+                 "choice": {
+                  "om-numa-type": {
+                   "description": "Openmano Numa type selection",
+                   "case": {
+                    "cores": {
+                     "leaf": {
+                      "num-cores": {
+                       "type": "uint8"
+                      }
+                     }
+                    },
+                    "paired-threads": {
+                     "container": {
+                      "paired-threads": {
+                       "leaf": {
+                        "num-paired-threads": {
+                         "type": "uint8"
+                        }
+                       },
+                       "list": {
+                        "paired-thread-ids": {
+                         "description": "List of thread pairs to use in case of paired-thread numa",
+                         "max-elements": 16,
+                         "key": "thread-a",
+                         "leaf": {
+                          "thread-a": {
+                           "type": "uint8"
+                          },
+                          "thread-b": {
+                           "type": "uint8"
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    },
+                    "threads": {
+                     "leaf": {
+                      "num-threads": {
+                       "type": "uint8"
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "provider-network": {
+       "container": {
+        "provider-network": {
+         "description": "Container for the provider network.",
+         "leaf": {
+          "physical-network": {
+           "description": "Name of the phsyical network on which the provider\nnetwork is built.",
+           "type": "string"
+          },
+          "overlay-type": {
+           "description": "Type of the overlay network.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "LOCAL": {
+               "value": 0
+              },
+              "FLAT": {
+               "value": 1
+              },
+              "VLAN": {
+               "value": 2
+              },
+              "VXLAN": {
+               "value": 3
+              },
+              "GRE": {
+               "value": 4
+              }
+             }
+            }
+           }
+          },
+          "segmentation_id": {
+           "description": "Segmentation ID",
+           "type": "uint32"
+          }
+         }
+        }
+       }
+      },
+      "config-primitive": {
+       "list": {
+        "config-primitive": {
+         "description": "Network service level configuration primitives.",
+         "key": "name",
+         "leaf": {
+          "name": {
+           "description": "Name of the configuration primitive.",
+           "type": "string"
+          },
+          "user-defined-script": {
+           "description": "A user defined script.",
+           "type": "string"
+          }
+         },
+         "list": {
+          "parameter": {
+           "description": "List of parameters to the configuration primitive.",
+           "key": "name",
+           "leaf": {
+            "name": {
+             "description": "Name of the parameter.",
+             "type": "string"
+            },
+            "data-type": {
+             "description": "Data type associated with the name.",
+             "type": "manotypes:parameter-data-type"
+            },
+            "mandatory": {
+             "description": "Is this field mandatory",
+             "type": "boolean",
+             "default": "false"
+            },
+            "default-value": {
+             "description": "The default value for this field",
+             "type": "string"
+            },
+            "parameter-pool": {
+             "description": "NSD Parameter pool name to use for this paramter",
+             "type": "string"
+            },
+            "read-only": {
+             "description": "The value should be greyed out by the UI.\nOnly applies to parameters with default values.",
+             "type": "boolean"
+            },
+            "hidden": {
+             "description": "The value should be hidden by the UI.\nOnly applies to parameters with default values.",
+             "type": "boolean"
+            }
+           }
+          },
+          "parameter-group": {
+           "description": "Grouping of parameters which are logically grouped in UI",
+           "key": "name",
+           "leaf": {
+            "name": {
+             "description": "Name of the parameter group",
+             "type": "string"
+            },
+            "mandatory": {
+             "description": "Is this parameter group mandatory",
+             "type": "boolean",
+             "default": "true"
+            }
+           },
+           "list": {
+            "parameter": {
+             "description": "List of parameters to the configuration primitive.",
+             "key": "name",
+             "leaf": {
+              "name": {
+               "description": "Name of the parameter.",
+               "type": "string"
+              },
+              "data-type": {
+               "description": "Data type associated with the name.",
+               "type": "manotypes:parameter-data-type"
+              },
+              "mandatory": {
+               "description": "Is this field mandatory",
+               "type": "boolean",
+               "default": "false"
+              },
+              "default-value": {
+               "description": "The default value for this field",
+               "type": "string"
+              },
+              "parameter-pool": {
+               "description": "NSD Parameter pool name to use for this paramter",
+               "type": "string"
+              },
+              "read-only": {
+               "description": "The value should be greyed out by the UI.\nOnly applies to parameters with default values.",
+               "type": "boolean"
+              },
+              "hidden": {
+               "description": "The value should be hidden by the UI.\nOnly applies to parameters with default values.",
+               "type": "boolean"
+              }
+             }
+            }
+           }
+          },
+          "vnf-primitive-group": {
+           "description": "List of configuration primitives grouped by VNF.",
+           "key": "member-vnf-index-ref",
+           "leaf": {
+            "member-vnf-index-ref": {
+             "description": "Reference to member-vnf within constituent-vnfds",
+             "type": "uint64"
+            },
+            "vnfd-id-ref": {
+             "description": "A reference to a vnfd. This is a\nleafref to path:\n    ../../../../nsd:constituent-vnfd\n    + [nsd:id = current()/../nsd:id-ref]\n    + /nsd:vnfd-id-ref\nNOTE: An issue with confd is preventing the\nuse of xpath. Seems to be an issue with leafref\nto leafref, whose target is in a different module.\nOnce that is resovled this will switched to use\nleafref",
+             "type": "string"
+            },
+            "vnfd-name": {
+             "description": "Name of the VNFD",
+             "type": "string"
+            }
+           },
+           "list": {
+            "primitive": {
+             "key": "index",
+             "leaf": {
+              "index": {
+               "description": "Index of this primitive",
+               "type": "uint32"
+              },
+              "name": {
+               "description": "Name of the primitive in the VNF primitive ",
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "monitoring-param": {
+       "list": {
+        "http-endpoint": {
+         "description": "List of http endpoints to be used by monitoring params",
+         "key": "path",
+         "leaf": {
+          "path": {
+           "description": "The HTTP path on the management server",
+           "type": "string"
+          },
+          "https": {
+           "description": "Pick HTTPS instead of HTTP , Default is false",
+           "type": "boolean",
+           "default": "false"
+          },
+          "port": {
+           "description": "The HTTP port to connect to",
+           "type": "inet:port-number"
+          },
+          "username": {
+           "description": "The HTTP basic auth username",
+           "type": "string"
+          },
+          "password": {
+           "description": "The HTTP basic auth password",
+           "type": "string"
+          },
+          "polling_interval_secs": {
+           "description": "The HTTP polling interval in seconds",
+           "type": "uint8",
+           "default": "2"
+          },
+          "method": {
+           "description": "This is the method to be performed at the uri.\nGET by default for action",
+           "type": "manotypes:http-method",
+           "default": "GET"
+          }
+         },
+         "list": {
+          "headers": {
+           "description": "Custom HTTP headers to put on HTTP request",
+           "key": "key",
+           "leaf": {
+            "key": {
+             "description": "HTTP header key",
+             "type": "string"
+            },
+            "value": {
+             "description": "HTTP header value",
+             "type": "string"
+            }
+           }
+          }
+         }
+        },
+        "monitoring-param": {
+         "description": "List of monitoring parameters at the NS level",
+         "key": "id",
+         "leaf": {
+          "id": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          },
+          "http-endpoint-ref": {
+           "type": {
+            "leafref": {
+             "path": "../../http-endpoint/path"
+            }
+           }
+          },
+          "json-query-method": {
+           "type": "manotypes:json-query-method",
+           "default": "NAMEKEY"
+          },
+          "description": {
+           "type": "string"
+          },
+          "group-tag": {
+           "description": "A simple tag to group monitoring parameters",
+           "type": "string"
+          },
+          "value-type": {
+           "type": "manotypes:param-value-type",
+           "default": "INT"
+          },
+          "value-integer": {
+           "description": "Current value for an integer parameter",
+           "type": "int64"
+          },
+          "value-decimal": {
+           "description": "Current value for a decimal parameter",
+           "type": {
+            "decimal64": {
+             "fraction-digits": "4"
+            }
+           }
+          },
+          "value-string": {
+           "description": "Current value for a string parameter",
+           "type": "string"
+          },
+          "widget-type": {
+           "type": "manotypes:widget-type"
+          },
+          "units": {
+           "type": "string"
+          }
+         },
+         "container": {
+          "json-query-params": {
+           "leaf": {
+            "json-path": {
+             "description": "The jsonpath to use to extract value from JSON structure",
+             "type": "string"
+            },
+            "object-path": {
+             "description": "The objectpath to use to extract value from JSON structure",
+             "type": "string"
+            }
+           }
+          },
+          "numeric-constraints": {
+           "leaf": {
+            "min-value": {
+             "description": "Minimum value for the parameter",
+             "type": "uint64"
+            },
+            "max-value": {
+             "description": "Maxium value for the parameter",
+             "type": "uint64"
+            }
+           }
+          },
+          "text-constraints": {
+           "leaf": {
+            "min-length": {
+             "description": "Minimum string length for the parameter",
+             "type": "uint8"
+            },
+            "max-length": {
+             "description": "Maximum string length for the parameter",
+             "type": "uint8"
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "control-param": {
+       "list": {
+        "control-param": {
+         "description": "List of control parameters to manage and\nupdate the running configuration of the VNF",
+         "key": "id",
+         "leaf": {
+          "id": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          },
+          "description": {
+           "type": "string"
+          },
+          "group-tag": {
+           "description": "A simple tag to group control parameters",
+           "type": "string"
+          },
+          "min-value": {
+           "description": "Minimum value for the parameter",
+           "type": "uint64"
+          },
+          "max-value": {
+           "description": "Maxium value for the parameter",
+           "type": "uint64"
+          },
+          "current-value": {
+           "description": "Current value for the parameter",
+           "type": "uint64"
+          },
+          "step-value": {
+           "description": "Step value for the parameter",
+           "type": "uint64"
+          },
+          "units": {
+           "type": "string"
+          },
+          "widget-type": {
+           "type": "manotypes:widget-type"
+          },
+          "url": {
+           "description": "This is the URL where to perform the operation",
+           "type": "inet:uri"
+          },
+          "method": {
+           "description": "This is the method to be performed at the uri.\nPOST by default for action",
+           "type": "manotypes:http-method",
+           "default": "POST"
+          },
+          "payload": {
+           "description": "This is the operation payload or payload template as stringified\nJSON. This field provides the data  to be sent for this operation\ncall",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "action-param": {
+       "list": {
+        "action-param": {
+         "description": "List of action parameters to\ncontrol VNF",
+         "key": "id",
+         "leaf": {
+          "id": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          },
+          "description": {
+           "type": "string"
+          },
+          "group-tag": {
+           "description": "A simple tag to group monitoring parameter",
+           "type": "string"
+          },
+          "url": {
+           "description": "This is the URL where to perform the operation",
+           "type": "inet:uri"
+          },
+          "method": {
+           "description": "This is the method to be performed at the uri.\nPOST by default for action",
+           "type": "manotypes:http-method",
+           "default": "POST"
+          },
+          "payload": {
+           "description": "This is the operation payload or payload template to be sent in\nthe data for this operation call",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "input-parameter": {
+       "description": "",
+       "list": {
+        "input-parameter": {
+         "description": "List of input parameters",
+         "key": "xpath",
+         "leaf": {
+          "xpath": {
+           "description": "A an xpath that specfies which element in a descriptor is to be\nmodified.",
+           "type": "string"
+          },
+          "value": {
+           "description": "The value that the element specified by the xpath should take when a\nrecord is created.",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "input-parameter-xpath": {
+       "list": {
+        "input-parameter-xpath": {
+         "description": "List of xpaths to parameters inside the NSD\nthe can be customized during the instantiation.",
+         "key": "xpath",
+         "leaf": {
+          "xpath": {
+           "description": "An xpath that specifies the element in a descriptor.",
+           "type": "string"
+          },
+          "label": {
+           "description": "A descriptive string",
+           "type": "string"
+          },
+          "default-value": {
+           "description": " A default value for this input parameter",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "nfvi-metrics": {
+       "container": {
+        "vcpu": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "VCPU"
+          },
+          "total": {
+           "description": "The total number of VCPUs available.",
+           "type": "uint64"
+          },
+          "utilization": {
+           "description": "The VCPU utilization (percentage).",
+           "type": {
+            "decimal64": {
+             "fraction-digits": "2",
+             "range": "0 .. 100"
+            }
+           }
+          }
+         }
+        },
+        "memory": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "MEMORY"
+          },
+          "used": {
+           "description": "The amount of memory (bytes) currently in use.",
+           "type": "uint64"
+          },
+          "total": {
+           "description": "The amount of memory (bytes) available.",
+           "type": "uint64"
+          },
+          "utilization": {
+           "description": "The memory utilization (percentage).",
+           "type": {
+            "decimal64": {
+             "fraction-digits": "2",
+             "range": "0 .. 100"
+            }
+           }
+          }
+         }
+        },
+        "storage": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "STORAGE"
+          },
+          "used": {
+           "description": "The amount of storage (bytes) currently in use.",
+           "type": "uint64"
+          },
+          "total": {
+           "description": "The amount of storage (bytes) available.",
+           "type": "uint64"
+          },
+          "utilization": {
+           "description": "The storage utilization (percentage).",
+           "type": {
+            "decimal64": {
+             "fraction-digits": "2",
+             "range": "0 .. 100"
+            }
+           }
+          }
+         }
+        },
+        "external-ports": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "EXTERNAL PORTS"
+          },
+          "total": {
+           "description": "The total number of external ports.",
+           "type": "uint64"
+          }
+         }
+        },
+        "internal-ports": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "INTERNAL PORTS"
+          },
+          "total": {
+           "description": "The total number of internal ports.",
+           "type": "uint64"
+          }
+         }
+        },
+        "network": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "NETWORK TRAFFIC"
+          }
+         },
+         "container": {
+          "incoming": {
+           "leaf": {
+            "label": {
+             "description": "Label to show in UI",
+             "type": "string",
+             "default": "INCOMING NETWORK TRAFFIC"
+            },
+            "bytes": {
+             "description": "The cumulative number of incoming bytes.",
+             "type": "uint64"
+            },
+            "packets": {
+             "description": "The cumulative number of incoming packets.",
+             "type": "uint64"
+            },
+            "byte-rate": {
+             "description": "The current incoming byte-rate (bytes per second).",
+             "type": {
+              "decimal64": {
+               "fraction-digits": "2"
+              }
+             }
+            },
+            "packet-rate": {
+             "description": "The current incoming packet (packets per second).",
+             "type": {
+              "decimal64": {
+               "fraction-digits": "2"
+              }
+             }
+            }
+           }
+          },
+          "outgoing": {
+           "leaf": {
+            "label": {
+             "description": "Label to show in UI",
+             "type": "string",
+             "default": "OUTGOING NETWORK TRAFFIC"
+            },
+            "bytes": {
+             "description": "The cumulative number of outgoing bytes.",
+             "type": "uint64"
+            },
+            "packets": {
+             "description": "The cumulative number of outgoing packets.",
+             "type": "uint64"
+            },
+            "byte-rate": {
+             "description": "The current outgoing byte-rate (bytes per second).",
+             "type": {
+              "decimal64": {
+               "fraction-digits": "2"
+              }
+             }
+            },
+            "packet-rate": {
+             "description": "The current outgoing packet (packets per second).",
+             "type": {
+              "decimal64": {
+               "fraction-digits": "2"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "alarm": {
+       "leaf": {
+        "alarm-id": {
+         "description": "This field is reserved for the identifier assigned by the cloud\nprovider",
+         "type": "string"
+        },
+        "name": {
+         "description": "A human readable string to identify the alarm",
+         "type": "string"
+        },
+        "description": {
+         "description": "A string containing a description of this alarm",
+         "type": "string"
+        },
+        "vdur-id": {
+         "description": "The identifier of the VDUR that the alarm is associated with",
+         "type": "string"
+        },
+        "repeat": {
+         "description": "This flag indicates whether the alarm should be repeatedly emitted\nwhile the associated threshold has been crossed.",
+         "type": "boolean",
+         "default": "true"
+        },
+        "enabled": {
+         "description": "This flag indicates whether the alarm has been enabled or\ndisabled.",
+         "type": "boolean",
+         "default": "true"
+        },
+        "severity": {
+         "description": "A measure of the important or urgency of the alarm",
+         "type": "manotypes:alarm-severity-type"
+        },
+        "metric": {
+         "description": "The metric to be tracked by this alarm.",
+         "type": "manotypes:alarm-metric-type"
+        },
+        "statistic": {
+         "description": "The type of metric statistic that is tracked by this alarm",
+         "type": "manotypes:alarm-statistic-type"
+        },
+        "operation": {
+         "description": "The relational operator that defines whether the alarm should be\ntriggered when the metric statistic is, say, above or below the\nspecified threshold value.",
+         "type": "manotypes:alarm-operation-type"
+        },
+        "value": {
+         "description": "This value defines the threshold that, if crossed, will trigger\nthe alarm.",
+         "type": {
+          "decimal64": {
+           "fraction-digits": "4"
+          }
+         }
+        },
+        "period": {
+         "description": "The period defines the length of time (seconds) that the metric\ndata are collected over in oreder to evaluate the chosen\nstatistic.",
+         "type": "uint32"
+        },
+        "evaluations": {
+         "description": "This is the number of samples of the metric statistic used to\nevaluate threshold crossing. Each sample or evaluation is equal to\nthe metric statistic obtained for a given period. This can be used\nto mitigate spikes in the metric that may skew the statistic of\ninterest.",
+         "type": "uint32"
+        }
+       },
+       "container": {
+        "actions": {
+         "list": {
+          "ok": {
+           "key": "url",
+           "leaf": {
+            "url": {
+             "type": "string"
+            }
+           }
+          },
+          "insufficient-data": {
+           "key": "url",
+           "leaf": {
+            "url": {
+             "type": "string"
+            }
+           }
+          },
+          "alarm": {
+           "key": "url",
+           "leaf": {
+            "url": {
+             "type": "string"
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "host-aggregate": {
+       "list": {
+        "host-aggregate": {
+         "description": "Name of the Host Aggregate",
+         "key": "metadata-key",
+         "leaf": {
+          "metadata-key": {
+           "type": "string"
+          },
+          "metadata-value": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "placement-group-input": {
+       "leaf": {
+        "cloud-type": {
+         "type": "manotypes:cloud-account-type"
+        }
+       },
+       "choice": {
+        "cloud-provider": {
+         "case": {
+          "openstack": {
+           "container": {
+            "availability-zone": {
+             "description": "Name of the Availability Zone",
+             "leaf": {
+              "name": {
+               "type": "string"
+              }
+             }
+            },
+            "server-group": {
+             "description": "Name of the Affinity/Anti-Affinity Server Group",
+             "leaf": {
+              "name": {
+               "type": "string"
+              }
+             }
+            }
+           },
+           "list": {
+            "host-aggregate": {
+             "description": "Name of the Host Aggregate",
+             "key": "metadata-key",
+             "leaf": {
+              "metadata-key": {
+               "type": "string"
+              },
+              "metadata-value": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          },
+          "aws": {
+           "leaf": {
+            "aws-construct": {
+             "type": "empty"
+            }
+           }
+          },
+          "openmano": {
+           "leaf": {
+            "openmano-construct": {
+             "type": "empty"
+            }
+           }
+          },
+          "vsphere": {
+           "leaf": {
+            "vsphere-construct": {
+             "type": "empty"
+            }
+           }
+          },
+          "mock": {
+           "leaf": {
+            "mock-construct": {
+             "type": "empty"
+            }
+           }
+          },
+          "cloudsim": {
+           "leaf": {
+            "cloudsim-construct": {
+             "type": "empty"
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "placement-group-info": {
+       "description": "",
+       "leaf": {
+        "name": {
+         "description": "Place group construct to define the compute resource placement strategy\nin cloud environment",
+         "type": "string"
+        },
+        "requirement": {
+         "description": "This is free text space used to describe the intent/rationale\nbehind this placement group. This is for human consumption only",
+         "type": "string"
+        },
+        "strategy": {
+         "description": "Strategy associated with this placement group\n  Following values are possible\n    - COLOCATION: Colocation strategy imply intent to share the physical\n                  infrastructure (hypervisor/network) among all members\n                  of this group.\n    - ISOLATION: Isolation strategy imply intent to not share the physical\n                 infrastructure (hypervisor/network) among the members\n                 of this group.\n  ",
+         "type": {
+          "enumeration": {
+           "enum": {
+            "COLOCATION": {
+             "value": 0
+            },
+            "ISOLATION": {
+             "value": 1
+            }
+           }
+          }
+         },
+         "default": "COLOCATION"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "rw-pb-ext": {
+   "module": {
+    "rw-pb-ext": {
+     "namespace": "http://riftio.com/ns/riftware-1.0/rw-pb-ext",
+     "prefix": "rwpb",
+     "revision": {
+      "2014-03-28": {
+       "description": "Initial revision.",
+       "reference": "RIFT yang extensions for converting yang files to Google\nProtocol Buffers (protobuf) using rift protoc-c extensions."
+      }
+     }
+    }
+   }
+  },
+  "rwvcs-types": {
+   "module": {
+    "rwvcs-types": {
+     "namespace": "http://riftio.com/ns/riftware-1.0/rwvcs-types",
+     "prefix": "rwvcstypes",
+     "import": {
+      "rw-pb-ext": {
+       "prefix": "rwpb"
+      },
+      "rw-yang-types": {
+       "prefix": "rwt"
+      },
+      "ietf-inet-types": {
+       "prefix": "inet",
+       "revision-date": "2013-07-15"
+      }
+     },
+     "revision": {
+      "2014-03-12": {
+       "description": "Initial implementation of RW.Manifest.",
+       "reference": "RW.VX Software Component Document"
+      }
+     },
+     "typedef": {
+      "component_type": {
+       "type": {
+        "enumeration": {
+         "enum": {
+          "RWCOLLECTION": null,
+          "RWVM": null,
+          "RWPROC": null,
+          "PROC": null,
+          "RWTASKLET": null
+         }
+        }
+       }
+      },
+      "recovery-type": {
+       "type": {
+        "enumeration": {
+         "enum": {
+          "NONE": null,
+          "RESTART": null,
+          "FAILCRITICAL": null,
+          "IGNORE": null,
+          "CUSTOM": null
+         }
+        }
+       }
+      }
+     },
+     "grouping": {
+      "rwvcs-variable-list": {
+       "leaf-list": {
+        "python-variable": {
+         "description": "List of Python variable assignments",
+         "type": "string"
+        }
+       }
+      },
+      "valgrind": {
+       "container": {
+        "valgrind": {
+         "leaf": {
+          "enable": {
+           "description": "Run the component under valgrind",
+           "type": "boolean"
+          }
+         },
+         "leaf-list": {
+          "opts": {
+           "description": "Command line options to pass to valgrind",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "action-list": {
+       "list": {
+        "action": {
+         "description": "This section contains a sequence\nof RW.VCS actions",
+         "key": "name",
+         "leaf": {
+          "name": {
+           "description": "Name of the action within the sequence",
+           "type": "string"
+          }
+         },
+         "grouping": {
+          "rwvcs-python-loop": {
+           "leaf": {
+            "python-loop-expression": {
+             "description": "Python expression",
+             "type": "string"
+            },
+            "python-loop-iterate": {
+             "description": "Python iteration",
+             "type": "string"
+            }
+           }
+          }
+         },
+         "uses": "rwvcs-python-loop",
+         "choice": {
+          "action": {
+           "case": {
+            "annex": {
+             "container": {
+              "annex": {
+               "leaf": {
+                "component-name": {
+                 "description": "Name of the component type\nin the inventory",
+                 "type": {
+                  "leafref": {
+                   "path": "../../../../../../../component/component-name"
+                  }
+                 }
+                },
+                "instance-id": {
+                 "description": "ID of the component instance\nin the inventory",
+                 "type": "string"
+                }
+               }
+              }
+             }
+            },
+            "start": {
+             "container": {
+              "start": {
+               "uses": "rwvcs-variable-list",
+               "leaf": {
+                "component-name": {
+                 "description": "Name of the component type in\nthe inventory",
+                 "type": {
+                  "leafref": {
+                   "path": "../../../../../../../component/component-name"
+                  }
+                 }
+                },
+                "instance-id": {
+                 "description": "ID of the component instance\nin the inventory",
+                 "type": "string"
+                },
+                "config-ready": {
+                 "description": "Config readiness check enable",
+                 "type": "boolean",
+                 "default": "true"
+                },
+                "recovery-action": {
+                 "description": "Define recovery action if this component fail",
+                 "type": "recovery-type"
+                }
+               }
+              }
+             }
+            },
+            "sleep": {
+             "container": {
+              "sleep": {
+               "leaf": {
+                "wait-time-usec": {
+                 "description": "Time to wait while sleeping",
+                 "type": "uint32"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "rwvcs-event-list": {
+       "container": {
+        "event-list": {
+         "description": "",
+         "list": {
+          "event": {
+           "description": "This section contains a list\nof RW.VCS events",
+           "key": "name",
+           "leaf": {
+            "name": {
+             "description": "Name of the event",
+             "type": "string"
+            }
+           },
+           "uses": "action-list"
+          }
+         }
+        }
+       }
+      },
+      "rwvcs-rwcollection": {
+       "container": {
+        "rwcollection": {
+         "description": "This section defines a RW.VCS\nrwollection component",
+         "leaf": {
+          "collection-type": {
+           "description": "Collection type",
+           "type": "string"
+          }
+         },
+         "uses": "rwvcs-event-list"
+        }
+       }
+      },
+      "rwvcs-rwvm": {
+       "container": {
+        "rwvm": {
+         "description": "This section defines a RW.VCS\nrwvm component",
+         "leaf": {
+          "pool-name": {
+           "description": "Name of the pool from which to\nallocate the VM",
+           "type": "string"
+          },
+          "leader": {
+           "description": "True if this VM is designated as a leader for\nthe parent collection.",
+           "type": "boolean"
+          }
+         },
+         "uses": {
+          "rwvcs-event-list": null,
+          "valgrind": null
+         }
+        }
+       }
+      },
+      "rwvcs-rwproc": {
+       "container": {
+        "rwproc": {
+         "description": "This section defines a RW.VCS\nrwproc component",
+         "leaf": {
+          "run-as": {
+           "description": "Host OS user that should run this\nprocess, requires sudo -E access\nand non-collapsed processes",
+           "type": "string"
+          }
+         },
+         "list": {
+          "tasklet": {
+           "description": "List of tasklets to be run within\nthis process",
+           "key": "name",
+           "leaf": {
+            "name": {
+             "description": "Local description of the tasklet",
+             "type": "string"
+            },
+            "component-name": {
+             "description": "Component name of the tasklet",
+             "mandatory": "true",
+             "type": "string"
+            },
+            "instance-id": {
+             "description": "If specified, the desired instance-id of\ntasklet component instance",
+             "type": "uint32"
+            },
+            "config-ready": {
+             "description": "Config readiness check enable",
+             "type": "boolean",
+             "default": "true"
+            },
+            "recovery-action": {
+             "description": "Define recovery action if this component fail",
+             "type": "recovery-type"
+            }
+           },
+           "uses": "rwvcs-variable-list"
+          }
+         },
+         "uses": "valgrind"
+        }
+       }
+      },
+      "native-proc": {
+       "container": {
+        "native-proc": {
+         "leaf": {
+          "run-as": {
+           "description": "Host OS user that should run this\nprocess, requires sudo -E access",
+           "type": "string"
+          },
+          "environment": {
+           "description": "Runtime environment for native process",
+           "type": "string"
+          },
+          "exe-path": {
+           "description": "Path to native process executable",
+           "type": "string"
+          },
+          "args": {
+           "description": "Arguments to pass to native process",
+           "type": "string"
+          },
+          "network-namespace": {
+           "description": "Namespace to start process in",
+           "type": "string"
+          },
+          "stdout": {
+           "description": "Redirect stdout to the file at the\nspecified path",
+           "type": "string"
+          },
+          "stderr": {
+           "description": "Redirect stderr to the file at the\nspecified path. Optionally, 'stdout'\nmay be used to redirect to the same\nfile as stdout",
+           "type": "string"
+          },
+          "interactive": {
+           "description": "Native process is interactive and needs\nterminal control",
+           "type": "empty"
+          }
+         },
+         "uses": "valgrind"
+        }
+       }
+      },
+      "rwvcs-rwtasklet": {
+       "container": {
+        "rwtasklet": {
+         "description": "This section defines a RW.VCS\nrwtasklet component",
+         "leaf": {
+          "plugin-directory": {
+           "description": "",
+           "type": "string"
+          },
+          "plugin-name": {
+           "description": "",
+           "type": "string"
+          },
+          "plugin-version": {
+           "description": "",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "rwvcs-component-list": {
+       "list": {
+        "component": {
+         "description": "This section defines the RIFT.ware\nvirtual components",
+         "key": "component-name",
+         "leaf": {
+          "component-name": {
+           "description": "",
+           "type": "string"
+          },
+          "component-type": {
+           "description": "",
+           "type": "component_type",
+           "mandatory": "true"
+          }
+         },
+         "choice": {
+          "component": {
+           "case": {
+            "rwvcs-rwcollection": {
+             "uses": "rwvcs-rwcollection"
+            },
+            "rwvcs-rwvm": {
+             "uses": "rwvcs-rwvm"
+            },
+            "rwvcs-rwproc": {
+             "uses": "rwvcs-rwproc"
+            },
+            "native-proc": {
+             "uses": "native-proc"
+            },
+            "rwvcs-rwtasklet": {
+             "uses": "rwvcs-rwtasklet"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "rw-yang-types": {
+   "module": {
+    "rw-yang-types": {
+     "namespace": "http://riftio.com/ns/riftware-1.0/rw-yang-types",
+     "prefix": "rwt",
+     "import": {
+      "ietf-inet-types": {
+       "prefix": "inet",
+       "revision-date": "2013-07-15"
+      },
+      "ietf-yang-types": {
+       "prefix": "ietf-yang-types",
+       "revision-date": "2013-07-15"
+      }
+     },
+     "description": "This module contains redefinitions of the ietf-yang-types and\nietf-inet-types modules, which allows customized extensions to be\ndefined for these types when used in RiftWare applications.",
+     "revision": {
+      "2014-04-01": {
+       "description": "Initial revision.",
+       "reference": "RIFT yang types that redefine the IETF types."
+      }
+     },
+     "typedef": {
+      "ip-version": {
+       "type": "inet:ip-version"
+      },
+      "dscp": {
+       "type": "inet:dscp"
+      },
+      "ipv6-flow-label": {
+       "type": "inet:ipv6-flow-label"
+      },
+      "port-number": {
+       "type": "inet:port-number"
+      },
+      "as-number": {
+       "type": "inet:as-number"
+      },
+      "ip-address": {
+       "type": "inet:ip-address"
+      },
+      "ipv4-address": {
+       "type": "inet:ipv4-address"
+      },
+      "ipv6-address": {
+       "type": "inet:ipv6-address"
+      },
+      "ip-address-no-zone": {
+       "type": "inet:ip-address-no-zone"
+      },
+      "ipv4-address-no-zone": {
+       "type": "inet:ipv4-address-no-zone"
+      },
+      "ipv6-address-no-zone": {
+       "type": "inet:ipv6-address-no-zone"
+      },
+      "ip-prefix": {
+       "type": "inet:ip-prefix"
+      },
+      "ip-prefix-non-canonical": {
+       "type": {
+        "union": {
+         "type": {
+          "rwt:ipv4-prefix-non-canonical": null,
+          "rwt:ipv6-prefix-non-canonical": null
+         }
+        }
+       },
+       "description": "The ip-prefix type represents an IP prefix and is IP\nversion neutral.  The format of the textual representations\nimplies the IP version."
+      },
+      "ipv4-prefix": {
+       "type": "inet:ipv4-prefix"
+      },
+      "ipv4-prefix-non-canonical": {
+       "type": {
+        "string": {
+         "pattern": "(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])/(([0-9])|([1-2][0-9])|(3[0-2]))"
+        }
+       },
+       "description": "The ipv4-prefix type represents an IPv4 address prefix.\nThe prefix length is given by the number following the\nslash character and must be less than or equal to 32.\n\nA prefix length value of n corresponds to an IP address\nmask that has n contiguous 1-bits from the most\nsignificant bit (MSB) and all other bits set to 0."
+      },
+      "ipv6-prefix": {
+       "type": "inet:ipv6-prefix"
+      },
+      "ipv6-prefix-non-canonical": {
+       "type": {
+        "string": {
+         "pattern": {
+          "((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|(((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])))(/(([0-9])|([0-9]{2})|(1[0-1][0-9])|(12[0-8])))": null,
+          "(([^:]+:){6}(([^:]+:[^:]+)|(.*\\..*)))|((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?)(/.+)": null
+         }
+        }
+       },
+       "description": "The ipv6-prefix type represents an IPv6 address prefix.\nThe prefix length is given by the number following the\nslash character and must be less than or equal to 128.\n\nA prefix length value of n corresponds to an IP address\nmask that has n contiguous 1-bits from the most\nsignificant bit (MSB) and all other bits set to 0.\n\nThe IPv6 address should have all bits that do not belong\nto the prefix set to zero."
+      },
+      "domain-name": {
+       "type": "inet:domain-name"
+      },
+      "host": {
+       "type": "inet:host"
+      },
+      "uri": {
+       "type": "inet:uri"
+      },
+      "counter32": {
+       "type": "ietf-yang-types:counter32"
+      },
+      "zero-based-counter32": {
+       "type": "ietf-yang-types:zero-based-counter32"
+      },
+      "counter64": {
+       "type": "ietf-yang-types:counter64"
+      },
+      "zero-based-counter64": {
+       "type": "ietf-yang-types:zero-based-counter64"
+      },
+      "gauge32": {
+       "type": "ietf-yang-types:gauge32"
+      },
+      "gauge64": {
+       "type": "ietf-yang-types:gauge64"
+      },
+      "object-identifier": {
+       "type": "ietf-yang-types:object-identifier"
+      },
+      "object-identifier-128": {
+       "type": "ietf-yang-types:object-identifier-128"
+      },
+      "yang-identifier": {
+       "type": "ietf-yang-types:yang-identifier"
+      },
+      "date-and-time": {
+       "type": "ietf-yang-types:date-and-time"
+      },
+      "timeticks": {
+       "type": "ietf-yang-types:timeticks"
+      },
+      "timestamp": {
+       "type": "ietf-yang-types:timestamp"
+      },
+      "phys-address": {
+       "type": "ietf-yang-types:phys-address"
+      },
+      "mac-address": {
+       "type": "ietf-yang-types:mac-address"
+      },
+      "xpath1.0": {
+       "type": "ietf-yang-types:xpath1.0"
+      },
+      "hex-string": {
+       "type": "ietf-yang-types:hex-string"
+      },
+      "uuid": {
+       "type": "ietf-yang-types:uuid"
+      },
+      "dotted-quad": {
+       "type": "ietf-yang-types:dotted-quad"
+      },
+      "call-id": {
+       "type": {
+        "string": {
+         "pattern": "[0-9]{1,20}:[0-9]{1,20}"
+        }
+       }
+      },
+      "base64-binary": {
+       "type": {
+        "string": {
+         "pattern": "[0-9a-zA-Z+/]{4,}[=]{0,2}"
+        }
+       }
+      },
+      "hex-binary": {
+       "type": {
+        "string": {
+         "pattern": "[0-9A-Fa-f]{2}([0-9A-Fa-f]{2})*"
+        }
+       }
+      },
+      "rw-ip-protocol": {
+       "type": {
+        "enumeration": {
+         "enum": {
+          "icmp": {
+           "value": 1
+          },
+          "tcp": {
+           "value": 6
+          },
+          "udp": {
+           "value": 17
+          },
+          "gre": {
+           "value": 47
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "extension": {
+  "module": {
+   "argument": "name",
+   "include": "0..n",
+   "prefix": "0..1",
+   "anyxml": "0..n",
+   "augment": "0..n",
+   "choice": "0..n",
+   "contact": "0..1",
+   "container": "0..n",
+   "description": "0..1",
+   "deviation": "0..n",
+   "extension": "0..n",
+   "feature": "0..n",
+   "grouping": "0..n",
+   "identity": "0..n",
+   "import": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "namespace": "0..1",
+   "notification": "0..n",
+   "organization": "0..1",
+   "reference": "0..1",
+   "revision": "0..n",
+   "rpc": "0..n",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "yang-version": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var changes, match, ref, synth, target;\n  synth = this.require('data-synth');\n  ref = params.augment;\n  for (target in ref) {\n    changes = ref[target];\n    match = this.locate(ctx, target);\n    if (match == null) {\n      continue;\n    }\n    synth.copy(match, changes);\n  }\n  return delete this.source[params.prefix];\n}"
+   },
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var k, m, modules, ref, synth, v;\n  synth = this.require('data-synth');\n  modules = {};\n  ref = params[\"import\"];\n  for (k in ref) {\n    v = ref[k];\n    modules[k] = children[k];\n    delete children[k];\n  }\n  m = (synth.Store(params, function() {\n    return this.set({\n      name: arg,\n      modules: modules\n    });\n  })).bind(children);\n  this.define('module', arg, m);\n  return m;\n}"
+   }
+  },
+  "prefix": {
+   "argument": "value",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return this.source[arg] = this.source;\n}"
+   }
+  },
+  "include": {
+   "argument": "module",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var k, m, ref, ref1, ref2, results, v;\n  m = this.preprocess(this.resolve('dependencies', arg));\n  ref = m.extension;\n  for (k in ref) {\n    v = ref[k];\n    this.define('extension', k, v);\n  }\n  ref1 = m.typedef;\n  for (k in ref1) {\n    v = ref1[k];\n    this.define('typedef', k, v);\n  }\n  ref2 = m.schema;\n  results = [];\n  for (k in ref2) {\n    v = ref2[k];\n    results.push(ctx[k] = v);\n  }\n  return results;\n}"
+   },
+   "revision-date": "0..1"
+  },
+  "augment": {
+   "anyxml": "0..n",
+   "case": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "uses": "0..n",
+   "when": "0..1",
+   "argument": "target-node"
+  },
+  "belongs-to": {
+   "prefix": 1,
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return this.source[params.prefix] = this.source;\n}"
+   },
+   "argument": "module"
+  },
+  "bit": {
+   "description": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "position": "0..1",
+   "argument": "name"
+  },
+  "case": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "uses": "0..n",
+   "when": "0..1",
+   "argument": "name"
+  },
+  "choice": {
+   "anyxml": "0..n",
+   "case": "0..n",
+   "config": "0..1",
+   "container": "0..n",
+   "default": "0..1",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "mandatory": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "when": "0..1",
+   "argument": "condition"
+  },
+  "config": {
+   "preprocess": {
+    "!js/function": "function (arg, p, ctx) {\n  return ctx.config = arg === true || arg === 'true';\n}"
+   },
+   "argument": "value"
+  },
+  "container": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "config": "0..1",
+   "container": "0..n",
+   "description": "0..1",
+   "grouping": "0..n",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "must": "0..n",
+   "presence": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "when": "0..1",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return (synth.Object(params)).bind(children);\n}"
+   },
+   "argument": "name"
+  },
+  "deviate": {
+   "config": "0..1",
+   "default": "0..1",
+   "mandatory": "0..1",
+   "max-elements": "0..1",
+   "min-elements": "0..1",
+   "must": "0..n",
+   "type": "0..1",
+   "unique": "0..1",
+   "units": "0..1",
+   "argument": "value"
+  },
+  "deviation": {
+   "description": "0..1",
+   "deviate": "1..n",
+   "reference": "0..1",
+   "argument": "target-node"
+  },
+  "enum": {
+   "description": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "value": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  if (params.value == null) {\n    if (this.enumValue == null) {\n      this.enumValue = 0;\n    }\n    params.value = this.enumValue++;\n  } else {\n    params.value = Number(params.value);\n    this.enumValue = params.value + 1;\n  }\n  return ctx[\"enum\"][arg] = params;\n}"
+   },
+   "argument": "name"
+  },
+  "feature": {
+   "description": "0..1",
+   "if-feature": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  if (params.status === 'unavailable') {\n    console.warn(\"feature \" + arg + \" is unavailable\");\n    if (typeof ctx.feature === 'object') {\n      return delete ctx.feature[arg];\n    } else {\n      return delete ctx.feature;\n    }\n  }\n}"
+   },
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var feature;\n  feature = this.resolve('feature', arg);\n  return null;\n}"
+   },
+   "argument": "name"
+  },
+  "grouping": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "description": "0..1",
+   "grouping": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "preprocess": {
+    "!js/function": "function (arg, params) {\n  return this.define('grouping', arg, params);\n}"
+   },
+   "argument": "name"
+  },
+  "identity": {
+   "base": "0..1",
+   "description": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params) {\n  return this.define('identity', arg, params);\n}"
+   },
+   "argument": "name"
+  },
+  "if-feature": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  if ((this.resolve('feature', arg)) == null) {\n    return ctx.status = 'unavailable';\n  }\n}"
+   },
+   "argument": "name"
+  },
+  "import": {
+   "prefix": 1,
+   "revision-date": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var copy, k, m, original, ref, ref1, rev, schema, source, synth, v;\n  synth = this.require('data-synth');\n  schema = this.resolve('dependencies', arg, false);\n  if (schema == null) {\n    console.warn(\"no explicit dependency for \" + arg + \" defined, searching local filesystem\");\n    schema = this.parse(\"!yang \" + arg + \".yang\", this.source);\n    if (schema != null) {\n      this.define('dependencies', arg, schema);\n      source = this.source.parent;\n      while ((source.parent != null) && source.parent.name !== 'yangforge') {\n        source = source.parent;\n      }\n      if (source.dependencies == null) {\n        source.dependencies = {};\n      }\n      source.dependencies[arg] = schema;\n    }\n  }\n  m = this.preprocess(schema);\n  if (m == null) {\n    throw this.error(\"unable to resolve '\" + arg + \"' in dependencies\", 'import');\n  }\n  rev = params['revision-date'];\n  if ((rev != null) && !(rev in m.revision)) {\n    throw this.error(\"requested \" + rev + \" not available in \" + arg, 'import');\n  }\n  ref = m.extension;\n  for (k in ref) {\n    v = ref[k];\n    if (!(v.override === true)) {\n      continue;\n    }\n    original = this.resolve('extension', k);\n    copy = synth.copy({}, v);\n    copy.origin = synth.copy({}, (ref1 = original.origin) != null ? ref1 : original);\n    delete copy.override;\n    this.define('extension', k, copy);\n  }\n  return this.source[params.prefix] = m;\n}"
+   },
+   "construct": {
+    "!js/function": "function (arg, params, children, ctx) {\n  return this.compile(this.source[params.prefix], this.source);\n}"
+   },
+   "argument": "module"
+  },
+  "input": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "grouping": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return (synth.Object(params)).bind(children);\n}"
+   }
+  },
+  "leaf": {
+   "config": "0..1",
+   "default": "0..1",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "mandatory": "0..1",
+   "must": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "type": "0..1",
+   "units": "0..1",
+   "when": "0..1",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return synth.Property(params, function() {\n    if (children.type != null) {\n      return this.set({\n        type: children.type\n      });\n    }\n  });\n}"
+   },
+   "argument": "name"
+  },
+  "leaf-list": {
+   "config": "0..1",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "max-elements": "0..1",
+   "min-elements": "0..1",
+   "must": "0..n",
+   "ordered-by": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "type": "0..1",
+   "units": "0..1",
+   "when": "0..1",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return synth.List(params, function() {\n    if (children.type != null) {\n      return this.set({\n        type: children.type\n      });\n    }\n  });\n}"
+   },
+   "argument": "name"
+  },
+  "list": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "config": "0..1",
+   "container": "0..n",
+   "description": "0..1",
+   "grouping": "0..n",
+   "if-feature": "0..n",
+   "key": "0..1",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "max-elements": "0..1",
+   "min-elements": "0..1",
+   "must": "0..n",
+   "ordered-by": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "unique": "0..1",
+   "uses": "0..n",
+   "when": "0..1",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var item, synth;\n  synth = this.require('data-synth');\n  item = (synth.Object(null)).bind(children);\n  return (synth.List(params)).set({\n    type: item\n  });\n}"
+   },
+   "argument": "name"
+  },
+  "mandatory": {
+   "preprocess": {
+    "!js/function": "function (arg, p, ctx) {\n  return ctx.mandatory = arg === true || arg === 'true';\n}"
+   },
+   "argument": "value"
+  },
+  "max-elements": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  if (arg !== 'unbounded') {\n    return ctx['max-elements'] = Number(arg);\n  }\n}"
+   },
+   "argument": "value"
+  },
+  "min-elements": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return ctx['min-elements'] = Number(arg);\n}"
+   },
+   "argument": "value"
+  },
+  "must": {
+   "description": "0..1",
+   "error-app-tag": "0..1",
+   "error-message": "0..1",
+   "reference": "0..1",
+   "argument": "condition"
+  },
+  "notification": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "description": "0..1",
+   "grouping": "0..n",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "preprocess": {
+    "!js/function": "function (arg, params) {\n  return this.define('notification', arg, params);\n}"
+   },
+   "argument": "event"
+  },
+  "output": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "grouping": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return (synth.Object(params)).bind(children);\n}"
+   }
+  },
+  "path": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return ctx.path = arg.replace(/[_]/g, '.');\n}"
+   },
+   "argument": "value"
+  },
+  "pattern": {
+   "construct": {
+    "!js/function": "function (arg, params, children, ctx) {\n  if (ctx.patterns == null) {\n    ctx.patterns = [];\n  }\n  return ctx.patterns.push(new RegExp(arg));\n}"
+   },
+   "argument": "value"
+  },
+  "refine": {
+   "default": "0..1",
+   "description": "0..1",
+   "reference": "0..1",
+   "config": "0..1",
+   "mandatory": "0..1",
+   "presence": "0..1",
+   "must": "0..n",
+   "min-elements": "0..1",
+   "max-elements": "0..1",
+   "units": "0..1",
+   "argument": "target-node"
+  },
+  "require-instance": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return ctx['require-instance'] = arg === true || arg === 'true';\n}"
+   },
+   "argument": "value"
+  },
+  "revision": {
+   "description": "0..1",
+   "reference": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return this.define('revision', arg, params);\n}"
+   },
+   "argument": "date"
+  },
+  "rpc": {
+   "description": "0..1",
+   "grouping": "0..n",
+   "if-feature": "0..n",
+   "input": "0..1",
+   "output": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var func, method, ref, ref1, request, response, synth;\n  synth = this.require('data-synth');\n  func = this.resolve('rpc', arg, false);\n  if (func == null) {\n    func = function(input, output, done) {\n      return done(\"No control logic found for '\" + arg + \"' rpc operation\");\n    };\n  }\n  request = (ref = children.input) != null ? ref : synth.Meta;\n  response = (ref1 = children.output) != null ? ref1 : synth.Meta;\n  method = function(data, resolve, reject) {\n    var e, error, input, output;\n    if (typeof console.debug === \"function\") {\n      console.debug(\"executing rpc \" + arg + \"...\");\n    }\n    try {\n      input = new request(data, this);\n      output = new response(null, this);\n    } catch (error) {\n      e = error;\n      return reject(e);\n    }\n    return func.call(this, input, output, function(e) {\n      if (e == null) {\n        return resolve(output);\n      } else {\n        return reject(e);\n      }\n    });\n  };\n  method.params = params;\n  method.input = request;\n  method.output = response;\n  return method;\n}"
+   },
+   "argument": "name"
+  },
+  "submodule": {
+   "argument": "name",
+   "anyxml": "0..n",
+   "augment": "0..n",
+   "belongs-to": "0..1",
+   "choice": "0..n",
+   "contact": "0..1",
+   "container": "0..n",
+   "description": "0..1",
+   "deviation": "0..n",
+   "extension": "0..n",
+   "feature": "0..n",
+   "grouping": "0..n",
+   "identity": "0..n",
+   "import": "0..n",
+   "include": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "notification": "0..n",
+   "organization": "0..1",
+   "reference": "0..1",
+   "revision": "0..n",
+   "rpc": "0..n",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "yang-version": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var k, v;\n  for (k in params) {\n    v = params[k];\n    ctx[k] = v;\n  }\n  return delete ctx.submodule;\n}"
+   }
+  },
+  "status": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return ctx.status != null ? ctx.status : ctx.status = arg;\n}"
+   },
+   "argument": "value"
+  },
+  "type": {
+   "base": "0..1",
+   "bit": "0..n",
+   "enum": "0..n",
+   "fraction-digits": "0..1",
+   "length": "0..1",
+   "path": "0..1",
+   "pattern": "0..n",
+   "range": "0..1",
+   "require-instance": "0..1",
+   "type": "0..n",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return delete this.enumValue;\n}"
+   },
+   "construct": {
+    "!js/function": "function (arg, params, children, ctx) {\n  var key, mparams, ref, ref1, synth, typedef, value;\n  synth = this.require('data-synth');\n  typedef = this.resolve('typedef', arg);\n  if (typedef == null) {\n    throw this.error(\"unable to resolve typedef for \" + arg);\n  }\n  switch (false) {\n    case typedef.construct == null:\n      ctx.type = typedef.construct(params, this, arguments.callee);\n      break;\n    case typeof typedef.type !== 'object':\n      ref = typedef.type;\n      for (key in ref) {\n        value = ref[key];\n        mparams = synth.copy({}, value);\n        synth.copy(mparams, params);\n        arguments.callee.call(this, key, mparams, children, ctx);\n      }\n      break;\n    case typeof typedef.type !== 'string':\n      arguments.callee.call(this, typedef.type, params, children, ctx);\n  }\n  if ((ref1 = ctx.type) != null) {\n    ref1.toString = function() {\n      return arg;\n    };\n  }\n  return null;\n}"
+   },
+   "argument": "name"
+  },
+  "typedef": {
+   "default": "0..1",
+   "description": "0..1",
+   "units": "0..1",
+   "type": "0..1",
+   "reference": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params) {\n  return this.define('typedef', arg, params);\n}"
+   },
+   "argument": "name"
+  },
+  "uses": {
+   "augment": "0..n",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "refine": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "when": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var changes, grouping, k, match, ref, ref1, synth, target, v;\n  synth = this.require('data-synth');\n  grouping = synth.copy({}, this.resolve('grouping', arg));\n  delete grouping.description;\n  delete grouping.reference;\n  synth.copy(ctx, grouping);\n  ref = params.refine;\n  for (target in ref) {\n    changes = ref[target];\n    match = this.locate(ctx, target);\n    if (match == null) {\n      continue;\n    }\n    for (k in changes) {\n      v = changes[k];\n      match[k] = v;\n    }\n  }\n  ref1 = params.augment;\n  for (target in ref1) {\n    changes = ref1[target];\n    match = this.locate(ctx, target);\n    if (match == null) {\n      continue;\n    }\n    synth.copy(match, changes);\n  }\n  if (typeof ctx.uses === 'object') {\n    return delete ctx.uses[arg];\n  } else {\n    return delete ctx.uses;\n  }\n}"
+   },
+   "argument": "name"
+  },
+  "when": {
+   "description": "0..1",
+   "reference": "0..1",
+   "argument": "condition"
+  },
+  "anyxml": {},
+  "base": {
+   "argument": "name"
+  },
+  "contact": {
+   "argument": {
+    "text": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "default": {
+   "argument": "value"
+  },
+  "description": {
+   "argument": {
+    "text": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "error-app-tag": {
+   "argument": "value"
+  },
+  "error-message": {
+   "argument": {
+    "value": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "fraction-digits": {
+   "argument": "value"
+  },
+  "key": {
+   "argument": "value"
+  },
+  "length": {
+   "argument": "value"
+  },
+  "namespace": {
+   "argument": "uri"
+  },
+  "ordered-by": {
+   "argument": "value"
+  },
+  "organization": {
+   "argument": {
+    "text": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "position": {
+   "argument": "value"
+  },
+  "presence": {
+   "argument": "value"
+  },
+  "range": {
+   "argument": "value"
+  },
+  "reference": {
+   "argument": {
+    "text": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "revision-date": {
+   "argument": "date"
+  },
+  "unique": {
+   "argument": "tag"
+  },
+  "units": {
+   "argument": "value"
+  },
+  "value": {
+   "argument": "value"
+  },
+  "yang-version": {
+   "argument": "value"
+  },
+  "yin-element": {
+   "argument": "value"
+  }
+ },
+ "pkgdir": "/Users/larsmaultsby/Documents/ATG_Branch/rift/modules/ui/rw.ui/skyquake/plugins/composer/src/schemas/yang",
+ "module": {}
+}

@@ -1,0 +1,64 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rwmon
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwmon";
+  prefix "rwmon";
+
+  import rw-base {
+    prefix rwbase;
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rw-log {
+    prefix "rwlog";
+  }
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  revision 2015-10-28 {
+    description
+        "Initial revision.";
+    reference
+        "RIFT monitoring";
+  }
+
+  container nfvi-metrics {
+    rwpb:msg-new NfviMetrics;
+
+    leaf timestamp {
+      description
+          "This is the time when the metric was captured. The timestamp is
+          represented as the number of seconds since the beginning of the Unix
+          epoch.";
+      type decimal64 {
+        fraction-digits 3;
+      }
+    }
+
+    uses manotypes:nfvi-metrics;
+  }
+
+  container alarm {
+    rwpb:msg-new Alarm;
+
+    uses manotypes:alarm;
+  }
+}
+
+/* vim: set ts=2:sw=2: */

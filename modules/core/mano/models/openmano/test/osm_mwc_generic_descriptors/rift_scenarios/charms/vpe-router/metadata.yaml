@@ -1,0 +1,11 @@
+name: vpe-router
+summary: setup a virtualized PE Router with GRE tunnels
+description: |
+  this charm, when deployed and configured, will provide a secure virtualized
+  provider edge router.
+peers:
+  loadbalance:
+    interface: vpe-router
+maintainers:
+- Marco Ceppi <marco.ceppi@canonical.com>
+- Adam Israel <adam.israel@canonical.com>

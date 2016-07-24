@@ -1,0 +1,103 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module other-rwzk
+{
+  namespace "http://riftio.com/ns/riftware-1.0/other-rwzk";
+  prefix "rwmanifest";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description
+    "RW.Zookeeper definition.";
+
+  revision 2014-03-12 {
+    description
+      "Initial implementation of RW.Zookeeper.
+       The yang definition captures the configuration 
+       information for zookeeper. An example configutaion is
+       shown below:
+                tickTime=2000
+                dataDir=/var/zookeeper
+                clientPort=2181
+                initLimit=5
+                syncLimit=2
+                server.1=zoo1:2888:3888
+                server.2=zoo2:2888:3888
+                server.3=zoo3:2888:3888
+
+       If you want to test multiple servers on a single machine, 
+       specify the servername as localhost with unique 
+       quorum & leader election ports 
+       (i.e. 2888:3888, 2889:3889, 2890:3890 in the example above) 
+       for each server.X in that server's config file. 
+       Of course separate dataDirs and distinct clientPorts 
+       are also necessary (in the above replicated example, 
+       running on a single localhost, 
+       you would still have three config files).";
+    reference
+      "http://zookeeper.apache.org/doc/r3.1.2/zookeeperStarted.html";
+  }
+
+  grouping zk-grouping {
+    container zk {
+      rwpb:msg-new RwZk;
+      leaf tick-time {
+        description "The number of milliseconds of each tick.";
+        type uint16;
+      }
+      leaf data-dir {
+        description "The directory where the snapshot is stored.";
+        type string;
+      }
+      leaf client-port {
+        description "The port at which the clients will connect.";
+        type uint16;
+      }
+      leaf init-limit {
+        description "The number of ticks that the initial 
+        synchronization phase can take.";
+        type uint16;
+      }
+      leaf sync-limit {
+        description "The number of ticks that can pass between
+        sending a request and getting an acknowledgement.";
+        type uint16;
+      }
+
+      list zk-ensemble {
+        description "The list of zookeeper servers to
+        function in a cluster.";
+        key "id";
+        leaf id {
+          description "The unique id of the zookeeper server. 
+          When the server starts up, it knows which server it is by 
+          looking for the file myid in the data directory. That 
+          file has the server number, in ASCII.";
+          type uint16;
+        }
+        leaf zk-server-name {
+          description "Name of the zookeeper server.";
+          type string;
+        }
+        leaf port1 {
+          description "Port used by peers to connect with each other.";
+          type uint16;
+        }
+        leaf port2 {
+          description "Port used by the ensemble members to elect leader.";
+          type uint16;
+        }
+      }
+    }
+  }
+  
+  container zk-config {
+    uses zk-grouping;
+  }
+}

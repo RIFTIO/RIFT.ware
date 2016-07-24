@@ -1,0 +1,20 @@
+#
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+#
+
+set(PKG_NAME rwuagent)
+set(PKG_VERSION 1.0)
+set(PKG_RELEASE 1)
+set(PKG_LONG_NAME ${PKG_NAME}-${PKG_VERSION})
+
+install(
+  FILES rwsysdump
+  DESTINATION usr/bin
+  COMPONENT ${PKG_LONG_NAME}
+  # ATTN: PERMS is workaround for RIFT-12370.  See RIFT-12393.
+  PERMISSIONS
+    OWNER_READ OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+    WORLD_READ WORLD_EXECUTE
+)

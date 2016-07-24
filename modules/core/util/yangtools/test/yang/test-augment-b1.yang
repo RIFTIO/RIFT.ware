@@ -1,0 +1,210 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file test-augment-b1.yang
+ * @author Tom Seidenberg
+ * @date 2014/04/04
+ * @brief yangncx test file for augments
+ */
+
+module test-augment-b1
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/test/yang/test-augment-b1";
+  prefix "taugb1";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "Augment testing for yangncx.";
+  revision 2014-04-04 { description "Initial version"; }
+
+  typedef b1e1 {
+    type enumeration {
+      enum foo;
+      enum bar;
+      enum baz;
+    }
+  }
+
+  grouping b1g1 {
+    container g1c1 {
+      leaf g1c1_a { type string; }
+    }
+    container g1c2 {
+      leaf g1c2_b { type b1e1; }
+    }
+    list g1l1 {
+      key "ks1 ks2";
+      leaf ks1 { type string; }
+      leaf g1l1_a { type string; }
+      leaf ks2 { type b1e1; }
+      leaf g1l1_b { type uint32; }
+      leaf g1l1_c { type string; }
+    }
+  }
+
+  grouping b1g2 {
+    container g2c1 {
+      leaf g2c1_a { type string; }
+    }
+    container g2c2 {
+      leaf g2c2_b { type b1e1; }
+    }
+  }
+
+  container b1_c {
+    rwpb:msg-new B1C;
+    description "The base container that everyone augments";
+
+    container b1_c1 {
+      leaf b1_f1 { type uint32; }
+    }
+
+    container b1_c2 {
+      leaf b1_f1 { type b1e1; }
+    }
+
+    container b1_c3 {
+      leaf b1_f1 { type uint32; }
+
+      container b1_c1 {
+        leaf b1_f1 { type uint32; }
+      }
+
+      list b1_l1 {
+        key "b1_f1";
+        leaf b1_f1 { type uint32; }
+        container b1_c1 {
+          leaf b1_f1 { type uint32; }
+        }
+      }
+    }
+
+    list b1_l1 {
+      key "b1_f1";
+      leaf b1_f1 { type uint32; }
+
+      container b1_c1 {
+        leaf b1_f1 { type uint32; }
+      }
+
+      list b1_l1 {
+        key "b1_f1";
+        leaf b1_f1 { type uint32; }
+
+        container b1_c1 {
+          leaf b1_f1 { type uint32; }
+        }
+      }
+    }
+
+    list b1_l2 {
+      key "b1_f1";
+      leaf b1_f1 { type uint32; }
+
+      container b1_c1 {
+        leaf b1_f1 { type uint32; }
+      }
+
+      list b1_l1 {
+        key "b1_f1";
+        leaf b1_f1 { type uint32; }
+
+        container b1_c1 {
+          leaf b1_f1 { type uint32; }
+        }
+      }
+    }
+
+    container b1cg2 {
+      uses b1g2;
+    }
+
+    choice b1ch1 {
+      leaf b1ch1-str1 { type string; }
+      case b1ch1-str2 {
+        leaf b1ch1-str2 { type string; }
+      }
+      container b1ch1-c1 {
+        leaf b1ch1-cstr1 { type string; }
+      }
+      case b1ch1-c2 {
+        container b1ch1-c2 {
+          leaf b1ch1-cstr2 { type string; }
+        }
+      }
+    }
+  }
+
+  container b1_c2 {
+    rwpb:msg-new B1C2;
+    description "A base container for augments to target";
+
+    list b1c2_l2 {
+      key "b1c2_f1";
+      leaf b1c2_f1 { type uint32; }
+
+      container b1c2_c1 {
+        leaf b1c2_f1 { type uint32; }
+      }
+    }
+
+    container b1cg2 {
+      uses b1g2;
+    }
+  }
+
+  container b1_c3 {
+    rwpb:msg-new B1C3;
+    description "A target for a local augment";
+    leaf b1c3_f1 { type uint32; }
+  }
+
+  augment /taugb1:b1_c3 {
+    uses b1g2;
+  }
+
+  rpc r1 {
+    input {
+      choice rpcti-ch {
+        case l1 {
+          leaf l1 { type string; }
+        }
+        leaf l2 { type string; }
+        case c1 {
+          container c1 {
+            leaf cl1 { type string; }
+          }
+        }
+        container c2 {
+          leaf cl2 { type string; }
+        }
+      }
+    }
+
+    output {
+      choice rpcto-ch {
+        case l1 {
+          leaf l1 { type string; }
+        }
+        leaf l2 { type string; }
+        case c1 {
+          container c1 {
+            leaf cl1 { type string; }
+          }
+        }
+        container c2 {
+          leaf cl2 { type string; }
+        }
+      }
+    }
+  }
+
+}
+

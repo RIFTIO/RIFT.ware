@@ -1,0 +1,25 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-dyn-schema-test-a
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-dyn-schema-test-a";
+  prefix "rw-dyn-schema-test-a";
+
+  description "Dynamic Schema Test";
+  revision 2015-10-15 {
+    description "Initial version"; 
+  }
+
+  container dyn-schema-test-a {
+    config true;
+    leaf hello-world-a {
+      type string;
+    }
+  }
+}

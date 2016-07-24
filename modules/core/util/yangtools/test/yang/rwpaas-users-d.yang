@@ -1,0 +1,48 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rwpaas-users-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwpaas-users";
+  prefix "rwusers";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix rwt; }
+  import ietf-inet-types { prefix "inet"; }
+  import ietf-yang-types { prefix "yang"; }
+
+  revision 2015-01-28 {
+    description
+      "Initial revision. This YANG file captures the
+      data model for provisioning PaaS layer users.";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  list users {
+    description
+        "List of users in the cloud.";
+
+    key name;
+    leaf name {
+      description "Name of the user.";
+      type string;
+    }
+  }
+  
+  list roles {
+    description
+        "List of roles.";
+
+    key name;
+    leaf name {
+      description "Name of the role.";
+      type string;
+    }
+  } 
+}

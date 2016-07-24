@@ -1,0 +1,215 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>The GIR XML format</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="index.html" title="GObject Introspection Reference Manual">
+<link rel="up" href="gi-gir.html" title="Part II. GIR markup format">
+<link rel="prev" href="gi-gir.html" title="Part II. GIR markup format">
+<link rel="next" href="gi-typelib.html" title="Typelib binary format">
+<meta name="generator" content="GTK-Doc V1.19 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2"><tr valign="middle">
+<td><a accesskey="p" href="gi-gir.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="gi-gir.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">GObject Introspection Reference Manual</th>
+<td><a accesskey="n" href="gi-typelib.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="chapter">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="gi-gir-reference"></a>The GIR XML format</h2></div></div></div>
+<p>
+    This chapter describes the GIR XML markup format.
+  </p>
+<div class="refsect2">
+<a name="gi-gir-api"></a><h3>
+<span class="emphasis"><em>api</em></span> node</h3>
+
+     The root node of all GIR documents is the api node.
+
+     Possible children: <a href="gi-gir-reference.html#gi-gir-namespace">namespace</a>.
+
+     <div class="example">
+<a name="id-1.4.2.3.3"></a><p class="title"><b>Example 4. A GIR fragment showing an api node</b></p>
+<div class="example-contents">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="symbol">&lt;</span><span class="usertype">api</span><span class="normal"> version</span><span class="symbol">=</span><span class="string">"1.0"</span><span class="symbol">&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;</span><span class="normal">namespace</span><span class="symbol">/&gt;</span>
+<span class="symbol">&lt;/</span><span class="normal">api</span><span class="symbol">&gt;</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<br class="example-break">
+</div>
+<hr>
+<div class="refsect2">
+<a name="gi-gir-namespace"></a><h3>
+<span class="emphasis"><em>namespace</em></span> node</h3>
+
+     Parent node: <a href="gi-gir-reference.html#gi-gir-api">api</a>.
+     Possible children: callback,
+     <a href="gi-gir-reference.html#gi-gir-class">class</a>,
+     <a href="gi-gir-reference.html#gi-gir-function">function</a>.
+     <a href="gi-gir-reference.html#gi-gir-interface">interface</a>.
+
+     <div class="example">
+<a name="id-1.4.2.4.7"></a><p class="title"><b>Example 5. A GIR fragment showing an namespace node</b></p>
+<div class="example-contents">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="symbol">&lt;</span><span class="usertype">api</span><span class="normal"> version</span><span class="symbol">=</span><span class="string">"1.0"</span><span class="symbol">&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;</span><span class="normal">namespace</span><span class="symbol">=</span><span class="string">"Gtk"</span><span class="symbol">&gt;</span>
+<span class="normal">     </span><span class="symbol">&lt;</span><span class="normal">class</span><span class="symbol">/&gt;</span>
+<span class="normal">     </span><span class="symbol">&lt;</span><span class="normal">function</span><span class="symbol">/&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;/</span><span class="normal">namespace</span><span class="symbol">&gt;</span>
+<span class="symbol">&lt;/</span><span class="normal">api</span><span class="symbol">&gt;</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<br class="example-break">
+</div>
+<hr>
+<div class="refsect2">
+<a name="gi-gir-class"></a><h3>
+<span class="emphasis"><em>class</em></span> node</h3>
+
+     Parent node: <a href="gi-gir-reference.html#gi-gir-namespace">namespace</a>.
+     Possible children: <a href="gi-gir-reference.html#gi-gir-class">constructor</a>,
+     field,
+     method,
+     property.
+     <div class="example">
+<a name="id-1.4.2.5.7"></a><p class="title"><b>Example 6. A GIR fragment showing an class node</b></p>
+<div class="example-contents">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="symbol">&lt;</span><span class="usertype">api</span><span class="normal"> version</span><span class="symbol">=</span><span class="string">"1.0"</span><span class="symbol">&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;</span><span class="normal">namespace</span><span class="symbol">=</span><span class="string">"Gtk"</span><span class="symbol">&gt;</span>
+<span class="normal">    </span><span class="symbol">&lt;</span><span class="usertype">class</span><span class="normal"> name</span><span class="symbol">=</span><span class="string">"Widget"</span><span class="symbol">&gt;</span>
+<span class="normal">       </span><span class="symbol">&lt;</span><span class="normal">constructor</span><span class="symbol">/&gt;</span>
+<span class="normal">       </span><span class="symbol">&lt;</span><span class="normal">field</span><span class="symbol">/&gt;</span>
+<span class="normal">       </span><span class="symbol">&lt;</span><span class="normal">method</span><span class="symbol">/&gt;</span>
+<span class="normal">       </span><span class="symbol">&lt;</span><span class="normal">property</span><span class="symbol">/&gt;</span>
+<span class="normal">    </span><span class="symbol">&lt;</span><span class="normal">class</span><span class="symbol">&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;/</span><span class="normal">namespace</span><span class="symbol">&gt;</span>
+<span class="symbol">&lt;/</span><span class="normal">api</span><span class="symbol">&gt;</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<br class="example-break">
+</div>
+<hr>
+<div class="refsect2">
+<a name="gi-gir-interface"></a><h3>
+<span class="emphasis"><em>interface</em></span> node</h3>
+
+     Parent node: <a href="gi-gir-reference.html#gi-gir-namespace">namespace</a>.
+     Possible children: field,
+     method,
+     property.
+     <div class="example">
+<a name="id-1.4.2.6.6"></a><p class="title"><b>Example 7. A GIR fragment showing an interface node</b></p>
+<div class="example-contents">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="symbol">&lt;</span><span class="usertype">api</span><span class="normal"> version</span><span class="symbol">=</span><span class="string">"1.0"</span><span class="symbol">&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;</span><span class="normal">namespace</span><span class="symbol">=</span><span class="string">"Gtk"</span><span class="symbol">&gt;</span>
+<span class="normal">    </span><span class="symbol">&lt;</span><span class="usertype">interface</span><span class="normal"> name</span><span class="symbol">=</span><span class="string">"Buildable"</span><span class="symbol">&gt;</span>
+<span class="normal">       </span><span class="symbol">&lt;</span><span class="normal">field</span><span class="symbol">/&gt;</span>
+<span class="normal">       </span><span class="symbol">&lt;</span><span class="normal">method</span><span class="symbol">/&gt;</span>
+<span class="normal">       </span><span class="symbol">&lt;</span><span class="normal">property</span><span class="symbol">/&gt;</span>
+<span class="normal">    </span><span class="symbol">&lt;</span><span class="normal">interface</span><span class="symbol">&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;/</span><span class="normal">namespace</span><span class="symbol">&gt;</span>
+<span class="symbol">&lt;/</span><span class="normal">api</span><span class="symbol">&gt;</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<br class="example-break">
+</div>
+<hr>
+<div class="refsect2">
+<a name="gi-gir-function"></a><h3>
+<span class="emphasis"><em>function</em></span> node</h3>
+
+     Parent node: <a href="gi-gir-reference.html#gi-gir-namespace">namespace</a>.
+     <div class="example">
+<a name="id-1.4.2.7.3"></a><p class="title"><b>Example 8. A GIR fragment showing an function node</b></p>
+<div class="example-contents">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="symbol">&lt;</span><span class="usertype">api</span><span class="normal"> version</span><span class="symbol">=</span><span class="string">"1.0"</span><span class="symbol">&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;</span><span class="normal">namespace</span><span class="symbol">=</span><span class="string">"Gtk"</span><span class="symbol">&gt;</span>
+<span class="normal">    </span><span class="symbol">&lt;</span><span class="usertype">function</span><span class="normal"> name</span><span class="symbol">=</span><span class="string">"init"</span><span class="symbol">&gt;</span>
+<span class="normal">    </span><span class="symbol">&lt;/</span><span class="normal">function</span><span class="symbol">&gt;</span>
+<span class="normal">  </span><span class="symbol">&lt;/</span><span class="normal">namespace</span><span class="symbol">&gt;</span>
+<span class="symbol">&lt;/</span><span class="normal">api</span><span class="symbol">&gt;</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<br class="example-break">
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.19</div>
+</body>
+</html>

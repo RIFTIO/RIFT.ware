@@ -1,0 +1,14 @@
+[Unit]
+Description=RiftWare Mission Control
+After=network.target network-online.target
+
+[Service]
+Type=forking
+ExecStart=/home/rift/.install/var/rift/services/riftware-missioncontrol/rwmc-start.sh
+ExecStop=/home/rift/.install/var/rift/services/riftware-missioncontrol/rwmc-stop.sh
+RemainAfterExit=yes
+# do we need a PID file ?!?
+#PIDFile=
+
+[Install]
+WantedBy=multi-user.target

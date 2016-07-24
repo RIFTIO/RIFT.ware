@@ -1,0 +1,293 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+module rw-resource-mgr
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-resource-mgr";
+  prefix "rw-resource-mgr";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rw-cloud {
+    prefix "rwcloud";
+  }
+
+  import rwcal {
+    prefix "rwcal";
+  }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  revision 2015-10-16 {
+    description
+      "Initial revision.";
+  }
+
+  grouping resource-pool-info {
+    leaf name {
+      description "Name of the resource pool";
+      rwpb:field-inline "true";
+      rwpb:field-string-max 64;
+      type string;
+      //mandatory true;
+    }
+
+    leaf resource-type {
+      description "Type of resource";
+      type enumeration {
+        enum compute;
+        enum network;
+      }
+    }
+
+    leaf pool-type {
+      description "Type of pool";
+      type enumeration {
+        enum static;
+        enum dynamic;
+      }
+      default "static";
+    }
+
+    leaf max-size {
+      description "Maximum size to which a dynamic resource pool can grow";
+      type uint32;
+    }
+
+  }
+
+  container resource-mgr-config {
+    description "Data model for configuration of resource-mgr";
+    rwpb:msg-new ResourceManagerConfig;
+    config true;
+
+    container management-domain {
+      leaf name {
+        description "The management domain name this launchpad is associated with.";
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+        type string;
+        //mandatory true;
+      }
+    }
+
+    container resource-pools {
+      description "Resource Pool configuration";
+      rwpb:msg-new ResourcePools;
+      list cloud-account {
+        key "name";
+        leaf name {
+          description
+            "Resource pool for the configured cloud account";
+          type leafref {
+            path "/rwcloud:cloud/rwcloud:account/rwcloud:name";
+          }
+        }
+      }
+    }
+  }
+
+  grouping resource-state {
+    leaf resource-state {
+      type enumeration {
+        enum inactive;
+        enum active;
+        enum pending;
+        enum failed;
+      }
+    }
+  }
+
+  container resource-mgmt {
+    description "Resource management ";
+    config false;
+
+    container vdu-event {
+      description "Events for VDU Management";
+      rwpb:msg-new VDUEvent;
+
+      list vdu-event-data {
+        rwpb:msg-new VDUEventData;
+        key "event-id";
+
+        leaf event-id {
+          description "Identifier associated with the VDU transaction";
+          type yang:uuid;
+        }
+
+        leaf cloud-account {
+          description "The cloud account to use for this resource request";
+          type leafref {
+            path "/rwcloud:cloud/rwcloud:account/rwcloud:name";
+          }
+        }
+
+        container request-info {
+          description "Information about required resource";
+
+          uses rwcal:vdu-create-params;
+        }
+
+        container resource-info {
+          description "Information about allocated resource";
+          leaf pool-name {
+            type string;
+          }
+          uses resource-state;
+          uses rwcal:vdu-info-params;
+        }
+      }
+    }
+
+    container vlink-event {
+      description "Events for Virtual Link management";
+      rwpb:msg-new VirtualLinkEvent;
+
+      list vlink-event-data {
+        rwpb:msg-new VirtualLinkEventData;
+
+        key "event-id";
+
+        leaf event-id {
+          description "Identifier associated with the Virtual Link transaction";
+          type yang:uuid;
+        }
+
+        leaf cloud-account {
+          description "The cloud account to use for this resource request";
+          type leafref {
+            path "/rwcloud:cloud/rwcloud:account/rwcloud:name";
+          }
+        }
+
+        container request-info {
+          description "Information about required resource";
+
+          uses rwcal:virtual-link-create-params;
+        }
+
+        container resource-info {
+          leaf pool-name {
+            type string;
+          }
+          uses resource-state;
+          uses rwcal:virtual-link-info-params;
+        }
+      }
+    }
+  }
+
+
+  container resource-pool-records {
+    description "Resource Pool Records";
+    rwpb:msg-new ResourcePoolRecords;
+    config false;
+
+    list cloud-account {
+      key "name";
+      leaf name {
+        description
+          "The configured cloud account's pool records.";
+        type leafref {
+          path "/rwcloud:cloud/rwcloud:account/rwcloud:name";
+        }
+      }
+
+      list records {
+        rwpb:msg-new ResourceRecordInfo;
+        key "name";
+        uses resource-pool-info;
+
+        leaf pool-status {
+          type enumeration {
+            enum unknown;
+            enum locked;
+            enum unlocked;
+          }
+        }
+
+        leaf total-resources {
+          type uint32;
+        }
+
+        leaf free-resources {
+          type uint32;
+        }
+
+        leaf allocated-resources {
+          type uint32;
+        }
+      }
+    }
+  }
+
+
+  container resource-mgr-data{
+    description "Resource Manager operational data";
+    config false;
+
+    container pool-record {
+      description "Resource Pool record";
+
+      list cloud {
+        key "name";
+        max-elements 16;
+        rwpb:msg-new "ResmgrCloudPoolRecords";
+        leaf name {
+          description
+            "The configured cloud account's pool records.";
+          type leafref {
+            path "/rwcloud:cloud/rwcloud:account/rwcloud:name";
+          }
+        }
+
+        list records {
+          key "name";
+          uses resource-pool-info;
+
+          list free-vdu-list {
+            key vdu-id;
+            uses rwcal:vdu-info-params;
+          }
+
+          list in-use-vdu-list {
+            key vdu-id;
+            uses rwcal:vdu-info-params;
+          }
+
+          list free-vlink-list {
+            key virtual-link-id;
+            uses rwcal:virtual-link-info-params;
+          }
+
+          list in-use-vlink-list {
+              key virtual-link-id;
+            uses rwcal:virtual-link-info-params;
+          }
+        }
+      }
+    }
+  }
+}

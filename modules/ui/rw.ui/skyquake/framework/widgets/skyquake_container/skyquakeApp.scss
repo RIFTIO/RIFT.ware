@@ -1,0 +1,143 @@
+//import a reset
+@import '../../style/_colors.scss';
+html, body {
+    height:100%;
+    width:100%;
+}
+
+
+.skyquakeApp {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: $gray-lightest;
+    h1 {
+        text-transform: uppercase;
+    }
+    .active {
+        background-color: $brand-blue!important;
+        border-color: $brand-blue!important;
+        color: #fff!important
+    }
+    .skyquakeNav {
+        display: flex;
+        color:white;
+        background:black;
+        position:relative;
+        z-index: 10;
+        font-size:0.75rem;
+        .secondaryNav {
+            flex: 1 1 auto;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .app {
+            position:relative;
+            h2 {
+                font-size:0.75rem;
+                border-right: 1px solid black;
+                display: flex;
+                align-items: center;
+                .oi {
+                    padding-right: 0.5rem;
+                }
+            }
+            .menu {
+                position:absolute;
+                display:none;
+                z-index:2;
+                width: 100%;
+            }
+            &:first-child{
+                h2 {
+                    border-left: 1px solid black;
+                }
+            }
+            &:hover {
+                a {
+                    color:$brand-blue-light;
+                    cursor:pointer;
+                }
+                .menu {
+                    display:block;
+                    background:black;
+                    a {
+                        color:white;
+                    }
+                    li:hover {
+                        a {
+                            color:$brand-blue-light;
+                        }
+                    }
+                }
+            }
+            &.active {
+                color:white;
+                background:black;
+                a {
+                    color:white;
+                }
+            }
+        }
+        a{
+            display:block;
+            padding:0.5rem 1rem;
+            text-decoration:none;
+            text-transform:uppercase;
+            color:white;
+        }
+        &:before {
+            content: '';
+            height:1.85rem;
+            width:2.5rem;
+            margin:0 1rem;
+            padding:0 0.125rem;
+            // background: url('../../style/img/header-logo.png') no-repeat center center white;
+            background: url('../../style/img/svg/riftio_logo_white.svg') no-repeat center center;
+            background-size:65%;
+        }
+    }
+    .skyquakeContainerWrapper {
+    }
+    .titleBar {
+        padding: 1rem 0 0;
+        h1 {
+        // background: url('../../style/img/header-logo.png') no-repeat;
+        background-size:contain;
+        height: 51px;
+        line-height: 51px;
+        margin-left: 20px;
+        // padding-left: 100px;
+        left: 0;
+        font-size: 1.625rem;
+        font-weight: 400;
+        text-align:left;
+        position:relative;
+        flex: 1 0 auto;
+        }
+    }
+    .corner-accent {
+        border: 1px solid #000;
+        display: block;
+        height: 4px;
+        position: absolute;
+        width: 4px;
+
+        &.top {
+            border-bottom: 0;
+            top: -1px;
+        }
+        &.right {
+            border-left: 0;
+            right: -1px;
+        }
+        &.bottom {
+            border-top: 0;
+            bottom: -1px;
+        }
+        &.left {
+            border-right: 0;
+            left: -1px;
+        }
+    }
+}

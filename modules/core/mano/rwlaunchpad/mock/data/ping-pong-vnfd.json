@@ -1,0 +1,396 @@
+{
+    "vnfd": [
+        {
+            "id": "ba145e82-626b-11e5-998d-6cb3113b406f",
+            "name": "ping-vnfd",
+            "short-name": "ping-vnfd",
+            "vendor": "RIFT.io",
+            "description": "This is an example RIFT.ware VNF",
+            "version": "1.0",
+            "internal-vld": [
+                {
+                    "id" : "ba1478fe-626b-11e5-998d-6cb3113b406f",
+                    "name": "fabric",
+                    "short-name": "fabric",
+                    "description": "Virtual link for internal fabric",
+                    "type": "ELAN"
+                }
+            ],
+            "connection-point": [
+                {
+                    "name": "ping-vnfd/cp0",
+                    "type": "VPORT"
+                },
+                {
+                    "name": "ping-vnfd/cp1",
+                    "type": "VPORT"
+                }
+            ],
+            "vdu": [
+                {
+                    "id": "ba14a504-626b-11e5-998d-6cb3113b406f",
+                    "name": "iovdu",
+                    "count": 2,
+                    "vm-flavor": {
+                        "vcpu-count": 4,
+                        "memory-mb": 1638,
+                        "storage-gb": 16
+                    },
+                    "guest-epa": {
+                        "trusted-execution": true,
+                        "mempage-size": "PREFER_LARGE",
+                        "cpu-pinning-policy": "DEDICATED",
+                        "cpu-thread-pinning-policy": "AVOID",
+                        "numa-node-policy": {
+                            "node-cnt": 2,
+                            "mem-policy": "PREFERRED",
+                            "node": [
+                                {
+                                    "id": 1,
+                                    "vcpu": [ 0, 1 ],
+                                    "memory-mb": 8192
+                                }
+                            ]
+                        }
+                    },
+                    "hypervisor-epa": {
+                            "type": "PREFER_KVM"
+                    },
+                    "host-epa": {
+                        "cpu-model": "PREFER_SANDYBRIDGE",
+                        "cpu-arch": "PREFER_X86_64",
+                        "cpu-vendor": "PREFER_INTEL",
+                        "cpu-socket-count": "PREFER_TWO",
+                        "cpu-feature": [ "PREFER_AES", "PREFER_CAT" ]
+                    },
+                    "image": "rw_openstack.qcow2",
+                    "internal-connection-point": [
+                        {
+                            "id": "ba153744-626b-11e5-998d-6cb3113b406f",
+                            "type": "VPORT"
+                        },
+                        {
+                            "id": "ba15577e-626b-11e5-998d-6cb3113b406f",
+                            "type": "VPORT"
+                        }
+                    ],
+                    "internal-interface": [
+                        {
+                            "name": "eth0",
+                            "vdu-internal-connection-point-ref": "ba153744-626b-11e5-998d-6cb3113b406f",
+                            "virtual-interface": {
+                                "type": "VIRTIO"
+                            }
+                        },
+                        {
+                            "name": "eth1",
+                            "vdu-internal-connection-point-ref": "ba15577e-626b-11e5-998d-6cb3113b406f",
+                            "virtual-interface": {
+                                "type": "VIRTIO"
+                            }
+                        }
+                    ],
+                    "external-interface": [
+                        {
+                            "name": "eth0",
+                            "vnfd-connection-point-ref": "ping-vnfd/cp0",
+                            "virtual-interface": {
+                                "type": "VIRTIO"
+                            }
+                        },
+                        {
+                            "name": "eth1",
+                            "vnfd-connection-point-ref": "ping-vnfd/cp1",
+                            "virtual-interface": {
+                                "type": "VIRTIO"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "monitoring-param": [
+                {
+                    "id": "ping-tx-rate-mp",
+                    "name": "Ping Transmit Rate",
+                    "description": "Ping transmit rate",
+                    "group-tag": "group-1",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 10,
+                    "widget-type": "GAUGE",
+                    "units": "gbps"
+                },
+                {
+                    "id": "ping-rc-rate-mp",
+                    "name": "Ping Receive Rate",
+                    "description": "Ping receive rate",
+                    "group-tag": "group-1",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 10,
+                    "widget-type": "GAUGE",
+                    "units": "gbps"
+                },
+                {
+                    "id": "ping-packet-size-mp",
+                    "name": "Ping Packet Size",
+                    "description": "Ping packet size",
+                    "group-tag": "group-2",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 10,
+                    "widget-type": "GAUGE",
+                    "units": "gbps"
+                }
+            ],
+            "rw-vnfd:control-param": [
+                {
+                    "id": "ping-transmit-rate-cp1",
+                    "name": "Transmit Rate",
+                    "description": "Ping transmit rate",
+                    "group-tag": "group-3",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 10,
+                    "step-value": 1,
+                    "units": "gbps",
+                    "widget-type": "GAUGE",
+                    "url": "https://%s/api/operations/set-control-param",
+                    "operation": "POST",
+                    "payload": "{\"set-control-param\":{\"id\":\"%s\",\"obj-code\":\"VNFR\",\"control-id\":\"ping-transmit-rate-cp1\",\"value\":10} }"
+                },
+                {
+                    "id": "ping-packet-size-cp1",
+                    "name": "Ping Packet Size",
+                    "description": "Packet size",
+                    "group-tag": "group-4",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 10,
+                    "step-value": 1,
+                    "units": "gbps",
+                    "widget-type": "GAUGE",
+                    "url": "https://%s/api/operations/set-control-param",
+                    "operation": "POST",
+                    "payload": "{\"set-control-param\":{\"id\":\"%s\",\"obj-code\":\"VNFR\",\"control-id\":\"ping-packet-size-cp1\",\"value\":10 } }"
+                }
+            ],
+            "rw-vnfd:action-param" : [
+                {
+                    "id": "start-vnfr",
+                    "name": "Start PING",
+                    "description": "Start the PUNG VNFR",
+                    "group-tag": "start-vnfr",
+                    "url": "https://%s/api/operations/start-vnfr",
+                    "operation": "POST",
+                    "payload": "{\"start-vnfr\": { \"id\": \"%s\" }  }"
+                },
+                {
+                    "id": "stop-vnfr",
+                    "name": "Stop PING",
+                    "description": "Stop the PING VNFR",
+                    "group-tag": "stop-vnfr",
+                    "url": "https://%s/api/operations/stop-vnfr",
+                    "operation": "POST",
+                    "payload": "{\"stop-vnfr\": { \"id\": \"%s\" }  }"
+                }
+            ]
+        },
+        {
+            "id": "ba1947da-626b-11e5-998d-6cb3113b406f",
+            "name": "pong-vnfd",
+            "short-name": "pong-vnfd",
+            "vendor": "RIFT.io",
+            "description": "This is an example RIFT.ware VNF",
+            "version": "1.0",
+            "internal-vld": [
+                {
+                    "id" : "ba1478fe-626b-11e5-998d-6cb3113b406f",
+                    "name": "fabric",
+                    "short-name": "fabric",
+                    "description": "Virtual link for internal fabric",
+                    "type": "ELAN"
+                }
+            ],
+            "connection-point": [
+                {
+                    "name": "pong-vnfd/cp0",
+                    "type": "VPORT"
+                },
+                {
+                    "name": "pong-vnfd/cp1",
+                    "type": "VPORT"
+                }
+            ],
+            "vdu": [
+                {
+                    "id": "ba14a504-626b-11e5-998d-6cb3113b406f",
+                    "name": "iovdu",
+                    "count": 2,
+                    "vm-flavor": {
+                        "vcpu-count": 4,
+                        "memory-mb": 1638,
+                        "storage-gb": 16
+                    },
+                    "guest-epa": {
+                        "trusted-execution": true,
+                        "mempage-size": "PREFER_LARGE",
+                        "cpu-pinning-policy": "DEDICATED",
+                        "cpu-thread-pinning-policy": "AVOID",
+                        "numa-node-policy": {
+                            "node-cnt": 2,
+                            "mem-policy": "PREFERRED",
+                            "node": [
+                                {
+                                    "id": 1,
+                                    "vcpu": [ 0, 1 ],
+                                    "memory-mb": 8192
+                                }
+                            ]
+                        }
+                    },
+                    "hypervisor-epa": {
+                            "type": "PREFER_KVM"
+                    },
+                    "host-epa": {
+                        "cpu-model": "PREFER_SANDYBRIDGE",
+                        "cpu-arch": "PREFER_X86_64",
+                        "cpu-vendor": "PREFER_INTEL",
+                        "cpu-socket-count": "PREFER_TWO",
+                        "cpu-feature": [ "PREFER_AES", "PREFER_CAT" ]
+                    },
+                    "image": "rw_openstack.qcow2",
+                    "internal-connection-point": [
+                        {
+                            "id": "ba153744-626b-11e5-998d-6cb3113b406f",
+                            "type": "VPORT"
+                        },
+                        {
+                            "id": "ba15577e-626b-11e5-998d-6cb3113b406f",
+                            "type": "VPORT"
+                        }
+                    ],
+                    "internal-interface": [
+                        {
+                            "name": "eth0",
+                            "vdu-internal-connection-point-ref": "ba153744-626b-11e5-998d-6cb3113b406f",
+                            "virtual-interface": {
+                                "type": "VIRTIO"
+                            }
+                        },
+                        {
+                            "name": "eth1",
+                            "vdu-internal-connection-point-ref": "ba15577e-626b-11e5-998d-6cb3113b406f",
+                            "virtual-interface": {
+                                "type": "VIRTIO"
+                            }
+                        }
+                    ],
+                    "external-interface": [
+                        {
+                            "name": "eth0",
+                            "vnfd-connection-point-ref": "pong-vnfd/cp0",
+                            "virtual-interface": {
+                                "type": "VIRTIO"
+                            }
+                        },
+                        {
+                            "name": "eth1",
+                            "vnfd-connection-point-ref": "pong-vnfd/cp1",
+                            "virtual-interface": {
+                                "type": "VIRTIO"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "monitoring-param": [
+                {
+                    "id": "pong-tx-rate-mp",
+                    "name": "Pong Transmit Rate",
+                    "description": "Pong transmit rate",
+                    "group-tag": "group-1",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 10,
+                    "widget-type": "GAUGE",
+                    "units": "gbps"
+                },
+                {
+                    "id": "pong-rx-rate-mp",
+                    "name": "Pong Receive Rate",
+                    "description": "Pong receive rate",
+                    "group-tag": "group-1",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 10,
+                    "widget-type": "GAUGE",
+                    "units": "gbps"
+                },
+                {
+                    "id": "pong-packet-size-mp",
+                    "name": "Pong Packet Size",
+                    "description": "Pong packet size",
+                    "group-tag": "group-2",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 10,
+                    "widget-type": "TEXTBOX",
+                    "units": "mb"
+                }
+            ],
+            "rw-vnfd:control-param" : [
+                {
+                    "id": "pong-receive-rate-cp1",
+                    "name": "Pong Receive Rate",
+                    "description": "Pong receive rate",
+                    "group-tag": "group-3",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 0,
+                    "step-value": 1,
+                    "units": "gbps",
+                    "widget-type": "GAUGE",
+                    "url": "https://{host}/api/operations/vnfr-control-param/",
+                    "operation": "POST",
+                    "payload": "{\"set-control-param\":{\"id\":\"%s\",\"obj-code\":\"VNFR\",\"control-id\":\"pong-receive-rate-cp1\",\"value\":10} }"
+                },
+                {
+                    "id": "pong-packet-size-cp1",
+                    "name": "Pong Packaet Size",
+                    "description": "Packet size",
+                    "group-tag": "group-4",
+                    "min-value": 0,
+                    "max-value": 100,
+                    "current-value": 0,
+                    "step-value": 1,
+                    "units": "gbps",
+                    "widget-type": "GAUGE",
+                    "url": "https://%s/api/operations/set-control-param",
+                    "operation": "POST",
+                    "payload": "{\"set-control-param\":{\"id\":\"%s\",\"obj-code\":\"VNFR\",\"control-id\":\"pong-packet-size-cp1\",\"value\":10 } }"
+                }
+            ],
+            "rw-vnfd:action-param" : [
+                {
+                    "id": "start-vnfr",
+                    "name": "Start PONG",
+                    "description": "Start the PONG VNFR",
+                    "group-tag": "start-vnfr",
+                    "url": "https://%s/api/operations/start-vnfr",
+                    "operation": "POST",
+                    "payload": "{\"start-vnfr\": { \"id\": \"%s\" }  }"
+                },
+                {
+                    "id": "stop-vnfr",
+                    "name": "Stop PONG",
+                    "description": "Stop the PONG VNFR",
+                    "group-tag": "stop-vnfr",
+                    "url": "https://%s/api/operations/stop-vnfr",
+                    "operation": "POST",
+                    "payload": "{\"stop-vnfr\": { \"id\": \"%s\" }  }"
+                }
+            ]
+       }
+   ]
+}

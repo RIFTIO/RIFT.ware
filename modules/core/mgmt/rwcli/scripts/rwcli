@@ -1,0 +1,62 @@
+#!/bin/bash
+
+if [ -z "$RIFT_INSTALL" ]; then
+   rift_install="/"
+else
+   rift_install=$RIFT_INSTALL
+fi
+
+zsh_bin="${rift_install}/usr/bin/zsh"
+zsh_cmd=${zsh_bin}
+
+while [[ $# > 0 ]]
+do
+  arg=$1
+  case $arg in
+    --trace_level | --netconf_host | --netconf_port | --username | --passwd)
+      zsh_cmd="${zsh_cmd} $1 $2"
+      shift 2
+    ;;
+    --netconf)
+      if [ -n "${rwmsg}" ]; then
+         echo "Netconf mode and rwmsg mode cannot be specified together"
+         exit 1
+      fi
+      netconf=1
+      shift
+    ;;
+    --rwmsg)
+      if [ -n "${netconf}" ]; then
+         echo "Netconf mode and rwmsg mode cannot be specified together"
+         exit 1
+      fi
+      rwmsg=1
+      zsh_cmd="${zsh_cmd} --rwmsg"
+      shift
+    ;;
+    --help)
+      show_help=1
+      shift
+    ;;
+    -c)
+      quoted_cmd=$2
+      shift 2
+    ;;
+    *)
+     echo "Error Unknown option $arg to rwcli"
+     exit 1
+  esac
+done
+
+if [ -n "${show_help}" ]; then
+   zsh_cmd="${zsh_bin} --help"
+   exec ${zsh_cmd}
+fi
+
+if [ -z "${quoted_cmd}" ]; then
+  echo ${zsh_cmd}
+  exec ${zsh_cmd}
+else
+  echo ${zsh_cmd} -c \"${quoted_cmd}\"
+  exec ${zsh_cmd} -c "${quoted_cmd}"
+fi

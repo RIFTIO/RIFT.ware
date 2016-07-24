@@ -1,0 +1,11 @@
+To use the simple.py, 
+
+./simple.py => This generates a manifest.xml file using the MASTER, VM1,
+VM2, etc. ip-adddresses listed inside the simple.py script.
+One shall edit the MASTER, VM1, etc. to suit their VMs in order to use
+the manifest.xml in an expanded mode.
+
+Options:
+-l - Generates a manifest.xml to be used in collapsed mode
+-m - Generates a manifest.xml with multi-dts-router option turned on.
+

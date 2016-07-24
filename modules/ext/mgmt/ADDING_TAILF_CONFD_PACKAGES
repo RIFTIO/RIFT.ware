@@ -1,0 +1,16 @@
+Due to licensing restrictions, Confd cannot be distributed along with Riftware.
+
+The Confd 6.0 package must be licenced and downloaded from Tail-F.
+
+Once extracted the following files should be copied into the following locations
+
+    - confd-6.0.linux.x86_64.installer.bin -> confd/
+    - confd-6.0.libconfd.tar.gz -> libconfd/libconfd-6.0/
+
+Once copied, add and commit the packages to your repository:
+
+    - git add .
+    - cd <rift_repo_root>
+    - git xcommit -a -m "Adding confd6.0 packages"
+    - git xpush
+

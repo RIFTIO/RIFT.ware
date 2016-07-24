@@ -1,0 +1,53 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rwmano-types-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwmano-types";
+  prefix "rwmano-types-d";
+
+  revision 2015-04-23 {
+    description
+      "Initial revision. This YANG file defines 
+       the reusable base types for VNF Management
+       and Orchestration (MANO).";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  typedef virtual-link-type {
+    description
+        "Type of virtual link
+         ELINE: For a simple point to point connection between a VNF and the
+         existing network.
+         ELAN: A multipoint service connecting a set of VNFs
+         ETREE: A multipoint service connecting one or more roots and a set of
+         leaves, but preventing inter-leaf communication.";
+    type enumeration {
+      enum ELAN;
+      enum ETREE;
+      enum ELINE;
+    }
+  }
+
+  typedef connection-point-type {
+    description
+        "Type of connection point
+        VNIC_ADDR: Virtual NIC Address
+        VPORT: Virtual Port
+        PHY_NIC_ADDR: Physical NIC Address
+        PPORT: Phsical Port";
+
+    type enumeration {
+      enum VNIC_ADDR;
+      enum VPORT;
+      enum PHY_NIC_ADDR;
+      enum PPORT;
+    }
+  }
+}

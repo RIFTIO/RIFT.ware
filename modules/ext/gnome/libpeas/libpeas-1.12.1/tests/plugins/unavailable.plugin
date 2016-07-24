@@ -1,0 +1,7 @@
+[Plugin]
+Module=unavailable
+Depends=does-not-exist
+Name=Unavailable
+Description=This plugin cannot be loaded.
+Authors=Garrett Regier
+Copyright=Copyright © 2010 Garrett Regier

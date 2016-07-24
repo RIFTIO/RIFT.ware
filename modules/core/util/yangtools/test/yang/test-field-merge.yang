@@ -1,0 +1,68 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+/**
+ * @file test-field-merge.yang
+ */
+
+module test-field-merge
+{
+    namespace "http://riftio.com/ns/core/util/yangtools/tests/yang/test-field-merge";
+    prefix "tfm";
+
+    import rw-pb-ext { prefix "rwpb"; }
+
+    description
+    "Test field merge statement";
+
+    revision 2015-06-17 {
+    description "Initial version"; }
+
+    container shop {
+        rwpb:msg-new ToyShop;
+        
+        list inventory {
+            key "item_name";
+            rwpb:field-merge-behavior none;
+            rwpb:msg-new Inventory;
+            
+            leaf item_name {
+                description "Toy name";
+                type string; rwpb:field-string-max "128";
+            }
+
+            leaf item-id {
+                description "Toy identifier";
+                type uint32;
+            }
+        }
+
+        list inventory_2 {
+            key "item-id";
+            rwpb:field-merge-behavior default;
+            rwpb:msg-new Inventory2;
+
+            leaf item_name {
+                description "Toy name";
+                type string; rwpb:field-string-max "128";
+            }
+
+            leaf item-id {
+                description "Toy identifier";
+                type uint32;
+            }
+        }
+
+    } // container shop
+
+    leaf-list all_shops {
+        description "List of all toy shops.";
+        rwpb:field-merge-behavior none;
+        type string; rwpb:field-string-max "64";
+    }
+}

@@ -1,0 +1,62 @@
+#!/bin/bash -e
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+
+## Fix submodules: make sure all submodules
+## are checked out correctly
+
+## read input, display help if necessary
+if [[ "$@" == *--help* ]]; then
+    cat<<EOF
+ Fix submodules
+
+ This command updates and initializes all submodules.
+ Orphaned submodule directories are removed if they are clean. The
+ HEADs of submodules are attached if necessary and possible. 
+
+ Usage:
+    git fix-submodules [--skip-checks]
+
+    --skip-checks: skip safety checks
+EOF
+    exit 0;
+fi
+
+## from the git mailinglist:
+function git
+{
+    LC_MESSAGES=C command git "$@"
+} 
+export git
+
+## ensure we are in the toplevel directory
+cdup=$(git rev-parse --show-toplevel) &&
+cd "$cdup" || {
+    echo >&2 "Cannot chdir to $cdup, the toplevel of the working tree"
+    exit 1
+}
+
+## check for modified content and uncommitted changes
+if [[ "$@" != *--skip-checks* ]]; then
+    git check-clean || exit 1
+fi
+
+## remove orphaned submodule directories
+git rm-orphaned-submodule-dirs || exit 1
+
+## continue only if there are submodules
+if [ -f .gitmodules ]; then 
+    ## update / initialize submodules
+    git submodule --quiet update --init || exit 1
+    ## do the same for the submodules
+    #git submodule --quiet foreach git fix-submodules "$@"
+    CMD='cd "$1"; git fix-submodules '"$@"
+    git submodule --quiet foreach 'echo "$toplevel/$path"' | 
+    xargs -r -n1 -P5 bash -c "$CMD" xargs
+    ## attach heads if possible
+    #git submodule --quiet foreach git attach-head
+    git submodule --quiet foreach 'echo "$toplevel/$path"' | 
+    xargs -r -n1 -P5 bash -c 'cd "$1"; git attach-head' xargs
+fi

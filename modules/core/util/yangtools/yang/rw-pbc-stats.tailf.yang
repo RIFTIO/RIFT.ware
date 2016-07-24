@@ -1,0 +1,29 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-pbc-stats-tailf
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-pbc-stats-tailf";
+  prefix "rw-pbc-stats-tailf";
+
+  import rw-pbc-stats {
+    prefix rwpbc;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/rwpbc:pbc-stats" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rwpbc:pbc-ebuf" {
+    tailf:callpoint rw_callpoint;
+  }
+}

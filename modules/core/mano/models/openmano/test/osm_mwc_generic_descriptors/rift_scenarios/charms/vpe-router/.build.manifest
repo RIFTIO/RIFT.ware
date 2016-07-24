@@ -1,0 +1,219 @@
+{
+  "layers": [
+    "layer:basic", 
+    "vpe-router", 
+    "build"
+  ], 
+  "signatures": {
+    "hooks/stop": [
+      "layer:basic", 
+      "static", 
+      "21759be2af2e65c9e29531b293fd77fc1c710468ece35bc1cb4360cdefd997b0"
+    ], 
+    "wheelhouse/ecdsa-0.13.tar.gz": [
+      "vpe-router", 
+      "dynamic", 
+      "64cf1ee26d1cde3c73c6d7d107f835fed7c6a2904aef9eac223d57ad800c43fa"
+    ], 
+    "wheelhouse/charms.reactive-0.3.8.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "3f8722d85f7d489f8414d11fc2a3e8793c68000f7a1bc7b1ad71120e037aebee"
+    ], 
+    "hooks/hook.template": [
+      "layer:basic", 
+      "static", 
+      "21759be2af2e65c9e29531b293fd77fc1c710468ece35bc1cb4360cdefd997b0"
+    ], 
+    "wheelhouse/pycrypto-2.6.1.tar.gz": [
+      "vpe-router", 
+      "dynamic", 
+      "f2ce1e989b272cfcb677616763e0a2e7ec659effa67a88aa92b3a65528f60a3c"
+    ], 
+    "hooks/start": [
+      "layer:basic", 
+      "static", 
+      "21759be2af2e65c9e29531b293fd77fc1c710468ece35bc1cb4360cdefd997b0"
+    ], 
+    "wheelhouse/pip-7.1.2.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "ca047986f0528cfa975a14fb9f7f106271d4e0c3fe1ddced6c1db2e7ae57a477"
+    ], 
+    "wheelhouse/PyYAML-3.11.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "c36c938a872e5ff494938b33b14aaa156cb439ec67548fcab3535bb78b0846e8"
+    ], 
+    "Makefile": [
+      "layer:basic", 
+      "static", 
+      "f91213a68bc5edce9ebe0615b70cc908ea45466c2e205fb6cfe9c35d9c3fde4b"
+    ], 
+    "reactive/__init__.py": [
+      "layer:basic", 
+      "static", 
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ], 
+    "wheelhouse/Jinja2-2.8.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "bc1ff2ff88dbfacefde4ddde471d1417d3b304e8df103a7a9437d47269201bf4"
+    ], 
+    "hooks/upgrade-charm": [
+      "layer:basic", 
+      "static", 
+      "b78e405476402d34624c70822d9a60be2f4f85255765f619c0ecfe18f5f934ea"
+    ], 
+    "actions/add-corporation": [
+      "vpe-router", 
+      "static", 
+      "951055318724d05aa82fa9757143561ecf3617a3bd2eaebb08533ed1ae897ade"
+    ], 
+    ".build.manifest": [
+      "build", 
+      "dynamic", 
+      "unchecked"
+    ], 
+    "wheelhouse/charmhelpers-0.6.1.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "c41a4cb3dcf6aa35e115addf9fb83a94585a4ff3bddc63148983431af45905f8"
+    ], 
+    "actions/delete-corporation": [
+      "vpe-router", 
+      "static", 
+      "1e380d728790fa946e2429eaed31ff11aa4186cc287b818d8a91da7da291a6b3"
+    ], 
+    "hooks/update-status": [
+      "layer:basic", 
+      "static", 
+      "21759be2af2e65c9e29531b293fd77fc1c710468ece35bc1cb4360cdefd997b0"
+    ], 
+    "hooks/leader-settings-changed": [
+      "layer:basic", 
+      "static", 
+      "21759be2af2e65c9e29531b293fd77fc1c710468ece35bc1cb4360cdefd997b0"
+    ], 
+    "wheelhouse/Tempita-0.5.2.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "cacecf0baa674d356641f1d406b8bff1d756d739c46b869a54de515d08e6fc9c"
+    ], 
+    "actions.yaml": [
+      "vpe-router", 
+      "static", 
+      "619cedd685181c02ae36d04014bc4763c1e4e1b0a1b8a743d1a239c442f2883b"
+    ], 
+    "README.md": [
+      "layer:basic", 
+      "static", 
+      "5d5101eb0f2eb90eb0959438416ceb5e9b82c7746a385eb64ccb8a8ffe01e92b"
+    ], 
+    "reactive/vpe_router.py": [
+      "vpe-router", 
+      "static", 
+      "479874bbe5db71ddc0b3e4e0adab051540dbc8d30021800c42a1b058bf9dcd94"
+    ], 
+    "tox.ini": [
+      "layer:basic", 
+      "static", 
+      "5efb9280763f1f4cb861485e80863caafc9cd5ab1176543e911c27519436de7a"
+    ], 
+    "metadata.yaml": [
+      "vpe-router", 
+      "dynamic", 
+      "a7bf974efb4a29810de06626025fbc3b158053c70b0d67eb4b142a2ac087c5c0"
+    ], 
+    "wheelhouse/pyaml-15.8.2.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "9c54fb5f17b58572c4cef50affea60bb73f445ab153580dac07a12383712b5b8"
+    ], 
+    "copyright": [
+      "layer:basic", 
+      "static", 
+      "1e2afbd75c71affa132ae7ee3327cb29b5e4b9d9705f27dfd03857c326f50c5c"
+    ], 
+    "requirements.txt": [
+      "layer:basic", 
+      "static", 
+      "0f1c70d27e26005a96d66ad54482877ae20f7737693c833e29dd72bd6ac24892"
+    ], 
+    "wheelhouse/netaddr-0.7.18.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "a1f5c9fcf75ac2579b9995c843dade33009543c04f218ff7c007b3c81695bd19"
+    ], 
+    "wheelhouse/paramiko-1.16.0.tar.gz": [
+      "vpe-router", 
+      "dynamic", 
+      "3297ebd3cd072f573772f7c7426939a443c62c458d54bb632ff30fd6ecf96892"
+    ], 
+    "actions/connect-domains": [
+      "vpe-router", 
+      "static", 
+      "cdc11dd947a97b1e6ecb92b95e5e2b2676a5b1a366638a80b5fcf052b6fe240d"
+    ], 
+    ".gitignore": [
+      "layer:basic", 
+      "static", 
+      "0da5c4dcda27cd6406e5bb81cbf68ddccaf728ac764ec15053a165c1449d87d9"
+    ], 
+    "lib/charms/router.py": [
+      "vpe-router", 
+      "static", 
+      "b29712ab37799310107c99bb79ce90a991c5ebf95d513bad127b3fabd02df4a7"
+    ], 
+    "hooks/install": [
+      "layer:basic", 
+      "static", 
+      "21759be2af2e65c9e29531b293fd77fc1c710468ece35bc1cb4360cdefd997b0"
+    ], 
+    "wheelhouse/MarkupSafe-0.23.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "a4ec1aff59b95a14b45eb2e23761a0179e98319da5a7eb76b56ea8cdc7b871c3"
+    ], 
+    "layer.yaml": [
+      "vpe-router", 
+      "dynamic", 
+      "b6f7fe3a054fa4c8a17d4fa922ee2b0624f75cb39fdcc59c511cb55455425f8b"
+    ], 
+    "config.yaml": [
+      "vpe-router", 
+      "dynamic", 
+      "989e451c1dc464082f3e1122bd784362502af58680ad8e77b88ce00db0ec2246"
+    ], 
+    "hooks/leader-elected": [
+      "layer:basic", 
+      "static", 
+      "21759be2af2e65c9e29531b293fd77fc1c710468ece35bc1cb4360cdefd997b0"
+    ], 
+    "lib/charms/bootstrap.py": [
+      "layer:basic", 
+      "static", 
+      "bec7997003dbe44e9bbe85f0df598746c868fe72d1971a99d357bf3512453c70"
+    ], 
+    "lib/charms/layer.py": [
+      "layer:basic", 
+      "static", 
+      "3accb93272464875583f9b661dc024b4adc67617354bc21d8a7f74284ae4deb4"
+    ], 
+    "actions/delete-domain-connection": [
+      "vpe-router", 
+      "static", 
+      "0b59e146b4b0223f5593cd4bad9a829822713b10b2ccab46d07a531eb9e20216"
+    ], 
+    "wheelhouse/six-1.10.0.tar.gz": [
+      "layer:basic", 
+      "dynamic", 
+      "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a"
+    ], 
+    "hooks/config-changed": [
+      "layer:basic", 
+      "static", 
+      "21759be2af2e65c9e29531b293fd77fc1c710468ece35bc1cb4360cdefd997b0"
+    ]
+  }
+}

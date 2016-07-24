@@ -1,0 +1,81 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file testncx-app-data-app-data.yang
+ * @author Tom Seidenberg
+ * @date 2014/06/03
+ * @brief Test application data extensions
+ */
+
+module testncx-app-data
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testncx-app-data";
+  prefix "tnad";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "Test application data extensions.";
+  revision 2014-06-03 { description "Initial version"; }
+
+  extension ext1 {
+    argument "foo";
+    description "ext1 extension";
+  }
+
+  extension ext2 {
+    argument "foo";
+    description "ext1 extension";
+  }
+
+  container top {
+    tnad:ext1 "ext1 in top";
+    container a {
+      tnad:ext1 "ext1 in a";
+
+      container a-1 {
+        tnad:ext1 "ext1 in a-1";
+      }
+
+      container a-2 {
+        leaf junk { type string; }
+      }
+
+      leaf n1 {config true; type int8 {range "-12..14";} }
+      leaf n2 { type int16 {range "100..200|300|400..500";} config true; }
+      leaf n3 { type int32; config false; }
+      leaf n4 { type int64; config false; }
+      leaf n5 { type uint8; config true; }
+      leaf n6 { type uint16; config true; }
+      leaf n7 { type uint32; config false; }
+      leaf n8 { type uint64; config false; }
+    }
+
+    container b {
+      rwpb:msg-new TnadContainerB;
+      tnad:ext2 "ext2 in b";
+      tnad:ext2 "ext2 in b";
+
+      container b-1 {
+        tnad:ext1 "ext1 in b-1";
+      }
+
+      container b-2 {
+        leaf junk { type string; }
+      }
+
+      leaf bin1 { type binary {length "2..5";}}
+      leaf bool1 { type boolean; }
+      leaf dec1 { type decimal64 { fraction-digits 10; } }
+      leaf e1 { type empty; }
+      leaf s1 { type string{length "2..5";} }
+    }
+  }
+}
+

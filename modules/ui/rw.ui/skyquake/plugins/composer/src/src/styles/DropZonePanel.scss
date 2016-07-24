@@ -1,0 +1,44 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import 'variables';
+
+.DropZonePanel {
+	overflow: hidden;
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: column;
+	align-content: stretch;
+	&.-close {
+		display: none;
+	}
+	.dz-message {
+		font-size: small;
+		margin: 2px;
+		text-align: center;
+	}
+	.dnd-target {
+		flex-grow: 4;
+		display: block;
+		margin: 4px;
+		padding: 25px 20px;
+		color: $panel-font-color;
+		border: 2px dashed $section-border-color;
+		border-radius: 8px;
+		background-color: $primary-contrast-bg-color;
+		&:hover {
+			border: 2px dashed darken($section-border-color, 20%);
+			background-color: $button-bg-color;
+		}
+		&.-drag-hover,
+		&.dz-drag-hover {
+			cursor: pointer !important;
+			border-color: darken($section-border-color, 20%);
+			background-color: darken($primary-contrast-bg-color, 20%);
+			color: darken($panel-font-color, 20%);
+		}
+	}
+}

@@ -1,0 +1,320 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rwpaas-vdus-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwpaas-vdus";
+  prefix "rwvdus";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix rwt; }
+  import ietf-inet-types { prefix "inet"; }
+  import ietf-yang-types { prefix "yang"; }
+  import rwiaas-zones-d { prefix "rwzones"; }
+  import rwpaas-environments-d { prefix "rwenvironments"; }
+  import rwpaas-networks-d { prefix "rwnetworks"; }
+
+  revision 2015-01-28 {
+    description
+      "Initial revision. This YANG file captures the
+      data model for provisioning PaaS layer VM resources.";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  list images {
+    description
+        "List of available images.";
+    key name;
+    leaf name {
+      description
+          "Image name.";
+      type string;
+    }
+
+    leaf format {
+      description
+          "Disk format of the image.
+           qcow2 - QEMU Emulator
+           raw - Raw disk image
+           iso - Optical Disk Image";
+      type enumeration {
+        enum image-type-qcow2;
+        enum image-type-raw;
+        enum image-type-iso;
+      }
+    }
+
+    leaf location {
+      description
+          "The URL where the data for the image resides. For example, if
+           the image data is stored in swift,
+           swift://account:key@example.com/container/obj.";
+      type string;
+    }
+
+    leaf public {
+      description
+          "Makes an image accessible for all the environments (admin-only by
+          default).";
+      type boolean;
+    }
+
+    leaf protected {
+      description
+          "Prevents image from being deleted.";
+      type boolean;
+    }
+  }
+
+  list vdu-flavors {
+    description
+      "Defines the virtual machine flavor. This is similar to VM flavors 
+       in OpenStack.";
+
+    key name;
+    leaf name {
+      description
+        "Name of the vdu flavor.";
+      type string;
+    }
+
+    list storage {
+      key name;
+      leaf name {
+        description
+          "Name of the storage drive. NOTE: a flavor may be associated with
+           multiple storage devices.";
+        type string;
+      }
+      leaf size-gb {
+        description
+          "Size of the storage in GB.";
+        type uint16;
+      }
+
+    }
+
+    container cpu {
+      leaf num-vcpu {
+        description
+          "The number of virtual CPUs.";
+        type uint16;
+      }
+
+      leaf cpu-policy {
+        description
+            "CPU pinning policy:
+             dedicated : Virtual CPUs are pinned to physical CPUs
+             shared    : Multiple VMs may share the same physical CPUs.";
+        type enumeration {
+          enum dedicated;
+          enum shared;
+        }
+      }
+
+      leaf cpu-thread-policy {
+          description
+            "CPU pinning policy with threads:
+             avoid   : Avoids placing a guest on a host with threads.
+             separate: Places vCPUs on separate cores, and avoids placing two
+                       vCPUs on two threads of same core.
+             isolate : Places each vCPU on a different core, and places no
+                       vCPUs from a different guest on the same core.
+             prefer  : Attempts to place vCPUs on threads of the same core.";
+
+
+        type enumeration {
+          enum avoid;
+          enum separate;
+          enum isolate;
+          enum prefer;
+        }
+      }
+
+      leaf numa-nodes {
+        description 
+            "Number of NUMA nodes to expose to the guest.";
+        type uint16;
+      }
+
+      list numa-mem-alloc-list {
+        description
+            "Lists how much memory to allocate from each numa node";
+        key numa-node-id;
+        leaf numa-node-id {
+          description 
+              "NUMA node identification. Typically it's 0 or 1";
+          type uint16;
+        }
+        leaf memory-gb {
+          description
+          "Memory size expressed in GB.";
+          type uint16;
+        }
+      }
+
+      list numa-cpu-alloc-list {
+        description
+            "Lists how vCPUs should be allocated to NUMA nodes.";
+        key numa-node-id;
+        leaf numa-node-id {
+          description 
+              "NUMA node identification. Typically it's 0 or 1";
+          type uint16;
+        }
+        list vcpu-ids {
+          description
+              "List of vcpus to allocate on this numa node.";
+          key vcpu-id;
+          leaf vcpu-id {
+            description
+                "The vcpu identifier, zero based.";
+            type uint16;
+          }
+        }
+      }
+    }
+
+    container memory {
+      leaf total-memory-gb {
+        description
+          "The total memory expressed in GB.";
+        type uint16;
+      }
+      leaf require-hugepages {
+        description
+            "Indicates that VDU requires hugepages.";
+        type boolean;
+      }
+      leaf hugepage-size {
+        description
+            "Size of hugepages.";
+        type uint16;
+      }
+    }
+
+    list extra-specs {
+      description
+          "Extra specifications for the flavor. Represented as
+           key-value pairs.";
+      key name;
+      leaf name {
+        type string;
+      }
+      leaf value {
+        type string;
+      }
+    }
+  }
+
+  list vdu-descriptors {
+    description 
+        "List of Virtual Deployment Unit Descriptors.";
+
+    key name;
+
+    leaf name {
+      description 
+          "Identifier for the vdu descriptor.";
+      type string;
+    }
+
+    leaf image-name {
+      description
+          "Name of the disk image associated with the VM.";
+      type leafref {
+        path "../../images/name";
+      }
+    }
+
+    leaf vdu-flavor-name {
+      description
+        "The type of VM flavor in this pool.";
+      type leafref {
+        path "../../vdu-flavors/name";
+      }
+    }
+
+    leaf availability-zone {
+      type leafref {
+        path "/rwzones:availability-zones/rwzones:name";
+      }
+    }
+
+    list ports {
+      description
+          "List of ports associated with a VDU in this pool.";
+
+      key name;
+
+      leaf name {
+        description
+            "Local name of the port on the VM.";
+        type string;
+      }
+
+      leaf virtual-port-descriptor {
+        description
+            "Leafref to a virtual port descriptor.";
+        type leafref {
+          path "/rwnetworks:virtual-port-descriptors/rwnetworks:name";
+        }
+      }
+    }
+  }
+
+  list vdu-pool-descriptors {
+    description
+        "Defines the list of Virtual Machine (VM) pools. The 
+         VM pool manager will manage the VMs in the pool.
+         During the boot up and autoscaling operations a VM will
+         be allocated from the VM pool for running VNFC.";
+    key name;
+    leaf name {
+      description
+        "Name of the VM pool.";
+      type string;
+    }
+
+    leaf environment {
+      type leafref {
+        path "/rwenvironments:environments/rwenvironments:name";
+      }
+    }
+
+    leaf vdu-descriptor-name {
+      description
+        "The type of VDU to use when populating this pool.";
+      type leafref {
+        path "../../vdu-descriptors/name";
+      }
+    }
+
+    leaf standby-vdu-threshold {
+      description
+          "If the standby VM count falls below this threshold, the
+           pool manager will allocate more VMs. The number of
+           VMs allocated depends on vdu-autoscale-count parameter.";
+      type uint32;
+    }
+
+    leaf vdu-autoscale-count {
+      description
+          "The number of VMs to allocate if the current-standby-vdu-count falls
+           below standby-vdu-threshold.";
+      type uint32;
+    }
+
+    leaf max-vdu-count {
+      description
+          "The maximum total VMs (active and standby) allowed for this pool";
+      type uint32;
+    }
+  }
+}

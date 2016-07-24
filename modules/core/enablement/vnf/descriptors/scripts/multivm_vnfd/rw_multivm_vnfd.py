@@ -1,0 +1,1 @@
+rift/mano/vnfds/rw_multivm_vnfd.py

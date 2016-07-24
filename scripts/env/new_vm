@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# this is meant to be run once right after a VM is created
+# if args are provided, they are assumed to be the IP Addresses of
+# the VMS and so the script will exec itself via ssh on them
+
+if [ $# -gt 0 ]; then
+    for sys 
+    do
+        echo executing on $sys
+        ssh_root -n $1 /usr/rift/scripts/env/new_vm >/tmp/new_vm.${1}.log &
+    done
+    wait
+fi
+
+
+
+if [ -h /usr/rift ]; then
+    if [ "`readlink /usr/rift`" == "/net/charm/usr/rift" ]; then
+        echo "already in lab mode"
+        exec /usr/rift/etc/fix_this_vm
+    fi
+fi
+
+
+/usr/rift/scripts/cloud/enable_lab
+/usr/rift/etc/fix_this_vm

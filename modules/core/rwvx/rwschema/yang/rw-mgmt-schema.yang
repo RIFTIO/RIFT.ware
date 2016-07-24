@@ -1,0 +1,314 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-mgmt-schema
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-mgmt-schema";
+  prefix "rw-mgmt-schema";
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  description
+    "Defines and configures the NETCONF schema of RIFT.ware.  RIFT.ware
+    supports a dynamic schema, which may change to reflect the network
+    services that are running under the RIFT.ware instance.  This
+    module provides the configuration needed to control the schema, as
+    well as the state necessary to monitor the schema as it changes.";
+
+  revision 2015-08-24 {
+    description
+      "Initial revision.";
+  }
+
+  typedef module-state {
+    description
+      "The state of a yang module.";
+
+    type enumeration {
+      enum configured {
+        description
+        "The yang module has been configured, but no further
+          action has been taken.";
+      }
+      enum errored {
+        description
+        "The module could not be loaded onto the system.  The
+          error-reason element contains a description of the
+          problem.";
+      }
+      enum loading-apps {
+        description
+          "Simple clients are loading the schema.";
+      }
+      enum loading-mgmt {
+        description
+          "The management apps are loading the schema.";
+      }
+      enum loading-nb-interfaces {
+        description
+          "The northbound interfaces are loading the schema.";
+      }
+      enum exported {
+        description
+        "The module has been loaded, parsed, and exported on the
+          northbound interfaces.  The module is ready for external
+          use.";
+      }
+    }
+  }
+
+  typedef application-state {
+    description
+      "The state of a listening application.";
+
+    type enumeration {
+      enum ready {
+        description
+        "The application has loaded all dynamic modules"; 
+      }
+      enum waiting {
+        description
+        "The application is waiting it's turn to load the dynamic modules";
+      }
+      enum working {
+        description
+        "The application has not loaded all the dynamic modules";
+      }
+      enum initializing {
+        description
+        "The application is loading more than the current pending dynamic modules.";
+      }
+      enum error {
+        description
+        "The application has failed to load the dynamic modules.";
+      }
+    }
+  }
+
+  typedef application-type {
+    description
+      "The type of listening application.";
+
+    type enumeration {
+      enum client {
+        description
+        "";
+      }
+      enum uAgent {
+        description
+        "";
+      }
+      enum nb-interface {
+        description
+        "";
+      }
+    }
+  }
+
+  grouping schema-module {
+    leaf so-filename {
+      type string;
+      description
+        "The internal full path and name for the pre-compiled shared
+          library that goes with the yang module.";
+    }
+    leaf fxs-filename {
+      type string;
+      description
+        "The internal full path and name for the confd fxs file that
+          goes with the yang module.";
+    }
+    leaf yang-filename {
+      type string;
+      description
+        "The internal full path and name for the yang file.";
+    }
+    leaf built-in {
+      type empty;
+      description
+        "Will be present if the module is a built-in module, that was
+          not loaded dynamically.";
+    }
+    leaf metainfo-filename {
+      type string;
+      description
+        "Absolute path of the meta info file which
+        holds the hash information of the schema files for a yang module.";
+    }
+    leaf exported {
+      description
+        "Determines whether the module will be exported via the
+          RIFT.ware northbound interfaces.  Only one revision of a
+          module may be exported at the same time.  A module must be
+          exported for any part of the config or operational data to be
+          accessible, for the rpcs to be usable, for notifications to
+          be generated, or for augments to be applied.  However, a
+          module does not need to be exported in order for its types or
+          groupings to be used by other modules.";
+      type boolean;
+    }
+  }
+
+  container rw-mgmt-schema {
+    description
+      "The configuration for the RIFT.ware external schema.  This
+      defines which yang files are externally visible and where they
+      are located.";
+
+    rwpb:msg-new "RwMgmtSchema";
+    config true;
+
+    container schema-version {
+      config false;
+      leaf yang-schema-version {
+        type uint32;
+        default 1;
+        description "Schema version number known by agent.";
+      }
+    }
+
+    list modules {
+      key "name revision";
+
+      leaf name {
+        type yang:yang-identifier;
+        description
+          "The name of the yang module (from the module statement).";
+      }
+
+      leaf revision {
+        type string;
+        // ATTN: draft-ietf-netconf-yang-library-01 has a revision typedef
+        description
+          "The yang revision of the module.  Multiple revisions may be
+          loaded, although only one will be exposed.  Empty string is
+          valid, in which case the revision statement must not exist in
+          the module.";
+      }
+      container module {
+        uses schema-module;
+        description
+          "The particulars of the dynamic module being loaded.";
+      }
+
+      // ATTN: Some notion of which package it came from? leafref into catalog?
+      // ATTN: Some notion of which interfaces it is exported on?
+      // ATTN: List of submodule files?
+      // ATTN: List of deviations?
+      // ATTN: List of features?
+      // ATTN: Upgrade initiation?
+      // ATTN: Indication of import-for-defs, import-for-data
+    }
+
+    list packages {
+      key "vnf-id";
+      leaf vnf-id {
+        type yang:uuid; // ATTN: make this a leafref to /vnfd:vnfd-catalog/vnfd:vnfd/vnfd:id when ATG is merged
+        description
+          "The uuid of the vnfd that 'owns' the package.";
+      }
+      
+      list modules {
+        key "name revision";
+
+        leaf name {
+          type leafref {
+            path "../../../modules/name";
+          }
+        }
+
+        leaf revision {
+          type leafref {
+            path "../../../modules[name=current()/../name]/revision";
+          }
+        }
+      }
+    }
+  }
+  
+  container rw-mgmt-schema-state {
+    config false;
+
+    list dynamic-modules {
+      key "name revision";
+
+      leaf name {
+        type yang:yang-identifier;
+        description
+          "The name of the yang module (from the module statement).";
+      }
+      leaf revision {
+        type string;
+        // ATTN: draft-ietf-netconf-yang-library-01 has a revision typedef
+        description
+          "The yang revision of the module.  Multiple revisions may be
+          loaded, although only one will be exposed.  Empty string is
+          valid, in which case the revision statement must not exist in
+          the module.";
+      }
+      container module {
+        uses schema-module;
+        description
+          "The particulars of the dynamic module being loaded.";
+      }
+      leaf state {
+        type module-state;
+        description
+          "Where the module is in it's lifecycle of being loaded.";
+      }
+/*
+      list imports {
+        key "name revision";
+
+        leaf name {
+          type yang:yang-identifier;
+          description
+            "The name of the yang module (from the module statement).";
+        }
+      }
+*/
+    }
+
+    list listening-apps {
+      key "name";
+      leaf name {
+        type "string";
+      }
+
+      leaf app-type {
+        type application-type;
+      }
+
+      leaf state {
+        type application-state;
+        description
+          "Where the module is in it's lifecycle of being loaded.";
+      }
+
+      container error-message {
+        presence "An error has occured.";
+        leaf message {
+          type "string";
+          description
+            "A description of the error that occured while loading the dynamic modules.";
+        }
+      }
+    }
+  }
+}
+
+
+
+
+

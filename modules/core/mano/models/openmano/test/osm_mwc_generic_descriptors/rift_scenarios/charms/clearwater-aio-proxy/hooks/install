@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+status-set maintenance "installing"
+
+# Install sshpass as we'll need it shortly
+apt-get update
+apt-get -q -y --force-yes install sshpass
+
+status-set maintenance "installed"

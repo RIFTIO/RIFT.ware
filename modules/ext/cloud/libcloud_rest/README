@@ -1,0 +1,28 @@
+Details on pristine tracking of GIT upstream libcloud.rest-1 repository:
+
+This is a fork of islamgulov/libcloud.rest
+
+Upstream for packages being maintained in publically accessible git
+repositories may be directly imported, tracked, and merged using the
+git subtree utility.  (Note that this is not the 'git merge -s
+subtree' merge strategy).
+
+Should upstream cease to be available in GIT, we can revert to manual
+creation of a pristine branch for the package and feed it with
+tarballs.
+
+Import a new upstream project's HEAD on branch master into the
+repository-local path libcloud_rest/libcloud_rest, as a single changeset (the
+--squash):
+
+  git subtree add --prefix=libcloud_rest/libcloud_rest -m 'Initial port of libcloud_rest' --squash https://github.com/Kami/libcloud.rest-1.git HEAD
+
+Merge any new changes since the import or last merge into the local libcloud_rest work:
+
+  git subtree pull --prefix=libcloud_rest/libcloud_rest -m 'Merge libcloud_rest version X.XX' --squash https://github.com/Kami/libcloud.rest-1.git HEAD
+
+For more details: 
+
+  /usr/share/doc/git/contrib/subtree/git-subtree.txt
+  https://github.com/apenwarr/git-subtree/blob/master/git-subtree.txt
+

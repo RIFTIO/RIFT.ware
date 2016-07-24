@@ -1,0 +1,29 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module interfaces-tailf {
+
+  namespace "http://riftio.com/ns/core/mgmt/rwuagent/test/interfaces-tailf";
+  prefix "intf-tailf";
+
+  import interfaces {
+    prefix "interfaces";
+  }
+
+  import tailf-common {
+    prefix "tailf";
+  }
+
+  tailf:annotate "/interfaces:interfaces/interfaces:interface/interfaces:status" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/interfaces:clear-interface" {
+    tailf:actionpoint rw_actionpoint;
+  }
+}

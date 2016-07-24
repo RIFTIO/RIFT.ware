@@ -1,0 +1,800 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module test-a-rw-vnf-base-opdata
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-vnf-base-opdata";
+  prefix "rwvnfopdata";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+  import test-a-mano-base {
+    prefix "manobase";
+  }
+  import rw-yang-types {
+    prefix "rwt";
+  }
+  import test-a-rw-vnf-base-types{
+    prefix "rwvnfbasetypes";
+  }
+
+  revision 2015-08-25 {
+    description
+      "This conatins common objects for RIFT VNFs. The
+       RIFT VNFs augment this YANG model for configuration.";
+  }
+
+  grouping vnf-key {
+    leaf vnf-name {
+      description
+        "Name of the VNF.";
+      /*
+        type leafref {
+        path "/manobase:vnf-config/manobase:vnf/manobase:name";
+        }
+      */
+      type string;
+    }
+    leaf vnf-instance{
+      description
+        "Instance number of the VNF.";
+      type uint32;
+      /*
+        type leafref {
+        path "/manobase:vnf-config/manobase:vnf/manobase:instance";
+        }
+      */
+    }
+  }
+
+  grouping logical-port-key{
+    leaf portname{
+      rwpb:field-inline "true";
+      type string {
+        length "min..64";
+      }
+      description "Corresponding physical port";
+    }
+    leaf vlan-id{
+      type uint32;
+      description "vlanid";
+    }
+    leaf lport-type{
+      type rwvnfbasetypes:lport-type;
+      description "Logical Port Type";
+    }
+  }
+
+  grouping generic-port-info {
+    leaf descr-string {
+      description "description comment for port";
+      type string {
+        length "min..32";
+      }
+    }
+    leaf link-state{
+      description "Port State, Up/Down";
+      type rwvnfbasetypes:up-down;
+    }
+    leaf admin-state{
+      type rwvnfbasetypes:up-down;
+    }
+    leaf mtu{
+      description "MTU of the port";
+      type uint32;
+    }
+    leaf mac{
+      description "Port MAC address";
+      rwpb:field-inline "true";
+      type rwt:mac-address;
+      rwpb:field-string-max 18;
+      rwpb:field-c-type "rw_mac_addr_t";
+    }
+    leaf speed {
+      type uint32;
+      description "Port speed in Mbps";
+    }
+    leaf duplex {
+      type enumeration {
+        enum half-duplex { value 0; }
+        enum full-duplex { value 1; }
+      }
+      description "Port duplex, half-duplex/full-duplex";
+    }
+    leaf lport-id{
+      description "Corresponding Logical port ID";
+      type uint32;
+    }
+  }
+
+  augment /manobase:vnf-opdata/manobase:vnf {
+    description
+      "Container for VNF base Operational Data";
+
+    list logical-port{
+      config false;
+      rwpb:msg-new RwLogicalPort;
+      ordered-by user;
+      /*Need to fix it by choice on lport-type*/
+      key "lport-type portname vlan-id";
+
+      leaf portname{
+        rwpb:field-inline "true";
+        type string {
+          length "min..64";
+        }
+        description "Corresponding physical port";
+      }
+      leaf vlan-id{
+        type uint32;
+        description "vlanid";
+      }
+      leaf lport-type{
+        type rwvnfbasetypes:lport-type;
+        description "Logical Port Type";
+      }
+      container info {
+        rwpb:msg-new RwLogicalPortInfo;
+        leaf lport-id {
+          type uint32;
+          description "Logical Port Id";
+        }
+        leaf fastpath-instance{
+          type uint32;
+          description "FastPath instance Identifier of the Physical port";
+        }
+        leaf lport-state{
+          type uint32;
+          description "Operation State of the logical port";
+        }
+        leaf parent-lportid{
+          type uint32;
+          description "Logical port-id if the parent in case of LAG";
+        }
+        leaf mac{
+           rwpb:field-inline "true";
+          type rwt:mac-address;
+          rwpb:field-string-max 18;
+          rwpb:field-c-type "rw_mac_addr_t";
+          
+        }
+        leaf fabric {
+          type rwvnfbasetypes:yes-no;
+          description "Fabric on for this logical port";
+        }
+        leaf mtu{
+          type uint32;
+          description "MTU on the Logical port";
+        }
+
+        container aggregation-members{
+          list active-members{
+            key "lport-id";
+            rwpb:field-inline "true";
+            max-elements 16;
+            description "Active Logical ports in the LAG group";
+            leaf lport-id{
+              type uint32;
+              description "Logical port id of the active member";
+            }
+          }
+        }
+
+        uses rwvnfbasetypes:tunnel-params;
+
+        container ncr-info{
+          rwpb:field-inline "true";
+          leaf context-name{
+            rwpb:field-inline "true";
+            type string {
+              length "min..64";
+            }
+            description "Context Name bound to";
+          }
+          leaf vrf-name{
+            rwpb:field-inline "true";
+            type string {
+              length "min..64";
+            }
+            description "Vrf Name bound to";
+          }
+          leaf context-id{
+            type uint32;
+            description "Net namespace ID bound to";
+          }
+          leaf interface-name{
+            rwpb:field-inline "true";
+            type string {
+              length "min..64";
+            }
+            description "Interface name bound to";
+          }
+        }
+      }
+      list fastpath-state{
+        config false;
+        key "instance";
+        rwpb:msg-new RwLogicalPortFpathStats;
+        leaf instance{
+          type uint32;
+          description "Fastpath Instance identifier";
+        }
+        leaf kni{
+          type string {
+            length "min..64";
+          }
+          rwpb:field-inline "true";
+          description "Corresponding kernel interface name";
+        }
+        leaf local{
+          type rwvnfbasetypes:yes-no;
+          description "Indicaes whether the logical port represents a port that is local to fastpath instance";
+        }
+        leaf virtual-fabric{
+          type rwvnfbasetypes:yes-no;
+          description "logical port representing virtual-fabric port";
+        }
+        container rx{
+          uses rwvnfbasetypes:network-packet-counters;
+        }
+        container tx{
+          uses rwvnfbasetypes:network-packet-counters;
+        }
+      }
+    }
+
+    list port-state {
+      config false;
+      rwpb:msg-new RwPhysicalPort;
+      key "portname";
+
+      leaf portname{
+        rwpb:field-inline "true";
+        type string {
+          length "min..64";
+        }
+        description "Port Name";
+      }
+      container info {
+        rwpb:msg-new RwPortInfo;
+        rwpb:msg-flat true;
+        leaf privatename{
+          rwpb:field-inline "true";
+          type string {
+            length "min..64";
+          }
+          description "Port Private Name(PCI)";
+        }
+        leaf virtual-fabric {
+          type rwvnfbasetypes:yes-no;
+          description "Indicates whether this port is used for fabric or not";
+        }
+        leaf fastpath-instance{
+          description "FastPath Instance managing the port";
+          type uint32;
+        }
+        leaf id{
+          type rwt:port-number;
+          description "Port Identifier";
+        }
+        leaf rte-port-id{
+          type rwt:port-number;
+          description "Piot Port Identifier";
+        }
+
+        uses generic-port-info;
+
+        leaf app-name {
+          type string {
+            length "min..32";
+          }
+          description "Name of the application running on the port";
+        }
+        leaf receive-queues {
+          type rwt:gauge32;
+          description "Number of receice queues on the port";
+        }
+        leaf transmit-queues {
+          type rwt:gauge32;
+          description "Number of transmit queues on the port";
+        }
+        leaf numa-socket {
+          type int32;
+          description "NUMA socket to which port PCI is attached";
+        }
+        uses rwvnfbasetypes:flow-control;
+      }
+
+      list secondary-mac{
+        config false;
+        key "mac";
+        leaf mac{
+          rwpb:field-inline "true";
+          type rwt:mac-address;
+          rwpb:field-string-max 18;
+          rwpb:field-c-type "rw_mac_addr_t";
+        }
+      }
+
+      container bundle-info {
+        rwpb:msg-new RwPortBundleInfo;
+        uses generic-port-info;
+        leaf system-priority{
+          description "The lacp priority for the system(colony)";
+          type uint32;
+        }
+        leaf system-id{
+          description "System ID used by the Link Aggregation Control Protocol (LACP)";
+          rwpb:field-inline "true";
+          type rwt:mac-address;
+          rwpb:field-string-max 18;
+          rwpb:field-c-type "rw_mac_addr_t";
+        }
+        leaf bundle-mac{
+          description "MAC used by the Link Aggregation Control Protocol (LACP)";
+          rwpb:field-inline "true";
+          type rwt:mac-address;
+          rwpb:field-string-max 18;
+          rwpb:field-c-type "rw_mac_addr_t";
+        }
+        leaf min-active-links{
+          description "Minimum number of active links to bring up the bundle";
+          type uint32;
+        }
+        leaf max-active-links{
+          description "Maximum number of active links in the bundle";
+          type uint32;
+        }
+        leaf load-balance{
+          description "packet contents to use for load-balancing";
+          type rwvnfbasetypes:lag-lb-mode;
+        }
+        leaf mac-mode{
+          description "Mac-mode for 1:1 redundancy";
+          type rwvnfbasetypes:mac-mode;
+        }
+        list members {
+          rwpb:msg-new RwPortBundleInfoMembers;
+          key "name";
+          leaf name {
+            description "Name of the bundle";
+            rwpb:field-inline "true";
+            type string {
+              length "min..64";
+            }
+          }
+          leaf lacp-mode{
+            description "lacp mode";
+            type  rwvnfbasetypes:lacp-mode;
+          }
+          leaf lacp-state{
+            description "LACP State";
+            type rwvnfbasetypes:lacp-state;
+          }
+          leaf bundle-state{
+            description "Bundle State";
+            type rwvnfbasetypes:bundle-state-type;
+          }
+          leaf priority{
+            type uint32;
+          }
+          leaf rate{
+            type rwvnfbasetypes:lacp-rate;
+          }
+          leaf fast-switchover{
+            type uint32;
+          }
+          leaf mac{
+            rwpb:field-inline "true";
+            type rwt:mac-address;
+            rwpb:field-string-max 18;
+            rwpb:field-c-type "rw_mac_addr_t";
+          }
+        }
+      }
+      container lacp-info{
+        rwpb:msg-new RwPortLacpinfo;
+        container params{
+          rwpb:msg-new RwPortLacpParams;
+          leaf priority{
+            type uint32;
+          }
+          leaf fast-switchover{
+            type rwvnfbasetypes:on-off;
+          }
+          leaf rate{
+            type rwvnfbasetypes:fast-slow;
+          }
+          leaf mode{
+            type uint32;
+          }
+          leaf bundle-name{
+            rwpb:field-inline "true";
+            type string {
+              length "min..64";
+            }
+          }
+          leaf bundle-lportid{
+            type uint32;
+          }
+          //akki why here???
+          leaf lport-id{
+            type uint32;
+          }
+          leaf lacp-mac{
+            rwpb:field-inline "true";
+            type rwt:mac-address;
+            rwpb:field-string-max 18;
+            rwpb:field-c-type "rw_mac_addr_t";
+          }
+        }
+        container state{
+          rwpb:msg-new RwPortLacpState;
+          
+          leaf collecting{
+            type rwvnfbasetypes:on-off;
+          }
+          leaf distributing{
+            type rwvnfbasetypes:on-off;
+          }
+          leaf active{
+            type rwvnfbasetypes:on-off;
+          }
+          container actor{
+            uses rwvnfbasetypes:lacppdu-info;
+          }
+          container partner{
+            uses rwvnfbasetypes:lacppdu-info;
+          }
+          leaf lacp-mux-state{
+            type string {
+              length "min..20";
+            }
+          }
+          leaf selected-state{
+            type string {
+              length "min..20";
+            }
+          }
+        }
+        container counters{
+          rwpb:msg-new RwPortLacpstat;
+          container lacppdu{
+            rwpb:field-inline "true";            
+            leaf rx{
+              type uint32;
+              description "Number of lacp-pdus received on the port";
+            }
+            leaf tx{
+              type uint32;
+              description "Number of lacp-pdus sent on the port";
+            }
+            leaf errors{
+              type uint32;
+              description "Number of lacp-pdus errors on the port";
+            }
+            leaf nobuf{
+              type uint32;
+              description "Number of lacp-pdus errors on the port";
+            }
+          }
+          container marker{
+            rwpb:field-inline "true";
+            leaf rx{
+              type uint32;
+              description "Number of marker received on the port";
+            }
+            leaf tx{
+              type uint32;
+              description "Number of marker sent on the port";
+            }
+            leaf errors{
+              type uint32;
+              description "Number of marker errors on the port";
+            }
+            leaf nobuf{
+              type uint32;
+              description "Number of marker errors on the port";
+            }
+          }
+        }
+      }
+
+      container queues {
+        rwpb:msg-new RwPortQueueStat;
+        rwpb:msg-flat true;
+        list rx-queue {
+          max-elements 16;
+          key "qid";
+
+          uses rwvnfbasetypes:port-queue-stats;
+        }
+
+        list tx-queue {
+          max-elements 40;
+          key "qid";
+
+          uses rwvnfbasetypes:port-queue-stats;
+        }
+      }
+      container counters {
+        rwpb:msg-new RwPortStat;
+        leaf rx-rate-pps {
+          type rwt:gauge32;
+          description "Rx Rate(pps)";
+        }
+        leaf tx-rate-pps {
+          type rwt:gauge32;
+          description "Tx Rate(pps)";
+        }
+        leaf rx-rate-mbps {
+          type rwt:gauge32;
+          description "Rx Rate(Mbps)";
+        }
+        leaf tx-rate-mbps {
+          type rwt:gauge32;
+          description "Tx Rate(Mbps)";
+        }
+        leaf input-errors {
+          type rwt:zero-based-counter32;
+          description "Input Errors";
+        }
+        leaf output-errors {
+          type rwt:zero-based-counter32;
+          description "Output Errors";
+        }
+        leaf input-packets {
+          type rwt:zero-based-counter64;
+          description "Input packets";
+        }
+        leaf output-packets {
+          type rwt:zero-based-counter64;
+          description "Output packets";
+        }
+        leaf input-bytes {
+          type rwt:zero-based-counter64;
+          description "Total In bytes(MB)";
+        }
+        leaf output-bytes {
+          type rwt:zero-based-counter64;
+          description "Total Out Bytes(MB)";
+        }
+        leaf input-missed-pkts {
+          type rwt:zero-based-counter64;
+          description "Total of RX missed packets (e.g full FIFO)";
+        }
+        leaf input-badcrc-pkts {
+          type rwt:zero-based-counter64;
+          description "Total of RX packets with CRC error";
+        }
+        leaf input-badlen-pkts {
+          type rwt:zero-based-counter64;
+          description "Total of RX packets with bad len";
+        }
+        leaf input-mcast-pkts {
+          type rwt:zero-based-counter64;
+          description "Total of RX multicast packets";
+        }
+        leaf input-nombuf-pkts {
+          type rwt:zero-based-counter64;
+          description "Total number of RX mbuf allocation failures";
+        }
+        leaf output-pause-xon-pkts {
+          type rwt:zero-based-counter64;
+          description "Total nb. of XON pause frame sent";
+        }
+        leaf input-pause-xon-pkts {
+          type rwt:zero-based-counter64;
+          description "Total nb. of XON pause frame received";
+        }
+        leaf output-pause-xoff-pkts {
+          type rwt:zero-based-counter64;
+          description "Total nb. of XOFF pause frame sent";
+        }
+        leaf input-pause-xoff-pkts {
+          type rwt:zero-based-counter64;
+          description "Total nb. of XOFF pause frame received";
+        }
+      }
+      list ip {
+        config false;
+        rwpb:msg-new  RwPortIp;
+        key "address";
+
+        leaf address {
+          description "ipv4 address assigned to the interface";
+          type rwt:ip-prefix-non-canonical;
+          rwpb:field-string-max 19;
+          rwpb:field-inline "true";
+          rwpb:field-c-type "rw_ip_prefix_t";
+        }
+      }
+    }
+
+    list network-context-state{
+      config false;
+      key "name";
+      rwpb:msg-new NetworkContextState;
+      leaf name{
+        rwpb:field-inline "true";
+        type string {
+          length "min..64";
+        }
+      }
+      leaf context-id{
+        type uint32;
+      }
+      leaf ncmgr-instance{
+        type uint32;
+      }
+      list vrf{
+        config false;
+        key "name";
+        rwpb:msg-new NetworkContextVrf;
+
+        leaf name{
+          rwpb:field-inline "true";
+          type string {
+            length "min..64";
+          }
+        }
+        container info {
+          rwpb:msg-new NetworkContextVrfInfo;
+          leaf vrf-context-id{
+            type uint32;
+          }
+          leaf ncmgr-instance{
+            type uint32;
+          }
+          leaf platform-name{
+            description "Network Namespace name";
+            type string {
+              length "min..64";
+            }
+            rwpb:field-inline "true";
+          }
+          leaf ipv6-forwarding{
+            type uint32;
+          }
+          leaf vsap_id{
+            type uint32;
+          }
+          leaf local-fastpath-instance{
+            type uint32;
+          }
+        }
+        uses rwvnfbasetypes:vrf-info;
+      }
+    }
+
+    /*New vsap, vfap id allocators*/
+    list virtual-service-access-point{
+      config false;
+      key "vsap-type vsap-name vsap-service-id vsap-service-subindex group-id";
+      rwpb:msg-new RwVirtualServiceAccessPoint;
+
+      leaf vsap-type {
+        type rwvnfbasetypes:vsap-type;
+      }
+      leaf vsap-name{
+        rwpb:field-inline "true";
+        type string {
+          length "min..64";
+        }
+      }
+      leaf vsap-service-id{
+        type uint32;
+      }
+      leaf vsap-service-subindex {
+        type uint32;
+      }
+      leaf group-id{
+        type uint32;
+      }
+      container vsap-info{
+        rwpb:field-inline "true";
+        leaf taskid {
+          type uint32;
+          description "Tasklet instance";
+        }
+        leaf alloc-flowid-chunk{
+          type uint32;
+        }
+      }
+
+      container controller-info {
+        leaf vsap-id {
+          type uint32;
+        }
+        leaf-list vfap-id-list {
+          type uint32;
+          max-elements 16;
+        }
+        leaf flowid-start {
+          type uint32;
+        }
+        leaf flowid-end {
+          type uint32;
+        }
+        leaf chunk-id {
+          type uint32;
+        }
+      }
+    }
+  }
+
+  rpc start {
+    input {
+      container vnf {
+        description "This is a presence container that individual vnf's can augment on";
+      }
+    }
+    output {
+      container vnf-output {
+        description "This is a presence container that individual vnf's can augment on";
+      }
+    }
+  }
+
+
+  rpc stop {
+    input {
+      container vnf {
+        description "This is a presence container that individual vnf's can augment on";
+      }
+    }
+    output {
+      container vnf-output {
+        description "This is a presence container that individual vnf's can augment on";
+      }
+    }
+  }
+
+  rpc debug {
+    input {
+      container vnf {
+        description "This is a presence container that individual vnf's can augment on";
+      }
+    }
+    output {
+      container vnf-output {
+        description "This is a presence container that individual vnf's can augment on";
+      }
+    }
+  }
+
+
+  rpc clear-data {
+    input {
+      container vnf {
+        description "This is a presence container that individual vnf's can augment on";
+      }
+      container logical-port-counters {
+        rwpb:msg-new RwClearLportCounters;
+        uses vnf-key;
+        uses logical-port-key;
+      }
+      container port-counters {
+        rwpb:msg-new RwClearPortCounters;
+        uses vnf-key;
+        leaf port-name {
+          rwpb:field-inline "true";
+          type string {
+            length "min..64";
+          }
+        }
+      }
+    }
+    output {
+      container vnf-output {
+        description "This is a presence container that individual vnf's can augment on";
+      }
+    }
+  }
+}

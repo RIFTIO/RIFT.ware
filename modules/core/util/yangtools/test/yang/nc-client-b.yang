@@ -1,0 +1,355 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file test-ydom-top.yang
+ * @author Tom Seidenberg
+ * @date 2014/05/13
+ * @brief Top-level yang for XMLManagerYang testing
+ */
+
+module nc-client-b
+{
+  namespace "http://riftio.com/ns/nc-client/nc-client";
+  prefix "ncc";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "Test yang for nc client";
+  revision 2014-07-09 { description "Copied from test-ydom-top"; }
+
+  typedef global-enum {
+    description "A typedefined global enumeration. This should work differently
+                 than a typedef inside a container or non-typedefed enum. Should
+                 be available in other modules";
+    type enumeration {
+      enum first { value 1; }
+      enum second{ value 3; }
+      enum seventh { value 7;}
+    }
+  }
+
+  container enum-test {
+    rwpb:msg-new NctestEnum;
+    description " A container geared towards testing enumerations ";
+    
+    typedef container-enum {
+      description " A typedefined enumeration within a conainer";
+      type enumeration {
+        enum first { value 10;}
+        enum second { value 20;}
+        enum seventh {value 70; }
+      }
+    }
+
+    leaf global {
+      description "An element from the global typdef ";
+      type global-enum;
+    }
+
+    leaf local {
+      description "An element from a local typedef";
+      type container-enum;
+    }
+
+    leaf not-typed {
+      description "From an non-typed enumeration ";
+      type enumeration {
+        enum first { value 100;}
+        enum second { value 234;}
+        enum seventh { value 999;}
+      }
+    }
+  }
+  
+  identity company { description "A company"; }
+  identity riftio { base company; description "rift.IO"; }
+  identity google { base company; description "Google"; }
+
+  typedef flags {
+    type bits {
+      bit a { position 0; }
+      bit b { position 1; }
+      bit c { position 2; }
+      bit d { position 3; }
+    }
+  }
+
+  typedef union1 {
+    type union {
+      type string;
+      type flags;
+      type identityref { base company; }
+      type int8;
+      type decimal64 { fraction-digits 14; }
+    }
+  }
+
+  typedef enum1 {
+    type enumeration {
+      enum RWCAT_E_A { value 1; }
+      enum RWCAT_E_B { value 2; }
+      enum RWCAT_E_C { value 3; }
+      enum RWCAT_E_D { value 4; }
+      enum RWCAT_E_E { value 12345; }
+
+    }
+  }
+
+  grouping group-a {
+    container cont-in-a {
+      description "Test container in group-a.";
+
+      leaf str1 {
+        description "A string from a";
+        type string {
+          length "1|2|10..20";
+        }
+      }
+
+      leaf num1 {
+        description "A number from a";
+        type int64;
+      }
+      
+      leaf-list ll {
+        description "A leaf-list of enums";
+        rwpb:field-inline-max "1024";
+        type enum1;
+      }
+
+      list lst {
+        description "A plain list";
+        key "str2";
+        max-elements 1024;
+
+        leaf num2 {
+          description "A number";
+          type int32 { range "1..10"; }
+        }
+
+        leaf str2 {
+          description "A string";
+          type string;
+        }
+      }
+    }
+  }
+
+  container top {
+    rwpb:msg-new NctestTop;
+
+    container a {
+      description "for test RwYangDom.Merge";
+      uses group-a;
+    }
+
+    container empty_leaf {
+      description "for test RwYangDom.EmptyLeaf";
+      leaf empty1 { type empty; }
+      leaf empty2 { type empty; }
+      leaf bool1 { type boolean; }
+      leaf bool2 { type boolean; }
+      leaf bool3 { type boolean; }
+    }
+
+    container empty_cont {
+      description "for test RwYangDom.PresenceCont";
+      presence true;
+
+      // empty presence containers
+      container ep01 {
+        presence true;
+      }
+      container ep02 {
+        presence true;
+      }
+
+      // non-presence containers
+      container ep10 {
+        leaf lf10 { type string; default "def10"; }
+      }
+      container ep11 {
+        leaf lf11 { type string; default "def11"; }
+      }
+      container ep12 {
+        leaf lf12 { type string; default "def12"; }
+      }
+      container ep14 {
+        leaf lf14 { type string; }
+      }
+      container ep15 {
+        leaf lf15 { type string; }
+      }
+      container ep16 {
+        leaf lf16 { type string; }
+      }
+
+      // presence containers with optional nodes
+      container ep20 {
+        presence true;
+        leaf lf20 { type string; default "def20"; }
+      }
+      container ep21 {
+        presence true;
+        leaf lf21 { type string; default "def21"; }
+      }
+      container ep22 {
+        presence true;
+        leaf lf22 { type string; default "def22"; }
+      }
+      container ep24 {
+        presence true;
+        leaf lf24 { type string; }
+      }
+      container ep25 {
+        presence true;
+        leaf lf25 { type string; }
+      }
+      container ep26 {
+        presence true;
+        leaf lf26 { type string; }
+      }
+
+      // presence containers with mandatory nodes
+      container ep36 {
+        presence true;
+        leaf lf36 { mandatory true; type string; }
+      }
+      container ep37 {
+        presence true;
+        leaf lf37 { mandatory true; type string; }
+      }
+
+      // empty non-presence containers
+      container ep43 {
+      }
+      container ep44 {
+      }
+
+      // non-presence containers with mandatory nodes
+      container ep55 {
+        leaf lf55 { mandatory true; type string; }
+      }
+    }
+
+    container empty_cont_flat {
+      description "for test RwYangDom.PresenceCont";
+      presence true;
+      rwpb:msg-flat true;
+
+      // empty presence containers
+      container ep01 {
+        presence true;
+      }
+      container ep02 {
+        presence true;
+      }
+
+      // non-presence containers
+      container ep10 {
+        leaf lf10 { type string { length "0..20"; } default "def10"; }
+      }
+      container ep11 {
+        leaf lf11 { type string { length "0..20"; } default "def11"; }
+      }
+      container ep12 {
+        leaf lf12 { type string { length "0..20"; } default "def12"; }
+      }
+      container ep14 {
+        leaf lf14 { type string { length "0..20"; } }
+      }
+      container ep15 {
+        leaf lf15 { type string { length "0..20"; } }
+      }
+      container ep16 {
+        leaf lf16 { type string { length "0..20"; } }
+      }
+
+      // presence containers with optional nodes
+      container ep20 {
+        presence true;
+        leaf lf20 { type string { length "0..20"; } default "def20"; }
+      }
+      container ep21 {
+        presence true;
+        leaf lf21 { type string { length "0..20"; } default "def21"; }
+      }
+      container ep22 {
+        presence true;
+        leaf lf22 { type string { length "0..20"; } default "def22"; }
+      }
+      container ep24 {
+        presence true;
+        leaf lf24 { type string { length "0..20"; } }
+      }
+      container ep25 {
+        presence true;
+        leaf lf25 { type string { length "0..20"; } }
+      }
+      container ep26 {
+        presence true;
+        leaf lf26 { type string { length "0..20"; } }
+      }
+
+      // presence containers with mandatory nodes
+      container ep36 {
+        presence true;
+        leaf lf36 { mandatory true; type string { length "0..20"; } }
+      }
+      container ep37 {
+        presence true;
+        leaf lf37 { mandatory true; type string { length "0..20"; } }
+      }
+
+      // empty non-presence containers
+      container ep43 {
+      }
+      container ep44 {
+      }
+
+      // non-presence containers with mandatory nodes
+      container ep55 {
+        leaf lf55 { mandatory true; type string { length "0..20"; } }
+      }
+    }
+
+    container apis_test {
+      description "for test RwYangDom.ApiTest";
+      leaf lint8 { type int8; }
+      leaf lint16 { type int16; }
+      leaf lint32 { type int32; }
+      leaf lint64 { type int64; }
+      leaf luint8 { type uint8; }
+      leaf luint16 { type uint16; }
+      leaf luint32 { type uint32; }
+      leaf luint64 { type uint64; }
+      leaf lboolean { type boolean; }
+      leaf lempty { type empty; }
+      leaf ldecimal64 { type decimal64 { fraction-digits 10; } }
+      leaf lenum { type enum1; }
+      leaf lstring { type string; }
+      leaf lbinary { type binary; }
+      leaf lbits { type flags; }
+      leaf lidref { type identityref { base "company"; } }
+      leaf llref { type leafref { path "../reallist/k"; } }
+      leaf linstid { type instance-identifier; }
+      leaf lunion { type union1; }
+      anyxml axml;
+      leaf-list leaflist { type string; }
+      list reallist {
+        key "k";
+        leaf k { type string; }
+        leaf d1 { type string; }
+        leaf d2 { type uint32; }
+      }
+    }
+  }
+}
+

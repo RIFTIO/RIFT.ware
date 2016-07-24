@@ -1,0 +1,78 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-mc-annotation
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-mc-annotation";
+  prefix "rw-mc-ann";
+
+  import rw-mc
+  {
+    prefix rw-mc;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/rw-mc:opdata" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:start-launchpad" {
+    tailf:actionpoint rw_actionpoint;
+  }
+
+  tailf:annotate "/rw-mc:mgmt-domain/rw-mc:domain/rw-mc:launchpad" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:stop-launchpad" {
+    tailf:actionpoint rw_actionpoint;
+  }
+
+  tailf:annotate "/rw-mc:vm-pool/rw-mc:pool/rw-mc:available" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:network-pool/rw-mc:pool/rw-mc:available" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:network-pool/rw-mc:pool/rw-mc:assigned-detail" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:vm-pool/rw-mc:pool/rw-mc:mgmt-domain" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:vm-pool/rw-mc:pool/rw-mc:assigned-detail" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:network-pool/rw-mc:pool/rw-mc:mgmt-domain" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:cloud-account/rw-mc:account/rw-mc:pools" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:cloud-account/rw-mc:account/rw-mc:resources" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:cloud-account/rw-mc:account/rw-mc:connection" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rw-mc:mission-control" {
+    tailf:callpoint rw_callpoint;
+  }
+}

@@ -1,0 +1,73 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rwiaas-hosts-d {   
+  namespace "http://riftio.com/ns/riftware-1.0/rwiaas-hosts";   
+  prefix "rwhosts";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix rwt; }
+  import ietf-inet-types { prefix "inet"; }
+  import ietf-yang-types { prefix "yang"; }
+  import rwiaas-zones-d { prefix "rwzones"; }
+  
+  revision 2015-01-28 {     
+    description       
+      "Initial revision. This YANG file captures the
+         data model for provisioning IaaS layer compute hosts.";     
+    reference       
+      "Derived from earlier versions of base YANG files";   
+  } 
+
+  list compute-hosts {     
+    description         
+      "List of compute hosts in the deployment.";
+      key name;     
+    leaf name {       
+      description "Name of the compute host.";       
+      type string;     
+    }
+      leaf fqdn {       
+      description "Fully qualified domain name for the host.";       
+      type inet:domain-name;     
+    }
+    leaf host-ip-address {       
+      description "IP address of the host.";       
+      type inet:ip-address;     
+    }
+    leaf ipmi-ip-address {       
+      description "IPMI interface IP address.";       
+      type inet:ip-address;     
+    }
+    leaf ipmi-username {       
+      description "IPMI username.";       
+      type inet:ip-address;     
+    }
+    leaf ipmi-password {       
+      description "IPMI password.";       
+      type inet:ip-address;     
+    }
+    leaf ipmi-interface-name {       
+      description "Name of the IPMI interface.";       
+      type string;     
+    }
+    leaf tenant-interface-name {       
+      description "Name of the tenant interface.";       
+      type string;     
+    }
+    leaf public-interface-name {       
+      description "Name of the public interface.";       
+      type string;     
+    }          
+    leaf availability-zone {       
+      type leafref {         
+        path "/rwzones:availability-zones/rwzones:name";       
+      }     
+    }   
+  } 
+} 

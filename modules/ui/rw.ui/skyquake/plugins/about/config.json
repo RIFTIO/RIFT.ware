@@ -1,0 +1,14 @@
+{
+    "root": "public",
+    "name": "About",
+    "dashboard": "./about.jsx",
+    "order": 99,
+    "priority":2,
+     "routes" : [{
+        "label": "Dashboard",
+        "route": "/",
+        "component": "./about.jsx",
+        "path": "",
+        "type": "internal"
+    }]
+}

@@ -1,0 +1,33 @@
+[
+    {
+        "nfvi_metric": {
+                "vm": {
+                    "active_vm": 1,
+                    "inactive_vm": 1
+                },
+                "memory": {
+                    "used": {
+                        "value": 1
+                    },
+                    "total": {
+                        "value": 2
+                    },
+                    "utilization": {
+                        "value": 1
+                    }
+                },
+                "storage" : {
+                    "used": {
+                        "value": 1
+                    },
+                    "total": {
+                        "value": 2
+                    },
+                    "utilization": {
+                        "value": 1
+                    }
+                }
+        }
+    }
+]
+

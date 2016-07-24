@@ -1,0 +1,355 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rwperson-db.yang
+ * @author Rajesh Velandy
+ * @date 2014/08/08
+ * @brief An example yang file to illustrate GI bindings
+ */
+
+module rwperson-db
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/person";
+  prefix "ps";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-c-types { prefix "rwct"; }
+
+  description
+    "This yang models a person";
+
+  revision 2014-03-05 {
+    description "Initial version"; }
+
+  typedef phone-type {
+    type enumeration {
+      enum MOBILE { value 0; }
+      enum HOME   { value 1; }
+      enum WORK   { value 2; }
+    }
+  }
+
+  container person {
+    rwpb:msg-new Person;
+
+    leaf name { 
+      description
+        "This is the person's name.";
+      type string; 
+    }
+
+    leaf id { 
+      type int32; 
+    }
+
+    leaf email { 
+      type string; 
+    }
+
+    leaf employed { 
+      type boolean; 
+    }
+
+    leaf blob { 
+      type binary; 
+    }
+
+    list phone {
+      key "number";
+      rwpb:msg-new PhoneNumber;
+
+      leaf number { 
+        type string; 
+      }
+
+      leaf type { 
+        type phone-type;
+      }
+    }
+
+    list phone-inline {
+      key "number";
+      rwpb:msg-name PhoneNumberInline;
+      rwpb:field-inline "true";
+      rwpb:field-inline-max 100;
+
+      leaf number { 
+        type string; rwpb:field-string-max "64";
+      }
+
+      leaf type { 
+        type phone-type;
+      }
+    }
+
+    container emergency-phone {
+      rwpb:msg-new PhoneNumber1;
+      leaf number { 
+        type string; 
+      }
+
+      leaf type { 
+        type phone-type;
+      }
+
+    }
+
+    container favourite {
+      leaf-list numbers {
+        type int32;
+      }
+
+      leaf-list colors {
+        type enumeration {
+          enum red;
+          enum blue;
+          enum green;
+          enum purple;
+        }
+      }
+
+      leaf-list places {
+        type string;
+      }
+    }
+
+    leaf nri {
+      type empty;
+    }
+
+    leaf-list secret {
+      type binary;
+    }
+
+    /* ctypes */
+    leaf laptop-ip {
+      type rwct:rw-ip-addr;
+    }
+
+    leaf laptop-mac {
+      type rwct:rw-mac-addr;
+    }
+
+    leaf-list other-ip4 {
+      type rwct:rw-ipv4-addr;
+    }
+  }
+
+  container flat-person {
+    rwpb:msg-new FlatPerson;
+    rwpb:msg-flat "true";
+
+    leaf name { 
+      type string; rwpb:field-string-max "64"; 
+    }
+
+    leaf id { 
+      type int32; 
+    }
+
+    leaf email { 
+      type string; rwpb:field-string-max "64"; 
+    }
+
+    leaf employed { 
+      type boolean; 
+    }
+
+    leaf blob { 
+      type binary; rwpb:field-string-max "64";
+    }
+
+    list phone {
+      key "number";
+      rwpb:field-inline-max "64";
+      rwpb:msg-new FlatPhoneNumber;
+      rwpb:msg-flat "true";
+
+      leaf number {
+        type string; rwpb:field-string-max "64"; 
+      }
+
+      leaf type { 
+        type phone-type; 
+      }
+    }
+
+    container emergency-phone {
+      rwpb:msg-new FlatPhoneNumber1;
+      rwpb:msg-flat "true";
+
+      leaf number { 
+        type string; rwpb:field-string-max "64"; 
+      }
+
+      leaf type { 
+        type phone-type; 
+      }
+    }
+
+    container favourite {
+      leaf-list numbers {
+        rwpb:field-inline-max "10";
+        type int32;
+      }
+
+      leaf-list colors {
+        type enumeration {
+          enum red;
+          enum blue;
+          enum green;
+          enum purple;
+        }
+        rwpb:field-inline-max "10";
+      }
+
+      leaf-list places {
+        type string;
+        rwpb:field-inline-max "10";
+        rwpb:field-string-max "64";
+      }
+
+    }
+
+    leaf-list secret {
+      type binary;
+      rwpb:field-inline-max "10";
+      rwpb:field-string-max "64";
+    }
+
+    /* ctype test. */
+    leaf laptop-ip {
+      type rwct:rw-ip-addr;
+      rwpb:field-inline true;
+    }
+
+    leaf laptop-mac {
+      type rwct:rw-mac-addr;
+      rwpb:field-inline true;
+    }
+
+    leaf-list other-ip4 {
+      type rwct:rw-ipv4-addr;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+  }
+
+  container minimal-person {
+
+    leaf name {
+      type string; rwpb:field-string-max "16";
+    }
+
+    leaf email {
+      type string; rwpb:field-string-max "20";
+    }
+
+    leaf employed {
+      type boolean;
+    }
+
+    leaf nationality {
+        type string;
+    }
+
+    container address {
+      rwpb:msg-new MinimalPersonAddr;
+
+      leaf street {
+        type string; rwpb:field-string-max "64";
+      }
+
+      leaf city {
+        type string; rwpb:field-string-max "12";
+      }
+
+      leaf state {
+        type string; rwpb:field-string-max "20";
+      }
+    }
+
+  } // End minimal-person
+
+  list person-list { /* Toplevel lists for module root tests. */
+
+    rwpb:msg-new PersonList;
+    key "name";
+
+    leaf name {
+      type string;
+      rwpb:field-inline "true";
+      rwpb:field-string-max 64;
+    }
+
+    container person-info {
+
+      rwpb:msg-new PersonInfo;
+
+      leaf aadhar-id {
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+
+      leaf dob {
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+
+      leaf pan-no {
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+
+      leaf passport-no {
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+    }
+  }
+
+  rpc duplicate-db {
+
+    input {
+      rwpb:msg-new "DuplicateDBI";
+      container target {
+        leaf name {
+          type string;
+        }
+        container details {
+          leaf location {
+            type string;
+          }
+          leaf timeout {
+            type uint32;
+          }
+        }
+      }
+    }
+
+    output {
+      rwpb:msg-new "DuplicateDBO";
+      container target {
+        leaf name {
+          type string;
+        }
+        container result {
+          leaf timetaken {
+            type uint32;
+          }
+        }
+      }
+    }
+  }
+}

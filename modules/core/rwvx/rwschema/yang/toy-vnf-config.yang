@@ -1,0 +1,77 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module toy-vnf-config
+{
+  namespace "http://riftio.com/ns/riftware-1.0/toy-vnf-config";
+  prefix "toyvnfconfig";
+
+  import mano-base {
+    prefix manobase;
+  }
+
+  import rw-vnf-base-config {
+    prefix rwvnfbaseconfig; 
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  revision 2015-08-25 {
+    description "Toy vnf combined configuration";
+  }
+
+  augment /manobase:vnf-config/manobase:vnf  {
+    description
+       "Container for toy vnf configuration";
+    list vnf-vm-resource{
+      key "name";
+      max-elements 32;
+          
+      leaf name {
+        description "Name of lb-profile";
+        rwpb:field-inline "true";
+        rwpb:field-string-max 256;
+        type string;
+      }
+    }
+  }
+
+  augment /manobase:vnf-config/manobase:vnf/rwvnfbaseconfig:network-context {
+    description
+      "Container for toy vnf configuration";
+    list vnf-nc-rule{
+      key "name";
+      max-elements 32;
+         
+      leaf name {
+        description "Name of lb-profile";
+        rwpb:field-inline "true";
+        rwpb:field-string-max 256;
+        type string;
+      }
+    }
+  }
+
+  augment /manobase:vnf-config/manobase:vnf/rwvnfbaseconfig:port {
+    description
+      "Container for toy vnf configuration";
+    list vnf-flow-rule{
+      key "name";
+      max-elements 32;
+            
+      leaf name {
+        description "Name of lb-profile";
+        rwpb:field-inline "true";
+        rwpb:field-string-max 256;
+        type string;
+      }
+    }
+  }
+}

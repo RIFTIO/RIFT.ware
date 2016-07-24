@@ -1,0 +1,16 @@
+MISC TODO
+---------
+o SKLIST work:
+   - cleanup rift_sklist memory alloc/free
+   - Do skiplists require support for: VX_SKLIST_TAIL() and VX_SKLIST_PREV() ???
+   - Possible performance optimization:
+     NOTE the type rift_sklist_element_t contains an element "node" of type rift_sklist_node_t
+     When the hight of the node is only 1, it would be possible to embed the node into the node
+     pointer itself.  This would be tricky, but would def improve performance.
+     A simpler/less-ugly solution would be to embed an instance of rift_sklist_node_t with height 1 into
+     type rift_sklist_element_t.  The downside of this approach is extra memory consumption.
+
+o User-defined pseudo-modules w/interfaces APIs
+  that can be installed/defined by the application itself
+  with a common interface api that does the right thing...
+

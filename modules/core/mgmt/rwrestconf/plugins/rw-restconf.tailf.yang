@@ -1,0 +1,26 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-restconf-annotation
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-restconf-annotation";
+  prefix "rw-restconf-ann";
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  import rw-restconf {
+    prefix rw-restconf;
+  }
+
+  tailf:annotate "/rw-restconf:rwrestconf-statistics" {
+    tailf:callpoint rw_callpoint;
+  }  
+}
+

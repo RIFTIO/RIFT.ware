@@ -1,0 +1,59 @@
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Anil Gunturu
+# Creation Date: 8/29/2013
+# 
+
+# cmake script for generating the gnome rpms
+cmake_minimum_required(VERSION 2.8)
+
+set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
+
+include(rift_build_utils)
+
+##
+# If the BUILDCACHE_DIR is NOT provided, the
+# artifacts are cached in @RIFT_CACHE_BASE_DIR@. 
+# Only jenkins is allowed to cache here.
+#
+# If the BUILDCACHE_DIR is provided, the current user can populate
+# the artifacts at the location specified. This is usually done for
+# debugging.
+##
+set(IS_BUILD_CACHE_DIR_PROVIDED 0)
+set(BUILDCACHE_DIR $ENV{BUILDCACHE_DIR})
+if(NOT BUILDCACHE_DIR)
+  set(BUILDCACHE_DIR @RIFT_CACHE_BASE_DIR@)
+else()
+  set(IS_BUILD_CACHE_DIR_PROVIDED 1)
+  message("User provided the build cache dir")
+endif()
+message("BUILD_CACHE_DIR=${BUILDCACHE_DIR}")
+
+rift_is_cacheable(
+  PROJECT_TOP_DIR     @PROJECT_TOP_DIR@
+  CURRENT_DIR         @PROJECT_TOP_DIR@/@RIFT_SUBMODULE_PREFIX@
+  BUILD_CACHE_DIR     ${BUILDCACHE_DIR}
+  BUILD_CACHE_TYPE    @BUILD_CACHE_TYPE@
+  OUT_IS_CACHEABLE    is_cacheable
+  )
+
+if(IS_BUILD_CACHE_DIR_PROVIDED OR (is_cacheable AND $ENV{USER} STREQUAL "jenkins"))
+  # Only populate the cache for jenkins builds
+  rift_populate_submodule_cache(
+    PROJECT_TOP_DIR         @PROJECT_TOP_DIR@
+    BUILD_CACHE_DIR         ${BUILDCACHE_DIR}
+    BUILD_CACHE_TYPE        @BUILD_CACHE_TYPE@
+    SUBMODULE               @RIFT_SUBMODULE_PREFIX@
+    RPM_DIR                 @CMAKE_CURRENT_BINARY_DIR@ 
+    OUT_ALREADY_EXISTS      already_exists
+    )
+  if(already_exists STREQUAL "true")
+    message("Build cache already exists for @RIFT_SUBMODULE_PREFIX@")
+  endif()
+else()
+  message("Submodule @RIFT_SUBMODULE_PREFIX@ is NOT cacheable")
+endif()
+
+

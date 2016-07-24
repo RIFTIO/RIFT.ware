@@ -1,0 +1,42 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file base-conversion.yang
+ * @author Vinod Kamalaraj
+ * @date 2014/05/27
+ * @brief Base definitions and typedefs that can be used with both flat and bum
+ * conversions
+ */
+
+module base-conversion
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/conversion/base";
+  prefix "cb";
+
+  description "Base definitions and typedefs";
+
+  revision 2014-05-27 {
+    description "Initial version"; }
+
+  typedef cb-enum {
+    description "A typedefined global enumeration. This should work differently
+                 than a typedef inside a container or non-typedefed enum. Should
+                 be available in other modules";
+    type enumeration {
+      enum first { value 1; }
+      /* This is intentionally set out of order for testing purposes -
+         The compliation warning can be ignored */
+      enum second{ value 0; }
+      enum seventh { value 7;}
+    }
+  }
+}
+
+

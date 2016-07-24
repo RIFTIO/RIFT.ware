@@ -1,0 +1,20 @@
+options:
+  proxied_ip:
+    description: The IP address of the All-in-One node to manage
+    type: string
+  password:
+    default: cw-aio
+    description: The login password of the All-in-One node to manage (default is very likely correct)
+    type: string
+  home_domain:
+    default: example.com
+    description: The home domain for this service
+    type: string
+  base_number:
+    default: "1230000000"
+    description: The first number to be allocated in the number range
+    type: string
+  number_count:
+    default: 1000
+    description: The count of numbers to allocate
+    type: int

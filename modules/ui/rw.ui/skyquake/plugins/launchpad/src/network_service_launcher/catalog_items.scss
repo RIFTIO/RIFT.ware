@@ -1,0 +1,101 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import "style/_colors.scss";
+
+.catalogItems {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-start;
+  flex-direction:row;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+  &_item {
+    // background-color:$darker-gray;
+    background-color: #fff;
+    margin: 0rem 1rem;
+    margin-top: 1rem;
+    min-width: 300px;
+    max-width: 300px;
+    position: relative;
+    height: 4pc;
+    overflow: hidden;
+    border-radius: 8px;
+    padding:0.5rem;
+    color: #d9d9d9;
+    font-weight: 100;
+    font-style: normal;
+    -webkit-user-select: none;
+    display:flex;
+    cursor:pointer;
+
+    h1 {
+      font-size: 1.125rem;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &:hover{
+        background-color: #7e9bc1;
+        cursor: pointer;
+        color: white;
+        h2 {
+            color: #000;
+        }
+        abbr, span {
+          color: white;
+        }
+      }
+
+    >div {
+      display:flex;
+      flex-direction:column;
+    }
+    &.-is-selected {
+      outline: 2px dashed $brand-blue;
+      outline-offset: 2px;
+
+      background-color: #7e9bc1;
+      cursor: pointer;
+      color: white;
+      span, abbr {
+        color:white;
+      }
+    }
+    img {
+      width: 50px;
+      height: 50px;
+      align-self: center;
+    }
+    section {
+      padding-left:0.5rem;
+      display:flex;
+      flex-direction:column;
+      flex: 1 1 95%;
+      justify-content: center;
+      padding: 0.125rem 0.75rem;
+      abbr {
+        font-weight:bold;
+      }
+      abbr,span {
+            display: block;
+    color: $gray-dark;
+    border: 0;
+    // color: #ef8354;
+    font-family: monospace,serif;
+    font-size: .7rem;
+    white-space: nowrap;
+      }
+    }
+    section, h2 {
+      margin: 0 0 4px;
+      font-weight: normal;
+      font-size: .8125rem;
+      color:black;
+      white-space: nowrap;
+    }
+  }
+}

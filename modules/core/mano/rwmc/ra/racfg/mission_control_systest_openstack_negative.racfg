@@ -1,0 +1,23 @@
+{
+  "test_name":"TC_MISSION_CONTROL_OPENSTACK_NEGATIVE",
+  "commandline":"./mission_control_negative_systest --cloud-type 'openstack' --cloud-host={cloud_host} --user={user} {tenants} --sysinfo ",
+  "test_description":"System test for mission control(Openstack) negative cases",
+  "run_as_root": false,
+  "status":"broken",
+  "keywords":["nightly","smoke", "openstack"],
+  "timelimit": 1600,
+  "networks":[],
+  "vms":[
+    {
+      "name": "rift_auto_mission_control",
+      "memory": 4096,
+      "cpus": 2
+    },
+    {
+      "name": "rift_auto_launchpad",
+      "memory": 4096,
+      "cpus": 2
+    }
+  ]
+}
+

@@ -1,0 +1,84 @@
+---
+  vnf: 
+    VNFC: 
+      - bridge-ifaces: 
+          - vpci: "0000:00:03.0"
+            bandwidth: "1 Gbps"
+            name: "eth0"
+        numas: 
+          - interfaces: 
+              - vpci: "0000:00:05.0"
+                bandwidth: "10 Gbps"
+                name: "xe0"
+                dedicated: "yes"
+              - vpci: "0000:00:06.0"
+                bandwidth: "10 Gbps"
+                name: "xe1"
+                dedicated: "yes"
+              - vpci: "0000:00:07.0"
+                bandwidth: "10 Gbps"
+                name: "xe2"
+                dedicated: "yes"
+              - vpci: "0000:00:08.0"
+                bandwidth: "10 Gbps"
+                name: "xe3"
+                dedicated: "yes"
+            paired-threads-id: 
+              - - 0
+                - 1
+              - - 2
+                - 3
+              - - 4
+                - 5
+              - - 6
+                - 7
+              - - 8
+                - 9
+              - - 10
+                - 11
+            paired-threads: 6
+            memory: 8
+        hypervisor: 
+          version: "10002|12001|2.6.32-358.el6.x86_64"
+          type: "QEMU-kvm"
+        VNFC image: "/mnt/powervault/virtualization/vnfs/6wind/6wind-turbo-router-1.1.2.img.qcow2"
+        image metadata: 
+          use_incremental: "no"
+        processor: 
+          model: "Intel(R) Xeon(R) CPU E5-4620 0 @ 2.20GHz"
+          features: 
+            - "64b"
+            - "iommu"
+            - "lps"
+            - "tlbps"
+            - "hwsv"
+            - "dioc"
+            - "ht"
+        name: "VM"
+    name: "6WindTR1.1.2"
+    external-connections: 
+      - local_iface_name: "eth0"
+        VNFC: "VM"
+        type: "bridge"
+        name: "eth0"
+        description: "Data"
+      - local_iface_name: "xe0"
+        VNFC: "VM"
+        type: "data"
+        name: "xe0"
+        description: "Data"
+      - local_iface_name: "xe1"
+        VNFC: "VM"
+        type: "data"
+        name: "xe1"
+        description: "Data"
+      - local_iface_name: "xe2"
+        VNFC: "VM"
+        type: "data"
+        name: "xe2"
+        description: "Data"
+      - local_iface_name: "xe3"
+        VNFC: "VM"
+        type: "data"
+        name: "xe3"
+        description: "Data"

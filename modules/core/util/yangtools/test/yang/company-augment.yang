@@ -1,0 +1,31 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module company-augment
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/company-augment";
+  prefix "company-augment";
+
+  import company { prefix "company"; }
+  description "This YANG module models a Company's augment";
+
+  augment /company:mangle-base/company:mangle {
+    container bucket {
+      leaf contents {
+        type string;
+      }
+    }
+
+    list bucket-list {
+      key "place";
+      leaf place {
+        type string;
+      }
+    }
+  }
+}

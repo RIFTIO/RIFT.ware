@@ -1,0 +1,1719 @@
+{
+ "synth": "source",
+ "name": "vnffgd",
+ "schema": {
+  "module": {
+   "vnffgd": {
+    "namespace": "urn:ietf:params:xml:ns:yang:nfvo:vnffgd",
+    "prefix": "vnffgd",
+    "import": {
+     "rw-pb-ext": {
+      "prefix": "rwpb"
+     },
+     "ietf-inet-types": {
+      "prefix": "inet"
+     },
+     "ietf-yang-types": {
+      "prefix": "yang"
+     },
+     "mano-types": {
+      "prefix": "manotypes"
+     }
+    },
+    "revision": {
+     "2014-10-27": {
+      "description": "Initial revision. This YANG file defines\nthe VNF Forwarding Graph Descriptor (VNFFGD)",
+      "reference": "Derived from earlier versions of base YANG files"
+     }
+    },
+    "container": {
+     "vnffgd-catalog": {
+      "list": {
+       "vnffgd": {
+        "key": "id",
+        "leaf": {
+         "name": {
+          "description": "VNF Forwarding Graph Descriptor name.",
+          "type": "string"
+         },
+         "id": {
+          "description": "Identifier for the VNFFGD.",
+          "type": "yang:uuid"
+         },
+         "provider": {
+          "description": "Provider of the VNFFGD.",
+          "type": "string"
+         },
+         "description": {
+          "description": "Description of the VNFFGD.",
+          "type": "string"
+         },
+         "version": {
+          "description": "Version of the VNFFGD",
+          "type": "string"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "dependencies": {
+  "rw-pb-ext": {
+   "module": {
+    "rw-pb-ext": {
+     "namespace": "http://riftio.com/ns/riftware-1.0/rw-pb-ext",
+     "prefix": "rwpb",
+     "revision": {
+      "2014-03-28": {
+       "description": "Initial revision.",
+       "reference": "RIFT yang extensions for converting yang files to Google\nProtocol Buffers (protobuf) using rift protoc-c extensions."
+      }
+     },
+     "extension": {
+      "msg-new": {
+       "argument": "typename",
+       "description": "Generate an equivalent, top-level, protobuf message for this\ncontainer, list, rpc input, rpc output, or notification.  The\nargument is the name of the protobuf message type.  Allowed\nvalues are valid C identifiers.\n\nThe protobuf definition will only be generated when processing\nthe same module that defines the yang object - a duplicate will\nnot be generated when importing reusing a yang object via uses,\nor when importing the module."
+      },
+      "msg-name": {
+       "argument": "typename",
+       "description": "Change the name of an embedded protobuf message type for this\ncontainer or list.  Allowed values are valid C identifiers.\n\nIn lieu of this extension, embedded protobuf message typenames\nare based on the fieldname, and further mangled by removing\nunderscores and CamelCased at underscore boundaries.  This\nextension allows the automatic mangling procedure to be\noverridden.\n\nThis extension is incompatible with msg-new, which already\ndefines the typename for top-level messages.  Use this extension\nsolely for embedded messages."
+      },
+      "msg-flat": {
+       "argument": "selection",
+       "description": "Set the protobuf message rw_msgopts flat option on a container\nor list statement.  Allowed values are 'true', 'false', and\n'auto'.  The default is 'false' for top-level messages, and\n'auto' for embedded messages.  If 'auto' is specified, the\nbehavior is the same as the enclosing container or list.\n\nUnless overridden, this extension effectively applies to all\nenclosed descendent container and list statements.  Flatness will\nbe required by the protobuf compilation step."
+      },
+      "msg-tag-base": {
+       "argument": "value",
+       "description": "Specify a base tag value for a container, list, grouping, or\nuses statement.  Field tags may be specified relative to this\nbase.  Allowed values are positive\ndecimal integers."
+      },
+      "msg-proto-max-size": {
+       "argument": "value",
+       "description": "Specify the maximum size of this message in the C structure or\nso in bytes.  Allowed values are positive decimal integers."
+      },
+      "msg-typedef": {
+       "argument": "typename",
+       "description": "Create a prototbuf-c message typedef for the original, base\ndefinition of the container, list, grouping, rpc input, rpc\noutput, or notification.  Allowed values are valid C identifiers.\n\ntypename will be appended to the mangeled protobuf package name\nand an underscore, to ensure name uniqueness across the global\nschema.\n\nThe typedef will only be generated when processing\nthe same module that defines the yang object - a duplicate will\nnot be generated when importing reusing a yang object via uses,\nor when importing the module."
+      },
+      "field-name": {
+       "argument": "fieldname",
+       "description": "Change the name of the element to fieldname, when converting the\nobject to protobuf.  Allowed values are valid C identifiers.\n\nIn lieu of this extension, element names will be used as-is, if\npossible, or mangled to fit in the C identifier character space\n(invalid C identifier characters will be replaced with\nunderscore).  This extension allows the automatic mangling\nprocedure to be overridden."
+      },
+      "field-inline": {
+       "argument": "selection",
+       "description": "Set the protobuf field 'inline' option on a container, list,\nleaf-list, or leaf statement.  Allowed values are 'true',\n'false', and 'auto'.  If 'auto' is specified, the behavior is\ncontrolled by the enclosing container or list's protobuf-msg-flat\nsetting.\n\nWhen applied to a container or list statement, this extension is\ninherited by all enclosed objects, unless overridden."
+      },
+      "field-inline-max": {
+       "argument": "limit",
+       "description": "Set the protobuf field 'inline_max' option for list and\nleaf-list statements.  Allowed values are a positive decimal\ninteger, 'yang', or 'none'.  Example limits:\n\n '64'\n 'yang'\n 'none'\n\nIf 'none' is specified, then the inline_max protobuf extension\nwill not be used.\n\nIf 'yang' is specified, then the number of elements specified in\nthe yang 'max-elements' statement is used.  If there is no\n'max-elements' statement, the behavior defaults to 'none'.\n\nIf a decimal integer is specified, that number is used as the\nmaximum length.\n\nIf this extension is not specified, the behavior defaults to\n'yang'.  Descendant list and leaf-list objects do not inherit\nthis extension."
+      },
+      "field-string-max": {
+       "argument": "limit",
+       "description": "Set the protobuf field 'string_max' option for a leaf or\nleaf-list of type string, binary, leafref, identityref, or\ninstance-identifier.  Allowed values are a positive decimal\ninteger, 'yang', or 'none'.  An optional encoding specifier may\nalso be specified, as octet or utf8, which specifies how\ncharacters are counted.  If specified, the encoding must come\nfirst.  Example limits:\n\n 'octet 64'\n 'utf8 20'\n 'utf8 yang'\n 'utf8'\n '128'\n 'none'\n\nIf 'none' is specified, then the string_max protobuf extension\nwill not be used.  'none' cannot be combined with 'octet' or\n'utf8'.\n\nIf 'yang' is specified, the yang type must be string or binary.\nIf the yang type includes the length statement, then the\nstatements maximum length is used as the length.  Otherwise,\nbehavior defaults to 'none'.\n\nIf a decimal integer is specified, that number is used as the\nlength.\n\nThe encoding specifiers are used to determine the actual number\nof bytes used in the protobuf extension.  If the 'octet'\nspecifier is used, then the maximum length is used literally as\nthe byte length.  If the 'utf8' specified is used, then the\nmaximum length is considered to be in terms of worst-case UTF-8\ncharacters, in which case the protobuf byte length will actually\nbe 4 times the specified length.\n\nFor string and binary types, the default encoding is 'octet'.\nFor the remaining types, the default encoding is 'utf8',\nreflecting those types fundemental description as XML entities\nassumed to be encoded in UTF-8.\n\nIf this extension is not specified, then the default is 'yang'\nfor string and binary, and 'none' for the other types.  This\nextension cannot be specified on aggregate objects, and so it\ncannot be inherited."
+      },
+      "field-tag": {
+       "argument": "value",
+       "description": "Set the protobuf field tag.  Allowed values are a positive\ndecimal integer, 'auto', a base-relative addition expression, or\na field-relative addition expression.\n\nIf a decimal integer is specified, then the tag is set to the\nspecified number.  You should avoid using this form in a\ngrouping, because you may not be able to guarantee uniqueness\nacross all the uses of the group.  However, the syntax will be\nallowed.\n\nA base-relative addition expression allows the tag of a field to\nbe defined in terms of the base tag of an enclosing grouping,\ncontainer, list, or uses statement.  The expression has the form\n'+NUMBER', where NUMBER is the value to add to the base to derive\nthe current field's tag.\n\nA field-relative addition expression allows the tag of one field\nto be defined in terms of another field.  The expression has the\nform 'NAME+NUMBER', where NAME is the name of the other field,\nand NUMBER is the value to add to the other fields tag to derive\nthe current field's tag.\n\nIf this extension is not specified, the default behavior is\n'auto'."
+      },
+      "field-type": {
+       "argument": "type",
+       "description": "Override the default protobuf field type mapping for a leaf or\nleaf-list type, and use the specified protobuf type instead.\n\nAllowed values are any of the Protobuf scalar types, as\nrestricted by the yang leaf type:\n\n+---------------------------+-------------------------------+\n| (pseudo) yang leaf type   | (pseudo) protobuf scalar type |\n|---------------------------+-------------------------------+\n| int8, int16, int32        | int32, sint32, sfixed32, auto |\n+---------------------------+-------------------------------+\n| int64                     | int64, sint64, sfixed64, auto |\n+---------------------------+-------------------------------+\n| uint8, uint16, uint32     | uint32, fixed32, auto         |\n+---------------------------+-------------------------------+\n| uint64                    | uint64, fixed64, auto         |\n+---------------------------+-------------------------------+\n| decimal                   | uint64, sint64, int64,        |\n|                           | fixed64, sfixed64,            |\n|                           | float, double, auto           |\n+---------------------------+-------------------------------+\n| empty, boolean            | bool, auto                    |\n+---------------------------+-------------------------------+\n| string, leafref,          | string, auto                  |\n| identityref,              |                               |\n| instance-identifier,      |                               |\n| anyxml                    |                               |\n+---------------------------+-------------------------------+\n| bits, binary              | bytes, auto                   |\n+---------------------------+-------------------------------+\n\nIf 'auto' is specified, the default conversion will be used.  The\nprotobuf pseudo-type utf8 is equivalent to string, except that\nlength limits will be adjusted in protobuf extentions to allow\nthe string to be composed entirely of the maximum sized UTF-8\nmultibyte characters (byte length is 4 times larger than the\ncharacter length)."
+      },
+      "field-c-type": {
+       "argument": "type",
+       "description": "Override the default protoc-c C-language type mapping for a leaf\nor leaf-list type, and use the specified C type instead."
+      },
+      "package-name": {
+       "argument": "pkgname",
+       "description": "Specifies the name of the package name in the generated .proto\nfile on a module statement The argument is the name of the\npackage-name.  Allowed values are valid C identifiers When\npackage-name is not specified the generated package name defaults\nto the Yang module name"
+      },
+      "application-request-point": {
+       "description": "This extension is used temporarily until the config and data portions\nare split into different namespaces and keyspecs. This allows\napplications to provide data at a keyspec, and request config at a\ndifferent level"
+      },
+      "enum-name": {
+       "argument": "enumname",
+       "description": "Use the specified name for the enum enumerator in the .proto\ninstead of the default mangled name of the yang identifer.\nIf there is a name conflict with other enum name either specified\nexplicitly or generated one, the yangpbc conversion will fail.\nAllowed values are valid C identifiers."
+      },
+      "enum-type": {
+       "argument": "enumtypename",
+       "description": "Use the specified name for the enum type in the .proto instead\nof the default mangled name of the yang identifier.  If there is\na name conflict with another enum type, either auto-generated or\nexplicitly specified one, the yangpbc conversion will fail.\nAllowed values are valid C identifiers."
+      },
+      "file-pbc-include": {
+       "argument": "pathstring",
+       "description": "A module level extension to specify the include files for pb-c.h\nwhen any rift specific c-types are used.  This extension can\noccur multiple times as a child of module statement.  The value\nshould be a valid path string."
+      },
+      "field-merge-behavior": {
+       "argument": "value",
+       "description": "An extension for controlling the merge done for listy types\nduring upacking of protobuf. It can take 3 different value:\n\n1) default: The default is whatever protobuf-c does today\n   (for keyed lists, the default is equivalent to by-keys).\n\n2) by-keys: allowed on keyed lists (and leaf-lists): merge\n   elements with matching key.\n\n3) none: allowed on keyed lists (and leaf-lists): do not\n   attempt to merge elements. This must ONLY be used when it\n   is known or expected that the proto message would contain\n   large number of list items."
+      }
+     }
+    }
+   }
+  },
+  "mano-types": {
+   "module": {
+    "mano-types": {
+     "namespace": "urn:ietf:params:xml:ns:yang:nfvo:mano-types",
+     "prefix": "manotypes",
+     "import": {
+      "ietf-inet-types": {
+       "prefix": "inet"
+      }
+     },
+     "revision": {
+      "2015-04-23": {
+       "description": "Initial revision. This YANG file defines\nthe reusable base types for VNF Management\nand Orchestration (MANO).",
+       "reference": "Derived from earlier versions of base YANG files"
+      }
+     },
+     "typedef": {
+      "virtual-link-type": {
+       "description": "Type of virtual link\nELAN: A multipoint service connecting a set of VNFs\n// ELINE: For a simple point to point connection\n//        between a VNF and the existing network.\n// ETREE: A multipoint service connecting one or\n//        more roots and a set of leaves, but\n//        preventing inter-leaf communication.",
+       "type": {
+        "enumeration": {
+         "enum": "ELAN"
+        }
+       }
+      },
+      "http-method": {
+       "description": "Type of HTTP operation",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "POST": null,
+          "PUT": null,
+          "GET": null,
+          "DELETE": null,
+          "OPTIONS": null,
+          "PATCH": null
+         }
+        }
+       }
+      },
+      "api-type": {
+       "description": "Type of API to fetch monitoring params",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "HTTP": null,
+          "NETCONF": null,
+          "SOAP": null
+         }
+        }
+       }
+      },
+      "json-query-method": {
+       "description": "The method to extract a value from a JSON response\n\nNAMEKEY - Use the name as the key for a non-nested value.\nJSONPATH - Use jsonpath-rw implemenation to extract a value.\nOBJECTPATH - Use objectpath implemenation to extract a value.",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "NAMEKEY": null,
+          "JSONPATH": null,
+          "OBJECTPATH": null
+         }
+        }
+       }
+      },
+      "param-value-type": {
+       "description": "The type of the parameter value",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "INT": null,
+          "DECIMAL": null,
+          "STRING": null
+         }
+        }
+       }
+      },
+      "connection-point-type": {
+       "description": "Type of connection point\nVPORT: Virtual Port\n// VNIC_ADDR: Virtual NIC Address\n// PNIC_ADDR: Physical NIC Address\n// PPORT: Phsical Port.",
+       "type": {
+        "enumeration": {
+         "enum": "VPORT"
+        }
+       }
+      },
+      "widget-type": {
+       "description": "Type of the widget, typically used by the UI.",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "HISTOGRAM": null,
+          "BAR": null,
+          "GAUGE": null,
+          "SLIDER": null,
+          "COUNTER": null,
+          "TEXTBOX": null
+         }
+        }
+       }
+      },
+      "cpu-feature-type": {
+       "description": "Enumeration for CPU features.\n\nAES: CPU supports advanced instruction set for\nAES (Advanced Encryption Standard).\n\nCAT: Cache Allocation Technology (CAT) allows\nan Operating System, Hypervisor, or similar\nsystem management agent to specify the amount\nof L3 cache (currently the last-level cache\nin most server and client platforms) space an\napplication can fill (as a hint to hardware\nfunctionality, certain features such as power\nmanagement may override CAT settings).\n\nCMT: Cache Monitoring Technology (CMT) allows\nan Operating System, Hypervisor, or similar\nsystem management agent to determine the\nusage of cache based on applications running\non the platform. The implementation is\ndirected at L3 cache monitoring (currently\nthe last-level cache in most server and\nclient platforms).\n\nDDIO: Intel Data Direct I/O (DDIO) enables\nEthernet server NICs and controllers talk\ndirectly to the processor cache without a\ndetour via system memory. This enumeration\nspecifies if the VM requires a DDIO\ncapable host.",
+       "type": {
+        "enumeration": {
+         "enum": {
+          "PREFER_AES": null,
+          "REQUIRE_AES": null,
+          "PREFER_CAT": null,
+          "REQUIRE_CAT": null,
+          "PREFER_CMT": null,
+          "REQUIRE_CMT": null,
+          "PREFER_DDIO": null,
+          "REQUIRE_DDIO": null
+         }
+        }
+       }
+      }
+     },
+     "grouping": {
+      "named-value": {
+       "leaf": {
+        "name": {
+         "type": "string"
+        },
+        "value": {
+         "type": "string"
+        }
+       }
+      },
+      "vm-flavor": {
+       "container": {
+        "vm-flavor": {
+         "leaf": {
+          "vcpu-count": {
+           "description": "Number of vcpus for the VM.",
+           "type": "uint16"
+          },
+          "memory-mb": {
+           "description": "Amount of memory in MB.",
+           "type": "uint64"
+          },
+          "storage-gb": {
+           "description": "Amount of disk space in GB.",
+           "type": "uint64"
+          }
+         }
+        }
+       }
+      },
+      "vswitch-epa": {
+       "container": {
+        "vswitch-epa": {
+         "leaf": {
+          "ovs-acceleration": {
+           "description": "Specifies Open vSwitch acceleration mode.\nMANDATORY: OVS acceleration is required\nPREFERRED: OVS acceleration is preferred",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "MANDATORY": null,
+              "PREFERRED": null,
+              "DISABLED": null
+             }
+            }
+           }
+          },
+          "ovs-offload": {
+           "description": "Specifies Open vSwitch hardware offload mode.\nMANDATORY: OVS offload is required\nPREFERRED: OVS offload is preferred",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "MANDATORY": null,
+              "PREFERRED": null,
+              "DISABLED": null
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "hypervisor-epa": {
+       "container": {
+        "hypervisor-epa": {
+         "leaf": {
+          "type": {
+           "description": "Specifies the type of hypervisor.\nKVM: KVM\nXEN: XEN",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_KVM": null,
+              "REQUIRE_KVM": null
+             }
+            }
+           }
+          },
+          "version": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "host-epa": {
+       "container": {
+        "host-epa": {
+         "description": "Specifies the host level EPA attributes.",
+         "leaf": {
+          "cpu-model": {
+           "description": "Host CPU model. Examples include: SandyBridge,\nIvyBridge",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_WESTMERE": null,
+              "REQUIRE_WESTMERE": null,
+              "PREFER_SANDYBRIDGE": null,
+              "REQUIRE_SANDYBRIDGE": null,
+              "PREFER_IVYBRIDGE": null,
+              "REQUIRE_IVYBRIDGE": null,
+              "PREFER_HASWELL": null,
+              "REQUIRE_HASWELL": null,
+              "PREFER_BROADWELL": null,
+              "REQUIRE_BROADWELL": null,
+              "PREFER_NEHALEM": null,
+              "REQUIRE_NEHALEM": null,
+              "PREFER_PENRYN": null,
+              "REQUIRE_PENRYN": null,
+              "PREFER_CONROE": null,
+              "REQUIRE_CONROE": null,
+              "PREFER_CORE2DUO": null,
+              "REQUIRE_CORE2DUO": null
+             }
+            }
+           }
+          },
+          "cpu-arch": {
+           "description": "Host CPU architecture.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_X86": null,
+              "REQUIRE_X86": null,
+              "PREFER_X86_64": null,
+              "REQUIRE_X86_64": null,
+              "PREFER_I686": null,
+              "REQUIRE_I686": null,
+              "PREFER_IA64": null,
+              "REQUIRE_IA64": null,
+              "PREFER_ARMV7": null,
+              "REQUIRE_ARMV7": null,
+              "PREFER_ARMV8": null,
+              "REQUIRE_ARMV8": null
+             }
+            }
+           }
+          },
+          "cpu-vendor": {
+           "description": "Host CPU Vendor.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_INTEL": null,
+              "REQUIRE_INTEL": null,
+              "PREFER_AMD": null,
+              "REQUIRE_AMD": null
+             }
+            }
+           }
+          },
+          "cpu-socket-count": {
+           "description": "Number of sockets on the host.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "PREFER_ONE": null,
+              "PREFER_TWO": null,
+              "REQUIRE_ONE": null,
+              "REQUIRE_TWO": null
+             }
+            }
+           }
+          },
+          "cpu-core-count": {
+           "description": "Number of cores on the host.",
+           "type": "uint64"
+          },
+          "om-cpu-model-string": {
+           "description": "Openmano CPU model string",
+           "type": "string"
+          }
+         },
+         "leaf-list": {
+          "cpu-feature": {
+           "description": "List of CPU features.",
+           "type": "manotypes:cpu-feature-type"
+          },
+          "om-cpu-feature": {
+           "description": "Openmano CPU features",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "guest-epa": {
+       "description": "EPA attributes for the guest",
+       "container": {
+        "guest-epa": {
+         "leaf": {
+          "trusted-execution": {
+           "description": "This VM should be allocated from trusted pool",
+           "type": "boolean"
+          },
+          "mempage-size": {
+           "description": "Memory page allocation size. If a VM requires\nhugepages, it should choose LARGE or SIZE_2MB\nor SIZE_1GB. If the VM prefers hugepages it\nshould chose PREFER_LARGE.\nLARGE        : Require hugepages (either 2MB or 1GB)\nSMALL        : Doesn't require hugepages\nSIZE_2MB     : Requires 2MB hugepages\nSIZE_1GB     : Requires 1GB hugepages\nPREFER_LARGE : Application perfers hugepages",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "LARGE": null,
+              "SMALL": null,
+              "SIZE_2MB": null,
+              "SIZE_1GB": null,
+              "PREFER_LARGE": null
+             }
+            }
+           }
+          },
+          "cpu-pinning-policy": {
+           "description": "CPU pinning policy describes association\nbetween virtual CPUs in guest and the\nphysical CPUs in the host.\nDEDICATED : Virtual CPUs are pinned to\n            physical CPUs\nSHARED    : Multiple VMs may share the\n            same physical CPUs.\nANY       : Any policy is acceptable for the VM",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "DEDICATED": null,
+              "SHARED": null,
+              "ANY": null
+             }
+            }
+           },
+           "default": "ANY"
+          },
+          "cpu-thread-pinning-policy": {
+           "description": "CPU thread pinning policy describes how to\nplace the guest CPUs when the host supports\nhyper threads:\nAVOID   : Avoids placing a guest on a host\n          with threads.\nSEPARATE: Places vCPUs on separate cores,\n          and avoids placing two vCPUs on\n          two threads of same core.\nISOLATE : Places each vCPU on a different core,\n          and places no vCPUs from a different\n          guest on the same core.\nPREFER  : Attempts to place vCPUs on threads\n          of the same core.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "AVOID": null,
+              "SEPARATE": null,
+              "ISOLATE": null,
+              "PREFER": null
+             }
+            }
+           }
+          }
+         },
+         "list": {
+          "pcie-device": {
+           "description": "List of pcie passthrough devices.",
+           "key": "device-id",
+           "leaf": {
+            "device-id": {
+             "description": "Device identifier.",
+             "type": "string"
+            },
+            "count": {
+             "description": "Number of devices to attach to the VM.",
+             "type": "uint64"
+            }
+           }
+          }
+         },
+         "choice": {
+          "numa-policy": {
+           "case": {
+            "numa-unware": {
+             "leaf": {
+              "numa-unware": {
+               "type": "empty"
+              }
+             }
+            },
+            "numa-aware": {
+             "container": {
+              "numa-node-policy": {
+               "description": "This policy defines numa topology of the\nguest. Specifically identifies if the guest\nshould be run on a host with one numa\nnode or multiple numa nodes. As an example\na guest may want 8 vcpus and 4 GB of\nmemory. But may want the vcpus and memory\ndistributed across multiple numa nodes.\nThe NUMA node 1 may run with 6 vcpus and\n3GB, and NUMA node 2 may run with 2 vcpus\nand 1GB.",
+               "leaf": {
+                "node-cnt": {
+                 "description": "The number of numa nodes to expose to the VM.",
+                 "type": "uint16"
+                },
+                "mem-policy": {
+                 "description": "This policy specifies how the memory should\nbe allocated in a multi-node scenario.\nSTRICT    : The memory must be allocated\n            strictly from the memory attached\n            to the NUMA node.\nPREFERRED : The memory should be allocated\n            perferentially from the memory\n            attached to the NUMA node",
+                 "type": {
+                  "enumeration": {
+                   "enum": {
+                    "STRICT": null,
+                    "PREFERRED": null
+                   }
+                  }
+                 }
+                }
+               },
+               "list": {
+                "node": {
+                 "key": "id",
+                 "leaf": {
+                  "id": {
+                   "description": "NUMA node identification. Typically\nit's 0 or 1",
+                   "type": "uint64"
+                  },
+                  "memory-mb": {
+                   "description": "Memory size expressed in MB\nfor this NUMA node.",
+                   "type": "uint64"
+                  }
+                 },
+                 "leaf-list": {
+                  "vcpu": {
+                   "description": "List of vcpus to allocate on\nthis numa node.",
+                   "type": "uint64"
+                  }
+                 },
+                 "choice": {
+                  "om-numa-type": {
+                   "description": "Openmano Numa type selection",
+                   "case": {
+                    "cores": {
+                     "leaf": {
+                      "num-cores": {
+                       "type": "uint8"
+                      }
+                     }
+                    },
+                    "paired-threads": {
+                     "container": {
+                      "paired-threads": {
+                       "leaf": {
+                        "num-paired-threads": {
+                         "type": "uint8"
+                        }
+                       },
+                       "list": {
+                        "paired-thread-ids": {
+                         "description": "List of thread pairs to use in case of paired-thread numa",
+                         "max-elements": "16",
+                         "key": "thread-a",
+                         "leaf": {
+                          "thread-a": {
+                           "type": "uint8"
+                          },
+                          "thread-b": {
+                           "type": "uint8"
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    },
+                    "threads": {
+                     "leaf": {
+                      "num-threads": {
+                       "type": "uint8"
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "provider-network": {
+       "container": {
+        "provider-network": {
+         "description": "Container for the provider network.",
+         "leaf": {
+          "physical-network": {
+           "description": "Name of the phsyical network on which the provider\nnetwork is built.",
+           "type": "string"
+          },
+          "overlay-type": {
+           "description": "Type of the overlay network.",
+           "type": {
+            "enumeration": {
+             "enum": {
+              "LOCAL": null,
+              "FLAT": null,
+              "VLAN": null,
+              "VXLAN": null,
+              "GRE": null
+             }
+            }
+           }
+          },
+          "segmentation_id": {
+           "description": "Segmentation ID",
+           "type": "uint32"
+          }
+         }
+        }
+       }
+      },
+      "monitoring-param": {
+       "list": {
+        "http-endpoint": {
+         "description": "List of http endpoints to be used by monitoring params",
+         "key": "path",
+         "leaf": {
+          "path": {
+           "description": "The HTTP path on the management server",
+           "type": "string"
+          },
+          "https": {
+           "description": "Pick HTTPS instead of HTTP , Default is false",
+           "type": "boolean",
+           "default": "false"
+          },
+          "port": {
+           "description": "The HTTP port to connect to",
+           "type": "inet:port-number"
+          },
+          "username": {
+           "description": "The HTTP basic auth username",
+           "type": "string"
+          },
+          "password": {
+           "description": "The HTTP basic auth password",
+           "type": "string"
+          },
+          "polling_interval_secs": {
+           "description": "The HTTP polling interval in seconds",
+           "type": "uint8",
+           "default": "2"
+          },
+          "method": {
+           "description": "This is the method to be performed at the uri.\nGET by default for action",
+           "type": "manotypes:http-method",
+           "default": "GET"
+          }
+         },
+         "list": {
+          "headers": {
+           "description": "Custom HTTP headers to put on HTTP request",
+           "key": "key",
+           "leaf": {
+            "key": {
+             "description": "HTTP header key",
+             "type": "string"
+            },
+            "value": {
+             "description": "HTTP header value",
+             "type": "string"
+            }
+           }
+          }
+         }
+        },
+        "monitoring-param": {
+         "description": "List of monitoring parameters at the NS level",
+         "key": "id",
+         "leaf": {
+          "id": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          },
+          "http-endpoint-ref": {
+           "type": {
+            "leafref": {
+             "path": "../../http-endpoint/path"
+            }
+           }
+          },
+          "json-query-method": {
+           "type": "manotypes:json-query-method",
+           "default": "NAMEKEY"
+          },
+          "description": {
+           "type": "string"
+          },
+          "group-tag": {
+           "description": "A simple tag to group monitoring parameters",
+           "type": "string"
+          },
+          "value-type": {
+           "type": "manotypes:param-value-type",
+           "default": "INT"
+          },
+          "value-integer": {
+           "description": "Current value for an integer parameter",
+           "type": "int64"
+          },
+          "value-decimal": {
+           "description": "Current value for a decimal parameter",
+           "type": {
+            "decimal64": {
+             "fraction-digits": "4"
+            }
+           }
+          },
+          "value-string": {
+           "description": "Current value for a string parameter",
+           "type": "string"
+          },
+          "widget-type": {
+           "type": "manotypes:widget-type"
+          },
+          "units": {
+           "type": "string"
+          }
+         },
+         "container": {
+          "json-query-params": {
+           "leaf": {
+            "json-path": {
+             "description": "The jsonpath to use to extract value from JSON structure",
+             "type": "string"
+            },
+            "object-path": {
+             "description": "The objectpath to use to extract value from JSON structure",
+             "type": "string"
+            }
+           }
+          },
+          "numeric-constraints": {
+           "leaf": {
+            "min-value": {
+             "description": "Minimum value for the parameter",
+             "type": "uint64"
+            },
+            "max-value": {
+             "description": "Maxium value for the parameter",
+             "type": "uint64"
+            }
+           }
+          },
+          "text-constraints": {
+           "leaf": {
+            "min-length": {
+             "description": "Minimum string length for the parameter",
+             "type": "uint8"
+            },
+            "max-length": {
+             "description": "Maximum string length for the parameter",
+             "type": "uint8"
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "control-param": {
+       "list": {
+        "control-param": {
+         "description": "List of control parameters to manage and\nupdate the running configuration of the VNF",
+         "key": "id",
+         "leaf": {
+          "id": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          },
+          "description": {
+           "type": "string"
+          },
+          "group-tag": {
+           "description": "A simple tag to group control parameters",
+           "type": "string"
+          },
+          "min-value": {
+           "description": "Minimum value for the parameter",
+           "type": "uint64"
+          },
+          "max-value": {
+           "description": "Maxium value for the parameter",
+           "type": "uint64"
+          },
+          "current-value": {
+           "description": "Current value for the parameter",
+           "type": "uint64"
+          },
+          "step-value": {
+           "description": "Step value for the parameter",
+           "type": "uint64"
+          },
+          "units": {
+           "type": "string"
+          },
+          "widget-type": {
+           "type": "manotypes:widget-type"
+          },
+          "url": {
+           "description": "This is the URL where to perform the operation",
+           "type": "inet:uri"
+          },
+          "method": {
+           "description": "This is the method to be performed at the uri.\nPOST by default for action",
+           "type": "manotypes:http-method",
+           "default": "POST"
+          },
+          "payload": {
+           "description": "This is the operation payload or payload template as stringified\nJSON. This field provides the data  to be sent for this operation\ncall",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "action-param": {
+       "list": {
+        "action-param": {
+         "description": "List of action parameters to\ncontrol VNF",
+         "key": "id",
+         "leaf": {
+          "id": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          },
+          "description": {
+           "type": "string"
+          },
+          "group-tag": {
+           "description": "A simple tag to group monitoring parameter",
+           "type": "string"
+          },
+          "url": {
+           "description": "This is the URL where to perform the operation",
+           "type": "inet:uri"
+          },
+          "method": {
+           "description": "This is the method to be performed at the uri.\nPOST by default for action",
+           "type": "manotypes:http-method",
+           "default": "POST"
+          },
+          "payload": {
+           "description": "This is the operation payload or payload template to be sent in\nthe data for this operation call",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "input-parameter": {
+       "description": "",
+       "list": {
+        "input-parameter": {
+         "description": "List of input parameters",
+         "key": "xpath",
+         "leaf": {
+          "xpath": {
+           "description": "A an xpath that specfies which element in a descriptor is to be\nmodified.",
+           "type": "string"
+          },
+          "value": {
+           "description": "The value that the element specified by the xpath should take when a\nrecord is created.",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "input-parameter-xpath": {
+       "list": {
+        "input-parameter-xpath": {
+         "description": "List of xpaths to parameters inside the NSD\nthe can be customized during the instantiation.",
+         "key": "xpath",
+         "leaf": {
+          "xpath": {
+           "description": "An xpath that specifies the element in a descriptor.",
+           "type": "string"
+          },
+          "label": {
+           "description": "A descriptive string",
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "nfvi-metrics": {
+       "container": {
+        "vcpu": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "VCPU"
+          },
+          "total": {
+           "description": "The total number of VCPUs available.",
+           "type": "uint64"
+          },
+          "utilization": {
+           "description": "The VCPU utilization (percentage).",
+           "type": {
+            "decimal64": {
+             "fraction-digits": "2",
+             "range": "0 .. 100"
+            }
+           }
+          }
+         }
+        },
+        "memory": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "MEMORY"
+          },
+          "used": {
+           "description": "The amount of memory (bytes) currently in use.",
+           "type": "uint64"
+          },
+          "total": {
+           "description": "The amount of memory (bytes) available.",
+           "type": "uint64"
+          },
+          "utilization": {
+           "description": "The memory utilization (percentage).",
+           "type": {
+            "decimal64": {
+             "fraction-digits": "2",
+             "range": "0 .. 100"
+            }
+           }
+          }
+         }
+        },
+        "storage": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "STORAGE"
+          },
+          "used": {
+           "description": "The amount of storage (bytes) currently in use.",
+           "type": "uint64"
+          },
+          "total": {
+           "description": "The amount of storage (bytes) available.",
+           "type": "uint64"
+          },
+          "utilization": {
+           "description": "The storage utilization (percentage).",
+           "type": {
+            "decimal64": {
+             "fraction-digits": "2",
+             "range": "0 .. 100"
+            }
+           }
+          }
+         }
+        },
+        "external-ports": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "EXTERNAL PORTS"
+          },
+          "total": {
+           "description": "The total number of external ports.",
+           "type": "uint64"
+          }
+         }
+        },
+        "internal-ports": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "INTERNAL PORTS"
+          },
+          "total": {
+           "description": "The total number of internal ports.",
+           "type": "uint64"
+          }
+         }
+        },
+        "network": {
+         "leaf": {
+          "label": {
+           "description": "Label to show in UI",
+           "type": "string",
+           "default": "NETWORK TRAFFIC"
+          }
+         },
+         "container": {
+          "incoming": {
+           "leaf": {
+            "label": {
+             "description": "Label to show in UI",
+             "type": "string",
+             "default": "INCOMING NETWORK TRAFFIC"
+            },
+            "bytes": {
+             "description": "The cumulative number of incoming bytes.",
+             "type": "uint64"
+            },
+            "packets": {
+             "description": "The cumulative number of incoming packets.",
+             "type": "uint64"
+            },
+            "byte-rate": {
+             "description": "The current incoming byte-rate (bytes per second).",
+             "type": {
+              "decimal64": {
+               "fraction-digits": "2"
+              }
+             }
+            },
+            "packet-rate": {
+             "description": "The current incoming packet (packets per second).",
+             "type": {
+              "decimal64": {
+               "fraction-digits": "2"
+              }
+             }
+            }
+           }
+          },
+          "outgoing": {
+           "leaf": {
+            "label": {
+             "description": "Label to show in UI",
+             "type": "string",
+             "default": "OUTGOING NETWORK TRAFFIC"
+            },
+            "bytes": {
+             "description": "The cumulative number of outgoing bytes.",
+             "type": "uint64"
+            },
+            "packets": {
+             "description": "The cumulative number of outgoing packets.",
+             "type": "uint64"
+            },
+            "byte-rate": {
+             "description": "The current outgoing byte-rate (bytes per second).",
+             "type": {
+              "decimal64": {
+               "fraction-digits": "2"
+              }
+             }
+            },
+            "packet-rate": {
+             "description": "The current outgoing packet (packets per second).",
+             "type": {
+              "decimal64": {
+               "fraction-digits": "2"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "extension": {
+  "module": {
+   "argument": "name",
+   "include": "0..n",
+   "prefix": "0..1",
+   "anyxml": "0..n",
+   "augment": "0..n",
+   "choice": "0..n",
+   "contact": "0..1",
+   "container": "0..n",
+   "description": "0..1",
+   "deviation": "0..n",
+   "extension": "0..n",
+   "feature": "0..n",
+   "grouping": "0..n",
+   "identity": "0..n",
+   "import": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "namespace": "0..1",
+   "notification": "0..n",
+   "organization": "0..1",
+   "reference": "0..1",
+   "revision": "0..n",
+   "rpc": "0..n",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "yang-version": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var changes, match, ref, synth, target;\n  synth = this.require('data-synth');\n  ref = params.augment;\n  for (target in ref) {\n    changes = ref[target];\n    match = this.locate(ctx, target);\n    if (match == null) {\n      continue;\n    }\n    synth.copy(match, changes);\n  }\n  return delete this.source[params.prefix];\n}"
+   },
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var k, m, modules, ref, synth, v;\n  synth = this.require('data-synth');\n  modules = {};\n  ref = params[\"import\"];\n  for (k in ref) {\n    v = ref[k];\n    modules[k] = children[k];\n    delete children[k];\n  }\n  m = (synth.Store(params, function() {\n    return this.set({\n      name: arg,\n      modules: modules\n    });\n  })).bind(children);\n  this.define('module', arg, m);\n  return m;\n}"
+   }
+  },
+  "prefix": {
+   "argument": "value",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return this.source[arg] = this.source;\n}"
+   }
+  },
+  "include": {
+   "argument": "module",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var k, m, ref, ref1, ref2, results, v;\n  m = this.preprocess(this.resolve('dependencies', arg));\n  ref = m.extension;\n  for (k in ref) {\n    v = ref[k];\n    this.define('extension', k, v);\n  }\n  ref1 = m.typedef;\n  for (k in ref1) {\n    v = ref1[k];\n    this.define('typedef', k, v);\n  }\n  ref2 = m.schema;\n  results = [];\n  for (k in ref2) {\n    v = ref2[k];\n    results.push(ctx[k] = v);\n  }\n  return results;\n}"
+   },
+   "revision-date": "0..1"
+  },
+  "augment": {
+   "anyxml": "0..n",
+   "case": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "uses": "0..n",
+   "when": "0..1",
+   "argument": "target-node"
+  },
+  "belongs-to": {
+   "prefix": 1,
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return this.source[params.prefix] = this.source;\n}"
+   },
+   "argument": "module"
+  },
+  "bit": {
+   "description": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "position": "0..1",
+   "argument": "name"
+  },
+  "case": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "uses": "0..n",
+   "when": "0..1",
+   "argument": "name"
+  },
+  "choice": {
+   "anyxml": "0..n",
+   "case": "0..n",
+   "config": "0..1",
+   "container": "0..n",
+   "default": "0..1",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "mandatory": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "when": "0..1",
+   "argument": "condition"
+  },
+  "config": {
+   "preprocess": {
+    "!js/function": "function (arg, p, ctx) {\n  return ctx.config = arg === true || arg === 'true';\n}"
+   },
+   "argument": "value"
+  },
+  "container": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "config": "0..1",
+   "container": "0..n",
+   "description": "0..1",
+   "grouping": "0..n",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "must": "0..n",
+   "presence": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "when": "0..1",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return (synth.Object(params)).bind(children);\n}"
+   },
+   "argument": "name"
+  },
+  "deviate": {
+   "config": "0..1",
+   "default": "0..1",
+   "mandatory": "0..1",
+   "max-elements": "0..1",
+   "min-elements": "0..1",
+   "must": "0..n",
+   "type": "0..1",
+   "unique": "0..1",
+   "units": "0..1",
+   "argument": "value"
+  },
+  "deviation": {
+   "description": "0..1",
+   "deviate": "1..n",
+   "reference": "0..1",
+   "argument": "target-node"
+  },
+  "enum": {
+   "description": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "value": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  if (params.value == null) {\n    if (this.enumValue == null) {\n      this.enumValue = 0;\n    }\n    params.value = this.enumValue++;\n  } else {\n    params.value = Number(params.value);\n    this.enumValue = params.value + 1;\n  }\n  return ctx[\"enum\"][arg] = params;\n}"
+   },
+   "argument": "name"
+  },
+  "feature": {
+   "description": "0..1",
+   "if-feature": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  if (params.status === 'unavailable') {\n    console.warn(\"feature \" + arg + \" is unavailable\");\n    if (typeof ctx.feature === 'object') {\n      return delete ctx.feature[arg];\n    } else {\n      return delete ctx.feature;\n    }\n  }\n}"
+   },
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var feature;\n  feature = this.resolve('feature', arg);\n  return null;\n}"
+   },
+   "argument": "name"
+  },
+  "grouping": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "description": "0..1",
+   "grouping": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "preprocess": {
+    "!js/function": "function (arg, params) {\n  return this.define('grouping', arg, params);\n}"
+   },
+   "argument": "name"
+  },
+  "identity": {
+   "base": "0..1",
+   "description": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params) {\n  return this.define('identity', arg, params);\n}"
+   },
+   "argument": "name"
+  },
+  "if-feature": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  if ((this.resolve('feature', arg)) == null) {\n    return ctx.status = 'unavailable';\n  }\n}"
+   },
+   "argument": "name"
+  },
+  "import": {
+   "prefix": 1,
+   "revision-date": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var copy, k, m, original, ref, ref1, rev, schema, source, synth, v;\n  synth = this.require('data-synth');\n  schema = this.resolve('dependencies', arg, false);\n  if (schema == null) {\n    console.warn(\"no explicit dependency for \" + arg + \" defined, searching local filesystem\");\n    schema = this.parse(\"!yang \" + arg + \".yang\", this.source);\n    if (schema != null) {\n      this.define('dependencies', arg, schema);\n      source = this.source.parent;\n      while ((source.parent != null) && source.parent.name !== 'yangforge') {\n        source = source.parent;\n      }\n      if (source.dependencies == null) {\n        source.dependencies = {};\n      }\n      source.dependencies[arg] = schema;\n    }\n  }\n  m = this.preprocess(schema);\n  if (m == null) {\n    throw this.error(\"unable to resolve '\" + arg + \"' in dependencies\", 'import');\n  }\n  rev = params['revision-date'];\n  if ((rev != null) && !(rev in m.revision)) {\n    throw this.error(\"requested \" + rev + \" not available in \" + arg, 'import');\n  }\n  ref = m.extension;\n  for (k in ref) {\n    v = ref[k];\n    if (!(v.override === true)) {\n      continue;\n    }\n    original = this.resolve('extension', k);\n    copy = synth.copy({}, v);\n    copy.origin = synth.copy({}, (ref1 = original.origin) != null ? ref1 : original);\n    delete copy.override;\n    this.define('extension', k, copy);\n  }\n  return this.source[params.prefix] = m;\n}"
+   },
+   "construct": {
+    "!js/function": "function (arg, params, children, ctx) {\n  return this.compile(this.source[params.prefix], this.source);\n}"
+   },
+   "argument": "module"
+  },
+  "input": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "grouping": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return (synth.Object(params)).bind(children);\n}"
+   }
+  },
+  "leaf": {
+   "config": "0..1",
+   "default": "0..1",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "mandatory": "0..1",
+   "must": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "type": "0..1",
+   "units": "0..1",
+   "when": "0..1",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return synth.Property(params, function() {\n    if (children.type != null) {\n      return this.set({\n        type: children.type\n      });\n    }\n  });\n}"
+   },
+   "argument": "name"
+  },
+  "leaf-list": {
+   "config": "0..1",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "max-elements": "0..1",
+   "min-elements": "0..1",
+   "must": "0..n",
+   "ordered-by": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "type": "0..1",
+   "units": "0..1",
+   "when": "0..1",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return synth.List(params, function() {\n    if (children.type != null) {\n      return this.set({\n        type: children.type\n      });\n    }\n  });\n}"
+   },
+   "argument": "name"
+  },
+  "list": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "config": "0..1",
+   "container": "0..n",
+   "description": "0..1",
+   "grouping": "0..n",
+   "if-feature": "0..n",
+   "key": "0..1",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "max-elements": "0..1",
+   "min-elements": "0..1",
+   "must": "0..n",
+   "ordered-by": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "unique": "0..1",
+   "uses": "0..n",
+   "when": "0..1",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var item, synth;\n  synth = this.require('data-synth');\n  item = (synth.Object(null)).bind(children);\n  return (synth.List(params)).set({\n    type: item\n  });\n}"
+   },
+   "argument": "name"
+  },
+  "mandatory": {
+   "preprocess": {
+    "!js/function": "function (arg, p, ctx) {\n  return ctx.mandatory = arg === true || arg === 'true';\n}"
+   },
+   "argument": "value"
+  },
+  "max-elements": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  if (arg !== 'unbounded') {\n    return ctx['max-elements'] = Number(arg);\n  }\n}"
+   },
+   "argument": "value"
+  },
+  "min-elements": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return ctx['min-elements'] = Number(arg);\n}"
+   },
+   "argument": "value"
+  },
+  "must": {
+   "description": "0..1",
+   "error-app-tag": "0..1",
+   "error-message": "0..1",
+   "reference": "0..1",
+   "argument": "condition"
+  },
+  "notification": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "description": "0..1",
+   "grouping": "0..n",
+   "if-feature": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "preprocess": {
+    "!js/function": "function (arg, params) {\n  return this.define('notification', arg, params);\n}"
+   },
+   "argument": "event"
+  },
+  "output": {
+   "anyxml": "0..n",
+   "choice": "0..n",
+   "container": "0..n",
+   "grouping": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var synth;\n  synth = this.require('data-synth');\n  return (synth.Object(params)).bind(children);\n}"
+   }
+  },
+  "path": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return ctx.path = arg.replace(/[_]/g, '.');\n}"
+   },
+   "argument": "value"
+  },
+  "pattern": {
+   "construct": {
+    "!js/function": "function (arg, params, children, ctx) {\n  if (ctx.patterns == null) {\n    ctx.patterns = [];\n  }\n  return ctx.patterns.push(new RegExp(arg));\n}"
+   },
+   "argument": "value"
+  },
+  "refine": {
+   "default": "0..1",
+   "description": "0..1",
+   "reference": "0..1",
+   "config": "0..1",
+   "mandatory": "0..1",
+   "presence": "0..1",
+   "must": "0..n",
+   "min-elements": "0..1",
+   "max-elements": "0..1",
+   "units": "0..1",
+   "argument": "target-node"
+  },
+  "require-instance": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return ctx['require-instance'] = arg === true || arg === 'true';\n}"
+   },
+   "argument": "value"
+  },
+  "revision": {
+   "description": "0..1",
+   "reference": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return this.define('revision', arg, params);\n}"
+   },
+   "argument": "date"
+  },
+  "rpc": {
+   "description": "0..1",
+   "grouping": "0..n",
+   "if-feature": "0..n",
+   "input": "0..1",
+   "output": "0..1",
+   "reference": "0..1",
+   "status": "0..1",
+   "typedef": "0..n",
+   "construct": {
+    "!js/function": "function (arg, params, children) {\n  var func, method, ref, ref1, request, response, synth;\n  synth = this.require('data-synth');\n  func = this.resolve('rpc', arg, false);\n  if (func == null) {\n    func = function(input, output, done) {\n      return done(\"No control logic found for '\" + arg + \"' rpc operation\");\n    };\n  }\n  request = (ref = children.input) != null ? ref : synth.Meta;\n  response = (ref1 = children.output) != null ? ref1 : synth.Meta;\n  method = function(data, resolve, reject) {\n    var e, error, input, output;\n    if (typeof console.debug === \"function\") {\n      console.debug(\"executing rpc \" + arg + \"...\");\n    }\n    try {\n      input = new request(data, this);\n      output = new response(null, this);\n    } catch (error) {\n      e = error;\n      return reject(e);\n    }\n    return func.call(this, input, output, function(e) {\n      if (e == null) {\n        return resolve(output);\n      } else {\n        return reject(e);\n      }\n    });\n  };\n  method.params = params;\n  method.input = request;\n  method.output = response;\n  return method;\n}"
+   },
+   "argument": "name"
+  },
+  "submodule": {
+   "argument": "name",
+   "anyxml": "0..n",
+   "augment": "0..n",
+   "belongs-to": "0..1",
+   "choice": "0..n",
+   "contact": "0..1",
+   "container": "0..n",
+   "description": "0..1",
+   "deviation": "0..n",
+   "extension": "0..n",
+   "feature": "0..n",
+   "grouping": "0..n",
+   "identity": "0..n",
+   "import": "0..n",
+   "include": "0..n",
+   "leaf": "0..n",
+   "leaf-list": "0..n",
+   "list": "0..n",
+   "notification": "0..n",
+   "organization": "0..1",
+   "reference": "0..1",
+   "revision": "0..n",
+   "rpc": "0..n",
+   "typedef": "0..n",
+   "uses": "0..n",
+   "yang-version": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var k, v;\n  for (k in params) {\n    v = params[k];\n    ctx[k] = v;\n  }\n  return delete ctx.submodule;\n}"
+   }
+  },
+  "status": {
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return ctx.status != null ? ctx.status : ctx.status = arg;\n}"
+   },
+   "argument": "value"
+  },
+  "type": {
+   "base": "0..1",
+   "bit": "0..n",
+   "enum": "0..n",
+   "fraction-digits": "0..1",
+   "length": "0..1",
+   "path": "0..1",
+   "pattern": "0..n",
+   "range": "0..1",
+   "require-instance": "0..1",
+   "type": "0..n",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  return delete this.enumValue;\n}"
+   },
+   "construct": {
+    "!js/function": "function (arg, params, children, ctx) {\n  var key, mparams, ref, ref1, synth, typedef, value;\n  synth = this.require('data-synth');\n  typedef = this.resolve('typedef', arg);\n  if (typedef == null) {\n    throw this.error(\"unable to resolve typedef for \" + arg);\n  }\n  switch (false) {\n    case typedef.construct == null:\n      ctx.type = typedef.construct(params, this, arguments.callee);\n      break;\n    case typeof typedef.type !== 'object':\n      ref = typedef.type;\n      for (key in ref) {\n        value = ref[key];\n        mparams = synth.copy({}, value);\n        synth.copy(mparams, params);\n        arguments.callee.call(this, key, mparams, children, ctx);\n      }\n      break;\n    case typeof typedef.type !== 'string':\n      arguments.callee.call(this, typedef.type, params, children, ctx);\n  }\n  if ((ref1 = ctx.type) != null) {\n    ref1.toString = function() {\n      return arg;\n    };\n  }\n  return null;\n}"
+   },
+   "argument": "name"
+  },
+  "typedef": {
+   "default": "0..1",
+   "description": "0..1",
+   "units": "0..1",
+   "type": "0..1",
+   "reference": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params) {\n  return this.define('typedef', arg, params);\n}"
+   },
+   "argument": "name"
+  },
+  "uses": {
+   "augment": "0..n",
+   "description": "0..1",
+   "if-feature": "0..n",
+   "refine": "0..n",
+   "reference": "0..1",
+   "status": "0..1",
+   "when": "0..1",
+   "preprocess": {
+    "!js/function": "function (arg, params, ctx) {\n  var changes, grouping, k, match, ref, ref1, synth, target, v;\n  synth = this.require('data-synth');\n  grouping = synth.copy({}, this.resolve('grouping', arg));\n  delete grouping.description;\n  delete grouping.reference;\n  synth.copy(ctx, grouping);\n  ref = params.refine;\n  for (target in ref) {\n    changes = ref[target];\n    match = this.locate(ctx, target);\n    if (match == null) {\n      continue;\n    }\n    for (k in changes) {\n      v = changes[k];\n      match[k] = v;\n    }\n  }\n  ref1 = params.augment;\n  for (target in ref1) {\n    changes = ref1[target];\n    match = this.locate(ctx, target);\n    if (match == null) {\n      continue;\n    }\n    synth.copy(match, changes);\n  }\n  if (typeof ctx.uses === 'object') {\n    return delete ctx.uses[arg];\n  } else {\n    return delete ctx.uses;\n  }\n}"
+   },
+   "argument": "name"
+  },
+  "when": {
+   "description": "0..1",
+   "reference": "0..1",
+   "argument": "condition"
+  },
+  "anyxml": {},
+  "base": {
+   "argument": "name"
+  },
+  "contact": {
+   "argument": {
+    "text": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "default": {
+   "argument": "value"
+  },
+  "description": {
+   "argument": {
+    "text": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "error-app-tag": {
+   "argument": "value"
+  },
+  "error-message": {
+   "argument": {
+    "value": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "fraction-digits": {
+   "argument": "value"
+  },
+  "key": {
+   "argument": "value"
+  },
+  "length": {
+   "argument": "value"
+  },
+  "namespace": {
+   "argument": "uri"
+  },
+  "ordered-by": {
+   "argument": "value"
+  },
+  "organization": {
+   "argument": {
+    "text": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "position": {
+   "argument": "value"
+  },
+  "presence": {
+   "argument": "value"
+  },
+  "range": {
+   "argument": "value"
+  },
+  "reference": {
+   "argument": {
+    "text": {
+     "yin-element": "true"
+    }
+   }
+  },
+  "revision-date": {
+   "argument": "date"
+  },
+  "unique": {
+   "argument": "tag"
+  },
+  "units": {
+   "argument": "value"
+  },
+  "value": {
+   "argument": "value"
+  },
+  "yang-version": {
+   "argument": "value"
+  },
+  "yin-element": {
+   "argument": "value"
+  }
+ },
+ "pkgdir": "/Users/onvelocity/rift-composer/webapp/schemas/yang",
+ "module": {}
+}

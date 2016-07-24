@@ -1,0 +1,27 @@
+uinet directory layout:
+
+Directory	Description
+=============	=============================================================
+bin		Test/sample programs that use libuinet.
+lib		Libraries that are or use the user-space networking stack.
+lib/libev	Port of libev-4.15 that provides a uinet watcher type so uinet
+		sockets can be used in libev-based programs.
+lib/libuinet	Library containing the user-space port of the FreeBSD TCP/IP
+		stack and additional management and configuration interfaces.
+		Many kernel interfaces (or portions thereof) had to be
+		reimplemented for the port.  Kernel functionality implemented
+		in <kern_file>.c in the kernel source tree can generally be
+		found in uinet_<kern_file>.c in this directory. 
+lib/libuinet/api_include
+		Public includes for libuinet.
+lib/libuinet/override_include
+		Header overrides for some of the FreeBSD kernel headers.
+lib/libuinet/opt
+		Kernel option headers required by the port. The kernel
+		configuration is modified by editing these files.
+mk		Port of requisite FreeBSD kernel make infrastructure to gmake.
+sys		Subset of the FreeBSD kernel source tree required by this port
+		of the TCP/IP stack.  Subdirs have been imported in their
+		entirety from the FreeBSD sources, even if not all the sources
+		therein will be used, in order to make merging with newer
+		kernel code more straightforward.

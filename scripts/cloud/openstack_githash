@@ -1,0 +1,27 @@
+#! /bin/bash
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Anil Gunturu
+# Creation Date: 07/24/2014
+# 
+
+# Since openstack consists of
+# many different modules, this script creates a single hash
+# from the hashes of individual modules.
+
+TEMPDIR=`pwd`
+STACKDIR=$1
+cd $STACKDIR
+echo "OpenStack Version Information" > VERSION
+ls modules/openstack |
+    while read d; do
+        cd modules/openstack/$d
+        echo "modules/openstack/$d `git log -n1 | grep commit | awk '{print $2}'`" >> $STACKDIR/VERSION
+       cd $STACKDIR
+    done
+
+md5=`md5sum VERSION | awk '{print $1}'`
+mv VERSION VERSION.$md5
+cd $TEMPDIR

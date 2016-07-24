@@ -1,0 +1,247 @@
+nsd:nsd-catalog:
+    nsd:
+    -   id: mwc16-pe
+        name: mwc16-pe
+        short-name: mwc16-pe
+        description: mwc16-pe
+        logo: osm_2x.png
+        constituent-vnfd:
+        -   member-vnf-index: '1'
+            vnfd-id-ref: 6WindTR1.1.2
+        -   member-vnf-index: '2'
+            vnfd-id-ref: 6WindTR1.1.2
+        -   member-vnf-index: '3'
+            vnfd-id-ref: 6WindTR1.1.2
+        vld:
+        -   id: 6WindTR1.1.2__3 to OpenStack
+            name: 6WindTR1.1.2__3 to OpenStack
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: interDC
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '3'
+                vnfd-connection-point-ref: xe3
+                vnfd-id-ref: 6WindTR1.1.2
+        -   id: 6WindTR1.1.2__1 enty point
+            name: 6WindTR1.1.2__1 enty point
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mwc16data1
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: xe2
+                vnfd-id-ref: 6WindTR1.1.2
+        -   id: 6WindTR1.1.2__2 entry point
+            name: 6WindTR1.1.2__2 entry point
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mwc16data2
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '2'
+                vnfd-connection-point-ref: xe2
+                vnfd-id-ref: 6WindTR1.1.2
+        -   id: management
+            name: management
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mgmt
+            type: ELAN
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: eth0
+                vnfd-id-ref: 6WindTR1.1.2
+            -   member-vnf-index-ref: '2'
+                vnfd-connection-point-ref: eth0
+                vnfd-id-ref: 6WindTR1.1.2
+            -   member-vnf-index-ref: '3'
+                vnfd-connection-point-ref: eth0
+                vnfd-id-ref: 6WindTR1.1.2
+        -   id: 6WindTR1.1.2__2-6WindTR1.1.2__3
+            name: 6WindTR1.1.2__2-6WindTR1.1.2__3
+            type: ELAN
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '2'
+                vnfd-connection-point-ref: xe1
+                vnfd-id-ref: 6WindTR1.1.2
+            -   member-vnf-index-ref: '3'
+                vnfd-connection-point-ref: xe1
+                vnfd-id-ref: 6WindTR1.1.2
+        -   id: 6WindTR1.1.2__1-6WindTR1.1.2__3
+            name: 6WindTR1.1.2__1-6WindTR1.1.2__3
+            type: ELAN
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: xe1
+                vnfd-id-ref: 6WindTR1.1.2
+            -   member-vnf-index-ref: '3'
+                vnfd-connection-point-ref: xe0
+                vnfd-id-ref: 6WindTR1.1.2
+        -   id: 6WindTR1.1.2__1-6WindTR1.1.2__2
+            name: 6WindTR1.1.2__1-6WindTR1.1.2__2
+            type: ELAN
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: xe0
+                vnfd-id-ref: 6WindTR1.1.2
+            -   member-vnf-index-ref: '2'
+                vnfd-connection-point-ref: xe0
+                vnfd-id-ref: 6WindTR1.1.2
+        config-primitive:
+        -   name: Add SP Test Corporation
+            parameter:
+            -   name: Corporation Name
+                data-type: string
+                default-value: SP Test Corp
+                mandatory: 'true'
+            -   name: Tunnel Key
+                data-type: integer
+                default-value: '10'
+                hidden: 'true'
+                mandatory: 'true'
+            parameter-group:
+            -   mandatory: 'false'
+                name: PE1
+                parameter:
+                -   name: Vlan ID
+                    data-type: integer
+                    default-value: '3000'
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Interface Name
+                    data-type: string
+                    default-value: eth3
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Corp. Network
+                    data-type: string
+                    default-value: 10.0.1.0/24
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Corp. Gateway
+                    data-type: string
+                    default-value: 10.0.1.1
+                    hidden: 'true'
+                    mandatory: 'true'
+            -   mandatory: 'false'
+                name: PE2
+                parameter:
+                -   name: Vlan ID
+                    data-type: integer
+                    default-value: '3000'
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Interface Name
+                    data-type: string
+                    default-value: eth3
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Corp. Network
+                    data-type: string
+                    default-value: 10.0.2.0/24
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Corp. Gateway
+                    data-type: string
+                    default-value: 10.0.2.1
+                    hidden: 'true'
+                    mandatory: 'true'
+            -   mandatory: 'false'
+                name: PE3
+                parameter:
+                -   name: Vlan ID
+                    data-type: integer
+                    default-value: '3000'
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Interface Name
+                    data-type: string
+                    default-value: eth3
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Corp. Network
+                    data-type: string
+                    default-value: 10.0.3.0/24
+                    hidden: 'true'
+                    mandatory: 'true'
+                -   name: Corp. Gateway
+                    data-type: string
+                    default-value: 10.0.3.1
+                    hidden: 'true'
+                    mandatory: 'true'
+            user-defined-script: add_corporation.py
+        -   name: Add Corporation
+            parameter:
+            -   name: Corporation Name
+                data-type: string
+                default-value: CorpA
+                mandatory: 'true'
+            -   name: Tunnel Key
+                data-type: integer
+                default-value: '1'
+                hidden: 'true'
+                mandatory: 'true'
+            parameter-group:
+            -   mandatory: 'false'
+                name: PE1
+                parameter:
+                -   name: Vlan ID
+                    data-type: integer
+                    default-value: '101'
+                    mandatory: 'true'
+                    read-only: 'true'
+                -   name: Interface Name
+                    data-type: string
+                    default-value: eth3
+                    mandatory: 'true'
+                -   name: Corp. Network
+                    data-type: string
+                    default-value: 10.0.1.0/24
+                    mandatory: 'true'
+                -   name: Corp. Gateway
+                    data-type: string
+                    default-value: 10.0.1.1
+                    mandatory: 'true'
+            -   mandatory: 'false'
+                name: PE2
+                parameter:
+                -   name: Vlan ID
+                    data-type: integer
+                    default-value: '102'
+                    mandatory: 'true'
+                    read-only: 'true'
+                -   name: Interface Name
+                    data-type: string
+                    default-value: eth3
+                    mandatory: 'true'
+                -   name: Corp. Network
+                    data-type: string
+                    default-value: 10.0.2.0/24
+                    mandatory: 'true'
+                -   name: Corp. Gateway
+                    data-type: string
+                    default-value: 10.0.2.1
+                    mandatory: 'true'
+            -   mandatory: 'false'
+                name: PE3
+                parameter:
+                -   name: Vlan ID
+                    data-type: integer
+                    default-value: '108'
+                    mandatory: 'true'
+                    read-only: 'true'
+                -   name: Interface Name
+                    data-type: string
+                    default-value: eth4
+                    mandatory: 'true'
+                -   name: Corp. Network
+                    data-type: string
+                    default-value: 10.0.4.0/24
+                    mandatory: 'true'
+                -   name: Corp. Gateway
+                    data-type: string
+                    default-value: 10.0.4.1
+                    mandatory: 'true'
+            user-defined-script: add_corporation.py

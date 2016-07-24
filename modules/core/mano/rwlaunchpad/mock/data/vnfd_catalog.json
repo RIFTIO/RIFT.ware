@@ -1,0 +1,47 @@
+{
+    "vnfd": [
+        {
+            "id": "a200a0a0-663a-11e5-b122-6cb3113b406f",
+            "name": "Virtual Network Descriptor 1",
+            "short-name": "VNFD1",
+            "vendor": "RIFT.io",
+            "description": "This is a description. It doesn't say much",
+            "version": "0.0.1",
+            "internal-vld": [
+                    {
+                        "id" : "68981800-7201-11e5-9fc4-bf5ad0442ce5",
+                        "name": "Zathrus",
+                        "short-name": "zathrus",
+                        "description": "Virtual link for zathrus",
+                        "type": "ELAN",
+                        "root-bandwidth": 42,
+                        "leaf-bandwidth": 42,
+                        "internal-connection-point-ref": [
+
+                            ]
+                    }
+              ]
+        },
+        {
+            "id": "b200a0a0-663a-11e5-b122-6cb3113b406f",
+            "name": "vnfd-two",
+            "short-name": "VNFD2",
+            "vendor": "RIFT.io",
+             "description": "This is a description. It doesn't say much",
+            "version": "0.0.1",
+            "internal-vld": [
+
+            ]
+        },
+        {
+            "id": "c200a0a0-663a-11e5-b122-6cb3113b406f",
+            "name": "vnfd-three",
+            "short-name": "VNFD03",
+            "vendor": "RIFT.io",
+            "description": "This is a description. It doesn't say much",
+            "version": "0.0.1",
+            "internal-vld": [
+            ]
+        }
+    ]
+}

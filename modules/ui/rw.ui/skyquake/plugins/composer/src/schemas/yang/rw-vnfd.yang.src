@@ -1,0 +1,105 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module rw-vnfd
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-vnfd";
+  prefix "rw-vnfd";
+
+  import vnfd {
+    prefix "vnfd";
+  }
+
+  import rwvcs-types {
+    prefix "rwvcstypes";
+  }
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import mano-types {
+    prefix "manotypes";
+  }
+
+  revision 2015-09-10 {
+    description
+      "Initial revision. This YANG file augments
+       the base MANO VNFD";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  augment /vnfd:vnfd-catalog/vnfd:vnfd {
+    uses manotypes:control-param;
+    uses manotypes:action-param;
+    leaf meta {
+      description
+        "Any meta-data needed by the UI";
+      type string;
+    }
+    list component {
+      description
+          "This section defines the RIFT.ware
+           virtual components";
+      key "component-name";
+      //rwpb:msg-new VcsComponent;
+      //rwpb:application-request-point;
+
+      leaf component-name {
+        description "";
+        type string;
+      }
+
+      leaf component-type {
+        description "";
+        type rwvcstypes:component_type;
+        mandatory true;
+      }
+
+      choice component {
+        case rwvcs-rwcollection {
+          uses rwvcstypes:rwvcs-rwcollection;
+        }
+        case rwvcs-rwvm {
+          uses rwvcstypes:rwvcs-rwvm;
+        }
+        case rwvcs-rwproc {
+          uses rwvcstypes:rwvcs-rwproc;
+        }
+        case native-proc {
+          uses rwvcstypes:native-proc;
+        }
+        case rwvcs-rwtasklet {
+          uses rwvcstypes:rwvcs-rwtasklet;
+        }
+      }
+    } // list component
+  }
+
+  augment /vnfd:vnfd-catalog/vnfd:vnfd/vnfd:vdu {
+    leaf vcs-component-ref {
+      description
+          "This defines the software components using the
+           RIFT.ware Virtual Component System (VCS). This
+           also allows specifying a state machine during
+           the VM startup.
+           NOTE: This is an significant addition to MANO,
+           since MANO doesn't clearly specify a method to
+           identify various software components in a VM.
+           Also using a state machine is not something that
+           is well described in MANO.";
+      type leafref {
+        path "/vnfd:vnfd-catalog/vnfd:vnfd/rw-vnfd:component/rw-vnfd:component-name";
+      }
+    }
+  }
+}
+// vim: sw=2

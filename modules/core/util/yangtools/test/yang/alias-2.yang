@@ -1,0 +1,28 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+module alias-2
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/test/yang/alias-2";
+  prefix "a2";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "Test yang module";
+
+  revision 2014-05-27 {
+    description "Initial version"; 
+  }
+
+  container dup {
+    rwpb:msg-new Dup;
+    container mid {
+      leaf l { type string; }
+    }
+  }
+}

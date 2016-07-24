@@ -1,0 +1,19 @@
+{
+  "test_name":"TC_LAUNCHPAD_MODULE_0100",
+  "commandline":"./launchpad_module_test",
+  "target_vm":"VM",
+  "test_description":"Module test for launchpad",
+  "run_as_root": true,
+  "status":"working",
+  "keywords":["nightly","smoke","smoke_stable","MANO","cloudsim"],
+  "timelimit": 600,
+  "networks":[],
+  "vms":[
+    {
+      "name": "VM",
+      "memory": 8192,
+      "cpus": 4
+    }
+  ]
+}
+

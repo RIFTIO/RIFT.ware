@@ -1,0 +1,32 @@
+#!/bin/bash
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Paul Laidler
+# Creation Date: 2016/01/04
+#
+
+source $RIFT_INSTALL/usr/rift/systemtest/util/mano/mano_common.sh
+
+# Helper script for invoking the mission control system test using the systest_wrapper
+SCRIPT_TEST="py.test -x -v \
+            ${PYTEST_DIR}/mission_control/test_mission_control.py \
+            ${PYTEST_DIR}/mission_control/pingpong_vnf/test_onboard_vnf.py \
+            ${PYTEST_DIR}/mission_control/pingpong_vnf/test_records.py \
+            ${PYTEST_DIR}/mission_control/pingpong_vnf/test_pingpong_longevity.py"
+
+test_prefix="pingpong_longevity_systest"
+test_cmd=""
+repeat_keyword="longevity"
+repeat=10
+
+# Parse commonline argument and set test variables
+parse_args "${@}"
+
+# Construct the test command based on the test variables
+construct_test_comand
+
+# Execute from pytest root directory to pick up conftest.py
+cd "${PYTEST_DIR}"
+
+eval ${test_cmd}

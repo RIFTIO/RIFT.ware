@@ -1,0 +1,38 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+module rwshell-mgmt-annotation
+
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwshell-mgmt-annotation";
+  prefix "rwshell-mgmt-ann";
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  import rwshell-mgmt {
+    prefix rwshellmgmt;
+  }
+
+  tailf:annotate "/rwshellmgmt:profiler-start" {
+    tailf:actionpoint rw_actionpoint;
+  }
+  tailf:annotate "/rwshellmgmt:profiler-stop" {
+    tailf:actionpoint rw_actionpoint;
+  }
+  tailf:annotate "/rwshellmgmt:profiler-report" {
+    tailf:actionpoint rw_actionpoint;
+  }
+  tailf:annotate "/rwshellmgmt:crash" {
+    tailf:callpoint rw_callpoint;
+  }
+  tailf:annotate "/rwshellmgmt:profiler" {
+    tailf:callpoint rw_callpoint;
+  }
+}

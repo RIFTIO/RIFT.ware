@@ -1,0 +1,26 @@
+The gobject-introspection-1.40.0 repo is imported/tracked directly from the 
+upstream repository. The following commands are used to create this from 
+the upstream repo
+
+git branch gnome-3-12
+git subtree add --prefix=gi/gobject-introspection-1.40.0 -m 'Add the gobject-introspection-1.40.0 branch' --squash git://git.gnome.org/gobject-introspection gnome-3-12
+
+git fetch git://git.gnome.org/gobject-introspection 1.42.0
+git subtree add --prefix=gi/gobject-introspection-1.42.0 -m 'Add the gobject-introspection-1.42.0' --squash FETCH_HEAD
+
+git fetch git://git.gnome.org/gobject-introspection 1.46.0
+git subtree add --prefix=gi/gobject-introspection-1.46.0 -m 'Add the gobject-introspection-1.46.0' --squash FETCH_HEAD
+
+diff --git a/gi/gobject-introspection-1.46.0/girepository/gitypelib.c b/gi/gobject-introspection-1.46.0/girepository/gitypelib.c
+index 09e74f1..cbcd142 100644
+--- a/gi/gobject-introspection-1.46.0/girepository/gitypelib.c
++++ b/gi/gobject-introspection-1.46.0/girepository/gitypelib.c
+@@ -467,7 +467,7 @@ is_aligned (guint32 offset)
+   return offset == ALIGN_VALUE (offset, 4);
+ }
+
+-#define MAX_NAME_LEN 200
++#define MAX_NAME_LEN 255
+
+ static const char *
+ get_string (GITypelib *typelib, guint32 offset, GError **error)

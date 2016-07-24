@@ -1,0 +1,2 @@
+RIFT.os, libcloud, Python Library for Interacting with Multiple Clouds, APLv2, https://git-wip-us.apache.org/repos/asf/libcloud.git
+RIFT.os, libcloud_rest, REST Interface for Libcloud, APLv2, https://github.com/Kami/libcloud.rest-1.git

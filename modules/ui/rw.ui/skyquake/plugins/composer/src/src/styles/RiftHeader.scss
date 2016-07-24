@@ -1,0 +1,40 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+@import 'variables';
+
+.RiftHeader {
+	.header-app {
+		background-color: #f1f1f1;
+	    height: 131px;
+	    padding: 20px 0;
+	    position: relative;
+
+	    h1 {
+			background: url('../images/header-logo.png') no-repeat left center;
+			height: 51px;
+			line-height: 51px;
+			margin-left: 80px;
+			padding-left: 118px;
+			position: absolute;
+			left: 0;
+			text-transform: uppercase;
+			font-size: 1.625rem;
+			font-weight: normal;
+	    }
+	}
+
+	div {
+		background-color: #f1f1f1;
+		padding-left: 1.25rem;
+		display: flex;
+		margin: 0 0 0.5rem 0;
+
+		a {
+			cursor: pointer;
+		}
+	}
+}

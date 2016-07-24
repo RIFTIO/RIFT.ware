@@ -1,0 +1,8 @@
+This is barebones confd client test program. This is useful for confd module testing. To use this program follow these steps:
+
+1. Reserve and login to a VM a root
+2. cd ${RIFT_ROOT}
+3. ./rift-shell -e
+4. cd modules/core/mc/confd_client
+4. ./confd_client_opdata.sh (will measure the rate for fetching operational data)
+5. ./confd_client_config.sh (will measure the rate of config writes and reads)

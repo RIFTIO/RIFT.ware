@@ -1,0 +1,73 @@
+nsd:nsd-catalog:
+    nsd:
+    -   id: gw_corpA
+        name: gw_corpA
+        description: Gateways to access as corpA to PE1 and PE2
+        constituent-vnfd:
+        -   member-vnf-index: '1'
+            vnfd-id-ref: gw_corpA_PE1
+        -   member-vnf-index: '2'
+            vnfd-id-ref: gw_corpA_PE2
+        vld:
+        -   id: connection 0
+            name: connection 0
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mgmt
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: eth1
+                vnfd-id-ref: gw_corpA_PE1
+        -   id: connection 1
+            name: connection 1
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mgmt
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '2'
+                vnfd-connection-point-ref: eth1
+                vnfd-id-ref: gw_corpA_PE2
+        -   id: connection 2
+            name: connection 2
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mwc1
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: eth0
+                vnfd-id-ref: gw_corpA_PE1
+        -   id: connection 3
+            name: connection 3
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mwc2
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '2'
+                vnfd-connection-point-ref: eth0
+                vnfd-id-ref: gw_corpA_PE2
+        -   id: connection 4
+            name: connection 4
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mwc16data1
+                segmentation_id: '101'
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: xe0
+                vnfd-id-ref: gw_corpA_PE1
+        -   id: connection 5
+            name: connection 5
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mwc16data2
+                segmentation_id: '102'
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '2'
+                vnfd-connection-point-ref: xe0
+                vnfd-id-ref: gw_corpA_PE2

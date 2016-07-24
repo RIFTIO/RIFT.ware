@@ -1,0 +1,33 @@
+This directory has source code for serf. The whole serf package is fetched as subtree as follows:
+
+git subtree add --prefix=src/github.com/hashicorp/serf -m 'Adding serf code library' --squash https://github.com/hashicorp/serf.git master
+
+git subtree add --prefix=src/github.com/hashicorp/go-msgpack -m 'Adding serf code library' --squash https://github.com/hashicorp/go-msgpack.git master
+
+git subtree add --prefix=src/github.com/hashicorp/go-syslog -m 'Adding serf code library' --squash https://github.com/hashicorp/go-syslog.git master
+
+git subtree add --prefix=src/github.com/hashicorp/go.net -m 'Adding serf code library' --squash https://github.com/hashicorp/go.net.git master
+
+git subtree add --prefix=src/github.com/hashicorp/logutils -m 'Adding serf code library' --squash https://github.com/hashicorp/logutils.git master
+
+git subtree add --prefix=src/github.com/hashicorp/mdns -m 'Adding serf code library' --squash https://github.com/hashicorp/mdns.git master
+
+git subtree add --prefix=src/github.com/hashicorp/memberlist -m 'Adding serf code library' --squash https://github.com/hashicorp/memberlist.git master
+
+git subtree add --prefix=src/github.com/miekg/dns -m 'Adding serf code library' --squash https://github.com/miekg/dns.git master
+
+git subtree add --prefix=src/github.com/mitchellh/cli -m 'Adding serf code library' --squash https://github.com/mitchellh/cli.git master
+
+git subtree add --prefix=src/github.com/mitchellh/mapstructure -m 'Adding serf code library' --squash https://github.com/mitchellh/mapstructure.git master
+
+git subtree add --prefix=src/github.com/ryanuber/columnize -m 'Adding serf code library' --squash https://github.com/ryanuber/columnize.git master
+
+git subtree add --prefix=src/github.com/armon/circbuf -m 'Adding serf code library' --squash https://github.com/armon/circbuf.git master
+
+git subtree add --prefix=src/github.com/armon/go-metrics -m 'Adding serf code library' --squash https://github.com/armon/go-metrics.git master
+
+One more package code.google.com/p/go.net also should have been bought through git subtree add. 
+However, it does not work.  This package is statically checked in.
+cd  $RIFT_ROOT/modules/ext/go
+export GOPATH=`pwd`
+go get code.google.com/p/go.net code.google.com/p/go.net

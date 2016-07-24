@@ -1,0 +1,137 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ */
+
+
+
+/**
+ * @file rwuagent-cli.yang
+ * @author Tom Seidenberg
+ * @date 2014/04/08
+ * @brief Micro-agent test CLI.  Not for demo use!
+ */
+
+module rwuagent-cli-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwuagent-cli";
+  prefix "rwua";
+
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  revision 2014-04-08 {
+    description
+      "Initial revision.";
+  }
+
+  container uagent {
+    
+    config false;
+    description "Micro-agent state and debug commands";
+
+    rwpb:msg-new RwUagentInfo;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+
+    container forward {
+        
+      description "Forward some test data through the micro-agent";
+      
+      leaf data {
+        description "The data to forward";
+        type string;
+        rwpb:field-string-max 256;
+      }
+    }
+    
+    container registration {
+      description "Show the list of registered endpoints with the uagent";
+      
+      list consumers {
+        description "The list of consumers for management messages";
+        rwpb:field-inline-max yang;
+        max-elements 256;
+        key "endpoint";
+        
+        leaf endpoint {
+          description "Name of the consumer";
+          type string;
+          rwpb:field-string-max 256;
+        }
+      }
+    }
+  }
+
+  notification timer-expiry {
+    description "This notification is used to test the uagent notification
+                 capability. The uagent-debug rpc is used to start a
+                 notification timer. When the timer expires, this notification
+                 is generated";
+    leaf count
+    {
+      type uint8;
+      description " The number of times the timer has expired since started";
+    }
+  }
+
+  rpc mgmt-agent-debug {
+    input {
+      choice action {        
+        container start-timer {
+          rwpb:msg-new StartTimer;
+          
+          leaf notification {
+            description "Start the notification timer";
+            type empty;
+          }
+        }
+        container stop-timer {
+          rwpb:msg-new StopTimer;
+          leaf notification {
+            description "Stop the notification timer";
+            type empty;
+          }
+        }
+
+        container test-rpc-output {
+          rwpb:msg-new OutputTest;
+          leaf timeout{
+            description "Immediate v/s Delayed response";
+            type uint8;
+          }
+        }
+        container test-dts {
+          rwpb:msg-new DtsTest;
+        }
+      }
+    }
+    output {
+      //test rpc output
+      container return-value {
+        rwpb:msg-flat "true";
+        leaf simple {
+          type uint8;
+        }
+        leaf-list leaf_list {
+          rwpb:field-inline-max 6;
+          type uint32;
+        }
+
+        list return-list {
+          rwpb:field-inline-max 10;
+          key "index";
+
+          leaf index {
+            type uint8;
+          }
+        }
+      }
+    }
+  }
+} // module rwuagent-cli

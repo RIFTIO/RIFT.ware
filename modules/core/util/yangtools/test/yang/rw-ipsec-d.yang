@@ -1,0 +1,1374 @@
+
+/*
+ * 
+ * (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+ *
+ *
+ */
+
+// Configuration references
+//
+// Cisco: Cisco ASA configuration guide/Cisco IOS XML 12.4T Configuring Secruity for VPNs
+// Juniper: JunOS 10.0 security CLI reference
+// Strongswan: http://wiki.strongswan.org/projects/strongswan/wiki/ConnSection
+// Vyatta: Vyatta VPN reference guide
+
+// StrongSwan left|right maps to local|remote, i.e. l->l, r->r.
+
+module rw-ipsec-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-ipsec";
+  prefix "rw-ipsec";
+
+  import rw-base-d {
+    prefix rwbase;
+  }
+  
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+  
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  /*
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+  import tailf-xsd-types {
+    prefix xs;
+  }
+  */
+  
+  import rw-cli-ext { prefix "rwcli"; }
+  import ietf-inet-types { prefix inet; }
+
+  description "IPsec related configuration";
+  revision 2014-05-27 {
+    description "Initial version"; 
+  }
+
+  // ============================ CONFIG - start ====================================
+  
+  grouping ike-version {
+    choice ike-version {
+      case ikev1 {
+        leaf aggressive-mode {
+          // Cisco supports:
+          //   crypto isakmp am-disable
+          //
+          // Juniper supports:
+          //   mode (aggressive | main)
+          //
+          // StrongSwan supports:
+          //   aggressive = yes | no
+          //
+          // Vayatta supports:
+          //   Not supported
+          type boolean;
+        }
+      }
+      case ikev2 {
+        leaf ikev2 {
+          type boolean;
+        }
+      }
+    }
+  } // grouping ike-protocol
+
+  grouping ike-dpd {
+    // Cisco supports:
+    //    crypto ikev2 dpd interval retry-interval {on-demand | periodic}
+    //
+    // Juniper supports:
+    // dead-peer-detection { always-send; interval seconds; threshold number; }
+    //   
+    // StrongSwan supports:
+    //   dpdaction = clear | trap | restart
+    //   dpddelay = 30s | <time>
+    //   dpdtimeout = 150s | <time>
+    //
+    // Vayatta supports:
+    //    set vpn ipsec ike-group <name> dead-peer-detection
+    //      [action (hold | clear | restart) | interval <seconds> | timeout <seconds> ]	
+    leaf delay {
+      type int32 {
+        range "30 .. 86400";
+      }
+      default 30;
+      description "Wait this many seconds for inactivity before sending DPD probe, defaults to 30 seconds.";
+    }
+    leaf timeout {
+      type int32 {
+        range "150 .. 86400";
+      }
+      default 150;
+      description "Wait this many seconds before assuming dead peer. Defaults to 150 seconds.";
+    }
+  } // grouping dpd
+
+  grouping ike-timeouts {
+    uses ike-dpd;
+    leaf ike-reauth {
+      type int32;
+      description "Time to schedule IKE reauth in seconds, default - 0 disable.";
+    }
+    leaf ike-rekey-time {
+      type int32;
+      default 14400;
+      description "Time to schedule IKE rekey in seconds, default - 4 hours";
+    }
+    
+  } //grouping ike-times
+  
+  typedef dh-groups {
+    type enumeration {
+      enum group1 {value 1;}
+      enum group2 {value 2;}
+      enum group5 {value 5;}
+      enum group14 {value 14;}
+      enum group16 {value 16;}
+    }
+  }
+
+  typedef auth-algorithms {
+    type enumeration {
+      enum md5;
+      enum sha1;
+      enum sha-256;
+    }
+  }
+
+  typedef encryption-algorithms {
+    type enumeration {
+      enum des-cbc;
+      enum 3des-cbc;
+      enum aes-128-cbc;
+      enum aes-192-cbc;
+      enum aes-256-cbc;
+    }
+  }
+
+  typedef compressions {
+    type enumeration {
+      enum disable;
+      enum lzs;
+    }
+  }
+
+  typedef dpd-actions {
+    type enumeration {
+      enum none;
+      enum clear;
+      enum restart;
+    }
+  }
+
+  typedef ipsec-mode {
+    type enumeration {
+      enum transport;
+      enum tunnel;
+    }
+  }
+  
+  grouping ikesa-proposal {
+    list ikesa-proposal {
+      key name;
+      leaf name {
+        type string;
+      }
+      leaf auth-algorithm {
+        // Cisco supports:
+        //   crypto isakmp policy hash (md5 | sha)
+        //
+        // Juniper supports:
+        //   authentication-algorithm (md5 | sha1| sha-256)
+        //   
+        // StrongSwan supports:
+        //   ike = <encryption-integrity-dhgroup>
+        //   where <integrity> can be one of the following:
+        //     md5 md5_128 sha1 sha1_160 aesxcbc sha2_256 sha2_384 sha2_512 sha2_256_96
+        //
+        // Vyatta supports:
+        //   set vpn ipsec ike-group <name> proposal <num> hash (md5 | sha1)
+        type auth-algorithms;
+        //default md5;
+      }
+      leaf dh-group {
+        // Cisco supports:
+        //   crypto isakmp policy group (1 | 2 | 5)
+        //
+        // Juniper supports:
+        //   dh-group (group1 | group2 | group5)
+        //
+        // StrongSwan supports:
+        //   ike = <encryption-integrity-dhgroup>
+        //   where <dhgroup> can be one of the following:
+        //   Modulo Prime Groups (modp68 modp1024 modp1536 modp2048 modp3072 modp4096 modp6144 modp8192)
+        //   Modulo Prime Groups with Prime Order Subgroup (modp1024s160 modp2048s224 modp2048s256)
+        //   Elliptic Curve Groups (ecp192 ecp224 ecp256 ecp384 ecp521)
+        //
+        // Vayatta supports:
+        //   set vpn ipsec ike-group <name> proposal <num> dh-group (2 | 5 )
+        type dh-groups;
+        //default group1;
+      }
+
+      leaf encryption-algorithm {
+        // Cisco supports:
+        //   crypto isakmp policy encryption (des | 3des | aes | aes-192 | aes-256)
+        //
+        // Juniper supports:
+        //   encryption-algorithm (des-cbc | 3des-cbc | aes-128-cbc | aes-192-cbc | aes-256-cbc)
+        //
+        // StrongSwan supports:
+        //   ike = <encryption-integrity-dhgroup>
+        //   where <encryption> can be one of the following:
+        //     3des cast128 blowfish128 blowfish192 blowfish256 null
+        //     aes128 aes192 aes256 aes128ctr aes192ctr aes256ctr
+        //     aes128ccm8 aes192ccm8 aes256ccm8 aes128ccm12 aes192ccm12 aes256ccm12
+        //     aes128ccm16 aes192ccm16 aes256ccm16 aes128gcm8 aes192gcm8 aes256gcm8
+        //     aes128gcm12 aes192gcm12 aes256gcm12 aes128gcm16 aes192gcm16 aes256gcm16
+        //     aes128gmac aes192gmac aes256gmac
+        //     camellia128 camellia192 camellia256 camellia128ctr camellia192ctr camellia256ctr
+        //     camellia128ccm8 camellia192ccm8 camellia256ccm8 camellia128ccm12 camellia192ccm12
+        //     camellia256ccm12 camellia128ccm16 camellia192ccm16 camellia256ccm16
+        //
+        // Vayatta supports:
+        //   set vpn ipsec ike-group <name> proposal <num> encryption (aes128 | aes256 | 3des)
+        type encryption-algorithms;
+        //default des-cbc;
+      }
+      // leaf prf {
+      //   // Cisco supports:
+      //   //   Not supported (same as integrity)
+      //   //
+      //   // Juniper supports:
+      //   //   Not supported (same as integrity)
+      //   //
+      //   // StrongSwan supports:
+      //   //   ike = <encryption-integrity[-prf]-dhgroup>
+      //   //   where <prf> can be any integrity altgorithm
+      //   //
+      //   // Vayatta supports:
+      //   //   Not supported (same as integrity)
+      //   type enumeration {
+      //     enum prf-md5;
+      //     enum prf-sha1;
+      //     enum prf-sha2-256;
+      //   }
+      // }
+    } //list ikesa-proposal
+  } //grouping ikesa-proposal
+  
+  grouping ike-id-local {
+    leaf local-identity {
+      // Cisco supports:
+      //   crypto isakmp identity {address | hostname | key-id id-string | auto}
+      //
+      // Juniper supports:
+      //  local-identity (distinguished-name string | hostname hostname | inet ipv4-ip-address |
+      //                  user-at-hostname e-mail-address )
+      //
+      // StrongSwan supports:
+      //   left|rightid = <id> where id can be:
+      //     IP address, a fully-qualified domain name, an email address, or a keyid
+      //     fully-qualified domain names can be preceded by an @ to avoid being resolved
+      //
+      // Vayatta supports:
+      //   set vpn ipsec site-to-site peer <peer> authentication id <id>
+      type string;
+      description "Take Tunnel local-ip-address by default while configuring if not set.";
+    }
+    container local-secret {
+      choice psk-secret {
+        case psk-string {
+          leaf string {
+            type string;
+          }
+          description "Supply secret as a regular string";
+        }
+        case hex-binary {
+          leaf hex-binary {
+            type rwt:hex-binary;
+          }
+          description "Supply Hex encoded binary string - only hex characters";
+        }
+        case b64-binary {
+          leaf b64-binary {
+            type rwt:base64-binary;
+          }
+          description "Supply Base64 encoded binary string - only [0-9],[a-z],[A-Z],+,/, padded with =";
+        }
+      }
+    } // choice psk-secret
+  }
+  
+  grouping ike-id-remote {
+    leaf remote-identity {
+      // Cisco supports:
+      //
+      // Juniper supports:
+      //
+      // StrongSwan supports:
+      //   left|rightid = <id> where id can be:
+      //     IP address, a fully-qualified domain name, an email address, or a keyid
+      //     fully-qualified domain names can be preceded by an @ to avoid being resolved
+      //
+      // Vayatta supports:
+      // set vpn ipsec site-to-site peer <peer> authentication remote-id <id>
+      type string;
+      description "Take Tunnel remote-ip-address by default while configuring if not set.";
+    }
+    container remote-secret {
+      choice psk-secret {
+        case psk-string {
+          leaf string {
+            type string;
+          }
+          description "Supply secret as a regular string";
+        }
+        case hex-binary {
+          leaf hex-binary {
+            type rwt:hex-binary;
+          }
+          description "Supply Hex encoded binary string - only hex characters";
+        }
+        case b64-binary {
+          leaf b64-binary {
+            type rwt:base64-binary;
+          }
+          description "Supply Base64 encoded binary string - only [0-9],[a-z],[A-Z],+,/, padded with =";
+        }
+      }
+    } // choice psk-secret
+  }
+  
+  grouping ike-config {
+    rwcli:new-mode "ike-config";
+    list ike-config {
+      key name;
+      leaf name {
+        type string;
+      }
+      
+      uses ike-version;
+      uses ike-timeouts;
+      uses ikesa-proposal;
+      uses ike-id-local;
+      uses ike-id-remote;
+
+      leaf ike-retransmit {
+        // Cisco supports:
+        //   Not supported
+        // 
+        // Juniper supports:
+        //   Not supported
+        //
+        // StrongSwan supports:
+        //   keyingtries = <number> | %forever
+        //
+        // Vayatta supports:
+        //   Not supported
+        type int32 {
+          range "0 .. 10";
+        }
+        default 3;
+        description "number of IKE retransmits - defaults to 3, specifying '0' here means 'forever'";
+      }
+    } // list ike-conn
+  } // grouping ike-conn
+
+  grouping childsa-proposal {
+    list childsa-proposal {
+      key name;
+      leaf name {
+        type string;
+      }
+      leaf ah-proposal {
+        // Cisco supports:
+        //   crypto ipsec transform-set <name> (... transforms ...) (for IKEv1)
+        //   crypto ikev2 proposal proposal-name integrity (sha | md5) (for IKEv2)
+        //
+        // Juniper supports:
+        //   authentication-algorithm (md5 | sha1| sha-256)
+        //   
+        // StrongSwan supports:
+        //   esp = <encryption-integrity[-dhgroup][-esnmode]>
+        //   where <integrity> can be one of the following:
+        //     md5 md5_128 sha1 sha1_160 aesxcbc sha2_256 sha2_384 sha2_512 sha2_256_96
+        //
+        // Vyatta supports:
+        //   set vpn ipsec esp-group <name> proposal <num> hash (md5 | sha1)
+        type auth-algorithms;
+      }
+      container esp-proposal {
+        // Cisco supports:
+        //   crypto ipsec transform-set <name> <transforms> (for ikev1)
+        //   crypto ikev2 proposal proposal-name encryption <transforms> (for IKEv2)
+        //   where <transforms> can be one of the following:
+        //     ah-md5-hmac ah-sha-hmac esp-aes esp-gcm esp-gmac esp-gcm esp-gmac esp-aes 192 esp-aes 256
+        //     esp-des esp-3des esp-null esp-seal esp-md5-hmac esp-sha-hmac comp-lzs
+        //
+        // Juniper supports:
+        //   encryption-algorithm (des-cbc | 3des-cbc | aes-128-cbc | aes-192-cbc | aes-256-cbc)
+        //
+        // StrongSwan supports:
+        //   esp = <encryption-integrity[-dhgroup][-esnmode]>
+        //   where <encryption> can be one of the following:
+        //     3des cast128 blowfish128 blowfish192 blowfish256 null
+        //     aes128 aes192 aes256 aes128ctr aes192ctr aes256ctr
+        //     aes128ccm8 aes192ccm8 aes256ccm8 aes128ccm12 aes192ccm12 aes256ccm12
+        //     aes128ccm16 aes192ccm16 aes256ccm16 aes128gcm8 aes192gcm8 aes256gcm8
+        //     aes128gcm12 aes192gcm12 aes256gcm12 aes128gcm16 aes192gcm16 aes256gcm16
+        //     aes128gmac aes192gmac aes256gmac
+        //     camellia128 camellia192 camellia256 camellia128ctr camellia192ctr camellia256ctr
+        //     camellia128ccm8 camellia192ccm8 camellia256ccm8 camellia128ccm12 camellia192ccm12
+        //     camellia256ccm12 camellia128ccm16 camellia192ccm16 camellia256ccm16
+        //
+        // Vayatta supports:
+        //   set vpn ipsec esp-group <name> proposal <num> encryption (aes128 | aes256 | 3des)
+        leaf encryption-algorithm {
+          type encryption-algorithms;
+        }
+        leaf auth-algorithm {
+          type auth-algorithms;
+        }
+        // tbd - add dh-group type dh-groups;
+      }
+    } // list childsa-proposal
+  } // greouping childsa-proposal
+  
+  grouping child-config {
+    rwcli:new-mode "child-config";
+    list child-config {
+      key name;
+      leaf name {
+        type string;
+      }
+      uses childsa-proposal;
+      leaf compression {
+        // Cisco supports:
+        //   crypto ipsec transform-set <name> comp-lzs
+        //
+        // Juniper supports:
+        //   Not supported
+        //
+        // StrongSwan supports:
+        //   compress = yes | no
+        //
+        // Vayatta supports:
+        //   set vpn ipsec esp-group <name> compression (enable | disable)
+        type compressions;
+        //default disable;
+      }
+    } // list child-config
+  } // grouping child-config
+
+  grouping ikesa-params {
+    container ikesa-params {
+      list use-ike-config {
+        key name;
+        leaf name {
+          type string;
+          /*
+          type leafref {
+            path "/colony/service/ikesa-proposal/name";
+          }
+          */
+          description "This refers to the ikesa proposals configured.";
+        }
+      }
+    }
+  } // grouping ikesa-params
+
+  grouping childsa-params {
+    container childsa-params {
+      container lifetime {
+        container seconds {
+          leaf hard-value {
+            // Cisco supports:
+            //   crypto dynamic-map <name> <seq> set security-association lifetime seconds <seconds>
+            //
+            // Juniper supports:
+            //   lifetime-seconds <seconds>
+            //
+            // StrongSwan supports:
+            //   lifetime = 1h | <time>
+            //
+            // Vayatta supports:
+            //   set vpn ipsec esp-group <name> lifetime <seconds>
+            type int32 {
+              range "1 .. max";
+            }
+          }
+          leaf soft-margin {
+            // Cisco supports:
+            //   Not supported
+            //
+            // Juniper supports:
+            //   Not configurable, defaults to 135/90 seconds for initiator/responder
+            //
+            // StrongSwan supports:
+            //   margintime = <time>
+            //
+            // Vayatta supports:
+            //   Not supported
+            type int32;
+          }
+        }
+        container kilobytes {
+          leaf hard-value {
+            // Cisco supports:
+            //   crypto dynamic-map <name> <seq> set security-association lifetime kilobytes <kb>
+            //
+            // Juniper supports:
+            //   lifetime-kilobytes <seconds>
+            //
+            // StrongSwan supports:
+            //   lifebytes = <number>
+            //
+            // Vayatta supports:
+            //   Not supported
+            type int32;
+          }
+          leaf soft-margin {
+            // Cisco supports:
+            //   Not supported
+            //
+            // Juniper supports:
+            //   Not Supported
+            //
+            // StrongSwan supports:
+            //   marginbytes = <number>
+            //
+            // Vayatta supports:
+            //   Not supported
+            type int32;
+          }
+        }
+        container packets {
+          leaf hard-value {
+            // Cisco supports:
+            //   Not supported
+            //
+            // Juniper supports:
+            //   Not supported
+            //
+            // StrongSwan supports:
+            //   lifepackets = <number>
+            //
+            // Vayatta supports:
+            //   Not supported
+            type int32;
+          }
+          leaf soft-margin {
+            // Cisco supports:
+            //   Not supported
+            //
+            // Juniper supports:
+            //   Not supported
+            //
+            // StrongSwan supports:
+            //   marginpackets = <number>
+            //
+            // Vayatta supports:
+            //   Not supported
+            type int32;
+          }
+        }
+        leaf rekey-fuzz {
+          type int32 {
+            range "0 .. 100";
+          }
+          default 100;
+          description "rekey fuzz (in percentage) to randomly increase rekey interval, default is 100%";
+        }
+      }
+      leaf replay-window {
+        type int32;
+        default 32;
+        description "Replay window for this Child SA, defaults to 32.";
+      }
+      leaf auto-start {
+        type boolean;
+        description "Start tunnel immediately after configuation.";
+      }
+      list use-child-config {
+        key name;
+        leaf name {
+          type string;
+          /*
+            type leafref {
+            path "../childsa-proposal/name";
+            }
+          */
+        }
+      }
+    } // list childsa-params
+  } // grouping childsa-params
+
+  grouping dpd {
+    // Cisco supports:
+    //    crypto ikev2 dpd interval retry-interval {on-demand | periodic}
+    //
+    // Juniper supports:
+    // dead-peer-detection { always-send; interval seconds; threshold number; }
+    //   
+    // StrongSwan supports:
+    //   dpdaction = clear | trap | restart
+    //   dpddelay = 30s | <time>
+    //   dpdtimeout = 150s | <time>
+    //
+    // Vayatta supports:
+    //    set vpn ipsec ike-group <name> dead-peer-detection
+    //      [action (hold | clear | restart) | interval <seconds> | timeout <seconds> ]
+    container dpd {
+      choice dpd {
+        case disable {
+          leaf disable {
+            type empty;
+          }
+        }
+        case enable {
+          leaf action {
+            type dpd-actions;
+            //default clear;
+            description "Default action for DPD is to clear the tunnel.";
+          }
+        }
+      }
+    } //choice dpd
+  } // grouping dpd
+
+  grouping local-tunnel-address {
+    leaf local-tunnel-address {
+      // Cisco supports:
+      //   crypto map map-name local-address interface-id 
+      //
+      // Juniper supports:
+      //   local-gateway address
+      //
+      // StrongSwan supports:
+      //   left|right = <ip address> | <fqdn> | %any
+      //
+      // Vayatta supports:
+      //   set vpn ipsec site-to-site peer <peer> local-address <address>
+      type inet:ip-address;
+    }
+  } // grouping local-tunnel-address
+
+  grouping remote-tunnel-address {
+    leaf remote-tunnel-address {
+      // Cisco supports:
+      //   set peer (hostname | ip-address)
+      //
+      // Juniper supports:
+      //   remote-gateway address
+      //
+      // StrongSwan supports:
+      //   left|right = <ip address> | <fqdn> | %any
+      //
+      // Vayatta supports:
+      //   set vpn ipsec site-to-site peer <peer>
+      type inet:ip-address;
+    }
+  } // grouping remote-tunnel-address
+
+  grouping ike-udp-port {
+    leaf local-ike-udp-port {
+      // Cisco supports:
+      //   Hardcoded to 500
+      //
+      // Juniper supports:
+      //   Hardcoded to 500
+      //
+      // StrongSwan supports:
+      //   left|right = <ip address> | <fqdn> | %any
+      //
+      // Vayatta supports:
+      //   Not supported
+      type int32;
+    }
+    leaf remote-ike-udp-port {
+      // Cisco supports:
+      //   Hardcoded to 500
+      //
+      // Juniper supports:
+      //   Hardcoded to 500
+      //
+      // StrongSwan supports:
+      //   left|right = <ip address> | <fqdn> | %any
+      //
+      // Vayatta supports:
+      //   Not supported
+      type int32;
+      default 500;
+    }
+
+  } // grouping ike-udp-port
+
+  grouping ipsec-mode {
+    leaf ipsec-mode {
+      // Cisco supports:
+      //   crypto ipsec transform-set <name> mode (tunnel | transport)
+      //
+      // Juniper supports:
+      //   mode (transport | tunnel)
+      //
+      // StrongSwan supports:
+      //   type = tunnel | transport | transport_proxy | passthrough | drop
+      //
+      // Vayatta supports:
+      //   set vpn ipsec esp-group <name> mode (tunnel | transport)
+      type ipsec-mode;
+      default tunnel;
+      description "Defaults to 'tunnel' mode.";
+    }
+  } // grouping ipsec-mode
+
+  
+  grouping addr-port {
+    leaf ip-address {
+      type inet:ip-prefix;
+      description "IP Address prefix";
+    }
+    leaf port {
+      type inet:port-number; description "Port Number";
+    }
+  }
+  
+  grouping payload {
+    // Cisco supports:
+    //   access-list <number> (deny | permit) <protocol> source <source-wild> destination <dest-wild> [log]
+    //
+    // Juniper supports:
+    //   match-direction (input | output)
+    //   source-address address
+    //   destination-address <address>
+    //   protocol/port ranges are not supported
+    //
+    // StrongSwan supports:
+    //   left|rightprotoport = <protocol>/<port>
+    //   leftsourceip = %config4 | %config6 | <ip address> (for dynamic addresses)
+    //   rightsourceip = %config | <network>/<netmask> | %poolname (for dynamic addresses)
+    //   left|rightsubnet = <ip subnet> (for static addresses)
+    //
+    // Vayatta supports:
+    //   set vpn ipsec site-to-site peer <peer> tunnel <tunnel> protocol <protocol>
+    //   set vpn ipsec site-to-site peer <peer> tunnel <tunnel> local (port <port> | prefix <prefix>)
+    //   set vpn ipsec site-to-site peer <peer> tunnel <tunnel> remote (port <port> | prefix <prefix>)
+    list payload {
+      key name;
+      leaf name {
+        type string;
+      }
+      choice protocol {
+        case tcp {
+          leaf tcp {
+            type empty;
+          }
+        }
+        case udp {
+          leaf udp {
+            type empty;
+          }
+        }
+        case any {
+          leaf ip-protocol {
+            type int32 {
+              range "0 .. 254";
+            }
+            description "Specify IP protocol number to identify traffic stream.";
+          }
+        }
+      }
+      container traffic-src {
+        uses addr-port;
+      }
+      container traffic-dst {
+        uses addr-port;
+      }
+    } // list payload
+  } // grouping payload
+
+  grouping tunnel-policy {
+    rwcli:new-mode "tunnel-policy";
+    list tunnel-policy {
+      key name;
+      leaf name {
+        type string;
+      }
+      uses dpd;
+      uses ike-udp-port;
+      uses ikesa-params;
+      uses childsa-params;
+      uses ipsec-mode;
+      uses local-tunnel-address;
+      uses remote-tunnel-address;
+      uses payload;
+      leaf load-policy {
+        type empty;
+        description "This is not actual config, only used to indicate user is done configuring,
+                     so now the entire policy can be pushed in ipsec stack";
+      }
+    } // list tunnel-policy
+  } // grouping tunnel-policy
+
+
+  grouping tunnel-clones {
+    container tunnel-clones {
+      leaf name {
+        type string;
+        description "Name of the tunnel to clone from";
+      }
+      leaf count {
+        type int32;
+        description "How many tunnels to clone.";
+      }
+      leaf increment {
+        type enumeration {
+          enum local-ts {value 1;}
+          enum remote-ts {value 2;}
+        }
+      }
+    }
+  }
+  
+  grouping service {
+    rwcli:new-mode "service";
+    list service {
+      key name;
+      rwpb:msg-new IpsecService;
+      leaf name {
+        type string;
+      }
+      container network-context {
+        leaf name{
+          type string;
+          description "Network context for this ipsec service.";
+        }
+      }
+      uses ike-config;
+      uses child-config;
+      uses tunnel-policy;
+      uses tunnel-clones;
+
+      leaf load-all-tunnels {
+        type empty;
+        description "Do not load tunnels to VICI until this is set. Once this is set, load all the tunnels with load-policy set for each tunnel.";
+      }
+    }
+  } // grouping ipsec-service
+
+  //augment /rwbase:colony/rwbase:network-context {
+
+  augment /rwbase:colony {
+    rwcli:new-mode "ipsec";
+    container ipsec {
+      rwpb:msg-new ipsec;
+      uses service;
+    }
+  }
+
+
+  // ============================ CONFIG - end ====================================
+
+
+  // ============================ SHOW - start ====================================
+
+  grouping algs-used {
+    leaf encrypt-alg {
+      type string;
+    }
+    leaf auth-alg {
+      type string;
+    }
+    leaf dh-group {
+      type string;
+    }
+  }
+  
+  grouping spi-stats {
+    leaf spi {
+      type string;
+      description "Directional SPI value for this IPSec (child) SA.";
+    }
+    leaf bytes {
+      type string;
+      description "Bytes processed over this SA";
+    }
+    leaf pkts {
+      type string;
+      description "Packets processed over this SA";
+    }
+  }
+
+  typedef childsa-states {
+    type enumeration {
+      enum created;
+      enum installed;
+      enum rekeying;
+      enum deleting;
+      enum destroying;
+    }
+   }
+  
+  grouping childsa {
+    leaf childsa-id {
+      type int32;
+      description "It seems this is internally generated identifier";
+    }
+    leaf status {
+      //type childsa-states;
+      type string;
+      description "Child SA current status";
+    }
+    leaf ipsec-mode {
+      type string;
+      description "transport/tunnel mode";
+    }
+    uses algs-used;
+    container dir-out {
+      uses spi-stats;
+      description "spi & stats";
+    }
+    container dir-in {
+      uses spi-stats;
+      description "spi & stats";
+    }
+    leaf rekey-in {
+      type uint32;
+      description "Rekey due in <> seconds.";
+    }
+    leaf expire-in {
+      type uint32;
+      description "If not rekeyed, will expire in <> seconds.";
+    }
+    leaf local-ts {
+      type string;
+      description "local traffic selector";
+    }
+    leaf remote-ts {
+      type string;
+      description "remote traffic selector";
+    }
+  } // grouping childsa
+
+  grouping cookies {
+    container cookies {
+      leaf initiator {
+        type string;
+        description "IKE Initiator Cookie (64-bits)";
+      }
+      leaf responder {
+        type string;
+        description "IKE Responder Cookie (64-bits)";
+      }
+    } //container cookies
+  } //grouping cookies
+
+
+  typedef ikesa-states {
+    type enumeration {
+      enum created;
+      enum connecting;
+      enum established;
+      enum passiv;
+      enum rekeying;
+      enum deleting;
+      enum destroying;
+    }
+  }
+
+  
+  grouping ike-id {
+    leaf local-identity {
+      // Cisco supports:
+      //   crypto isakmp identity {address | hostname | key-id id-string | auto}
+      //
+      // Juniper supports:
+      //  local-identity (distinguished-name string | hostname hostname | inet ipv4-ip-address |
+      //                  user-at-hostname e-mail-address )
+      //
+      // StrongSwan supports:
+      //   left|rightid = <id> where id can be:
+      //     IP address, a fully-qualified domain name, an email address, or a keyid
+      //     fully-qualified domain names can be preceded by an @ to avoid being resolved
+      //
+      // Vayatta supports:
+      //   set vpn ipsec site-to-site peer <peer> authentication id <id>
+      type string;
+      description "Take Tunnel local-ip-address by default while configuring if not set.";
+    }
+    leaf remote-identity {
+      // Cisco supports:
+      //
+      // Juniper supports:
+      //
+      // StrongSwan supports:
+      //   left|rightid = <id> where id can be:
+      //     IP address, a fully-qualified domain name, an email address, or a keyid
+      //     fully-qualified domain names can be preceded by an @ to avoid being resolved
+      //
+      // Vayatta supports:
+      // set vpn ipsec site-to-site peer <peer> authentication remote-id <id>
+      type string;
+      description "Take Tunnel remote-ip-address by default while configuring if not set.";
+    }
+  }
+  
+  grouping ikesa {
+    container ikesa {
+      leaf name {
+        type string;
+        description "configured IKE connection name that is active for this tunnel-policy.";
+      }
+      leaf conn-number {
+        type int32;
+        description "IKE connection number for this named IKE configuration (internally generated).";
+      }
+      leaf status {
+        //type ikesa-states;
+        type string;
+        description "IKE connection current status";
+      }
+      leaf ike-version {
+        type string;
+      }
+      leaf local-addr {
+        type string;
+        description "local ike address";
+      }
+      leaf remote-addr {
+        type string;
+        description "remote ike address";
+      }
+      leaf auth-type {
+        type string;
+        description "Authentication type, e.g. pre-shared-key";
+      }
+      uses cookies;
+      uses ike-id;
+      uses algs-used;
+      leaf reauth-in {
+        type uint32;
+        description "Reauth due in <> seconds.";
+      }
+      leaf rekey-in {
+        type uint32;
+        description "Rekey due in <> seconds.";
+      }
+    } // container ikesa
+  } // grouping ikesa
+  
+  grouping tunnel-state {
+    list tunnel-policy {
+      key name;
+      leaf name {
+        type string;
+        description "tunnel-policy name in this ipsec service for which sa information is needed.";
+      }
+      uses childsa; // Will return only one childsa (for named tunnel)
+    } // list tunnel-name
+  } // grouping tunnel-state
+
+  grouping ike-state {
+    container ike-state {
+      list ike {
+        key name;
+        leaf name {
+          type string;
+          description "tunnel-policy name in this ipsec service for which sa information is needed.";
+        }
+        uses ikesa; // WIll return multiple childsa (all for named IKE sa)
+        uses tunnel-state;
+      } // list ike
+    } // container ike-state
+  } // grouping ike-state
+
+  
+  // grouping service-stats {
+  //   container rekey {
+  //     leaf rate {
+  //       type uint32;
+  //       description "Number of rekeys per seconds";
+  //     }
+  //     leaf total {
+  //       type uint64;
+  //       description "Total number of rekeys";
+  //     }
+      
+  //   }
+  // } //grouping service-stats
+  
+  grouping service-stats {
+    container statistics {
+      container rekey {
+        leaf rate {
+          type uint32;
+          description "Number of rekeys per minute";
+        }
+        leaf total {
+          type uint64;
+          description "Total number of rekeys";
+        } 
+        leaf instantaneous-rate {
+          type uint64;
+          description "Number of rekeys per second";
+        } 
+      } // rekey
+      container state {
+        leaf ike-sas {
+          type uint32;
+          description "Number of cuurently established IKE SAs";
+        }
+        leaf threads-in-use {
+          type uint64;
+          description "Total number of threads in-use at this moment";
+        } 
+        leaf swanctl-dir {
+          type string;
+          description "/tmp dir for swanctl socket acces";
+        } 
+      } // state
+      container esp {
+        leaf rx-packets {
+          type uint64;
+          description "Number of ESP packets received";
+        }
+
+        leaf rx-bytes {
+          type uint64;
+          description "Number of ESP bytes received";
+        }
+        
+        leaf tx-packets {
+          type uint64;
+          description "Number of ESP packets transmitted";
+        }
+        leaf tx-bytes {
+          type uint64;
+          description "Number of ESP bytes transmitted";
+        }
+      }
+    } // statistics
+  } //grouping service-stats
+    
+  augment /rwbase:colony {
+    list ipsec-service-state {
+      config false;
+      key "name";
+      rwpb:msg-new IpsecServiceState;
+
+      leaf name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+        type string;
+        description "Supply same service name you configured.";
+      }
+          
+    container ike-state {
+      config false;
+      list ike {
+        key name;
+        leaf name {
+          type string;
+          description "tunnel-policy name in this ipsec service for which sa information is needed.";
+        }
+        uses ikesa; // WIll return multiple childsa (all for named IKE sa)
+        uses tunnel-state;
+      } // list ike
+    } // container ike-state
+
+    
+    container statistics {
+      config false;
+      container rekey {
+        leaf rate {
+          type uint32;
+          description "Number of rekeys per minute";
+        }
+        leaf total {
+          type uint64;
+          description "Total number of rekeys";
+        } 
+        leaf instantaneous-rate {
+          type uint64;
+          description "Number of rekeys per second";
+        } 
+      } // rekey
+      container state {
+        leaf ike-sas {
+          type uint32;
+          description "Number of cuurently established IKE SAs";
+        }
+        leaf threads-in-use {
+          type uint64;
+          description "Total number of threads in-use at this moment";
+        } 
+        leaf swanctl-dir {
+          type string;
+          description "/tmp dir for swanctl socket acces";
+        } 
+      } // state
+      container esp {
+        leaf rx-packets {
+          type uint64;
+          description "Number of ESP packets received";
+        }
+
+        leaf rx-bytes {
+          type uint64;
+          description "Number of ESP bytes received";
+        }
+        
+        leaf tx-packets {
+          type uint64;
+          description "Number of ESP packets transmitted";
+        }
+        leaf tx-bytes {
+          type uint64;
+          description "Number of ESP bytes transmitted";
+        }
+      }
+    } // statistics
+
+    }
+  }
+
+
+  // augment /rwbase:colony {
+  //   list ipsec-service {
+  //     config false;
+  //     key "name";
+  //     rwpb:msg-new IpsecServiceStatistics;
+  //     leaf name {
+  //       type string;
+  //       description "Supply same service name you configured.";
+  //       rwpb:field-inline "true";
+  //       rwpb:field-string-max 64;
+  //     }
+  //     uses service-stats;
+  //   }
+  // }
+  
+
+  // ============================ SHOW - end ====================================
+  // ============================ START - start ====================================
+
+  // Could not augment fpath start rpc due to "flat" requirement.
+  // Once "flat" is specified, everything underneath requires that.
+  //augment /rwbase:colony:start {
+
+  // Turns out no "start" rpc augments work
+  //augment /rwfp:start/rwfp:input {
+
+  // <root><rw-ipsec:start-ipsec xmlns:rw-ipsec="http://riftio.com/ns/riftware-1.0/rw-ipsec"/></root>
+  rpc start-ipsec {
+    input {
+      rwpb:msg-new StartIpsec;
+      container colony {
+        leaf name {
+          type string;
+          description "colony name";
+        }
+        container service {
+          leaf name {
+            type string;
+            description "ipsec-service name";
+          }
+          
+          container tunnel-policy {
+            leaf name {
+              type string;
+              description "tunnel-policy need to be started.";
+            }
+          }
+
+          container tunnel-clones {
+            leaf name {
+              type string;
+              description "base tunnel name from which tunnels were cloned.";
+            }
+            leaf count {
+              type int32;
+              description "Number of tunnels to start";
+            }
+            leaf starting-from {
+              type int32;
+              default 1;
+              description "If starting in batches, you can specify starting offset.";
+            }
+          }
+          
+        }
+      }
+    }
+  }
+  
+  
+  // ============================ START - end ====================================
+
+  // ============================ STOP - start ====================================
+  
+
+  rpc stop-ipsec {
+    input {
+      rwpb:msg-new StopIpsec;
+      container colony {
+        leaf name {
+          type string;
+          description "colony name";
+        }
+        container service {
+          leaf name {
+            type string;
+            description "ipsec-service name";
+          }
+          container tunnel-policy {
+            leaf name {
+              type string;
+              description "tunnel-policy that needs to be stopped.";
+            }
+          }
+          container ike-name {
+            leaf name {
+              type string;
+              description "ike-cfg that needs to be stopped.";
+            }
+          }
+
+          container ike-clones {
+            leaf name {
+              type string;
+              description "base tunnel name from which tunnels were cloned.";
+            }
+            leaf count {
+              type int32;
+              description "Number of tunnels to stop";
+            }
+            leaf starting-from {
+              type int32;
+              default 1;
+              description "If stopping in batches, you can specify starting offset.";
+            }
+          }
+          
+        }
+      }
+    }
+  }
+  
+  // ============================ STOP - end ====================================
+
+
+  
+} // module rw-ipsec

@@ -1,0 +1,40 @@
+Upstream git repository URIs.
+
+[ We might stash these as 'remote' config items, but these don't
+  automagically propogate, so just record them here. ]
+
+Nanomsg: 
+
+  http://nanomsg.org/
+  GIT URI: https://github.com/nanomsg/nanomsg.git
+
+
+
+
+----------------------------------------
+Details on pristine tracking of GIT upstream packages:
+
+Upstream for packages being maintained in publically accessible git
+repositories may be directly imported, tracked, and merged using the
+git subtree utility.  (Note that this is not the 'git merge -s
+subtree' merge strategy).
+
+Should upstream cease to be available in GIT, we can revert to manual
+creation of a pristine branch for the package and feed it with
+tarballs.
+
+Import a new upstream project's HEAD on branch master into the
+repository-local path nanomsg/nanomsg/, as a single changeset (the
+--squash):
+
+  git subtree add --prefix=nanomsg/nanomsg -m 'Add nanomsg version X.XX' --squash https://github.com/nanomsg/nanomsg.git master
+
+Merge any new changes since the import or last merge into the
+local nanomsg work:
+
+  git subtree pull --prefix=nanomsg/nanomsg -m 'Merge nanomsg version X.XX' --squash https://github.com/nanomsg/nanomsg.git master
+
+For more details: 
+
+  /usr/share/doc/git/contrib/subtree/git-subtree.txt
+  https://github.com/apenwarr/git-subtree/blob/master/git-subtree.txt

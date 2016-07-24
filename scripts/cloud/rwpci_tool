@@ -1,0 +1,485 @@
+#!/usr/bin/python
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Anil Gunturu
+# Creation Date: 07/24/2014
+# 
+
+# This tool helps viewing & managing the host device assigment to guest VMs
+
+import argparse
+import shlex
+from subprocess import call, Popen, PIPE
+import subprocess
+import sys
+import re
+import os.path
+from xml.dom.minidom import parseString
+import libvirt
+import pprint
+import glob
+import string
+
+class VirshPCITool:
+    """ Various functions to manage ethernet PCI devices
+    """
+    
+    def __init__(self):
+        self.macs_to_switch = dict()
+        self.macs_to_switch_initialized = False
+        # these two arrays are built together
+        self.dev_to_mac = dict()
+        self.dev_to_port = dict()
+        self.dev_to_mac_initialized = False
+        self._fmt_string = "%16s %6s %8s %24s %24s %20s %15s %8s"
+
+   
+    def get_attached_pci_devices(self, vm):
+        """This function returns the dictionary of attached host devices to the VM
+        """
+        attached_devices = {}
+        cmd = "virsh dumpxml " + vm
+        args = shlex.split(cmd)
+        proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = proc.communicate()
+        if error:
+            print "Failed to execute: " + cmd
+            print error
+            return attached_devices
+
+        dom = parseString(output)
+        hostdevs = dom.getElementsByTagName('hostdev')
+        for hostdev in hostdevs:
+            if hostdev.attributes["type"].value == "pci":
+
+                # compose the source PCI address
+                addr_list = hostdev.getElementsByTagName('address')
+                assert(len(addr_list) == 2)
+                addr = addr_list[0]
+                name = "pci"
+                name = name + "_" + addr.attributes["domain"].value[2:]
+                name = name + "_" + addr.attributes["bus"].value[2:]
+                name = name + "_" + addr.attributes["slot"].value[2:]
+                name = name + "_" + addr.attributes["function"].value[2:]
+
+                # compose the PCI address of the corresponding device 
+                # in the guest
+                addr = addr_list[1]
+                guest_name = "pci"
+                guest_name = guest_name + "_" + addr.attributes["domain"].value[2:]
+                guest_name = guest_name + "_" + addr.attributes["bus"].value[2:]
+                guest_name = guest_name + "_" + addr.attributes["slot"].value[2:]
+                guest_name = guest_name + "_" + addr.attributes["function"].value[2:]
+                attached_devices[name] = guest_name
+        
+        return attached_devices
+
+    def list_vms(self):
+        """This function lists VMs and the attached host devices"""
+
+        cmd = "virsh list --all"
+        args = shlex.split(cmd)
+        proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = proc.communicate()
+        if error:
+            print "Failed to execute: " + cmd
+            print error
+            return False
+
+        vms = output.splitlines()
+        vms.pop(0)
+        vms.pop(0)
+
+        for vm in vms:
+            vm = vm.strip()
+            if not vm:
+                continue
+            temp = vm.split()
+            vm = temp[1].strip()
+             
+            print vm + ": " + ', '.join(self.get_attached_pci_devices(vm))
+
+    def get_guest_address(self, hostdev):
+        """This function returns the address of device in the guest VM.
+           Returns null if it is not attached to any VM"""
+        
+        cmd = "virsh list --all"
+        args = shlex.split(cmd)
+        proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = proc.communicate()
+        if error:
+            print "Failed to execute: " + cmd
+            print error
+            return False
+
+        vms = output.splitlines()
+        vms.pop(0)
+        vms.pop(0)
+
+        for vm in vms:
+            vm = vm.strip()
+            if not vm:
+                continue
+            temp = vm.split()
+            vm = temp[1].strip()
+
+            if self.get_attached_pci_devices(vm).has_key(hostdev):
+                return self.get_attached_pci_devices(vm)[hostdev]
+
+        return ""
+
+    def get_attached_vm(self, hostdev):
+        """This function returns the name of the guest VM that the host
+           device is attached to. Returns null if it is not attached 
+           to any VM"""
+        
+        cmd = "virsh list --all"
+        args = shlex.split(cmd)
+        proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = proc.communicate()
+        if error:
+            print "Failed to execute: " + cmd
+            print error
+            return False
+
+        vms = output.splitlines()
+        vms.pop(0)
+        vms.pop(0)
+
+        for vm in vms:
+            vm = vm.strip()
+            if not vm:
+                continue
+            temp = vm.split()
+            vm = temp[1].strip()
+
+            if self.get_attached_pci_devices(vm).has_key(hostdev):
+                return vm
+
+        return ""
+
+    def print_device_info(self, dev_name, eth_type):
+        """Print the device information"""
+
+        temp,domain,bus,slot,function = dev_name.split("_")
+        cmd = "readlink /sys/bus/pci/devices/" + domain + ":" + bus + ":" + slot + "." + function + "/driver"
+        args = shlex.split(cmd)
+        proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = proc.communicate()
+        if error:
+            print "Failed to execute: " + cmd
+            print error
+            output = ""
+        output = os.path.basename(output.strip())
+        mac = self.get_mac_by_device(dev_name)
+        switch = self.get_switch(mac)
+        vm = self.get_attached_vm(dev_name)
+        print self._fmt_string % (dev_name, eth_type, output, vm, self.get_guest_address(dev_name), 
+                                  mac, switch, self.get_port_by_device(dev_name) )
+             
+    def list_ethernet_pci_devices(self):
+        """This function lists the ethernet PCI devices in the system
+        """
+        cmd = "virsh nodedev-list --cap pci"
+        args = shlex.split(cmd)
+        proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = proc.communicate()
+        if error:
+            print "Failed to execute: " + cmd
+            print error
+            return False
+
+        devices = output.splitlines()
+        eth1G_list = []
+        eth10G_list = []
+        for device in devices:
+            device = device.strip()
+            if not device:
+                continue
+
+            cmd = "virsh nodedev-dumpxml " + device
+            args = shlex.split(cmd)
+            proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, error = proc.communicate()
+            if error:
+                print "Failed to execute: " + cmd
+                print error
+            else:
+                m=re.match(r'.*10-Gigabit.*Network Connection.*', output, re.S|re.M)
+                if m:
+                    eth10G_list.append(device)
+                   
+                m=re.match(r'.* Gigabit.*Network Connection.*', output, re.S|re.M)
+                if m:
+                    eth1G_list.append(device)
+
+        print self._fmt_string % ("Device", "Speed", "Driver", "Guest VM", "Guest Address", "MAC Address", "switch", "port" )
+        for dev_name in eth10G_list:
+            self.print_device_info(dev_name, "10G")
+
+        for dev_name in eth1G_list:
+            self.print_device_info(dev_name, "1G")
+            
+        return
+
+    def _load_switch_info(self):
+
+        # start with what we knew when we booted:                
+        try:
+            f = open("/var/log/rift_biosdevname.log", "r")
+        except:
+            print "error opening /var/log/rift_bisodevname.log"
+        else:
+            tt = string.maketrans(":.", "__")
+            while True:
+                line = f.readline()
+                if line == "": break
+                args = line.split(" ")
+                if len(args) >4:
+                    self.macs_to_switch[args[2].lower() ] = args[4].strip()
+
+        # now try to glean more info
+        
+        cmds='''terminal length 0
+show mac-address-table
+q
+'''
+        re1 = re.compile('\s*[0-9]+\s+([0-9a-f:]+)\s+Dynamic\s+Te\s+0/([0-9]+)\s+Active')
+        devnull = open(os.devnull, "w")
+    
+        for switch_num in range(3):
+            switchname='f10-grunt%02d' % switch_num
+            p = subprocess.Popen(["ssh", "-o", "StrictHostKeyChecking=no", "admin@%s" % switchname ], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=devnull )
+            (stdout, stderr) = p.communicate(cmds)
+            # eliminate any ports that have more than 2 mac addresses
+            counts=[0 for m in range(64)]
+            for line in stdout.split('\n'):
+                m = re1.match(line)
+                if m is not None:
+                    counts[int(m.group(2))] += 1
+            
+            for line in stdout.split('\n'):
+                m = re1.match(line)
+                if m is not None:
+                    port = int(m.group(2))
+                    if counts[port] < 3:
+                        self.macs_to_switch[m.group(1).lower() ] = switchname.strip()
+
+                        
+    def get_switch(self,mac):
+        if mac is None: return None
+        if not self.macs_to_switch_initialized:
+            self._load_switch_info()
+            self.macs_to_switch_initialized = True
+        mac = mac.lower()
+        if mac in self.macs_to_switch:
+            return self.macs_to_switch[mac]
+        else:
+            return None
+
+
+    def _load_mac_table(self):
+    
+        # this may not be reliaable....see below
+        re1 = re.compile('ixgbe ([0-9]+):([0-9a-f]+):([0-9]+)\.([0-9]): \(PCI Express:5.0GT/s:Width x8\) ([0-9a-f:]+)')
+        re_port = re.compile('ixgbe ([0-9]+):([0-9a-f]+):([0-9]+)\.([0-9]) (.*): detected SFP')
+        
+        files = glob.glob("/var/log/messages-*")
+        files.append("/var/log/messages")
+        for file in files:
+            f = open(file, "r")
+            while True:
+                line = f.readline()
+                if line == "": break
+                m = re1.search(line)
+                if m is not None:
+                    dev = "pci_%s_%s_%s_%s" % ( m.group(1), m.group(2), m.group(3), m.group(4) )
+                    self.dev_to_mac[dev] = m.group(5)
+                m = re_port.search(line)
+                if m is not None:
+                    dev = "pci_%s_%s_%s_%s" % ( m.group(1), m.group(2), m.group(3), m.group(4) )
+                    self.dev_to_port[dev] = m.group(5)
+        # now append/replace with the trusted information from /var/log
+        try:
+            f = open("/var/log/rift_biosdevname.log", "r")
+        except:
+            print "error opening /var/log/rift_bisodevname.log"
+        else:
+            tt = string.maketrans(":.", "__")
+            while True:
+                line = f.readline()
+                if line == "": break
+                args = line.split(" ")
+                if len(args) > 3:
+                    dev = "pci_" + string.translate(args[3].strip(), tt)
+                    self.dev_to_port[dev] = args[1]
+                    self.dev_to_mac[dev] = args[2]
+
+         
+            
+            
+                    
+                
+        
+    
+    def get_mac_by_device(self, device):
+        if not self.dev_to_mac_initialized:
+            self._load_mac_table()
+            self.dev_to_mac_initialized = True
+        if device in self.dev_to_mac:
+            return self.dev_to_mac[device]
+        else:
+            return None
+
+    def get_port_by_device(self, device):
+        if not self.dev_to_mac_initialized:
+            self._load_mac_table()
+            self.dev_to_mac_initialized = True
+        if device in self.dev_to_port:
+            return self.dev_to_port[device]
+        else:
+            # import pdb; pdb.set_trace()
+            return None
+        
+    
+        
+
+def dev_list(tool, cmdargs):
+    """Process the nodedev_list subcommand"""
+
+    if cmdargs.pcidev:
+        tool.list_ethernet_pci_devices()
+
+    if cmdargs.vm:
+        tool.list_vms()
+
+def reattach(tool, cmdargs):
+    """Process the reattach subcommand"""
+
+    for hostdev in cmdargs.hostdevs:
+      cmd = "virsh nodedev-reattach " + hostdev
+      args = shlex.split(cmd)
+      proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = proc.communicate()
+      if error:
+          print "Failed to execute: " + cmd
+          print error
+
+def host_detach(tool, cmdargs):
+    """Process the host-detach subcommand"""
+
+    for hostdev in cmdargs.hostdevs:
+      cmd = "virsh nodedev-detach " + hostdev
+      args = shlex.split(cmd)
+      proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = proc.communicate()
+      if error:
+          print "Failed to execute: " + cmd
+          print error
+
+def vm_detach(tool, cmdargs):
+    """Process the vm-detach subcommand"""
+
+    conn = libvirt.open("qemu:///system")
+    p = conn.lookupByName(cmdargs.vmname)
+
+    for devname in cmdargs.devnames:
+      temp, domain, bus, slot, function = devname.split("_")
+      hostdev_xml = """<hostdev mode='subsystem' type='pci' managed='yes'>
+      <source>
+          <address domain='0x""" + domain + """' bus='0x""" + bus + """' slot='0x""" + slot + """' function='0x""" + function + """'/>
+      </source>
+</hostdev>"""
+
+      if p.info()[0] == libvirt.VIR_DOMAIN_RUNNING:
+          p.detachDeviceFlags(hostdev_xml, libvirt.VIR_DOMAIN_AFFECT_LIVE | libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+      else: 
+          # domain is not live only effect the config
+          p.detachDeviceFlags(hostdev_xml, libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+
+def vm_attach(tool, cmdargs):
+    """Process the vm-attach subcommand"""
+
+    conn = libvirt.open("qemu:///system")
+    p = conn.lookupByName(cmdargs.vmname)
+
+    for devname in cmdargs.devnames:
+      temp, domain, bus, slot, function = devname.split("_")
+      hostdev_xml = """<hostdev mode='subsystem' type='pci' managed='yes'>
+      <source>
+          <address domain='0x""" + domain + """' bus='0x""" + bus + """' slot='0x""" + slot + """' function='0x""" + function + """'/>
+      </source>
+</hostdev>"""
+
+      if p.info()[0] == libvirt.VIR_DOMAIN_RUNNING:
+         p.attachDeviceFlags(hostdev_xml, libvirt.VIR_DOMAIN_AFFECT_LIVE | libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+      else: 
+         # domain is not live only effect the config
+         p.attachDeviceFlags(hostdev_xml, libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+
+##
+##
+# Set up command arguments
+##
+desc="""This tool helps viewing the host device assigment to guest VMs.
+        Specifically:
+        (1) List all the Ethernet PCI devices, and the attached guest VM
+        (2) List all VMs and the attached host devices
+        (3) Attach and detach the PCI devices to/from host
+        (4) Attach and detach PCI devices to/from VM
+     """
+parser = argparse.ArgumentParser(description=desc)
+
+subparsers = parser.add_subparsers() 
+
+# Parser for reattach subcommand - attach the device back to host
+reattach_parser = subparsers.add_parser('reattach')
+reattach_parser.add_argument('hostdevs', nargs='+', 
+                           type=str,
+                           help='List of PCI devices to reattach to host')
+reattach_parser.set_defaults(func=reattach)
+
+# Parser for host-detach subcommand - detach a device from host
+detach_parser = subparsers.add_parser('host-detach')
+detach_parser.add_argument('hostdevs', nargs='+', 
+                           type=str,
+                           help='List of PCI devices to detach from host')
+detach_parser.set_defaults(func=host_detach)
+
+# Parser for vm-detach subcommand - detach a device from vm
+detach_parser = subparsers.add_parser('vm-detach')
+detach_parser.add_argument('vmname',
+                           help='VM name')
+detach_parser.add_argument('devnames', nargs='+',
+                           help='List of names of the PCI devices to detach from VM')
+detach_parser.set_defaults(func=vm_detach)
+
+# Parser for vm-detach subcommand - detach a device from vm
+attach_parser = subparsers.add_parser('vm-attach')
+attach_parser.add_argument('vmname',
+                           help='VM name')
+attach_parser.add_argument('devnames',nargs='+',
+                           help='List of names of the PCI devices to attach to VM')
+attach_parser.set_defaults(func=vm_attach)
+
+# Parser for list subcommand
+list_parser = subparsers.add_parser('list')
+list_parser.add_argument('-p', '--pcidev', dest='pcidev', 
+                    action='store_true',
+                    help='List all the Ethernet PCI devices')
+list_parser.add_argument('-v', '--vm', dest='vm', 
+                    action='store_true',
+                    help='List all the VMs')
+list_parser.set_defaults(func=dev_list)
+
+
+cmdargs = parser.parse_args()
+
+##
+# Main
+##
+if __name__ == "__main__":
+     tool = VirshPCITool();
+     cmdargs.func(tool, cmdargs)

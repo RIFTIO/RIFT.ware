@@ -1,0 +1,14 @@
+import "ex2_base1.proto";
+import "ex2_base2.proto";
+import "ex2_base4.proto";
+
+package ex2;
+
+message importedmesg
+{
+ required TheBase_1.msgb1 a = 1;
+ optional TheBase_1.VALUES b = 2 [ default = V1 ];
+ required Secondbase.hackola c = 3;
+ required base4msg d = 4;
+}
+

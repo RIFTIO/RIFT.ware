@@ -1,0 +1,149 @@
+    <vnf-config xmlns="http://riftio.com/ns/riftware-1.0/mano-base">
+      <vnf>
+        <name>trafsink</name>
+        <instance>0</instance>
+        <network-context xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>lb-trafsink</name>
+          <interface>
+            <name>N3TenGigi-1</name>
+            <autoconfigure>
+              <port/>
+            </autoconfigure>
+            <bind>
+              <port>trafsink/cp0</port>
+            </bind>
+          </interface>
+         <interface>
+            <name>N3TenGigi-2</name>
+            <autoconfigure>
+              <port/>
+            </autoconfigure>
+            <bind>
+              <port>trafsink/cp1</port>
+            </bind>
+          </interface>
+         <interface>
+            <name>N3TenGigi-3</name>
+            <autoconfigure>
+              <port/>
+            </autoconfigure>
+            <bind>
+              <port>trafsink/cp2</port>
+            </bind>
+          </interface>
+        </network-context>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafsink/cp0</name>
+          <open/>
+          <application>
+            <rx>rw_trafgen</rx>
+            <tx>rw_trafgen</tx>
+          </application>
+          <receive-q-length>2</receive-q-length>
+          <port-identity>
+          <ip-address><rw_connection_point_name trafsink/cp0></ip-address>
+          <port-mode>direct</port-mode>
+          </port-identity>
+          <trafgen xmlns="http://riftio.com/ns/riftware-1.0/rw-trafgen">
+            <receive-param>
+              <receive-echo>
+                <on/>
+              </receive-echo>
+            </receive-param>
+          </trafgen>
+        </port>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafsink/cp1</name>
+          <open/>
+          <application>
+            <rx>rw_trafgen</rx>
+            <tx>rw_trafgen</tx>
+          </application>
+          <receive-q-length>2</receive-q-length>
+          <port-identity>
+          <ip-address><rw_connection_point_name trafsink/cp1></ip-address>
+          <port-mode>direct</port-mode>
+          </port-identity>
+          <trafgen xmlns="http://riftio.com/ns/riftware-1.0/rw-trafgen">
+            <receive-param>
+              <receive-echo>
+                <on/>
+              </receive-echo>
+            </receive-param>
+          </trafgen>
+        </port>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafsink/cp2</name>
+          <open/>
+          <application>
+            <rx>rw_trafgen</rx>
+            <tx>rw_trafgen</tx>
+          </application>
+          <receive-q-length>2</receive-q-length>
+          <port-identity>
+          <ip-address><rw_connection_point_name trafsink/cp2></ip-address>
+          <port-mode>direct</port-mode>
+          </port-identity>
+          <trafgen xmlns="http://riftio.com/ns/riftware-1.0/rw-trafgen">
+            <receive-param>
+              <receive-echo>
+                <on/>
+              </receive-echo>
+            </receive-param>
+          </trafgen>
+        </port>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafsink/icp0</name>
+          <open/>
+          <virtual-fabric>true</virtual-fabric>
+          <port-identity>
+            <ip-address><rw_connection_point_name trafsink/icp0></ip-address>
+            <port-mode>direct</port-mode>
+          </port-identity>
+          <application>
+            <rx>rw-ipfastpath</rx>
+            <tx>rw-ipfastpath</tx>
+          </application>
+        </port>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafsink/icp1</name>
+          <open/>
+          <virtual-fabric>true</virtual-fabric>
+          <port-identity>
+            <ip-address><rw_connection_point_name trafsink/icp1></ip-address>                                                                                              
+            <port-mode>direct</port-mode>
+          </port-identity>
+          <application>
+            <rx>rw-ipfastpath</rx>
+            <tx>rw-ipfastpath</tx>
+          </application>
+        </port>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafsink/icp2</name>
+          <open/>
+          <virtual-fabric>true</virtual-fabric>
+          <port-identity>
+            <ip-address><rw_connection_point_name trafsink/icp2></ip-address>                                                                                              
+            <port-mode>direct</port-mode>
+          </port-identity>
+          <application>
+            <rx>rw-ipfastpath</rx>
+            <tx>rw-ipfastpath</tx>
+          </application>
+        </port>
+        <port xmlns="http://riftio.com/ns/riftware-1.0/rw-vnf-base-config">
+          <name>trafsink/icp3</name>
+          <open/>
+          <virtual-fabric>true</virtual-fabric>
+          <port-identity>
+            <ip-address><rw_connection_point_name trafsink/icp3></ip-address>                                                                                              
+            <port-mode>direct</port-mode>
+          </port-identity>
+          <application>
+            <rx>rw-ipfastpath</rx>
+            <tx>rw-ipfastpath</tx>
+          </application>
+        </port>
+      </vnf>
+    </vnf-config>
+

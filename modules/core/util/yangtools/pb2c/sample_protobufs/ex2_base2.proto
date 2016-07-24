@@ -1,0 +1,19 @@
+import "ex2_base3.proto";
+
+package Secondbase;
+
+
+enum JUNKOLA {
+   TB2_UNDEFINED = 0;
+   J1 = 1;
+   J2 = 2;
+};
+
+message hackola {
+  required pkg3.foo aa = 4;
+  required string a = 1 [default = "a"];
+  required string b = 2 [default = "b"];
+  required JUNKOLA c = 3 [ default = J2 ];
+};
+
+

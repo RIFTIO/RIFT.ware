@@ -1,0 +1,414 @@
+#!/bin/bash
+
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+
+#
+# RPM Builder, see bottom for args and main code
+# see https://confluence.riftio.com/display/RM/RIFT.ware+Release+RPMs  for internal docs
+#
+#
+# nate.hudson@riftio.com
+#
+# Usage:
+#
+# ./build-rpm riftware-rpmname repo-to-release-to
+#
+# Ex.
+# ./build-rpm riftware-base
+# ./build-rpm riftware-base nightly
+# - don't do this yet?
+# ./build-rpm riftware-base release
+#
+#
+
+function rpm_announce() {
+	#echo " ";
+	echo -e "\n=== RPM_BUILD ${rpmname}: $1 ";
+	#echo " ";
+}
+
+function rpm_get_buildnum() {
+
+	rpm_announce "Get BuildNum"
+
+	source ${RIFT_ROOT}/scripts/packaging/getbuild
+	echo "RIFT_Build_Number: ${RIFT_BUILD_NUMBER}";
+#	BUILD_NUMBER=grant
+#	RIFT_BUILD_NUMBER=grant
+#	BUILD_NUMBER=26000
+#	RIFT_BUILD_NUMBER=26000
+
+}
+
+function rpm_get_version() {
+
+	rpm_announce "Get Version"
+
+	verfile=.build/VERSION
+
+	if [ -f ${verfile} ]; then
+		version=`cat ${verfile} | cut -d. -f1-4 `;
+	fi
+
+	# version actually needs to be the VERSION.buildnum for proper dependencies -RIFT-10430
+	version=${version}.${RIFT_BUILD_NUMBER}
+
+	echo "RIFT_Version: ${version}";
+}
+
+function rpm_collect_files() {
+
+	rpm_announce "Collect Files";
+
+	# collect files needed from a filelist, this way it is easy to add new files into an RPM
+
+	echo "FileList: ${filelist}";
+
+        if [ ! -f ${filelist} ]; then
+               	echo "FileList doesn't exist!"
+               	exit 1
+        fi
+
+	# create destination dirs
+	dst=${rpmbuildroot}/SOURCES/${rpmname}-${version}
+	tgz_rift_root=${dst}${dst_rift_root}
+	#mkdir -p ${dst}
+	mkdir -p ${tgz_rift_root}
+
+	# setup output directories
+	mkdir -p ${rpmbuildroot}/RPMS
+	mkdir -p ${rpmbuildroot}/BUILD
+	mkdir -p ${rpmbuildroot}/SRPMS
+
+	echo "Destination is ${dst}";
+	echo "RIFT_ROOT is ${RIFT_ROOT}";
+
+	RPM_MISSING_FILES=0
+	RPM_FOUND_FILES=0
+
+	echo "Copying source files"
+
+	# read all lines of $filelist
+	#while read p; do
+	while read p || [[ -n $p ]]; do
+		#echo "Found line: $p"
+
+		# ignore comments in the filelist
+		if [[ $p != *"#"* ]]; then
+			#echo " ";
+			#echo "--- Found File: $p";
+
+			src=${RIFT_ROOT}/${p}
+			#echo "---src= ${src}";
+
+			# if a glob*, then copy recursively
+			if [[ $p == *"*"* ]]; then
+
+				# remove the * in order to mkdir basedir
+				q=${p%'*'}
+				#echo "--> q=$q"
+				mkdir -p ${tgz_rift_root}/${q}
+
+				#echo "CMD: cp -a ${src} ${tgz_rift_root}/${q}/ "
+				cp -a ${src} ${tgz_rift_root}/${q}/
+
+				# G = glob copy
+				echo -n 'G'
+				RPM_FOUND_FILES=$[$RPM_FOUND_FILES +1]
+
+			# if src file exists, copy it
+			elif [ -f ${src} ]; then
+
+				# find base dir and create it
+				dirname=`dirname ${p}`
+				#echo "dirname=$dirname"
+				mkdir -p ${tgz_rift_root}/${dirname}/
+
+				#echo "CMD: cp -vp ${src} ${tgz_rift_root}/${dirname}/ ";
+				#cp -vp ${src} ${tgz_rift_root}/${dirname}/
+				cp -p ${src} ${tgz_rift_root}/${dirname}/
+
+				# . = good copy
+				echo -n '.'
+				RPM_FOUND_FILES=$[$RPM_FOUND_FILES +1]
+
+			else
+				# M = missing file
+				echo -n 'M'
+				RPM_MISSING_FILES=$[$RPM_MISSING_FILES +1]
+
+				# tack the missing src onto the array
+				RPM_THE_MISSING_FILES=("${RPM_THE_MISSING_FILES[@]}" "${src}")
+			fi
+
+		fi
+
+
+
+	done <$filelist
+
+
+	echo " ";
+	echo " ";
+	echo "  RPM_FOUND_FILES: $RPM_FOUND_FILES";
+	echo "RPM_MISSING_FILES: $RPM_MISSING_FILES";
+	echo " ";
+
+	if [[ $RPM_MISSING_FILES > 0 ]]; then
+		echo "The Missing Files: ";
+		printf '%s\n' "${RPM_THE_MISSING_FILES[@]}"
+		echo " ";
+
+		echo "  RPM_FOUND_FILES: $RPM_FOUND_FILES";
+		echo "RPM_MISSING_FILES: $RPM_MISSING_FILES";
+		echo " ";
+
+	fi
+
+
+	sleep 5;
+
+}
+
+function rpm_archive() {
+
+	rpm_announce "Archive";
+
+	# in the basic rpmbuild scheme, you need a source archive to build the rpm from
+	# we need to make one with the proper paths to the final install directory
+
+	tgzout=${rpmbuildroot}/SOURCES/${rpmname}-${version}.tar.gz
+
+	echo "Sources are this big: `du -hs ${dst}` "
+
+	# do copyright insertion before packing up the sources
+	copytool=$RIFT_ROOT/scripts/packaging/copyright-helper.py
+	toolargs="--insert-license=true --quiet=true --skipchecks=true --interactive=false"
+	#toolargs="--insert-license=true --quiet=false --debug=true --skipchecks=true --interactive=false" # debug
+
+	if [ -f $copytool ]; then
+		echo "Copyright Helper was found."
+		echo "CMD: ${copytool} --source-dir=${rpmbuildroot}/SOURCES/${rpmname}-${version}/ ${toolargs} "
+		${copytool} --source-dir=${rpmbuildroot}/SOURCES/${rpmname}-${version}/ ${toolargs}
+	else
+		echo "Copyright Helper NOT FOUND!"
+	fi
+
+
+	echo "Creating $tgzout..."
+	# the -C flag goes to the directory and then tars up from the '.' root
+	echo "CMD: tar -C ${rpmbuildroot}/SOURCES/ -zcf ${tgzout} ${rpmname}-${version}/ ";
+	tar -C ${rpmbuildroot}/SOURCES/ -zcf ${tgzout} ${rpmname}-${version}/
+
+	echo " ";
+	du -hs $tgzout
+
+}
+
+function rpm_check_sw() {
+
+	rpm_announce "Check Software";
+
+	if [ "$EUID" -eq 0 ]
+		then
+		echo "Do not build RPMs as root!";
+		exit 1;
+	fi
+
+	if [ -z "$RIFT_ROOT" ]; then
+    		echo "RIFT_ROOT not set. please load rift-shell"
+    		exit 1
+	fi
+
+	# check for rpmbuild and rpmlint !
+	if which rpmbuild; then
+		echo "Found rpmbuild"
+	else
+        	echo "rpmbuild not found. Install the required software with: sudo yum install rpm-build rpmlint"
+		exit 1;
+	fi
+
+	if which rpmlint; then
+		echo "Found rpmlint"
+	else
+        	echo "rpmlint not found. Install the required software with: sudo yum install rpm-build rpmlint"
+		exit 1;
+	fi
+
+}
+
+function rpm_uninstall {
+	rpm_announce "Uninstall";
+	#sudo rpm -ev ${name}
+	#rm -fv ${rpm}
+}
+
+function rpm_lint {
+	rpm_announce "Spec Lint Check";
+
+	# make sure spec exists first
+	if [ -f "$spec" ]; then
+		echo "$spec found."
+	else
+		echo "$spec not found."
+		exit 1;
+	fi
+
+	rpmlint ${spec} || exit 1;
+
+}
+
+function rpm_build {
+	rpm_announce "Build RPM";
+
+	# -> Pass Variables to a spec file:
+	# rpmbuild -bb --define '_foobar Foo' somespecfile.spec
+	# and refer it within the spec as %{_foobar}
+
+	# binary only
+	#rpmbuild -bb --define "_rpmname ${rpmname}" --define "_rift_root ${RIFT_ROOT}" --define "_dst_rift_root ${dst_rift_root}" --define "_version ${version}" --define "_buildnum ${RIFT_BUILD_NUMBER}" --define "_filelist ${filelist}" --buildroot ${rpmbuildroot}/BUILD/${rpmname}-${version} ${spec}
+	rpmbuild -bb --define "_rpmname ${rpmname}" --define "_rift_root ${RIFT_ROOT}" --define "_dst_rift_root ${dst_rift_root}" --define "_version ${version}" --define "_buildnum ${RIFT_BUILD_NUMBER}" --define "_filelist ${filelist}" --define "_agent_build ${AGENT_BUILD}" --buildroot ${rpmbuildroot}/BUILD/${rpmname}-${version} ${spec}
+
+	# binary and sources
+	#rpmbuild -v -ba SPECS/riftio-shutdown-helper.spec
+}
+
+function rpm_install {
+	rpm_announce "Install";
+	du -hs ${rpm} || exit 1;
+	#sudo rpm -Uvh ${rpm}
+
+	#echo " ";
+	#echo "!!! *** WE HAVE TO REMOVE THE --nodeps AND DO DEPS CORRECTLY *** !!!";
+	#echo " ";
+	#sudo rpm --nodeps -Uvh  ${rpm}
+}
+
+function rpm_verify {
+	rpm_announce "Verify";
+
+	du -hs ${rpm} || exit 1;
+
+	echo "Built RPM File Count: `rpm -qlp ${rpm} | wc -l`  "
+
+	#echo "The RPM ${rpm} will install these files:";
+	#rpm -qlp ${rpm} || exit 1;
+
+}
+
+function rpm_test {
+	rpm_announce "Test, each RPM probably needs its own test functions??? ";
+
+	#sudo ls -all /home/rift/.install/
+	#echo " ";
+	#ls -all ${rpm}
+	#sudo systemctl status ${name}
+	#echo " ";
+	#sudo systemctl restart ${name}
+	#announce "Checking permissions";
+	#ls -all /bin/riftio-shutdown-helper.sh
+	#echo " ";
+}
+
+function rpm_distribute {
+	rpm_announce "Distribute";
+
+	echo "repo=${repo}";
+	echo "rpm=${rpm}";
+
+	#dst_repo="/net/boson/home1/autobot/www/mirrors/releases/riftware/4.0/20/x86_64/${repo}/";
+	dst_repo="/net/charm/localdisk/jenkins/rpm-staging/"
+
+	if [ ${rpmname} = "riftware-release" ]; then
+		#echo "[info] riftware-release is a special case and doesn't get automatically put into a riftware-release repo"
+		echo "[info] copying to ritware-release special rpm staging area"
+		echo "CMD: cp -v ${rpm} ${dst_repo}/riftware-release/ "
+		cp -v ${rpm} ${dst_repo}/riftware-release/
+	else
+		echo "[info] copying to rpm staging area"
+		echo "CMD: cp -v ${rpm} ${dst_repo} "
+		cp -v ${rpm} ${dst_repo}
+
+		if [ -f ${debuginforpm} ]; then
+			cp -v ${debuginforpm} ${dst_repo}
+		fi
+	fi
+
+}
+
+
+function rpm_update_buildsys()
+{
+	rpm_announce "Updating Build System";
+
+	setrepo="${RIFT_ROOT}/scripts/packaging/setrepo"
+
+	if [ -f ${setrepo} ]; then
+		echo "Calling ${setrepo} ${RIFT_BUILD_NUMBER} ${repo} "
+		${setrepo} ${RIFT_BUILD_NUMBER} ${repo}
+	fi
+
+}
+
+
+
+#################################################################################################################
+# START OF MAIN
+#################################################################################################################
+
+rpm_check_sw
+
+rpm_get_buildnum
+rpm_get_version
+
+# setup variables
+rpmname=$1
+repo=$2
+dist='fc20'
+arch='x86_64'
+
+# NEED BETTER ARG CHECKING
+
+# rpm build root
+rpmbuildroot=${RIFT_ROOT}/.install/rpmbuild
+
+#spec=${rpmbuildroot}/SPECS/${rpmname}.spec
+spec=${RIFT_ROOT}/scripts/packaging/rpmbuild/SPECS/${rpmname}.spec
+dst_rift_root="/home/rift/"
+
+# collect files needed from a filelist, this way it is easy to add new files into an RPM
+filelist=${RIFT_ROOT}/scripts/packaging/rpmbuild/FILELISTS/${rpmname}.txt
+
+# build the rpm to .install
+#rpm=${RIFT_ROOT}/.install/rpmbuild/RPMS/x86_64/${rpmname}-${version}-${RIFT_BUILD_NUMBER}.fc20.x86_64.rpm # RIFT-10430
+#debuginforpm=${RIFT_ROOT}/.install/rpmbuild/RPMS/x86_64/${rpmname}-debuginfo-${version}-${RIFT_BUILD_NUMBER}.fc20.x86_64.rpm
+rpm=${RIFT_ROOT}/.install/rpmbuild/RPMS/x86_64/${rpmname}-${version}-1.${dist}.${arch}.rpm
+debuginforpm=${RIFT_ROOT}/.install/rpmbuild/RPMS/x86_64/${rpmname}-debuginfo-${version}-1.${dist}.${arch}.rpm
+
+START=`date`
+rpm_announce "START do_rpm_build @ $START";
+
+#
+# What to do, what to do ???
+#
+rpm_collect_files
+rpm_archive
+#rpm_uninstall
+rpm_lint
+rpm_build
+rpm_verify
+#rpm_install
+rpm_test
+rpm_distribute
+
+# we do this in scripts/packaging/update-riftware-repo.sh now
+#rpm_update_buildsys
+
+END=`date`
+echo " ";
+echo "START = $START";
+echo "  END = $END  ";
+rpm_announce "END do_rpm_build @ $END";
+

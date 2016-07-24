@@ -1,0 +1,29 @@
+nsd:nsd-catalog:
+    nsd:
+    -   id: mwc16-pe-onevnf
+        name: mwc16-pe-onevnf
+        description: mwc16-pe-onevnf
+        constituent-vnfd:
+        -   member-vnf-index: '1'
+            vnfd-id-ref: 6WindTR1.1.2
+        vld:
+        -   id: 6WindTR1.1.2__1 enty point
+            name: 6WindTR1.1.2__1 enty point
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mwc16data1
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: xe2
+                vnfd-id-ref: 6WindTR1.1.2
+        -   id: management
+            name: management
+            type: ELAN
+            provider-network:
+                overlay-type: VLAN
+                physical-network: mgmt
+            vnfd-connection-point-ref:
+            -   member-vnf-index-ref: '1'
+                vnfd-connection-point-ref: eth0
+                vnfd-id-ref: 6WindTR1.1.2

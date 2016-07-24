@@ -1,0 +1,33 @@
+#!/bin/bash
+# 
+# (c) Copyright RIFT.io, 2013-2016, All Rights Reserved
+#
+# Author(s): Varun Prasad
+# Creation Date: 19-Feb-2016
+# 
+
+source $RIFT_INSTALL/usr/rift/systemtest/util/mano/mano_common.sh
+
+# Helper script for invoking the mission control system test using the systest_wrapper
+SCRIPT_TEST="py.test -x -v -p no:cacheprovider \
+            ${PYTEST_DIR}/mission_control/test_mission_control.py \
+            ${PYTEST_DIR}/mission_control/pingpong_vnf/test_onboard_vnf.py \
+            ${PYTEST_DIR}/mission_control/pingpong_vnf/test_records.py"
+
+test_prefix="pingpong_lp_standalone"
+test_cmd=""
+
+# Parse commonline argument and set test variables
+parse_args "${@}"
+
+# Force standalone launchpad
+lp_standalone=true
+
+# Construct the test command based on the test variables
+construct_test_comand
+
+# Execute from pytest root directory to pick up conftest.py
+cd "${PYTEST_DIR}"
+
+eval ${test_cmd}
+

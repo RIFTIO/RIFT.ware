@@ -1,0 +1,6 @@
+[Plugin]
+Module=not-loadable
+Name=Not loadable
+Description=This plugin is not loadable.
+Authors=Garrett Regier
+Copyright=Copyright © 2011 Garrett Regier

@@ -1,0 +1,57 @@
+name: gw_corpA
+topology: 
+  nodes: 
+    gw_corpA_PE1: 
+      type: VNF
+      VNF model: gw_corpA_PE1
+    gw_corpA_PE2: 
+      type: VNF
+      VNF model: gw_corpA_PE2
+    mwc1: 
+      type: external_network
+      model: mwc1
+    mwc2: 
+      type: external_network
+      model: mwc2
+    mgmt: 
+      type: external_network
+      model: mgmt
+    mwc16data1_vlan: 
+      type: external_network
+      model: "mwc16data1:101"
+    mwc16data2_vlan: 
+      type: external_network
+      model: "mwc16data2:102"
+  connections: 
+    connection 0: 
+      type: link
+      nodes: 
+        - mgmt: null
+        - gw_corpA_PE1: eth1
+    connection 1: 
+      type: link
+      nodes: 
+        - mgmt: null
+        - gw_corpA_PE2: eth1
+    connection 2: 
+      type: link
+      nodes: 
+        - mwc1: null
+        - gw_corpA_PE1: eth0
+    connection 3: 
+      type: link
+      nodes: 
+        - mwc2: null
+        - gw_corpA_PE2: eth0
+    connection 4: 
+      type: link
+      nodes: 
+        - mwc16data1_vlan: null
+        - gw_corpA_PE1: xe0
+    connection 5: 
+      type: link
+      nodes: 
+        - mwc16data2_vlan: null
+        - gw_corpA_PE2: xe0
+description: Gateways to access as corpA to PE1 and PE2
+
