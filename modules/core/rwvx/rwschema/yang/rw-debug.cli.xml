@@ -1,9 +1,0 @@
-<cli>
-  <plugin-list>
-     <plugin name="rwcli_plugin" typelib="rwcli_plugin/1.0"/>
-  </plugin-list>
-
-  <modifications>
-     <addPrintHook path="rw-debug heap" hook="rwcli_plugin:print_tasklet_heap"/>
-  </modifications>
-</cli>

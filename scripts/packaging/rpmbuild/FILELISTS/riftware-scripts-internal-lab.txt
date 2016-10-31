@@ -1,9 +1,0 @@
-# these files are needed to enable_lab in the BUR and BLR VMs and other internal lab things
-scripts/cloud/enable_lab
-scripts/setup/scripts/ldap 
-scripts/env/rift.sh
-scripts/cloud/UpdateHostsFile
-scripts/setup/scripts/localdisk
-scripts/env/pip-install
-scripts/setup/skel/etc/nfsmount.conf 
-# YUM repos and SSH keys should be handled outside the scope of this RPM

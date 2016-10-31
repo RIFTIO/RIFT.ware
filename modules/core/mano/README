@@ -1,9 +1,0 @@
-This sumodule contains the MANO subsystem from RIFT.ware. The following
-section describes the directory structure of the MANO subsystem:
-
-common: contains code shared by mission-control and launchpad
-examples: contains a ping/pong NS example
-models: contains YANG based information models
-rwlaunchpad: contains software for RIFT.ware launchpad
-rwmc: contains software RIFT.ware mission control
-rwcm: conatins software for RIFT.ware configuration manager

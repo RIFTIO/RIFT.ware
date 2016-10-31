@@ -1,4 +1,0 @@
-VNF vnfname=trafgen, ext_port_type=virtio, fab_port_type=virtio
-VDU1 vduname=RW.VDU.LEAD.STND, fabric_port=0, external_port=0, epa=0, image=rift-root-latest-multivm-vnf.qcow2
-VDU2 vduname=RW.VDU.MEMB.DDPL, fabric_port=1, external_port=0, epa=0, image=rift-root-latest-multivm-vnf.qcow2
-VDU3 vduname=RW.VDU.MEMB.DDPM, fabric_port=1, external_port=1, epa=0, image=rift-root-latest-multivm-vnf.qcow2

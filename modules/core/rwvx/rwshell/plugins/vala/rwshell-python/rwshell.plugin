@@ -1,8 +1,0 @@
-[Plugin]
-Module=rwshell-plugin
-Loader=python
-Name=RWShell python
-Description=This plugin is for RWSHELL
-Authors=RIFT.IO
-Copyright=Copyright © 2014 RIFT.IO
-Website=http://www.riftio.com

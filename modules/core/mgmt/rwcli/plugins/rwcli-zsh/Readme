@@ -1,9 +1,0 @@
-Most files in the directory are generated from the rift.mdd file by placing
-rift.mdd and rift.c in the modules/ext/yang/zsh/zsh-5.0.7/Src/Modules path.
-
-rift.c    - is the zsh plugin for riftware
-rift.mdd  - definitions file for the module. Not used but will be required
-            to regenerate include definitions.
-rift.mdh  - has definitions and dependency includes from zsh/zle [generated]
-rift.epro - has the exported symbols [generated]
-rift.pro  - ? currently is empty [generated]

@@ -1,9 +1,0 @@
-
-[Plugin]
-Module=rwtermio-c
-Name=rwtermio
-Description=This plugin 'c' plugin for rwtermio tasklet
-Authors=RIFT.io
-Copyright=Copyright © 2015 RIFT.io
-Website=http://www.riftio.com
-

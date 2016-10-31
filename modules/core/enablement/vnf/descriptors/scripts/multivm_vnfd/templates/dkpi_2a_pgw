@@ -1,6 +1,0 @@
-VNF vnfname=pgw_2a, ext_port_type=virtio, fab_port_type=virtio, config_priority=1, config_delay=120, monitor1=ike2_clients
-CONFIG1 config_file=dkpi_2a_pgw_cfg
-CONFIG2 config_file=dkpi_2a_pgw_cfg2
-CONFIG3 config_file=dkpi_2a_pgw_cfg3
-CONFIG4 config_file=dkpi_2a_pgw_cfg4
-VDU1 vduname=RW.VDU.LEAD.DDPL-IPSEC, fabric_port=0, external_port=4, epa_memory=LARGE, epa_cpu_pinning=DEDICATED, vcpu=6, vmem=16384, image=rift-root-latest-multivm-vnf.qcow2

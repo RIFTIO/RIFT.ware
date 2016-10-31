@@ -1,4 +1,0 @@
-initial_config_primitive:
-- name: config
-  parameter:
-    proxied_ip: <rw_mgmt_ip>

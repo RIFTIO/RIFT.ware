@@ -1,1 +1,0 @@
-Upstream, for git subtree purposes, is https://github.com/protobuf-c/protobuf-c.git

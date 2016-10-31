@@ -1,7 +1,0 @@
-module enc {
-  namespace urn:example:enc;
-  prefix enc;
-
-  description
-    "he’";
-}

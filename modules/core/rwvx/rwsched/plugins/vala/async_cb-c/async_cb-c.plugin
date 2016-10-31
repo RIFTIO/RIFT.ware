@@ -1,7 +1,0 @@
-[Plugin]
-Module=async_cb-c
-Name=AsyncCb-c
-Description=This plugin is for testing asynchronous callbacks
-Authors=RIFT.io
-Copyright=Copyright © 2014 RIFT.io
-Website=http://www.riftio.com

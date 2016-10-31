@@ -1,8 +1,0 @@
-https://github.com/ajcormier/ncclient.git
-
-Local Branch: asynciopy3
-Remote Branch: py3dev
-
-Once python3 changes have been pushed to master and the asyncio changes have
-been pulled upstream, then hopefully we can track master here and pull
-as needed.

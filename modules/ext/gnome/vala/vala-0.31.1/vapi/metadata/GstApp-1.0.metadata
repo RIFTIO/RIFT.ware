@@ -1,2 +1,0 @@
-* parent="Gst.App"
-App* name="App(.+)"

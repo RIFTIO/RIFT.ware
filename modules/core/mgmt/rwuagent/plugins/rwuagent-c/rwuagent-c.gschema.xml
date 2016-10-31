@@ -1,9 +1,0 @@
-<schemalist>
-  <schema id="extension-c" path="/org/gnome/libpeas/tests/extension-c/">
-    <key name="socket-path" type="s">
-      <default>/tmp/rw-uagent.sock</default>
-      <summary>uAgent socket path.</summary>
-      <description>uAgent socket path.</description>
-    </key>
-  </schema>
-</schemalist>

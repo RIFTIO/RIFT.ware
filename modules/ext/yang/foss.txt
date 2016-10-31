@@ -1,5 +1,0 @@
-RIFT.core, protobuf-c, C Implementation of Protocol Buffers, BSD 2-Clause, https://github.com/protobuf-c/protobuf-c.git
-RIFT.mgmt, pyang, YANG Validator, MIT, https://code.google.com/p/pyang/
-RIFT.mgmt, yuma, YANG Based Management System, BSD, http://sourceforge.net/p/yuma123/git/ci/yuma-official/tree/
-RIFT.mgmt, zsh, Z Shell, MIT-Like ,http://zsh.sourceforge.net/Arc/git.html git://git.code.sf.net/p/zsh/code
-RIFT.mgmt, ncclient, NETCONF Client Library, APLv2, https://github.com/leopoul/ncclient

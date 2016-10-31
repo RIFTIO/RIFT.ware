@@ -1,8 +1,0 @@
-* parent="Gst.Controller"
-
-DirectControlBinding
-	.new_absolute name=".new_with_absolute"
-
-TimedValueControlSource
-  .find_control_point_iter skip=false
-  .values type="GLib.Sequence<Gst.Controller.ControlPoint?>"

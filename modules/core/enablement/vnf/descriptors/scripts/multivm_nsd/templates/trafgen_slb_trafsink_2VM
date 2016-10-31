@@ -1,7 +1,0 @@
-NS  nsname=TG-SLB-TS
-VNF1 pkgname=trafgen_2VM_vnfd.tar.gz, vnf_index=1, config_file=slb_trafgen, config_priority=1, config_delay=120
-VNF2 pkgname=slb_2VM_vnfd.tar.gz, vnf_index=2, config_file=slb_slb, config_priority=2, config_delay=2
-VNF3 pkgname=trafsink_2VM_vnfd.tar.gz, vnf_index=3, config_file=slb_trafsink, config_priority=3, config_delay=2
-VLD1 linkname=TG-SLB, cp1=VNF1:1, cp2=VNF2:1, type=VIRTIO, provider=physnet1, overlay=VLAN
-VLD2 linkname=SLB-TS, cp1=VNF3:1, cp2=VNF2:2, type=VIRTIO, provider=physnet1, overlay=VLAN
-NSP1 nspname=TrafgenTraffic

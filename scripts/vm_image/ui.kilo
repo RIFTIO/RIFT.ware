@@ -1,5 +1,0 @@
-python-ceilometerclient==2.0.1
-python-novaclient
-python-neutronclient
-python-glanceclient
-python-cinderclient

@@ -1,8 +1,0 @@
-[Plugin]
-Module=python_plugin-PY_LOADER
-Loader=PY_LOADER
-Name=PythonPlugin PY_LOADER
-Description=This plugin is for the PY_LOADER tests
-Authors=RIFT.io
-Copyright=Copyright © 2014 RIFT.io
-Website=http://www.riftio.com

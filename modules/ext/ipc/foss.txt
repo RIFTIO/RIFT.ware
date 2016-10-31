@@ -1,8 +1,0 @@
-RIFT.core, msgpack, Binary Serialization Format, APLv2, https://github.com/msgpack/msgpack-c
-RIFT.core, nanomsg, Socket Library for Common Communication Patterns, MIT, https://github.com/nanomsg/nanomsg
-RIFT.core, protobuf, Library for Serializing Structured Data, BSD 3-Clause, https://developers.google.com/protocol-buffers/
-RIFT.core, redis/redis-cluster-3.0/, Key-Value Cache and Store, BSD 3-Clause, https://github.com/antirez/redis.git
-RIFT.core, redis/redis-gems/, RUBY Client APIs for Redis, MIT-like, https://github.com/redis/redis-rb
-
-
-

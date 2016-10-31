@@ -1,1 +1,0 @@
-RIFT.app, diameter/freeDiameter-1.2.0/, Diameter Protocol Implementation, BSD, http://www.freediameter.net/trac/

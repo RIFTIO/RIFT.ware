@@ -1,9 +1,0 @@
-Check bugzilla
-Run all tests
-Commit
-make distcheck
-make release-tag
-make upload-release
-Send release announcement
-Bump version number:
-  configure.ac

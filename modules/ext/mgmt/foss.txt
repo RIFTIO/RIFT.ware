@@ -1,7 +1,0 @@
-RIFT.mgmt, confd, CONFD from Tail-f, Tail-f proprietary, Obtained from Tail-f
-RIFT.mgmt, docs/confd-6.0/, CONFD Docs from Tail-f, Tail-f proprietary, Obtained from Tail-f
-RIFT.mgmt, examples/confd-6.0/, CONFD Examples from Tail-f, Tail-f proprietary, Obtained from Tail-f
-RIFT.mgmt, libconfd, CONFD Client Library from Tail-f, Tail-f proprietary, Obtained from Tail-f
-#RIFT.mgmt, ncclient, NETCONF Client Library, APLv2, https://github.com/leopoul/ncclient
-# ^ seems to be in /modules/ext/yang now, moved there
-RIFT.mgmt, loganalyzer, loganalyzer, GNU GPLv3+Commercial,http://loganalyzer.adiscon.com/

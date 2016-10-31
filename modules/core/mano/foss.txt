@@ -1,2 +1,0 @@
-RIFT.core, rwmc/mock/node_modules/autobahn, AutobahnJS, MIT, https://github.com/crossbario/autobahn-js
-RIFT.core, common/python/rift/mano/tosca_translator, Openstack, Apache License 2.0, https://github.com/openstack/heat-translator

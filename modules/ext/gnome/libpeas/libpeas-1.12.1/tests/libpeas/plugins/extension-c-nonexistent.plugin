@@ -1,6 +1,0 @@
-[Plugin]
-Module=extension-c-nonexistent
-Name=Extension C Nonexistent
-Description=This plugin is nonexistent.
-Authors=Garrett Regier
-Copyright=Copyright © 2011 Garrett Regier

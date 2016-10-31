@@ -1,6 +1,0 @@
-# all scripts! 
-# ?there is a macro in the riftware-scripts-host.spec to remove the /scripts/setup dir as it is old?
-scripts/*
-bin/pip-install
-bin/pip3-install
-bin/pip3-kilo-install

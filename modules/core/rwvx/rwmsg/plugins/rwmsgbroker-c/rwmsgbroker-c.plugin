@@ -1,7 +1,0 @@
-[Plugin]
-Module=rwmsgbroker-c
-Name=rwmsgbroker-c
-Description=This plugin is for the C RIFT.io message broker
-Authors=RIFT.io
-Copyright=Copyright © 2014 RIFT.io
-Website=http://www.riftio.com

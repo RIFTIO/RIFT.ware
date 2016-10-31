@@ -1,5 +1,0 @@
-* parent="Gst.RTSP"
-RTSP* name="RTSP(.+)"
-rtsp_* name="rtsp_(.+)"
-
-RTSPWatchFuncs skip

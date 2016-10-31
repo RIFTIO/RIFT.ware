@@ -1,8 +1,0 @@
-NS  nsname=cag_pgw_2b
-VNF1 pkgname=dkpi_2b_cag_vnfd.tar.gz, vnf_index=1, config_priority=1, config_delay=120
-VNF2 pkgname=dkpi_2b_pgw_vnfd.tar.gz, vnf_index=2, config_priority=2, config_delay=5
-VLD1 linkname=Link1, cp1=VNF1:1, cp2=VNF2:1, type=VIRTIO, provider=physnet1, overlay=VLAN
-VLD2 linkname=Link2, cp1=VNF1:2, cp2=VNF2:2, type=VIRTIO, provider=physnet1, overlay=VLAN
-VLD3 linkname=Link3, cp1=VNF1:3, cp2=VNF2:3, type=VIRTIO, provider=physnet1, overlay=VLAN
-VLD4 linkname=Link4, cp1=VNF1:4, cp2=VNF2:4, type=VIRTIO, provider=physnet1, overlay=VLAN
-NSP1 nspname=IkeTraffic_2B

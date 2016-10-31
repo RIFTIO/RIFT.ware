@@ -1,3 +1,0 @@
-Added using:
-
-git subtree add --prefix=lua/packages/luaunit/luaunit -m 'add the luaunit package' --squash https://github.com/bluebird75/luaunit.git master

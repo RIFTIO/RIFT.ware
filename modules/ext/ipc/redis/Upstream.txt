@@ -1,8 +1,0 @@
-Upstream, for git subtree purposes, is https://github.com/antirez/redis.git
-
-The git upstream tree was imported the following way
-
-git remote add redis https://github.com/antirez/redis.git
-git fetch redis
-git subtree add --squash -P redis/redis-cluster-3.0 redis/3.0
-

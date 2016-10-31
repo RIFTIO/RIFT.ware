@@ -1,4 +1,0 @@
-* parent="Gst.Riff"
-riff_* name="riff_(.+)"
-RIFF_* name="RIFF_(.+)"
-RIFF_WAVE_FORMAT_*  name="RIFF_WAVE_FORMAT_(.+)" parent="Gst.Riff.WaveFormat"

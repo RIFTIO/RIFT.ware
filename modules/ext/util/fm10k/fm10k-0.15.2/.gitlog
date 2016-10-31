@@ -1,8 +1,0 @@
-76996d6: Jef Oliver - Update to 0.15.2
-282e68b: Jef Oliver - Update to 0.15.0
-bfa7ed8: Jef Oliver - Correctly run depmod
-47046ef: Jef Oliver - Update to 0.14.0
-b475e96: Jef Oliver - Autotoolize
-8ee5b3f: Jef Oliver - Allow building against kernels directory
-94fb7bc: Jef Oliver - Add unmodified fm10k-0.13.2 source
-6c53475: EC TF Bind account - Initial empty repository

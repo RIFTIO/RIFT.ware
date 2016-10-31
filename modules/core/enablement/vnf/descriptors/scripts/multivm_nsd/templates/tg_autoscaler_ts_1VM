@@ -1,7 +1,0 @@
-NS  nsname=TG-AUTOSCALER-TS
-VNF1 pkgname=trafgen_1VM_vnfd.tar.gz, vnf_index=1, config_file=autoscaler_trafgen, config_priority=1, config_delay=120
-VNF2 pkgname=autoscaler_1VM_vnfd.tar.gz, vnf_index=2, config_file=autoscaler_slb, config_priority=2, config_delay=2
-VNF3 pkgname=trafsink_1VM_vnfd.tar.gz, vnf_index=3, config_file=autoscaler_trafsink, config_priority=3, config_delay=2
-VLD1 linkname=TG-AS, cp1=VNF1:1, cp2=VNF2:1, type=VIRTIO, provider=physnet1, overlay=VLAN
-VLD2 linkname=AS-TS, cp1=VNF3:1, cp2=VNF2:2, type=VIRTIO, provider=physnet1, overlay=VLAN
-NSP1 nspname=TrafgenTraffic

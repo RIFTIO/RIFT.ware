@@ -1,3 +1,0 @@
-include *.rst requirements.txt LICENSE
-graft docs
-graft examples

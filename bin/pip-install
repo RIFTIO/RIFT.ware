@@ -1,9 +1,0 @@
-#!/usr/bin/bash
-
-
-if [ "$1" == "ALL" ]; then
-    set -- -r /usr/rift/scripts/setup/PIP
-fi
-/bin/pip2 install --use-wheel --no-index --find-links=http://wheel.riftio.com/mirrors/wheelhouse "$@"
-
-

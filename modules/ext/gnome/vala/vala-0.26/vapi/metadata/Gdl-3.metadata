@@ -1,2 +1,0 @@
-DockItem.dock_drag_motion skip
-DockItem.dock_drag_motion#signal skip=false

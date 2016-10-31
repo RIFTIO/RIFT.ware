@@ -1,7 +1,0 @@
-
-
-
-message base4msg {
-  required string foo = 1 [default = "I am the walrus" ];
-  optional string moo = 2 [ default = "HAHA" ] ;
-}

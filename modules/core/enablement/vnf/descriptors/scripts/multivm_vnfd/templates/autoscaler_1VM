@@ -1,2 +1,0 @@
-VNF vnfname=autoscaler, ext_port_type=virtio, fab_port_type=virtio,  monitor1=ports
-VDU1 vduname=RW.VDU.LEAD.DDPL, fabric_port=0, external_port=2, epa=0, image=rift-root-latest-multivm-vnf.qcow2

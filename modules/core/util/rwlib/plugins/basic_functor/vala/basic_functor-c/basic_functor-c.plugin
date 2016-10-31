@@ -1,7 +1,0 @@
-[Plugin]
-Module=basic_functor-c
-Name=BasicFunctor
-Description=This 'c' plugin for functor test cases.
-Authors=Anil Gunturu
-Copyright=Copyright © 2014 RIFT.io
-Website=http://www.riftio.com

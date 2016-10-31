@@ -1,7 +1,0 @@
-#!/bin/bash
-
-export PATH=$PATH:/usr/sbin:/sbin
-addr=`ifconfig eth0 | awk '/inet / { print $2; }'`
-hostname=`hostname`
-hostnameshort=`hostname -s`
-echo $addr $hostname $hostnameshort ${hostnameshort}.novalocal ${hostnameshort}.novalocal.localdomain >>/etc/hosts

@@ -1,2 +1,0 @@
-RIFT.code, rwdtsmockserver/etc/crossbar/autobahn.js, AutobahnJS, MIT, http://autobahn.ws
-RIFT.core, rwdts/src/rwdts_xpath_ncx.c, YANG Based Management System, BSD, http://sourceforge.net/p/yuma123/git/ci/yuma-official/tree/

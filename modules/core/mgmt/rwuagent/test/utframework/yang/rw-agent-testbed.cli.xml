@@ -1,9 +1,0 @@
-<cli>
-  <plugin-list>
-     <plugin name="rwcli_plugin" typelib="rwcli_plugin/1.0"/>
-  </plugin-list>
-
-  <modifications>
-     <addPrintHook path="agent-tests" hook="rwcli_plugin:default_print"/>
-  </modifications>
-</cli>

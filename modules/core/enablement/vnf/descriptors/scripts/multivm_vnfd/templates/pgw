@@ -1,2 +1,0 @@
-VNF vnfname=pgw, ext_port_type=virtio, fab_port_type=virtio, config_file=pgw, config_priority=1, config_delay=120
-VDU1 vduname=RW.VDU.LEAD.DDPL-IPSEC, fabric_port=0, external_port=1, epa=0, image=rift-root-latest-multivm-vnf.qcow2
