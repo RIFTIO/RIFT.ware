@@ -1,0 +1,183 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file dts-test.yang
+ * @author Rajesh Velandy
+ * @date 2014/08/08
+ * @brief Top-level yang for testing libncx.
+ */
+
+module dts-test
+{
+  namespace "http://riftio.com/ns/core/rwvx/rwdts/test/yang/dtstest";
+  prefix "ps";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import testdts-rw-base { prefix "tdtsbase"; }
+  import testdts-rw-fpath { prefix "tdtsfp"; }
+  import testdts-rw-stats { prefix "tdtsstats"; }
+  import rw-dts { prefix "rwdts"; }
+
+  description
+    "This yang models a person";
+
+  revision 2014-03-05 {
+    description "Initial version"; }
+
+  typedef phone-type {
+    type enumeration {
+              enum MOBILE { value 0; }
+              enum HOME   { value 1; }
+              enum WORK   { value 2; }
+    }
+  }
+  container person {
+    rwpb:msg-new Person;
+
+    leaf name         { type string; }
+    leaf id           { type int32; }
+    leaf email        { type string; }
+    leaf employed     { type boolean; }
+
+
+    list phone {
+        key "number";
+        rwpb:msg-new PhoneNumber;
+
+        leaf number { type string; rwpb:field-string-max "15";}
+        leaf type  { type phone-type;}
+    }
+
+    container emergency-phone {
+      rwpb:msg-new PhoneNumber1;
+
+      leaf number { type string; }
+      leaf type  { type phone-type;}
+    }
+  }
+
+  container multi-person {
+    rwpb:msg-new MultiPerson;
+
+    leaf name         { type string; }
+    leaf id           { type int32; }
+    leaf employed     { type boolean; }
+
+
+    list multi-phone {
+        key "number";
+        rwpb:msg-new MultiPhoneNumber;
+
+        leaf number { type string; rwpb:field-string-max "15";}
+        leaf type  { type phone-type;}
+    }
+  }
+
+  container flat-person {
+    rwpb:msg-new FlatPerson;
+    rwpb:msg-flat "true";
+
+    leaf name         { type string; rwpb:field-string-max "64"; }
+    leaf id           { type int32; }
+    leaf email        { type string; rwpb:field-string-max "64"; }
+    leaf employed     { type boolean; }
+
+    list phone {
+        key "number";
+        rwpb:field-inline-max "64";
+        rwpb:msg-new FlatPhoneNumber;
+        rwpb:msg-flat "true";
+
+        leaf number { type string; rwpb:field-string-max "64"; }
+        leaf type  { type phone-type; }
+    }
+    container emergency-phone {
+      rwpb:msg-new FlatPhoneNumber1;
+      rwpb:msg-flat "true";
+
+      leaf number { type string; rwpb:field-string-max "64"; }
+      leaf type  { type phone-type; }
+    }
+  }
+
+  container company {
+  rwpb:msg-new Company;
+
+    list persons {
+      rwpb:msg-new Persons;
+      key "id";
+      leaf name         { type string; }
+      leaf id           { type int32; }
+      leaf email        { type string; }
+      leaf employed     { type boolean; }
+
+
+      list phones {
+          rwpb:msg-new Phones;
+          key "number";
+
+          leaf number { type string;}
+          leaf type  { type phone-type;}
+          leaf calls { type uint64; }
+      }
+
+      container emergency {
+        rwpb:msg-new Emergency;
+        leaf number { type string; }
+        leaf type  { type phone-type;}
+        leaf calls { type int32; }
+      }
+    }
+  }
+
+  list level-one {
+    key "key-one";
+    leaf key-one { type int32; }
+    list level-two {
+      key "key-two";
+      leaf key-two { type int32; }
+      list level-three {
+        key "key-three";
+        leaf key-three { type int32; }
+        list level-four {
+          key "key-four";
+          leaf key-four { type int32; }
+        }
+      }
+    }
+  }
+
+  notification event-route-added {
+    description "Notification for new route";
+    leaf name {
+      description "Route name";
+      type string;
+    }
+
+    leaf id {
+      description "Route ID";
+      type uint16;
+    }
+  }
+}
+
+

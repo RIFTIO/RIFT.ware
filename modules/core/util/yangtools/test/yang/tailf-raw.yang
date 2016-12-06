@@ -1,0 +1,77 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+/**
+ * @file tailf-raw.yang
+ * @author Tom Seidenberg
+ * @date 2014/08/12
+ * @brief Test tail-f yang annotations. This is the raw, unannotated file.
+ */
+
+module tailf-raw
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/tailf-raw";
+  prefix "tfr";
+
+  typedef e1 {
+    type enumeration {
+      enum lf1;
+      enum lf2;
+      enum n1;
+    }
+  }
+
+  notification n1 {
+    leaf lf4 { type string; }
+  }
+
+  rpc r1 {
+    input {
+      leaf lf1 { type string; }
+    }
+    output {
+      leaf lf5 { type string; }
+    }
+  }
+
+  grouping g1 {
+    leaf lf1 { type string; }
+    leaf lf2 { type string; }
+  }
+
+  container top1 {
+    uses g1;
+
+    // These 2 have a hash collision (thank you, birthday paradox!)
+    leaf lf588506805 { type string; }
+    leaf lf116142732 { type string; }
+
+    leaf lf3 { type string; }
+    leaf n1 { type string; }
+  }
+
+  container top2 {
+    config false;
+    list ls1 {
+      leaf-list ll1 { type string; }
+    }
+  }
+}
+

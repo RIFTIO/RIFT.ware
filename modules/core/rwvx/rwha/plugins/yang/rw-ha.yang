@@ -1,0 +1,80 @@
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rw-ha
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-ha";
+  prefix "rw-ha";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rwvcs-types {
+    prefix "rwvcstypes";
+  }
+
+  revision 2016-06-16 {
+    description "Initial revision";
+    reference "RIFT High Availability";
+  }
+
+  container ha-uagent-state {
+    description
+      "Information pertaining to the ha-state of the Management Agent";
+    rwpb:msg-new HAState;
+    config false;
+
+    container ha-config-state {
+      leaf ready {
+        description
+          "Indicates readiness of critical tasks, schema loading and init configuration";
+        type boolean;
+        default false;
+      }
+    }
+  }
+
+  list mode-change-info {
+    config false;
+    key rwvm-instance-name;
+    leaf rwvm-instance-name {
+      type string;
+    }
+    list instances {
+      key instance-name;
+      leaf instance-name {
+        type string;
+      }
+      leaf vm-state {
+        type rwvcstypes:vm-state;
+      }
+    }
+  }
+
+  container active-mgmt-info {
+    config false;
+    leaf mgmt-vm-instance-name {
+      type string;
+    }
+    leaf mgmt-ip-address {
+      type string;
+    }
+  }
+}

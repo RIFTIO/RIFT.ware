@@ -1,0 +1,179 @@
+.wrapper
+{
+  margin: 0;
+  padding: 0;
+  top: 0;
+  left: 0;
+}
+
+.toc-treeview
+{
+  font: normal 0.75em "Segoe UI", Arial, Sans-serif;
+  padding: 8px 8px 8px 8px;
+  margin: 0;
+  height: 100%;
+  width: 320px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #555555;
+  overflow: auto;
+}
+
+.toc-treeview *
+{
+  list-style: none;
+  padding: 0;
+  margin: 2;
+}
+
+.toc-treeview a
+{
+  text-decoration: none;
+  font-size: 1.1em;
+  color: #c1c1c1;
+}
+
+.toc-treeview a:hover {
+  color: white;
+}
+
+.toc-treeview h1
+{
+  font-size: 2em;
+  color: #c1c1c1;
+  text-align: center;
+  margin: 20px 0 10px 0;
+}
+
+/* Indentation for list within a list item */
+.toc-treeview li ul
+{
+  margin: 0 0 0 20px;
+}
+
+.toc-treeview label[for]
+{
+  display: inline-block;
+  margin: 2px 0 0;
+  width: 13px;
+  height: 13px;
+  color: #818181;
+  font-size: 0.75em;
+  cursor: pointer;
+}
+
+.toc-treeview input[type="checkbox"][id]:checked ~ label[for].checked
+{
+  display: inline-block;
+}
+
+.toc-treeview input[type="checkbox"][id]:checked ~ label[for].unchecked
+{
+  display: none;
+}
+
+.toc-treeview input[type="checkbox"][id]:not(:checked) ~ label[for].checked
+{
+  display: none;
+}
+
+.toc-treeview input[type="checkbox"][id]:not(:checked) ~ label[for].unchecked
+{
+  display: inline-block;
+}
+
+/* Don't display the checkbox for the input type */
+.toc-treeview input[type="checkbox"]
+{
+  display: none;
+}
+
+.toc-treeview input[type="checkbox"][id]:not(:checked) ~ ul
+{
+  display: none;
+}
+
+.content
+{
+  font: normal 1em Calibri, Arial,Sans-serif;
+  padding: 10px 0 0 30px;
+}
+
+.content h1 
+{
+  text-align: center;
+  font: normal 2em Cambria, Serif;
+}
+.content h2 
+{
+  font: normal 1.5em Cambria, Serif;
+}
+.content h3 
+{
+  font: normal 1.25em Cambria, Serif;
+}
+.content h4 
+{
+  font: italic 1.25em Cambria, Serif;
+}
+
+.definitions table
+{
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+}
+
+.definitions td, .definitions th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+    background-color: #dddddd;
+}
+
+.definitions td:nth-child(1) {
+  background-color: #666666;
+  color: #e1e1e1;
+  border: 1px solid #666666;
+}
+
+.definitions td pre
+{
+  margin: 0;
+  font-family: Consolas, monospace;
+}
+
+.children table
+{
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+}
+.children th
+{
+  border: 1px solid #666666;
+  text-align: center;
+  padding: 8px;
+  background-color: #666666;
+  color: #e1e1e1;
+  font-weight: normal;
+}
+
+.children td {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+.children tbody tr:nth-child(even) {
+  background-color: #e1e1e1;
+}
+.children tbody tr:nth-child(odd) {
+  background-color: #cccccc;
+}
+
+textarea {
+  font-family: Consolas, monospace;
+  font-size: 0.8em;
+  background-color: #dddddd;
+}
+

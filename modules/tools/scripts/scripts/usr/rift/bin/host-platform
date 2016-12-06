@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Find the platform and return a short name
+
+# Look for either python3 or python2
+if which python3 >/dev/null; then
+    PYTHON=python3
+elif which python >/dev/null; then
+    PYTHON=python
+fi
+
+PLATFORM=$($PYTHON -mplatform)
+if [[ ! $PLATFORM ]]; then
+    echo "Cannot find platform using $PYTHON -mplatform" >&2
+    exit 1
+fi
+
+case $PLATFORM in
+    *Ubuntu-16.04*) echo ub16; exit;;
+    *fedora-20*)    echo fc20; exit;;
+    *fedora-21*)    echo fc21; exit;;
+    *fedora-23*)    echo fc23; exit;;
+    *fedora-24*)    echo fc24; exit;;
+    *) echo "Unknown platform: $PLATFORM" >&2 ; exit 1;;
+esac

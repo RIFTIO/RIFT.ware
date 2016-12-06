@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# script to delete old jenkins workspaces
+# for each job, 
+#    determine how many workspaces exist across all servers
+#    determine how many to delete
+#    delete the ones that are local
+#
+# if this is run on all build servers, they should all come to the same 
+# conclusion and the net result should be that the right number of jobs are kept
+# across all of them
+# without deleting anything over NFS
+
+KEEP=${1:-10}
+
+cd /localdisk
+
+for server in jenkins3 jenkins4 jenkins5; do
+    touch /net/$server/localdisk
+done
+
+ROOT='/net/jenkins[345]/localdisk/jen*/workspace'
+LOCAL_RE="/net/$(hostname -s)(/.*)"
+
+JOBS=$(ls -d ${ROOT}/* 2>/dev/null)
+if [ -z "$JOBS" ]; then
+    echo "No Jenkins workspaces found" >&2
+    exit 1
+fi
+JOBS=$(ls -d ${ROOT}/* | xargs -n 1 basename | sort | uniq)
+
+# echo "### JOBLIST $JOBS"
+
+for job in $JOBS; do
+    workspaces="${ROOT}/$job"
+    ct=$(ls -d $workspaces/*  2>/dev/null | wc -l)
+    #ls -d $workspaces/*
+    echo "### job $job has $ct workspaces "
+    del=$(expr $ct - ${KEEP} )
+    if [ $del -gt 0 ]; then
+        for d in $(ls $workspaces/* -d | sort -n -k8 -t/ | head -$del); do
+            if [[ $d =~ $LOCAL_RE ]]; then
+                d=${BASH_REMATCH[1]}
+                echo "## REMOVING $d"
+                rm -rf $d
+            else
+                echo "## NOT LOCAL $d"
+            fi
+        done
+	for d in $(ls $workspaces/* -d | sort -n -k8 -t/ | tail -$KEEP); do
+		echo "## KEEPING $d"
+	done
+    fi
+done
+
+#vim: ts=4 et

@@ -1,0 +1,274 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file testy2p-top1.yang
+ * @author Tom Seidenberg
+ * @date 2014/03/28
+ * @brief yangpbc test file for extensions
+ */
+
+module testy2p-top1
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testy2p-top1";
+  prefix "y2p-top1";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "Module top1 testing for yangpbc.";
+  revision 2014-03-28 { description "Initial version"; }
+
+  rwpb:file-pbc-include "rwtypes.h";
+
+  identity top1id1-base {
+    description "basic identity";
+  }
+
+  typedef top1enum1 {
+    description "An enumeration";
+    type enumeration {
+      enum TOP1-E_A { value 1; }
+      enum TOP1-E_B { value 2; }
+      enum TOP1-E_C { value 3; }
+      enum TOP1-E_D { value 4; }
+      enum TOP1-E_E { value 12345; }
+    }
+  }
+
+  typedef top1bits1 {
+    description "Some bits";
+    type bits {
+      bit top1-a { position 0; }
+      bit top1-b { position 1; }
+      bit top1-c { position 2; }
+      bit top1-d { position 3; }
+    }
+  }
+
+  typedef top1union1 {
+    description "A union";
+    type union {
+      type identityref { base "top1id1-base"; }
+      type top1bits1;
+      type top1enum1;
+      type boolean;
+      type decimal64 { fraction-digits 2; }
+      type int64;
+      type uint64;
+      type string;
+    }
+  }
+
+  typedef just-one-enum {
+    description "An enumeration with just one enumerator - RIFT-2730";
+    type enumeration {
+      enum just-me { value 1; }
+    }
+  }
+
+  grouping top1g01-conts {
+    description "A grouping that has message-able types";
+
+    leaf ls010 { type string { length "20..40"; } }
+    container top1g01-c0 {
+      description "Container top1g01-c0";
+      rwpb:msg-new RwTop1g01C0;
+
+      leaf ls01 { type string { length "20..40"; } }
+      //leaf ls01 { rwpb:field-tag "+8"; type string { length "20..40"; } }
+    }
+  }
+
+  grouping top1g0-conts {
+    description "A grouping that has message-able types";
+
+    leaf ls00 { type string { length "20..40"; } }
+    container top1g0-c0 {
+      description "Container top1g0-c0";
+      rwpb:msg-new RwTop1g0C0;
+      rwpb:msg-tag-base "7000";
+
+      leaf ls10 { type string { length "20..40"; } }
+      leaf ls11 {  type string { length "20..40"; } }
+      uses top1g01-conts;
+    }
+  }
+
+  container top1c0 {
+    description "A container that uses things with messages";
+    rwpb:msg-new RwTop1c0;
+    rwpb:msg-tag-base "5000";
+
+    uses top1g0-conts;
+  }
+
+  grouping top1g1-leafs {
+    description "A grouping that has all leaf types";
+
+    leaf li8 { type int8; default -8; }
+    leaf li16 { type int16; default -16; }
+    leaf li32 { type int32; default -32; }
+    leaf li64 { type int64; default -64; }
+    leaf lu8 { type uint8; default 8; }
+    leaf lu16 { type uint16; default 16; }
+    leaf lu32 { type uint32; default 32; }
+    leaf lu64 { type uint64; default 64; }
+    leaf liref { type identityref { base "top1id1-base"; } }
+    leaf lbin { type binary { length "1024"; } }
+    leaf lbits { type top1bits1; }
+    leaf lenum { type top1enum1; }
+    leaf lbool { type boolean; }
+    leaf ldec { type decimal64 { fraction-digits 12; } }
+    leaf lmt { type empty; }
+    leaf ls { type string { length "0..128"; } }
+    leaf lunion { type top1union1; }
+    // ATTN: not supported by confd: anyxml laxml { }
+  }
+
+  grouping top1g2-conts {
+    description "A grouping that has message-able types";
+
+    container top1g2-c1 {
+      description "Container top1g2-c1, pb message type rw_top1g2_c1";
+      rwpb:msg-new RwTop1g2C1;
+
+      leaf ln1 { type int8; }
+      leaf ln2 { type int16; }
+      leaf ls1 { type string { length "20..40"; } }
+
+      container c1 {
+        // yes, we want duplicate names, for testing.
+        container c1 {
+          leaf ln1 { type uint8; }
+          leaf ln2 { type uint16; }
+        }
+      }
+
+      list l1 {
+        max-elements 4;
+        key "ln2";
+        leaf ln2 { type uint16; }
+        // yes, we want duplicate names, for testing.
+        list l1 {
+          max-elements 4;
+          key "ln2";
+          leaf ln1 { type uint8; }
+          leaf ln2 { type uint16; }
+        }
+      }
+    }
+
+    list top1g2-l1 {
+      description "List top1g2-l1, pb message type rw_top1g2_l1";
+      rwpb:msg-new RwTop1g2L1;
+      //rwpb:msg-tag-base "2000";
+      key "ls1";
+      max-elements 10;
+
+      leaf ls1 { type string { length "20..40"; } }
+      //leaf ls1 { rwpb:field-tag "+4"; type string { length "20..40"; } }
+      leaf ln1 { type int8; }
+      leaf ln2 { type int16; }
+
+      container c1 {
+        // yes, we want duplicate names, for testing.
+        container c1 {
+          leaf ln1 { type uint8; }
+          leaf ln2 { type uint16; }
+        }
+      }
+
+      list l1 {
+        max-elements 4;
+        // yes, we want duplicate names, for testing.
+        key "ln2";
+        leaf ln2 { type uint16; }
+        list l1 {
+          rwpb:field-name the_real_l1;
+          max-elements 4;
+          key "ln2";
+          leaf ln1 { type uint8; }
+          leaf ln2 { type uint16; }
+        }
+      }
+    }
+  }
+
+
+  container top1c1 {
+    description "A container that uses things with messages";
+    rwpb:msg-new RwTop1c1;
+
+    uses top1g1-leafs;
+    uses top1g2-conts;
+  }
+
+  container top1c2 {
+    description "A container that uses things with messages";
+    rwpb:msg-new RwTop1c2;
+    rwpb:msg-flat "true";
+    //rwpb:msg-tag-base "1000";
+
+    //leaf ls1 { rwpb:field-tag "+2"; type string { length "20..40"; } }
+    leaf ls1 { type string { length "20..40"; } }
+    leaf ln1 { type int8; }
+    leaf ln2 { type int16; }
+
+    container c1 {
+      // yes, we want duplicate names, for testing.
+      container c1 {
+        rwpb:msg-name TheRealC1;
+        leaf ln1 { type uint8; }
+        leaf ln2 { type uint16; }
+      }
+    }
+
+    list l1 {
+      key "lf1";
+      max-elements 5;
+      // yes, we want duplicate names, for testing.
+      list l1 {
+        rwpb:field-inline-max "20";
+        rwpb:field-tag "1000";
+        key "ln1";
+        leaf ln1 { type string; rwpb:field-string-max "256"; }
+        leaf ln2 { type uint16; }
+      }
+      leaf lf1 { type uint8; }
+    }
+  }
+  container top1testctype {
+    description "A container that uses things with messages";
+    rwpb:msg-new RwTop1ctype;
+
+    leaf mycfield { 
+      // ATTN: FIX ME: rwpb:field-c-type "rw_ip_addr_t";
+      type string;
+    }
+  }
+
+  container testjustone {
+    leaf j1 {
+      type just-one-enum;
+    }
+  }
+}
+

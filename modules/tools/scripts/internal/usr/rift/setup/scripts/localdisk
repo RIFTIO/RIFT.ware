@@ -1,0 +1,32 @@
+#!/bin/bash
+
+
+if [ `hostname -s` == boson ]; then
+	echo no localdisk on boson
+	exit 0
+fi
+disk=${1:-/localdisk}
+if [ ! -d $disk ]; then
+    echo $disk not found
+    exit 1
+fi
+
+
+if [[ `hostname -s` =~ ^rwkvm ]]; then
+	echo no localdisk on vms
+	exit 0
+fi
+
+echo Making user dirs under $disk ...
+
+userlist=$(ldapsearch -x '(objectClass=posixAccount)' | grep '^uid: ' | awk '{print $2}')
+users=$(echo "${userlist}" | paste -s -d,)
+cachedirs=$(echo ${disk}/{${users}}/.ccache)
+eval mkdir -p ${cachedirs}
+echo "${userlist}" | xargs -P 8 -I {} chown -R {}.{} ${disk}/{}
+if ! grep -q localdisk /etc/exports; then
+    echo "/localdisk *(rw,no_root_squash)" >>/etc/exports
+    exportfs -a
+    systemctl restart nfs
+fi
+

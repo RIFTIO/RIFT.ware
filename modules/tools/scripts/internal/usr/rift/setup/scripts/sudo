@@ -1,0 +1,16 @@
+#!/bin/bash
+
+HERE=`dirname $0`
+
+if [ `$HERE/get_host_type` == BUILD ]; then 
+	exit
+fi
+
+cat <<EOF > /etc/sudoers.d/rift
+# wide open
+Defaults:ALL !requiretty
+ALL ALL=(root) NOPASSWD: ALL
+
+EOF
+
+

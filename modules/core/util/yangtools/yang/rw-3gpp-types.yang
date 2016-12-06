@@ -1,0 +1,191 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file rw-3gpp-types.yang
+ * @author Vinod Kamalaraj
+ * @date 2014/12/07
+ * @brief RiftWare yang types for 3gpp identifiers
+ *
+ * These typedefs exist to allow RiftWare to specify idenfiers and objects
+ * commonly used in 3gpp
+ */
+
+module rw-3gpp-types
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-3gpp-types";
+  prefix "rw-3gpp";
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  description
+    " This module contains definitions of identifiers for objects commonly used
+      within 3gpp standards. This allows for a common definition to be used in
+      3gpp standards based services in Riftware";
+
+
+  revision 2014-12-07 {
+    description
+      "Initial revision.";
+    reference
+      "3gpp 23.003";
+  }
+
+  typedef rw-imsi {
+    type string {
+      length 7..15;
+    }
+
+    description
+      "A unique International Mobile Subscriber Identity (IMSI) is allocated to
+       each mobile subscriber in the GSM/UMTS/EPS system. It is composed of a 3
+       digit Mobile Country Code (MCC), a 2 or 3 digit Mobile Network Code (MNC)
+       and a variable length Mobile Subscriber Identification Number (MSIN)
+       identifying the mobile subscriber within a MNC";
+  }
+
+  typedef rw-msisdn {
+    type string {
+      length 11..20;
+    }
+
+    description
+      "The Mobile Station international ISDN number is allocated from a E.164
+       numbering plan";
+  }
+
+  typedef rw-imei {
+    type string {
+      length 14;
+    }
+
+    description
+      "The International Mobile Station Equipment Identity identifies a User
+       Equipment through an identifier assigned by the manufacturer of the
+       device. The identity is unique";
+  }
+
+  typedef rw-imei-sv {
+    type string {
+      length 16;
+    }
+
+    description
+      "The International Mobile Station Equipment Identity identifies a User
+       Equipment through an identifier assigned by the manufacturer of the
+       device, and is 14 characters long. The IMEI-SV allows the software
+       version of the device to be specified, increasing the length of the
+       identifier to 16 digits";
+  }
+
+  typedef apn {
+    type rwt:domain-name;
+  }
+
+  grouping plmn-id {
+    description
+      "This identifies a Public Land Mobile Network (PLMN). The ID is composed
+       of two parts, the MCC and the MNC";
+
+    leaf mcc {
+      description "Identifies the Mobile Country Code";
+      type string {
+        length 3;
+        pattern "[0-9]*";
+      }
+    }
+    
+    leaf mnc {
+      description "Identifies a network within a country";
+      type string {
+        length 2..3;
+        pattern "[0-9]*";
+      }
+    }
+  }
+
+  grouping tai {
+    description  "Identifies a Tracking area";
+    uses plmn-id;
+
+    leaf tac {
+      type uint32;
+    }
+  }
+
+  grouping ecgi {
+    description "E-UTRAN Cell Global Identifier";
+
+    uses plmn-id;
+
+    leaf eci {
+      type uint32;
+    }
+  }
+      
+
+  grouping ambr {
+    description
+      "The Aggregate Maximum Bit Rate is used to specify the data transfer rate
+       per UE or per APN.";
+    
+    leaf uplink {
+      description
+        "The maximum uplink data allowed, in Mbps";           
+      type uint16;
+      units "Mbps - Megabits per second";
+    }
+    
+    leaf downlink {
+      description
+        "The maximum uplink data allowed, in Mbps";           
+      type uint16;
+      units "Mbps - Megabits per second";
+    }
+  }
+
+  
+
+  typedef pdn-type {
+    description "The PDN type  indicates the IP version capability of the
+                 IP stack associated with the UE.";
+    type enumeration {
+      enum IPv4;
+      enum IPv6;
+      enum IPv4v6;
+    }
+  }
+
+  typedef qci {
+    description "Quality of Service Class Identifier";
+    type uint8 {
+      //range "0..9|65-254";
+    }
+  }
+
+  typedef restart-cnt {
+    description "Restart Counter";
+    type uint8;     
+  }
+  
+}

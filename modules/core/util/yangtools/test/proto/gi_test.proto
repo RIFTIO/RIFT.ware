@@ -1,0 +1,28 @@
+package proto_gi_example;
+import "descriptor.proto";
+import "rwpbapi.proto";
+
+message Person {
+  required string name = 1;
+  required int32  id = 2;
+  optional string email = 3 [ (rw_fopts) = {inline:true string_max:32} ];
+  repeated string aliases = 4;
+  optional bool   employed = 5;
+
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+
+  message PhoneNumber {
+    required string number = 11;
+    optional PhoneType ph_type = 12 [default = HOME];
+  };
+
+  repeated PhoneNumber phone = 6;
+  optional PhoneNumber emergencyPhone = 7;
+
+  repeated PhoneNumber phone_inline = 8 [ (rw_fopts) = {inline:true inline_max:100} ];
+  optional PhoneNumber emergencyPhone_inline = 9 [ (rw_fopts) = {inline:true} ];
+}

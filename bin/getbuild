@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+if [ -z "$RIFT_ROOT" ]; then
+    echo RIFT_ROOT not set. please load rift-shell >&2
+    exit 1
+fi
+
+if [ $# -ne 2 ]; then
+    echo "ERROR: Cmake binary directory and platform must be provided" >&2
+    exit 1
+fi
+BUILD_DIR="$1"
+
+echo platform is $2 >&2
+
+if ! which wget >/dev/null; then
+	echo "wget not found, install it with: sudo yum install wget" >&2
+	exit 1;
+fi
+
+cd $RIFT_ROOT
+release=$(cat RELEASE)
+if [ -z "$JOB_NAME" ]; then
+    echo "No Jenkins JOB_NAME" >&2
+    ALT_JOB_NAME=${ENV, var="JOB_NAME"}
+    echo "ALT_JOB_NAME=${ALT_JOB_NAME}" >&2
+    # not in Jenkins
+    if [ -f "${BUILD_DIR}/BUILD" ]; then 
+      # auto-increment makes upgrade testing easy
+      build=$(cat ${BUILD_DIR}/BUILD)
+      build=$(expr $build + 1)
+    else
+      build=1
+    fi
+else
+  if [ -f "${BUILD_DIR}/BUILD" ]; then 
+    build=$(cat ${BUILD_DIR}/BUILD)
+  else
+    githash=$(git rev-parse  HEAD)
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    username=$USER
+    hostname=$(hostname -s)
+    workspace=$RIFT_ROOT
+    jobname=$JOB_NAME
+    platform="$2"
+    args="githash=$githash&release=$release&branch=$branch&username=$username&hostname=$hostname&workspace=$workspace&jobname=$jobname&platform=$platform"
+    build=$(wget -O - -o /dev/null --post-data="$args" "${URL:-http://buildtracker}/postbuild/")
+    if [ -z "$build" ]; then
+        echo "Wget failed, data:$args" >&2
+        build=1
+    fi
+  fi
+fi
+
+echo build is $build >&2
+echo $build
+
+# used for RPM packaging
+export RIFT_BUILD_NUMBER=$build
+mkdir -p ${BUILD_DIR}
+echo -n $build >${BUILD_DIR}/BUILD
+echo -n ${release}.${build} >${BUILD_DIR}/VERSION
+

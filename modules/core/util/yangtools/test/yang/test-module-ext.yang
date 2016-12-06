@@ -1,0 +1,90 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module test-module-ext
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/test-module-ext";
+  prefix "tme";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description
+    "Test file for moduleext.cpp.";
+
+  revision 2014-05-06 {
+    description "Initial version";
+    reference "Testing Module Extension support";
+  }
+
+  grouping test-group {
+    container cont-in-group {
+      config true;
+      description "Test container in grouping.";
+
+      leaf str1 {
+        description "A string";
+        type string;
+      }
+
+      leaf num1 {
+        description "A number";
+        type int64;
+      }
+    }
+  }
+
+  container test-cont {
+    config true;
+    description "Test container.";
+    rwpb:msg-new Tx2pTestContA;
+
+    leaf str2 {
+      description "Another string";
+      type string;
+    }
+
+    leaf num2 {
+      description "Another number";
+      type int64;
+    }
+
+    leaf enum1 {
+      description "What happends to an enum?";
+      type enumeration {
+        enum zero;
+        enum one {
+          value 7;
+        }
+      }
+    }
+
+    leaf nothing {
+      description "Theres nothing inside";
+      type empty;
+    }
+
+    container here {
+      description "Try presence now";
+      presence  "Just presence";
+    }
+        
+    uses test-group;
+  }
+}

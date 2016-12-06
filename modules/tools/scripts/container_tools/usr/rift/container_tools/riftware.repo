@@ -1,0 +1,42 @@
+#
+# RIFT.ware
+# Source is available at https://github.com/RIFTIO/RIFT.ware
+#
+[RIFT.ware]
+name=RIFT.ware
+baseurl=http://repos.riftio.com/releases/riftware/release/fedora/20
+enabled=1
+metadata_expire=1m
+gpgcheck=0
+skip_if_unavailable=False
+#
+# open source projects modified and/or repackaged by RIFT.io
+# modified packages can be found in our github account https://github.com/RIFTIO/
+#
+[RIFT.packages]
+name=RIFT.ware Packages
+baseurl=http://repos.riftio.com/packages/fedora/20
+enabled=1
+metadata_expire=1m
+gpgcheck=0
+skip_if_unavailable=False
+#
+# miscelaneous packages that are not part of a stock fc20 distribution
+#
+[RIFT.misc]
+name=Misc Packages collected by RIFT.io
+baseurl=http://repos.riftio.com/mirrors/fedora/20/misc
+enabled=1
+metadata_expire=1m
+gpgcheck=0
+skip_if_unavailable=False
+#
+# RIFT.ware OSM
+#
+[RIFT.ware-OSM]
+name=RIFT.ware OSM
+baseurl=http://repos.riftio.com/public/releases/riftware/OSM/fedora/20
+enabled=1
+metadata_expire=1m
+gpgcheck=0
+skip_if_unavailable=False

@@ -1,0 +1,200 @@
+#!/bin/bash
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Lezz Giles
+# Creation Date: 08/29/2016
+# 
+# This script tries to follow https://google.github.io/styleguide/shell.xml
+#
+
+# This is a top-level installer for the RIFT.io software
+#
+# Arguments and options: use -h or --help
+#
+# dependencies -- requires sudo rights
+
+# Defensive bash programming flags
+set -o errexit    # Exit on any error
+trap 'echo "ERROR: Command failed at $BASH_SOURCE:$LINENO: \"$BASH_COMMAND\"" >&2' ERR
+
+set -o nounset    # Expanding an unset variable is an error.  Variables must be
+                  # set before they can be used.
+
+###############################################################################
+# Options and arguments
+
+params="$(getopt -o hl -l help,local --name "$0" -- "$@")"
+if [ $? != 0 ] ; then
+    echo "Failed parsing options." >&2
+    exit 1
+fi
+
+eval set -- $params
+
+LOCAL=false
+
+while true; do
+    case "$1" in
+	-h|--help)
+	    echo
+	    echo "NAME:"
+	    echo "  $0"
+	    echo
+	    echo "SYNOPSIS:"
+	    echo "  $0 -h|--help"
+	    echo "  $0 -l|--local [<mode> ]"
+	    echo "  $0 [<mode> [<RIFTWARE_REPOSITORY> [<RIFTWARE_VERSION>]]]"
+	    echo
+	    echo "DESCRIPTION:"
+	    echo "  Install RIFTware packages."
+	    echo
+	    echo "OPTIONS:"
+	    echo "  -l --local  install packages from the local workspace instead of a"
+	    echo "              remote repo"
+	    echo
+	    echo "ARGUMENTS:"
+	    echo
+	    echo "  mode: the set of packages to install, default is launchpad:"
+	    echo "    ui:       third-party packages needed to run launchpad"
+	    echo "    build:    third-party packages needed to build launchpad; includes ui"
+	    echo "    ext:   	RIFTware forked third-party packages needed to build and run"
+	    echo "              launchpad; includes build and ui"
+	    echo "    platform: RIFTware platform packages needed to build RIFTware mano and"
+	    echo "              ui; includes ext, build and ui."
+	    echo "    launchpad: installs launchpad from packages; includes platform, ext and ui"
+	    echo
+	    echo "  RIFTWARE_REPOSITORY (optional): name of the RIFT.ware repository."
+	    echo "  RIFTWARE_VERSION (optional): version of the platform packages to be installed."
+	    echo
+	    exit 0;;
+	-l|--local) LOCAL=true; shift;;
+	    
+	--) shift; break;;
+	*) echo "Not implemented: $1" >&2; exit 1;;
+    esac
+done
+
+readonly top=$(git rev-parse --show-toplevel)
+
+###############################################################################
+# Find the platform
+
+if grep -qi "Ubuntu 16.04" /etc/issue; then
+    readonly PLATFORM=ub16
+elif grep -qi "Fedora release 20" /etc/issue; then
+    readonly PLATFORM=fc20
+else
+    echo "This installer only runs on Ubuntu 16.04 or Fedora release 20." >&2
+    exit 1
+fi
+
+# Temporary check until we properly support fc20.  Allow installation of
+# an explicit build number from an explicit repo, but disallow installing from
+# defaults.
+if [[ $PLATFORM == fc20 && $# -ne 3 ]]; then
+    echo "You cannot currently use this script to install RIFT.ware on Fedora Core 20."
+    echo "This functionality is coming soon."
+    exit 1
+fi
+
+# Turn this on after handling options, so the output doesn't get cluttered.
+set -x             # Print commands before executing them
+
+###############################################################################
+# Get the mode
+
+if [[ $# -lt 1 ]]; then
+    echo "Must provide mode.  Use --help for details"
+    exit 1
+fi
+
+readonly MODE=${1:-launchpad}
+shift
+
+###############################################################################
+# Set up repo and version
+
+if $LOCAL; then
+    if [[ $# -gt 0 ]]; then
+	echo "Error: Cannot have --local or -l with repository"
+	exit 1
+    fi
+    readonly RIFTWARE_VERSION=$(cat $top/RELEASE).$(cat $top/build/BUILD)
+else
+    if [[ $PLATFORM == ub16 ]]; then
+	readonly RIFTWARE_REPOSITORY=${1:-release}
+	readonly RIFTWARE_VERSION=${2:-4.3.1.0.51336}
+    elif [[ $PLATFORM == fc20 ]]; then
+	readonly RIFTWARE_REPOSITORY=${1:-OSM}  # change to OSM when published
+	readonly RIFTWARE_VERSION=${2:-4.3.1.0.50310}
+    else
+	echo "Internal error: unknown platform $PLATFORM"
+	exit 1
+    fi
+fi
+
+###############################################################################
+# Main block
+
+if [[ $PLATFORM == ub16 ]]; then
+    # enable the right repos
+    curl http://repos.riftio.com/public/xenial-riftware-public-key | sudo apt-key add -
+
+    if $LOCAL; then
+	gpg -a --export | sudo apt-key add -
+	if [[ ! -d $top ]]; then
+	    echo "Not in a git repository!"
+	    exit 1
+	fi
+	rm -fr $top/.local.repo/ubuntu
+	mkdir -p $top/.local.repo/ubuntu/pool/xenial/riftware
+	for package in `find $top/ -name \*.deb`; do
+	    cp -f $package $top/.local.repo/ubuntu/pool/xenial/riftware
+	done
+	$top/modules/tools/CI/packaging/make-debian-repo $top/.local.repo/ubuntu xenial
+	echo "deb [arch=amd64] file:$top/.local.repo/ubuntu xenial riftware" | sudo tee /etc/apt/sources.list.d/local-workspace.list
+	
+    else
+	sudo curl -o /etc/apt/sources.list.d/${RIFTWARE_REPOSITORY}.list \
+	     http://buildtracker.riftio.com/repo_file/ub16/${RIFTWARE_REPOSITORY}/
+    fi
+    sudo apt-get update
+        
+    # install the RIFT platform tools:
+    sudo apt-get install -y rw.tools-container-tools=${RIFTWARE_VERSION} rw.tools-scripts=${RIFTWARE_VERSION}
+    
+elif [[ $PLATFORM == fc20 ]]; then
+    
+    # enable the right repos
+    sudo curl -o /etc/yum.repos.d/${RIFTWARE_REPOSITORY}.repo \
+	 http://buildtracker.riftio.com/repo_file/fc20/${RIFTWARE_REPOSITORY}/
+    
+    temp=$(mktemp -d /tmp/rw.XXX)
+    pushd $temp
+
+    sudo yum install -y rw.tools-container-tools-${RIFTWARE_VERSION} rw.tools-scripts-${RIFTWARE_VERSION}
+
+else
+    echo "Internal error: unknown platform $PLATFORM" >&2
+    exit 1
+fi
+
+# Install all required packages; this includes the RIFT platform code and tools
+# and install of the packages required to run launchpad.
+sudo /usr/rift/container_tools/mkcontainer --modes $MODE --rw-version ${RIFTWARE_VERSION}
+
+sudo chmod 777 /usr/rift /usr/rift/usr/share
+    

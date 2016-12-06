@@ -1,0 +1,46 @@
+#!/bin/bash -e
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+# This script recursively shows the status of each submodule that is changed
+# check that you are a top level
+if [ ! -f .gitmodules ] ; then
+    echo "$(basename $0) can only be executed from top (supermodule) level"
+    exit 1
+fi
+
+
+echo "Diffs in supermodule"
+meld .
+echo ""
+
+# Get the diff in each submodule
+do_submodule_difftool() {
+        name="$1"
+        path="$2"
+        toplevel="$3"
+        cd "$toplevel/$path"
+        if [[ $(git status -s) ]] ; then
+                echo "Diffs in submodule $name"
+                meld .
+        fi
+}
+
+export -f do_submodule_difftool
+
+git submodule foreach --quiet --recursive 'echo "$name $path $toplevel"' |
+xargs -r -n3 -P20 bash -c 'do_submodule_difftool "$@"' do_submodule_difftool

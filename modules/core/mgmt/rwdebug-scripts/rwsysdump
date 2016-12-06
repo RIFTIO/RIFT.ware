@@ -1,0 +1,238 @@
+#!/bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+#
+# @date 01/10/2015
+# @brief Takes system dump of the VM
+# @details Takes a set of information from the VM
+#          on which it is run for debug purposes
+#
+
+DATE_STR=`date '+%Y-%m-%d_%H-%M-%S'`
+NUM_LOG_LINES=100
+
+if [ -z "${RIFT_INSTALL}" ]
+then
+  echo "Warning: RIFT_INSTALL not set. Sysdump might not retrieve all information."
+  RIFT_HOME_DIR="/tmp"
+else
+  RIFT_HOME_DIR=${RIFT_INSTALL}
+fi
+
+SYSDUMP_DIR="${RIFT_HOME_DIR}/rwsysdump_${DATE_STR}"
+VMINFO_FILE="${SYSDUMP_DIR}/vminfo.txt"
+LOG_DIR="${SYSDUMP_DIR}/logs"
+CONFD_LOG_DIR="${LOG_DIR}/confd"
+COREDUMP_DIR="${SYSDUMP_DIR}/core_dump"
+DUMP_TO_STDOUT=0
+
+if [[ $1 ]] && [[ $1 == "--stdout" ]]; then
+  DUMP_TO_STDOUT=1
+fi
+
+# copy a file if it exists, preserving permissions
+do_safe_cp()
+{
+  file="$1"
+  dest="$2"
+  if [ -f "$file" ]; then
+    cp -p "$file" "$dest"
+  fi
+}
+
+# copy a file if it exists, preserving permissions
+# and then gzip it
+do_safe_cp_zip()
+{
+  file="$1"
+  dest="$2"
+  fname=`basename $1`
+
+  if [ -e "$file" ]; then
+    cp -p "$file" "$dest"
+    gzip "$dest/$fname"
+  fi
+}
+
+# Function to dump command output
+exec_command()
+{
+  local command_name="$*"
+  echo "=================================================="
+  echo "Result of '${command_name}':"
+  echo ""
+  echo "`${command_name} 2>&1`"
+  echo ""
+  echo "--------------------------------------------------"
+  echo ""
+}
+
+fetch_confd_logs()
+{
+  if [ ${DUMP_TO_STDOUT} -eq 0 ]; then
+    confd_wss=`find ${RIFT_HOME_DIR} -maxdepth 4 -type d -name 'persist*' -o -name 'unique_ws*'`
+    for confd_ws in ${confd_wss}; do
+      base_confd_ws=`basename ${confd_ws}`
+      confd_logs=`find ${confd_ws} -name '*.log*' -o -name '*.trace*'`
+      for log in ${confd_logs}; do
+        mkdir -p ${CONFD_LOG_DIR}/${base_confd_ws}
+        do_safe_cp ${log} ${CONFD_LOG_DIR}/${base_confd_ws}
+      done
+    done
+  fi
+}
+
+display_core_bts()
+{
+  #ATTN: Core files are expected to be written to ${RIFT_HOME_DIR} ?
+  core_files=`find ${RIFT_HOME_DIR} -maxdepth 1 -name '*core*' | grep -E '[0-9]$'`
+  for core in ${core_files}; do
+    if [ -e "${core}.txt" ]; then
+      cat ${core}.txt
+    else
+      exe_name=`file ${core} | tr "'" ' ' | cut -d ' ' -f 14`
+      gdb `which ${exe_name}` --core ${core} --batch --quiet -ex "thread apply all bt" -ex "quit"
+    fi
+  done
+}
+
+fetch_core_files()
+{
+  if [ ${DUMP_TO_STDOUT} -eq 1 ]; then
+    display_core_bts
+    return
+  fi
+
+  #ATTN: Core files are expected to be written to ${RIFT_HOME_DIR} ?
+  core_files=`find ${RIFT_HOME_DIR} -maxdepth 1 -name '*core*' | grep -E '[0-9]$'`
+  for core in ${core_files}; do
+    ln -s ${core} ${COREDUMP_DIR}/`basename ${core}`
+    if [ -e "${core}.txt" ]; then
+      do_safe_cp "${core}.txt" ${COREDUMP_DIR}
+    else
+      exe_name=`file ${core} | tr "'" ' ' | cut -d ' ' -f 14`
+      gdb `which ${exe_name}` --core ${core} --batch --quiet -ex "thread apply all bt" -ex "quit" > ${core}.txt
+      do_safe_cp "${core}.txt" ${COREDUMP_DIR}
+      rm -rf ${core}.txt
+    fi
+  done
+}
+
+fetch_var_log()
+{
+  if [ ${DUMP_TO_STDOUT} -eq 0 ]; then
+    journalctl --since "10 days ago" > ${LOG_DIR}/journalctl_messages
+    gzip ${LOG_DIR}/journalctl_messages
+    if [ $? == 0 ]; then
+      rm -rf ${LOG_DIR}/journalctl_messages
+    fi
+    do_safe_cp /var/log/rift/rift.log ${LOG_DIR}
+ fi
+}
+
+fetch_schema_listing()
+{
+  echo "=================================================="
+  echo ""
+  echo "SCHEMA LISTING : "
+  find ${RIFT_HOME_DIR}/var/rift -type d
+  echo "--------------------------------------------------"
+  echo "" 
+  find ${RIFT_HOME_DIR}/var/rift  -name 'schema' -type d | xargs find | xargs ls -l
+  echo "--------------------------------------------------"
+  echo ""
+}
+
+fetch_system_info()
+{
+  exec_command 'uname -a'
+  exec_command 'uptime'
+  exec_command 'free'
+  exec_command 'df -h -l'
+  exec_command 'cat /proc/meminfo'
+  if [ -f /etc/rift.vm ]; then
+    exec_command 'cat /etc/rift.vm'
+  fi 
+  exec_command 'cat /proc/cpuinfo'
+  exec_command 'ifconfig -a'
+  exec_command 'route -n'
+  exec_command 'netstat -anp'
+  exec_command 'ps -ALww -o user,pid,ppid,tid,pcpu,psr,pri,nice,vsize,rss,majflt,tty,stat,wchan=WIDE-WCHAN-COLUMN -o start,bsdtime,command' 
+  exec_command 'who -a' 
+  if [ ${RIFT_PLATFORM} = "ub16" ]
+  then
+    exec_command 'apt list --installed'
+  else 
+    exec_command 'rpm -qa'
+  fi
+  fetch_schema_listing
+  if [ ${RIFT_PLATFORM} = "ub16" ]
+  then
+    exec_command "sudo tail -${NUM_LOG_LINES} /var/log/syslog"
+  else 
+    exec_command "sudo tail -${NUM_LOG_LINES} /var/log/messages"
+  fi
+}
+
+create_dirs()
+{
+  mkdir ${SYSDUMP_DIR}
+  mkdir -p ${LOG_DIR}
+  mkdir -p ${COREDUMP_DIR}
+  mkdir -p ${CONFD_LOG_DIR}
+}
+
+setup_out_fds()
+{
+  if [ ${DUMP_TO_STDOUT} -eq 0 ]
+  then
+    create_dirs
+    exec 1> ${VMINFO_FILE}
+  fi
+}
+
+main()
+{
+  setup_out_fds
+
+  # Vminfo header
+  echo "=================================================="
+  echo "System information:"
+  echo ""
+  echo "Hostname: "`uname -n`
+  echo "Date:     ${DATE_STR}"
+  UPTIME_STRING=`cat /proc/uptime | awk '{fs=$1; d=int(fs/86400); fs=fs-d*86400; h=int(fs/3600); fs=fs-h*3600; m=int(fs/60); fs=fs-m*60; s=int(fs); fs=fs-s; print d "d " h "h " m "m " s "s\n"}'`
+  echo "Uptime:   ${UPTIME_STRING}"
+  echo ""
+
+  fetch_system_info
+  fetch_var_log
+  fetch_confd_logs
+  fetch_core_files
+
+  if [ ${DUMP_TO_STDOUT} -eq 0 ]; then
+    ## zip the sysdump dir
+    tar cpfz ${SYSDUMP_DIR}.tar.gz -C ${RIFT_HOME_DIR} `basename ${SYSDUMP_DIR}`
+    if [ $? -eq 0 ]
+    then
+      rm -rf ${SYSDUMP_DIR}
+    fi
+  fi
+}
+
+
+main

@@ -1,0 +1,93 @@
+#!/bin/bash
+
+##
+## returns a simple string (no newline) with the rift.io office site: eng, blr, or unknown
+##
+## uses the IP, second octet and the subnetting data from: https://confluence.riftio.com/display/IT/Ip+subnetting
+## stops at the first 10.x IP it finds
+##
+
+#
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+# functions
+function cmd_exists () {
+    type "$1" > /dev/null 2>&1;
+}
+
+function eng() {
+	echo -n "eng";
+	exit 0;
+}
+
+function blr() {
+	echo -n "blr";
+	exit 0;
+}
+
+function unknown() {
+	echo -n "unknown";
+	exit 1;
+}
+
+# get all non-localhost IP addresses
+# some OSes don't have ifconfig anymore by default, lets try a few options
+if cmd_exists ifconfig; then
+	IPS=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+elif cmd_exists ip; then
+	IPS=$(ip a | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+else
+	echo "Error. Couldn't find ifconfig or ip command."
+	exit 1;
+fi
+
+# debug
+#echo "# IPS: "
+#echo "${IPS}"
+
+while read -r ip; do
+
+	#echo "---------------------------"
+	#echo "# checking $ip"
+
+	# split IP on the dots and break into octets
+	arrDots=(${ip//./ })
+	oct1=${arrDots[0]}
+	oct2=${arrDots[1]}
+	oct3=${arrDots[2]}
+	oct4=${arrDots[3]}
+
+	# debug
+	#echo "OCT: $oct1-$oct2-$oct3-$oct4"
+
+	# found a 10.x network
+	if [ $oct1 -eq 10 ]; then
+
+		# Burlington	10.64.0.0/12 (10.64 -> 10.79)
+		# Bangalore	10.96.0.0/12 (10.96 -> 10.111)
+
+		if [ $oct2 -gt 63 -a $oct2 -lt 80 ]; then
+			eng
+		elif [ $oct2 -gt 95 -a $oct2 -lt 112 ]; then
+			blr
+		fi
+
+	fi
+
+done <<< "${IPS}"
+
+# last resort
+unknown

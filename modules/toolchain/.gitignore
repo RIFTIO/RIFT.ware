@@ -1,0 +1,15 @@
+# Object file directories
+.obj
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.elc
+auto-save-list
+tramp
+.\#*
+
+# vi
+*.swp

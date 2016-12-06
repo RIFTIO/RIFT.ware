@@ -1,0 +1,478 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file vehicle-a.yang
+ * @author Max Beckett
+ * @date 7/17/2015
+ * @brief YANG definition for unit testing rwrestconf 
+ */
+
+module vehicle-a
+{
+  namespace "http://riftio.com/ns/core/mgmt/rwrestconf/test/vehicle-a";
+  prefix "vehicle-a";
+
+  description "RestConf test yang";
+  revision 2015-07-17 {
+    description "Initial version"; 
+  }
+
+  list car {
+
+    key "brand";
+
+    leaf brand {
+      type string;
+    }
+
+    leaf country-of-origin {
+      type string;
+    }
+
+    list models {
+      key "name-m";
+      
+      leaf name-m {
+        type string;
+      }
+
+      leaf year {
+        type uint32;
+      }
+
+      leaf capacity {
+        type uint8;
+      }
+
+      leaf is-cool {
+        type boolean;
+      }
+
+      leaf version-str {
+        type string;
+      }
+      
+    }
+  }
+
+  container whatever {
+    container inner-whatever {
+      list list-whatever {
+        key "name-lw";
+        leaf name-lw {
+          type string;
+        }
+      }
+    }
+  }
+
+
+  container top-container-shallow {
+    leaf a {
+      type string;
+    }
+  }
+
+  list top-list-shallow {
+    key "k";
+    leaf k {
+      type string;
+    }
+  }
+
+  container top-container-deep {
+    leaf a {
+      type string;
+    }
+
+    list inner-list-shallow {
+      key "k";
+      leaf k {
+        type string;
+      }
+    }
+
+    container inner-container {
+      leaf a{
+        type string;
+      }
+      list inner-list {
+        key "k";
+        leaf k {
+          type string;
+        }
+      }
+
+    }
+
+    list inner-list-deep {
+      key "k";
+      leaf k {
+        type string;
+      }
+      container inner-container-shallow {
+        leaf a {
+          type string;
+        }
+      }
+      container inner-container-deep {
+        list bottom-list-shallow {
+          key "k";
+          leaf k {
+            type string;
+          }          
+        }
+      }
+    }
+
+  }
+
+  list top-list-deep {
+      key "k";
+      leaf k {
+        type string;
+      }
+      list inner-list {
+        key "k";
+        leaf k {
+          type string;
+        }
+        leaf a {
+          type string;
+        }
+        container inner-container {
+          leaf a{
+            type string;
+          }
+        }
+      }
+
+      container inner-container-shallow {
+        leaf a{
+          type string;
+        }
+      }
+      container inner-container-deep {
+        list bottom-list-shallow {
+          key "k";
+          leaf k {
+            type string;
+          }          
+        }
+      }
+    }
+
+  container clash {
+    leaf foo {
+      type string;
+    }
+  }
+
+  list multi-key {
+    key "foo bar";
+    leaf foo {
+      type string;
+    }
+    leaf bar {
+      type string;
+    }
+    
+    leaf treasure {
+      type uint32;
+    }
+
+  }
+
+  rpc ping {                                                                     
+    input {                                                                          
+      leaf in {                                                                      
+        type boolean;                                                                     
+      }                                                         }
+    output {                                                                          
+      leaf out {                                                                      
+        type boolean;                                                                     
+      }                                                                            
+    }                                                                             
+  }
+  rpc in-and-out {                                                                     
+    input {                                                                          
+      leaf in {                                                                      
+        type string;
+      }
+    }
+    output {                                                                          
+      leaf out {                                                                      
+        type string;                                                                     
+      }                                                                            
+    }                                                                             
+  }
+
+  rpc in-no-out {                                                                     
+    input {                                                                          
+      leaf in {                                                                      
+        type string;
+      }
+    }
+  }
+
+  rpc in-list-no-out {                                                                     
+    input {                                                                          
+      list in {
+        key "k";
+        leaf k {
+          type string;
+        }
+      }
+    }
+  }
+
+
+  identity identity-base {
+    description "Testing base identity";    
+  }
+
+  identity identity-sub {
+    base "identity-base";
+  }
+  container misc {
+
+    leaf binary-leaf {
+      type binary {
+        length "1..20";
+      }
+    }
+
+    leaf bool-leaf {
+      type boolean;
+    }
+
+    leaf empty-leaf {
+      type empty;
+    }
+
+    leaf enum-leaf {
+      type enumeration {
+        enum a;
+        enum b;
+      }
+    }
+
+    leaf identityref-leaf {
+      type identityref {
+        base "identity-base";
+      }
+    }
+
+    leaf int-leaf {
+      type int32;
+    }
+
+    leaf instance-identifier-leaf {
+      type instance-identifier;
+    }
+
+    list list-a {
+      key "id";
+      leaf id {
+        type uint8;
+      }
+      leaf foo {
+        type string;
+      }
+    }
+
+    list list-b {
+      key "id";
+      leaf id {
+        type uint8;
+      }
+      leaf leafref-to-list-a {
+        type leafref {
+          path "../../list-a[id=current()/../id]/foo";
+        }
+      }    
+    }
+  
+    list numbers {
+      key "int8-leaf";
+      
+      leaf int8-leaf {
+        type int8;
+      }
+
+      leaf int16-leaf {
+        type int16;
+      }
+
+      leaf int32-leaf {
+        type int32;
+      }
+
+      leaf int64-leaf {
+        type int64;
+      }
+
+      leaf uint8-leaf {
+        type uint8;
+      }
+
+      leaf uint16-leaf {
+        type uint16;
+      }
+
+      leaf uint32-leaf {
+        type uint32;
+      }
+
+      leaf uint64-leaf {
+        type uint64;
+      }
+
+      leaf decimal-leaf {
+        type decimal64 {
+          fraction-digits 2;
+        }
+      }
+    }
+  }
+
+  notification notif {
+    container cont {
+      list dict {
+        key "name";
+        leaf name { type string; }
+        leaf value { type string; }
+      }
+      leaf cont-leaf { type boolean; }
+    }
+    leaf top-leaf { type uint32; }
+  }
+
+  rpc exec-ns-config-primitive {
+    description "Executes a NS level primite or script";
+
+    input {
+      leaf name {
+        description "Name of the NS primitive";
+        type string;
+      }
+
+      leaf nsr_id_ref {
+        description "Reference to NSR ID ref";
+        type string;
+      }
+
+      list vnf-primitive-group {
+        description
+            "List of configuration primitives grouped by VNF.";
+
+        key "member-vnf-index-ref";
+        leaf member-vnf-index-ref {
+          description
+              "Reference to member-vnf within constituent-vnfds";
+          type uint64;
+        }
+
+        leaf vnfr-id-ref {
+          description
+              "A reference to a vnfr. This is a 
+               leafref to path";
+          type string;
+        }
+
+        list primitive {
+          key "name";
+          leaf name {
+            description "the name of the primitive";
+            type string;
+          }
+     
+          leaf value {
+            description "the value of the primitive";
+            type string;
+          }
+        }
+      }
+
+      leaf user-defined-script {
+        description
+            "A user defined script.";
+        type string;
+      }
+    }
+    output {
+      leaf nsr-id-ref {
+        description "Reference to NSR ID ref";
+        type string;
+      }
+
+      leaf execution-id {
+        description "The NS level execution id";
+        type string;
+      }
+      leaf execution-status {
+        description "NS level status of the Execution:
+                     This could  be,
+                       SUCCESS,
+                       FAILURE,
+                       PARTIAL-FAILURE and the details of the failure";
+        type string;
+      }
+
+      list vnf-primitive-group {
+        description
+            "List of configuration primitives grouped by VNF.";
+
+        key "member-vnf-index-ref";
+        leaf member-vnf-index-ref {
+          description
+              "Reference to member-vnf within constituent-vnfds";
+          type uint64;
+        }
+
+        leaf vnfr-id-ref {
+          description
+              "A reference to a vnfr. This is a 
+               leafref to path";
+          type string;
+        }
+
+        list primitive {
+          key "name";
+          leaf name {
+            description "the name of the primitive";
+            type string;
+          }
+          leaf execution-id {
+            description "Execution id of the primitive";
+            type string;
+          }
+          leaf execution-status {
+            description "status of the Execution";
+            type string;
+          }
+        }
+      }
+    }
+  }
+}
+

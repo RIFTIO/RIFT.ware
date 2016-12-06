@@ -1,0 +1,798 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file data-rwfpath.yang
+ * @author Rajesh Velandy
+ * @date 2013/04/04
+ * @brief RiftWare CLI Results Yang for fastpath
+ */
+
+module other-data_rwfpath
+{
+  namespace "urn:ietf:params:xml:ns:yang:rift:data";
+  prefix "rwfpath";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  revision 2014-03-31 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Trafgen Application";
+  }
+
+  typedef rwfpath-base-string {
+    type string {
+      length "1..256";
+    }
+  }
+
+  grouping ip-nexthops{
+      list nexthops{
+          max-elements 10;
+          key "lportname gateway";
+          
+          leaf gateway{
+              type rwt:ipv4-address;
+              rwpb:field-string-max 16;
+          }
+          leaf lportname{
+              type string;
+              rwpb:field-string-max 64;
+          }
+      }
+  }
+  
+  grouping ip-nhrec-info{
+      container ip-nhrec-info {
+          rwpb:msg-new NhrecInfo;
+          rwpb:msg-flat true;
+          rwpb:field-inline "true";
+          
+          list nhrec{
+              rwpb:field-inline-max yang;
+              max-elements 32;
+              
+              key "nhrec";
+              
+              leaf nhrec{
+                  type uint32;
+              }
+              uses ip-nexthops;
+          }
+      }
+  }
+  container ip-nhrec-info{
+      uses ip-nhrec-info;
+  }
+  
+  container ip-route-info{
+      rwpb:msg-new IpRouteInfo;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      list route{
+          rwpb:field-inline-max yang;
+          max-elements 32;
+
+          key "prefix";
+
+          leaf prefix {
+              type rwt:ipv4-prefix;
+              rwpb:field-string-max 19;
+          }
+          leaf nhrec{
+              type uint32;
+          }
+          uses ip-nexthops;
+      }
+  }
+
+
+  container ip-arp-info{
+      rwpb:msg-new IpArpInfo;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      list arp{
+          rwpb:field-inline-max yang;
+          max-elements 32;
+          
+          key "address";
+
+          leaf address {
+              type rwt:ipv4-address;
+              rwpb:field-string-max 16;
+          }
+          leaf mac{
+              type rwt:mac-address;
+              rwpb:field-string-max 18;
+          }
+          leaf lportname{
+              type string;
+              rwpb:field-string-max 64;
+          }
+      }
+  }
+
+
+  container ip-intf-info{
+      rwpb:msg-new IpIntfInfo;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      list interface{
+          rwpb:field-inline-max yang;
+          max-elements 32;
+          
+          key "lportid";
+          
+          leaf lportid {
+              type uint32;
+          }
+          leaf name{
+              type string;
+              rwpb:field-string-max 64;
+          }
+          leaf state{
+              type string;
+              rwpb:field-string-max 10;
+          }
+          leaf address {
+              type rwt:ipv4-address;
+              rwpb:field-string-max 16;
+          }
+      }
+  }
+
+
+  container ip-filter-info{
+      rwpb:msg-new IpFilterInfo;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      list filter{
+          rwpb:field-inline-max yang;
+          max-elements 32;
+          
+          key "inodeid";
+          
+          leaf inodeid {
+              type uint32;
+          }
+          leaf lportname{
+              type string;
+              rwpb:field-string-max 64;
+          }
+          leaf bpflen{
+              type uint32;
+          }
+      }
+  }
+
+  container ip-acl-info{
+      rwpb:msg-new IpAclInfo;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      list acl{
+          rwpb:field-inline-max yang;
+          max-elements 32;
+          
+          key "name";
+          
+          leaf name {
+              type string;
+              rwpb:field-string-max 64;
+          }
+      }
+  }
+  
+  container lport-info{
+      rwpb:msg-new LportInfo;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+      list lport{
+          key "id";
+          
+          max-elements 128;
+          
+          leaf name {
+              type string;
+              rwpb:field-string-max 64;
+              description "Logical Port Name";
+          }
+          
+          leaf id {
+              type uint32;
+              description "lport-id";
+          }
+      }
+  }
+  
+  container port-info {
+    rwpb:msg-new RwPortInfo;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+    list port {
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      key "id";
+
+      leaf name {
+        type string;
+        rwpb:field-string-max 256;
+        description "Port Name";
+      }
+
+      leaf id {
+        type rwt:port-number;
+        description "Port Identifier";
+      }
+
+      leaf state {
+        type uint32;
+        description "Port State, UP(1)/Down(0)";
+      }
+      leaf speed {
+        type uint32;
+        description "Port speed in Mbps";
+      }
+      leaf duplex {
+        type uint32;
+        description "Port duplex, half-duplex(0)/full-duplex(1)";
+      }
+      leaf app-name {
+        type string;
+        rwpb:field-string-max 32;
+        description "Name of the application running on the port";
+      }
+      leaf receive-queues {
+        type rwt:gauge32;
+        description "Number of receice queues on the port";
+      }
+      leaf transmit-queues {
+        type rwt:gauge32;
+        description "Number of transmit queues on the port";
+      }
+    }
+  }
+
+  grouping rx_queue_stats {
+    leaf rx_qid {
+      type uint32;
+      description "Receive Queue Id";
+    }
+    leaf rx-rate-pps {
+       type rwt:gauge32;
+       description "Rx Rate(pps)";
+     }
+     leaf rx-rate-mbps {
+       type rwt:gauge32;
+       description "Rx Rate(Mbps)";
+     }
+     leaf input-packets {
+       type rwt:zero-based-counter64;
+       description "Input packets";
+     }
+     leaf input-bytes-MB {
+       type rwt:zero-based-counter64;
+       description "Total In bytes(MB)";
+     }
+  }
+
+
+  grouping tx_queue_stats {
+     leaf tx_qid {
+       type uint32;
+       description "Receive Queue Id";
+     }
+     leaf tx-rate-pps {
+       type rwt:gauge32;
+       description "Tx Rate(pps)";
+     }
+     leaf tx-rate-mbps {
+       type rwt:gauge32;
+       description "Tx Rate(Mbps)";
+     }
+     leaf output-errors {
+       type rwt:zero-based-counter32;
+       description "Output Errors";
+     }
+     leaf output-packets {
+       type rwt:zero-based-counter64;
+       description "Output packets";
+     }
+     leaf output-bytes-MB {
+       type rwt:zero-based-counter64;
+       description "Total Out Bytes(MB)";
+     }
+  }
+
+
+  container port-queue_stat {
+    rwpb:msg-new RwPortQueueStat;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+    rwpb:msg-proto-max-size "156584";
+
+    list port {
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      key "id";
+
+      leaf name {
+        type string;
+        rwpb:field-string-max 256;
+        description "Port Name";
+      }
+
+      leaf id {
+        type rwt:port-number;
+        description "Port Identifier";
+      }
+
+      list rx_queue {
+        rwpb:field-inline-max yang;
+        max-elements 16;
+
+        key "rx_qid";
+        
+        uses rx_queue_stats;
+      }
+
+      list tx_queue {
+        rwpb:field-inline-max yang;
+        max-elements 40;
+
+        key "tx_qid";
+        
+        uses tx_queue_stats;
+      }
+    }
+  }
+
+
+  container trafgen-info {
+    rwpb:msg-new RwTrafgenInfo;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+    list port {
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      key "id";
+
+      leaf name {
+        type string;
+        rwpb:field-string-max 256;
+        description "Port Name";
+      }
+
+      leaf id {
+        type rwt:port-number;
+        description "Port Identifier";
+      }
+      leaf tx_state {
+        type uint32;
+        description "Current state of Trafgen trasmit off (0), on (1)";
+      }
+      leaf tx_rate {
+        type uint32;
+        description "Configured Tx Rate";
+      }
+      leaf tx_count {
+        type uint32;
+        description "Counfigured Tx Count";
+      }
+      leaf pkt_size {
+        type uint32;
+        description "size of packet transmitted on the port";
+      }
+      leaf tx_burst {
+        type uint32;
+        description " transmit burst size on the port";
+      }
+      leaf src_l4_port {
+        type uint32;
+        description "Source L4 port of Transmitted packet";
+      }
+      leaf dst_l4_port {
+        type uint32;
+        description "Destination L4 port of Transmitted packet";
+      }
+      leaf src_ip_address {
+        type rwt:ip-address;
+        rwpb:field-string-max 16;
+        description "source ip address of Transmitted packet";
+      }
+      leaf dst_ip_address {
+        type rwt:ip-address;
+        rwpb:field-string-max 16;
+        description "destination ip address of Transmitted packet";
+      }
+      leaf src_mac_address {
+         type rwt:mac-address;
+         rwpb:field-string-max 18;
+        description "source mac address of Transmitted packet";
+      }
+      leaf dst_mac_address {
+         type rwt:mac-address;
+         rwpb:field-string-max 18;
+        description "destination mac address of Transmitted packet";
+      }
+    }
+  }
+
+  container port-stat {
+    rwpb:msg-new RwPortStat;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+    list port {
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      key "id";
+
+      leaf name {
+        type string;
+        rwpb:field-string-max 256;
+        description "Port Name";
+      }
+
+      leaf id {
+        type rwt:port-number;
+        description "Port Identifier";
+      }
+
+      leaf state {
+        type uint32;
+        description "Port State, UP(1)/Down(0)";
+      }
+      leaf speed {
+        type uint32;
+        description "Port speed in Mbps";
+      }
+      leaf duplex {
+        type uint32;
+        description "Port duplex, half-duplex(0)/full-duplex(1)";
+      }
+      leaf rx-rate-pps {
+        type rwt:gauge32;
+        description "Rx Rate(pps)";
+      }
+      leaf tx-rate-pps {
+        type rwt:gauge32;
+        description "Tx Rate(pps)";
+      }
+      leaf rx-rate-mbps {
+        type rwt:gauge32;
+        description "Rx Rate(Mbps)";
+      }
+      leaf tx-rate-mbps {
+        type rwt:gauge32;
+        description "Tx Rate(Mbps)";
+      }
+      leaf input-errors {
+        type rwt:zero-based-counter32;
+        description "Input Errors";
+      }
+      leaf output-errors {
+        type rwt:zero-based-counter32;
+        description "Output Errors";
+      }
+      leaf input-packets {
+        type rwt:zero-based-counter64;
+        description "Input packets";
+      }
+      leaf output-packets {
+        type rwt:zero-based-counter64;
+        description "Output packets";
+      }
+      leaf input-bytes {
+        type rwt:zero-based-counter64;
+        description "Total In bytes(MB)";
+      }
+      leaf output-bytes {
+        type rwt:zero-based-counter64;
+        description "Total Out Bytes(MB)";
+      }
+    }
+  }
+
+  container work-info {
+    rwpb:msg-new RwWorkInfo;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+    list work {
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      key "id";
+
+      leaf id {
+        type uint32;
+        description "Id";
+      }
+
+      leaf type {
+        type string;
+        rwpb:field-string-max 16;
+        description "Type";
+      }
+
+      leaf port-id {
+        type rwt:port-number;
+        description "Port Id";
+      }
+      leaf port-name {
+        type rwfpath-base-string;
+        rwpb:field-string-max 256;
+        description "Port Name";
+      }
+      leaf q-id {
+        type int32;
+        description "qid";
+      }
+      leaf work-instance-id {
+        type int32;
+        description "Work instance Id";
+      }
+      leaf lcore-id {
+        type int32;
+        description "lcore Assigned";
+      }
+    }
+  }
+
+  container lcore-info {
+    rwpb:msg-new RwLcoreInfo;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+    list lcore {
+      rwpb:field-inline-max yang;
+      max-elements 64;
+
+      key "id";
+
+      leaf id {
+        type uint32;
+        description "Id";
+      }
+
+      leaf socket {
+        type int32;
+        description "Socket";
+      }
+
+      leaf core-id {
+        type uint32;
+        description "Core Id";
+      }
+
+      leaf thread-status {
+          type string;
+          rwpb:field-string-max 256;
+          description "Thread Status";
+      }
+
+      leaf thread-type {
+          type string;
+          rwpb:field-string-max 256;
+          description "Thread Type";
+      }
+
+      leaf tx-q-id {
+        type uint32;
+        description "Tx Q Id";
+      }
+      leaf num-works {
+        type uint32;
+        description "Num works Assigned"; 
+      }
+    }
+  }
+
+  container lcore-id-info {
+    rwpb:msg-new RwLcoreIdInfo;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+    leaf id {
+      type uint32;
+      description "Id";
+    }
+    list work {
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      key "work-id";
+
+      leaf work-id {
+        type uint32;
+        description "Work Id";
+      }
+
+      leaf work-type {
+        type string;
+        rwpb:field-string-max 16;
+        description "Work Type";
+      }
+    }
+  }
+
+  container pcap-info {
+    rwpb:msg-new RwPcapInfo;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+    leaf port-id {
+        type rwt:port-number;
+        description "Port Identifier";
+    }
+
+    leaf file-name {
+      type rwfpath-base-string;
+      rwpb:field-string-max 256;
+      description "File Name";
+    }
+
+    leaf magic {
+      type uint32;
+      description "Magic";
+    }
+
+    container version {
+      leaf low {
+        type uint32;
+        description "Version Low";
+      }
+      leaf high {
+        type uint32;
+        description "Version High";
+      }
+    }
+
+    leaf zone {
+      type uint32;
+      description "Zone";
+    }
+
+    leaf snaplen {
+      type uint32;
+      description "SnapLen";
+    }
+
+    leaf sigflags {
+      type uint32;
+      description "SigFlags";
+    }
+
+    leaf network {
+      type uint32;
+      description "Network";
+    }
+
+/* Commenting out for now -- Need to fix compilation issues with PB C structures 
+    leaf endian {
+      type enumeration {
+        enum little {
+          value 1; // RV TODO - check with Sanil
+          description "Little Endian";
+        }
+        enum big {
+          value 2; // RV TODO - check with Sanil
+          description "Big Endian";
+        }
+      }
+      description "Endian";
+    }
+*/
+    leaf packet-count {
+      type uint64;
+      description "PacketCount";
+    }
+  }
+
+  
+  
+ container return_status {
+    rwpb:msg-new ReturnStatus;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+
+    leaf error_number {
+      type int32;
+      description "Error number";
+    }
+    leaf error_string {
+      type string;
+      rwpb:field-string-max 128;
+      description "Error string value";
+    }
+  }     
+ 
+ container lcore_thread-info {
+     rwpb:msg-new RwFpDebugLcoreThreadInfo;
+     rwpb:msg-flat true;
+     rwpb:field-inline "true";
+     
+     leaf lcore-id {
+         type int32;
+         description "lcore Id";
+     }
+
+     leaf thread-type {
+         type string;
+         rwpb:field-string-max 256;
+         description "Thread Type";
+     }
+
+     leaf tx-q-id {
+         type uint32;
+         description "Tx Q Id";
+     }
+     
+     list work_queue {
+         rwpb:field-inline-max yang;
+         max-elements 32; // TBD
+
+         key "work_id";
+
+         leaf work_id{
+             type uint32;
+             description "Work instance Id";
+         }
+         leaf work_type{
+             type string;
+             rwpb:field-string-max 256;
+             description "Work Type";
+         }
+         leaf port-id {
+             type rwt:port-number;
+             description "Port Id";
+         }
+         leaf q-id {
+             type int32;
+             description "q-id";
+         }
+         leaf i-id {
+             type int32;
+             description "i-id";
+         }         
+     } //Work Info
+ } // thread-info
+     
+} // module data_rwfpath

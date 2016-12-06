@@ -1,0 +1,956 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module other-config_rwfpath
+{
+  namespace "urn:ietf:params:xml:ns:yang:rift:config";
+  prefix "rwfpath";
+
+  import other-config_rwfpath_base {
+    prefix rwbase;
+  }
+
+  import rw-cli-ext { 
+    prefix "rwcli";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  revision 2014-03-31 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Trafgen Application";
+  }
+
+  grouping range-param-attr {    
+      leaf ip-version {
+          type uint16;
+      }
+      leaf protocol{
+          type uint16;
+      }
+      
+      container destination-mac {
+          leaf start {
+              type rwt:mac-address;
+              rwpb:field-string-max 18;
+          }
+          leaf minimum {
+              type rwt:mac-address;
+              rwpb:field-string-max 18;
+          }
+          leaf maximum {
+              type rwt:mac-address;
+              rwpb:field-string-max 18;
+          }
+          leaf increment {
+              type uint16;
+          }
+          container dynamic{
+              leaf gateway{
+                  description "destination ip address of the generated packet";
+                  type rwt:ipv4-address;
+                  rwpb:field-string-max 16;
+              }
+          }
+      }
+      
+      container source-ip {
+          leaf start {
+              type rwt:ip-address;
+              rwpb:field-string-max 16;
+              mandatory "true";
+          }
+          leaf minimum {
+              type rwt:ip-address;
+              rwpb:field-string-max 16;
+              mandatory "true";
+          }
+          leaf maximum {
+              type rwt:ip-address;
+              rwpb:field-string-max 16;
+              mandatory "true";
+          }
+          leaf increment {
+              type uint16;
+              mandatory "true";
+          }
+      }
+      
+      container destination-ip {
+          leaf start {
+              type rwt:ip-address;
+              rwpb:field-string-max 16;
+              mandatory "true";
+          }
+          leaf minimum {
+              type rwt:ip-address;
+              rwpb:field-string-max 16;
+              mandatory "true";
+          }
+          leaf maximum {
+              type rwt:ip-address;
+              rwpb:field-string-max 16;
+              mandatory "true";
+          }
+          leaf increment {
+              type uint16;
+              mandatory "true";
+          }
+      }
+      
+      container source-port {
+          leaf start {
+              type rwt:port-number;
+              mandatory "true";
+          }
+          leaf minimum {
+              type rwt:port-number;
+              mandatory "true";
+          }
+          leaf maximum {
+              type rwt:port-number;
+              mandatory "true";
+          }
+          leaf increment {
+              type uint16;
+              mandatory "true";
+          }
+      }
+      
+      container destination-port {
+          leaf start {
+              type rwt:port-number;
+              mandatory "true";
+          }
+          leaf minimum {
+              type rwt:port-number;
+              mandatory "true";
+          }
+          leaf maximum {
+              type rwt:port-number;
+              mandatory "true";
+          }
+          leaf increment {
+              type uint16;
+              mandatory "true";
+          }
+      }
+      
+      container packet-size {
+          leaf start {
+              type uint16;
+              mandatory "true";
+          }
+          leaf minimum {
+              type uint16;
+              mandatory "true";
+          }
+          leaf maximum {
+              type uint16;
+              mandatory "true";
+          }
+          leaf increment {
+              type uint16;
+              mandatory "true";
+          }
+      }
+  }
+  
+  grouping range-template {
+      container range-template {
+          description "Modify the paramaters for a range of packets";
+          choice port-id-range {
+              case all{
+                  container all {
+                      rwcli:new-mode "range-template";
+                      uses range-param-attr;
+                  }
+              }
+              case id {
+                  list port {
+                      key "id";
+                      rwpb:field-inline-max yang;
+                      max-elements 32;
+                      rwcli:new-mode "range-template";
+                      description
+                          "This is a template for specifying the contents of packets generated
+         by trafgen application. This template allows the specfiying the
+         ranges for destination mac address, source ip address, destination 
+         ip address, source port, destination port and packet sizes. For each
+         of these ranges minimum and maximum values can be specified. The
+         increment value specifies how the values are picked between minimum
+         and maximum values. It is also possible to specify and ip version
+         and L3 protocol type using this template.";
+                    leaf id {
+                        description "Identifier of the port for which traffic need to be generated";
+                        type uint32;
+                    }
+                    uses range-param-attr;
+                }
+              }
+          }
+    }
+  }
+  
+  grouping template-attr {
+    leaf ip-version {
+      type uint16;
+    }
+    leaf protocol{
+      type uint16;
+    }
+    leaf packet-size {
+      description "Size of packet to be generated";
+      type uint32;
+    }
+    leaf source-port {
+      description "IP L4 Source Port of the generated packet";
+      type uint16;
+    }
+    leaf destination-port {
+      description "IP L4 Destination Port of the generated packet";
+      type uint16;
+    }
+    leaf destination-ip{
+        description "destination ip address of the generated packet";
+        type rwt:ipv4-address;
+        rwpb:field-string-max 16;
+    }
+    leaf source-ip{
+        description "source ip address of the generated packet";
+        type rwt:ipv4-prefix;
+        rwpb:field-string-max 19;
+    }
+    container destination-mac{
+        container dynamic{
+            leaf gateway{
+                description "destination ip address of the generated packet";
+                type rwt:ipv4-address;
+                rwpb:field-string-max 16;
+                mandatory "true";
+            }
+        }
+        leaf mac{
+            rwpb:field-string-max 18;
+            type rwt:mac-address;
+        }
+    }
+  }
+
+  grouping single-template {
+   container single-template {
+      description "Modify the paramaters for a single packet";
+      choice port-id-range {
+        case all {
+          container all {
+              rwcli:new-mode "single-template";
+              uses single-attr;
+          }
+        }
+        case id {
+          list port {
+            key "id";
+            rwpb:field-inline-max yang;
+            max-elements 32;
+
+            rwcli:new-mode "single-template";
+            description
+              "This template allows specifying the contents of packets generated
+               by trafgen application. This template supports specfiying the
+               destination mac address, source ip address, destination 
+               ip address, source port, destination port and packet sizes. 
+               It is also possible to specify and ip version
+               and L3 protocol type using this template.";
+            leaf id {
+              description "Identifier of the port for which traffic need to be generated";
+              type uint32;
+            }
+            uses single-attr;
+          }
+        }
+      }
+    }
+  }
+  grouping single-attr {
+      uses template-attr;
+  }
+  
+  grouping sequence-attr {    
+      list sequence {
+          key "id";
+          rwcli:new-mode "sequence-id";
+          rwpb:field-inline-max yang;
+          max-elements 32;
+          leaf id {
+              description "Sequence Id";
+              type uint32;
+          }
+
+          uses template-attr;
+      }
+  }
+  grouping sequence-template {
+      container sequence-template {
+      rwpb:msg-proto-max-size "258100";
+      description "Modify the paramaters for a sequence of packets";
+      choice port-id-range {
+          case all {
+              container all {
+                  rwcli:new-mode "sequence-template";
+                  uses sequence-attr;
+              }
+          }
+          case id {
+              list port {
+                  key "id";
+                  rwpb:field-inline-max yang;
+                  max-elements 32;
+                  
+                  rwcli:new-mode "sequence_template";
+                  description
+       "This is a template for specifying the contents of packets generated
+        by trafgen application. This template allows specification of 
+        ip version, l3 protocol, destination mac, source ip, destination ip,
+        source port, destination port and packet size. Note that this template
+        is a list and can contain one or more streams of such packets. If the 
+        list size is one, all the generated packets will have the same 
+        attributes.";
+                  leaf id {
+                      description "Identifier of the port for which traffic need to be generated";
+                      type uint32;
+                  }
+                  uses sequence-attr;
+              }
+          }
+      }
+      }
+  }
+
+  grouping transmit-param-attr {
+    leaf tx-rate {
+      description "Transmit rate as percentage of port speed";
+      type uint32;
+    }
+    leaf packet-count {
+      description "Total number of packets to be generated(default to unlimited)";
+      type uint32;
+    }
+    leaf burst-size {
+      description "Burst size  in no of packets be generated";
+      type uint32;
+    }
+    leaf tx-cycles {
+      description "transmit cycle of the gernated traffic";
+      type uint32;
+    }
+  }
+
+
+  grouping transmit-params {
+    container transmit-param {
+      choice port-id-range {
+        case all {
+          container all {
+            rwcli:new-mode "transmit-param";
+            uses transmit-param-attr;
+          }
+        }
+        case id {
+          list port {
+            description
+             "This is a template for specifying the attributes for packet generation
+              such as transmit rate, packet count, burst size ...";
+
+            rwcli:new-mode "transmit-param";
+            rwpb:field-inline-max yang;
+            max-elements 32;
+    
+            key "id";
+    
+            leaf id {
+              description "Port Identifier for which transmit params need to be changed";
+              type uint32;
+            }
+            uses transmit-param-attr;
+          }
+        }
+      }
+    }
+  }
+
+
+
+  grouping receive-params {
+    container receive-param {
+      choice port-id-range {
+        case all {
+          container all {
+            rwcli:new-mode "receive-param";
+             container receive-echo {
+              leaf on {
+                  type boolean;
+              }
+            }
+          }
+        }
+        case id {
+          list port {
+            description
+             "This is a template for specifying the attributes for packet generation
+              such as transmit rate, packet count, burst size ...";
+
+            rwcli:new-mode "receive-param";
+            rwpb:field-inline-max yang;
+            max-elements 32;
+    
+            key "id";
+    
+            leaf id {
+              description "Port Identifier for which transmit params need to be changed";
+              type uint32;
+            }
+            container receive-echo {
+              leaf on {
+                  type boolean;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping trafgen-template {
+    container trafgen {
+      rwcli:new-mode "trafgen";
+      rwpb:msg-new ConfigTrafgen;
+      rwpb:msg-flat "true";
+      rwpb:msg-proto-max-size "293128";
+
+
+      choice template-type {
+        case range-template {
+          uses range-template;
+        }
+        case sequence-template {
+          uses sequence-template;
+        }
+        case single-template {
+          uses single-template;
+        }
+        case trans-params {
+          uses transmit-params;
+        }
+        case rx-params {
+          uses receive-params;
+        }
+      }
+    }
+  } // grouping trafgen-template
+
+  grouping trafgen-service {
+    container trafgen-service {
+      description
+        "This is a container for trafgen service related parameters.";
+
+      rwcli:new-mode "trafgen-service";
+      rwpb:msg-new ConfigTrafgenService;
+      rwpb:msg-flat "true";
+
+      list interface {
+        rwpb:field-inline-max yang;
+        max-elements 32;
+        description
+          "List of interfaces that should participate in traffic generation.
+           Note that each interface is also associated with a trafgen template.";
+
+        leaf name {
+          type leafref {
+            path "/config/sector/vpn-context/ip-interface/name";
+          }
+        }
+
+        leaf template {
+          type leafref {
+            path "/config/sector/vpn-context/trafgen-template/name";
+          }
+        }
+      }
+
+      leaf start {
+        type empty;
+      }
+
+      leaf stop {
+        type empty;
+      }
+    }
+  }
+
+/*
+  augment /rwbase:config/rwbase:service-realm/rwbase:port/rwbase:ethernet {
+
+    // enable/disable the port
+    leaf shutdown {
+      description "shutdown the interface";
+      type empty;
+    }
+    container no {
+      leaf shutdown {
+        description "open the interface";
+        type empty;
+      }
+    }
+
+    // Descriptor ring configutaion
+
+  } // port augment
+
+  augment /rwbase:config/rwbase:service-realm/rwbase:vpn-context {
+    uses trafgen-template;
+    uses trafgen-service;
+  }
+
+*/
+  augment /rwbase:node/rwbase:config {
+    uses trafgen-template;
+  }
+
+  augment /rwbase:node/rwbase:start {
+    container traffic {
+      choice port-id-range {
+        case  all {
+          leaf all {
+            type empty;
+          }
+        }
+        case  port-id {
+          leaf port-id {
+            type uint32;
+          }
+        }
+      }
+    }
+  }
+
+  augment /rwbase:node/rwbase:stop {
+    container traffic {
+      choice port-id-range {
+        case  all {
+          leaf all {
+            type empty;
+          }
+        }
+        case  port-id {
+          leaf port-id {
+            type uint32;
+          }
+        }
+      }
+    }
+  }
+
+  augment /rwbase:node/rwbase:config {
+
+    list port {
+      rwcli:new-mode " port";
+      key "name";
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      leaf name {
+        description "Name of the port";
+        rwpb:field-string-max 256;
+        type string;
+      }
+      container open {
+          description "open the specified port";
+          container application{
+              description "Application that is using this port. Default is IPFP";
+              leaf ip-fastpath{
+                  type boolean;
+              }
+              leaf trafgen{
+                  type boolean;
+              }  
+          }
+      }
+      leaf receive-q-length {
+          description "No of receive queues for the port. default is 2";
+          type uint32;
+      }
+      
+      container descriptors {
+          leaf rx-size {
+              description "Size of rx descriptor ring. default is 256";
+              type uint32;
+          }
+          leaf tx-size {
+              description "Size of tx descriptor ring. default is 256";
+              type uint32;
+          }
+      }
+
+      // Flow control configuration for the port
+      container flow-control {
+          leaf flow-type {
+              description "none|rx|tx|both";
+              type string;
+              rwpb:field-string-max 5;
+          }
+          leaf high-watermark {
+              type uint32;
+              mandatory "true";
+          }
+          leaf low-watermark {
+              type uint32;
+              mandatory "true";
+          }
+          leaf pause-time {
+              type uint32;
+              mandatory "true";
+          }
+          leaf xon-status {
+              type boolean;
+              mandatory "true";
+          }
+      }
+      
+      container bind {
+          description "bind the port to a logical interface";
+          leaf interface{
+              description "interface name";
+              rwpb:field-string-max 64;
+              mandatory "true";
+              type string;
+          }
+          leaf network-context{
+              description "network context name";
+              rwpb:field-string-max 64;
+              mandatory "true";
+              type string;
+          }
+      }
+    }
+  }
+
+
+  grouping component-context{
+    leaf network-context{
+      description "Network context";
+      type string;
+      rwpb:field-string-max 64;
+    }
+    leaf fpath{
+      description "Lists information from the FastPath component";
+      type boolean;
+    }
+  }
+  
+  
+  augment /rwbase:node/rwbase:show {
+    container port {
+      rwpb:msg-new ShowPortCounters;
+      rwpb:msg-flat "true";
+
+      description "Shows port related counters/stats";
+      choice port-id-range  {
+        case all {
+          leaf all {
+            description "List all the available ports";
+            type empty;
+          }
+        }
+        case port-id {
+          leaf port-id {
+            description "Show detailed information for the specified port";
+            type uint32;
+          }
+        }
+      }
+      container counters {
+        description "Lists brief port statistics the ports";
+        // rwcli:cli-print-hook "rwcli_plugin-python:default_print";
+        choice port-id-range  {
+          case all {
+            leaf all {
+              description "Lists brief port statistics for all the ports";
+              type empty;
+            }
+          }
+          case port-id {
+            leaf port-id {
+              description "Lists detailed port statistics for the specified port id";
+              type uint32;
+            }
+          }
+        }
+      }
+      container queues {
+        description "Lists brief per queue statistics the ports";
+        container counters {
+          description "Lists brief port statistics the ports";
+          choice port-id-range  {
+            case all {
+              leaf all {
+                description "Lists brief port statistics for all the ports";
+                type empty;
+              }
+            }
+            case port-id {
+              leaf port-id {
+                description "Lists detailed port statistics for the specified port id";
+                type uint32;
+              }
+            }
+          }
+        }
+      }
+    }
+    container trafgen {
+      rwpb:msg-new ShowTrafgen;
+      rwpb:msg-flat "true";
+
+      description "Shows trafgen state for ports";
+      choice port-id-range  {
+        case all {
+          leaf all {
+            description "List trafgen informationf for all the available ports";
+            type empty;
+          }
+        }
+        case port-id {
+          leaf port-id {
+            description "Show trafgen information for the specified port";
+            type uint32;
+          }
+        }
+      }
+    }
+
+    container ip{
+      container route{
+        uses component-context;
+      }
+      container nexthop-record{
+        uses component-context;
+      }
+      container interface{
+        uses component-context;
+      }
+      container arp{
+        uses component-context;
+      }
+      container filter{
+        uses component-context;
+      }
+      container acl{
+        uses component-context;
+      }
+    }
+    container logical-port{
+      uses component-context;
+    }
+  }
+
+  augment /rwbase:commit {
+    container foo {
+    }
+  }
+
+  augment /rwbase:node {
+    container foo {
+    }
+  }
+
+  augment /rwbase:node/rwbase:clear {
+    container port {
+      rwpb:msg-new ClearPort;
+      rwpb:msg-flat "true";
+      container counters {
+        leaf all {
+          description "Clear statistics for all the ports";
+          type empty;
+        }
+        leaf port-id {
+          description "Clear statistics for the specified port id";
+          type uint32;
+        }
+      }
+    }
+  }
+
+  augment /rwbase:logging {
+    leaf level {
+      description "Specify logging level - Allowed values are emergency, alert, critical, error, warn, notice, info, debug";
+      rwpb:field-string-max 256;
+      type string;
+    }
+  }
+  
+  augment /rwbase:config {
+      uses rwbase:network-context;
+  }
+
+  augment /rwbase:config/network-context {
+    list  lb-profile {
+      rwcli:new-mode "lb-profile";
+      key "name";
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      leaf name {
+        description "Name of lb-profile";
+        rwpb:field-string-max 256;
+        type string;
+      }
+      
+      list destination-nat {
+        key "real-ip";
+        rwpb:field-inline-max yang;
+        max-elements 32;
+
+        leaf real-ip {
+          type rwt:ip-address;
+          rwpb:field-string-max 16;
+          mandatory "true";
+        }
+        leaf tcp-port {
+          type uint16;
+          mandatory "true";
+        }
+        leaf udp-port {
+          type uint16;
+          mandatory "true";
+        }
+        leaf source-ip {
+          type rwt:ip-address;
+          rwpb:field-string-max 16;
+          mandatory "true";
+        }
+      }
+    }
+    list load-balancer {
+      rwcli:new-mode "load-balancer";
+      key "name";
+      rwpb:field-inline-max yang;
+      max-elements 32;
+
+      leaf name {
+        description "Name of load-balancer";
+        rwpb:field-string-max 256;
+        type string;
+      }
+
+      leaf virtual-ip {
+        type rwt:ip-address;
+        rwpb:field-string-max 16;
+        mandatory "true";
+      }
+      leaf tcp-port {
+        type uint16;
+        mandatory "true";
+      }
+      leaf udp-port {
+        type uint16;
+        mandatory "true";
+      }
+      leaf lb-profile {
+        rwpb:field-string-max 256;
+        type string;
+        mandatory "true";
+      }
+    }
+  }
+
+  augment /rwbase:node {
+    container fpath-debug {
+      rwpb:msg-new FpathDebug;
+      rwpb:msg-flat "true";
+      container show {
+        description "Show operation";
+              
+        container thread {
+          description "Information on thread";
+          leaf lcore {
+            type uint32;
+            description "Core Id";
+          }
+        } //thread
+        leaf work {
+          type boolean;
+          description "Information on work";
+        } //thread
+        leaf lcore {
+          type boolean;
+          description "Information on lcore";
+        } //lcore
+        
+      } //show   
+      container start {
+        description "Start operation";
+        container thread {
+          leaf lcore {
+            type uint32;
+            description "Core Id";
+          }
+        } //thread
+        leaf fast-path {
+          type boolean;
+          description "fast path";
+        } //fast-path
+      } //start
+      container stop {
+        container thread {
+          description "Stop operation";
+          leaf lcore {
+            type uint32;
+            description "Core Id";
+          }
+        } //thread
+        leaf fast-path {
+          type boolean;
+          description "fast path";
+        } //fast-path
+      } //stop
+      container assign {
+        description "Assign operation";       
+        leaf work-id {
+          type uint32;
+          description "Work Id";
+        }
+        leaf lcore-id {
+          type uint32;
+          description "lcore-id";
+        }
+        
+      } //assign
+    } //fpath-debug container
+  }
+  
+} // module config_rwfpath

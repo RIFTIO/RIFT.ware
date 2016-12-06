@@ -1,0 +1,171 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+/**
+ * @file test-json-schema-case.yang
+ * @brief Test YangNode to Json conversion
+ */
+
+module test-json-schema-case
+{
+  namespace "http://riftio.com/ns/riftware-1.0/test-yang-json.yang";
+  prefix "tjsc";
+
+  import ietf-inet-types {
+    prefix "inet";
+  }
+
+  typedef union1 {
+     type union {
+       type string;
+       type enumeration {
+          enum RWCAT_E_A { value 1; }
+          enum RWCAT_E_B { value 2; }
+       }
+     }
+  }
+
+  container top {
+    description "Top Container";
+
+    list abc {
+      key "lone";
+      leaf lone {
+        type string;
+      }
+
+      choice leaf_choice {
+        case leaf_one {
+          leaf ltwo {
+            type empty;
+          }
+          leaf lthree {
+            type empty;
+          }
+        }
+
+        case list-two {
+          list lldb {
+            key "comm";
+            leaf comm {
+              type string;
+            }
+            choice list-ch {
+              case a {
+                leaf al {
+                  type empty;
+                }
+              }
+              case b {
+                leaf bl {
+                  type empty;
+                }
+              }
+            }
+          } // end list
+        }
+
+        case list-three {
+          list gdb {
+            key "bt";
+            leaf bt {
+              type string;
+            }
+
+            choice opt {
+              case d {
+                leaf d1 {
+                  type empty;
+                }
+              }
+              case e {
+                leaf e1 {
+                  type empty;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    container choice-cont {
+      description "An example with choice statement";
+
+      choice leaf_choice {
+        case leaf_one {
+          leaf lone {
+            type empty;
+          }
+          leaf ltwo {
+            type empty;
+          }
+        }
+      }
+
+      choice action {
+        case annex {
+          container annex {
+            leaf component-name {
+              description "Name of the component type in the inventory";
+              type string;
+            }
+            leaf instance-id {
+              description "ID of the component instance in the inventory";
+              type string;
+            }
+            leaf instance-name {
+              description "Name of the component instance in the inventory";
+              type string;
+            }
+          }
+        }
+
+        case start {
+          container start {
+            leaf component-name {
+              description "Name of the component type in the inventory";
+              type string;
+            }
+            leaf instance-id {
+              description "ID of the component instance in the inventory";
+              type string;
+            }
+            leaf instance-name {
+              description "Name of the component instance in the inventory";
+              type string;
+            }
+          }
+        }
+
+        case sleep {
+          container sleep {
+            leaf wait-time-usec {
+              description "Time to wait while sleeping";
+              type uint32;
+            }
+          }
+        }
+      } // choice action
+    }
+
+  }
+}
+

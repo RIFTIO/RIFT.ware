@@ -1,0 +1,638 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file test-max-proto-buf-size.yang
+ * @author Shaji Radhakrishnan
+ * @date 2014/07/29
+ * @brief yangpbc test file for extensions
+ */
+
+module test-max-proto-buf-size
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/test-max-proto-buf-size";
+  prefix "test-max-proto-buf-size";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "Module test-max-proto-buf-size testing for yangpbc.";
+  revision 2014-07-29 { description "Initial version"; }
+
+  identity test-max-proto-buf-size-base {
+    description "basic identity";
+  }
+
+  container maxtest {
+    description "A container that uses things with messages";
+    rwpb:msg-new Maxtest1;
+    rwpb:msg-flat "true";
+    rwpb:msg-proto-max-size "4176";
+
+    leaf ln1 { type int8; }
+    leaf ln2 { type int16; }
+    leaf ls1 { type string { length "1028"; } }
+    //leaf ls1 { type string { length "40"; } }
+  }
+
+  container blrtest1 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest1;
+    rwpb:msg-flat "true";
+    rwpb:msg-proto-max-size "100000";
+
+    leaf ln1 { type int8; }
+    leaf ln2 { type int16; }
+    leaf ls1 { type string { length "20..40"; } }
+    container blrtest1in {
+      description "A container that uses things with messages";
+      rwpb:msg-new Blrtest1in;
+
+      leaf ln4 { type int8; }
+      leaf ln5 { type int16; }
+      leaf ls6 { type string { length "20..40"; } }
+    }
+  }
+
+  container blrtest1001 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest1001;
+    rwpb:msg-flat "true";
+
+    leaf ln1 { type int8; }
+    leaf ln2 { type int16; }
+    leaf ls1 { type string { length "20..40"; } }
+
+    container blrtest2001 {
+      description "A container that uses things with messages";
+      rwpb:msg-new Blrtest2001;
+
+      leaf ln1 { type int8; }
+      leaf ln2 { type int16; }
+      leaf ls1 { type string { length "20..40"; } }
+
+      container blrtest3001 {
+        description "A container that uses things with messages";
+        rwpb:msg-new Blrtest3001;
+
+        leaf ln1 { type int8; }
+        leaf ln2 { type int16; }
+        leaf ls1 { type string { length "20..40"; } }
+
+        container blrtest4001 {
+          description "A container that uses things with messages";
+          rwpb:msg-new Blrtest4001;
+
+          leaf ln1 { type int8; }
+          leaf ln2 { type int16; }
+          leaf ls1 { type string { length "20..40"; } }
+        }
+      }
+    }
+
+    container blrtest2005 {
+      description "A container that uses things with messages";
+      rwpb:msg-new Blrtest2005;
+
+      leaf ln1 { type int8; }
+      leaf ln2 { type int16; }
+      leaf ls1 { type string { length "20..40"; } }
+
+      container blrtest3005 {
+        description "A container that uses things with messages";
+        rwpb:msg-new Blrtest3005;
+
+        leaf ln1 { type int8; }
+        leaf ln2 { type int16; }
+        leaf ls1 { type string { length "20..40"; } }
+
+        container blrtest4005 {
+          description "A container that uses things with messages";
+          rwpb:msg-new Blrtest4005;
+
+          leaf ln1 { type int8; }
+          leaf ln2 { type int16; }
+          leaf ls1 { type string { length "20..40"; } }
+        }
+      }
+    }
+  }
+
+
+  container blrtest2 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest2;
+
+    leaf ln1 { type int8; }
+    leaf ln2 { type int16; }
+    leaf ls1 { type string { length "20..40"; } }
+  }
+
+  container blrtest3 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest3;
+    rwpb:msg-flat "true";
+
+    leaf ln1 { type int8; }
+    leaf ln2 { type int16; }
+    leaf ls1 { type string { length "20..40"; } }
+  }
+
+  container blrtest4 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest4;
+
+    leaf ln41 { type int8; }
+    leaf ln42 { type int16; }
+    leaf ls43 { type string { length "20..40"; } }
+
+    container c41 {
+      rwpb:msg-name TheRealC4;
+      rwpb:msg-new TheRealC4;
+
+      leaf lnc41 { type uint8; }
+      leaf lnc42 { type uint16; }
+      leaf lsc43 { type string { length "20..40"; } }
+    }
+  }
+
+  container blrtest5 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest5;
+    rwpb:msg-flat "true";
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c51 {
+      rwpb:msg-name TheRealC51;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+  container blrtest6 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest6;
+    rwpb:msg-flat "true";
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c61 {
+      rwpb:msg-name TheRealC61;
+      rwpb:msg-new TheRealC61;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+
+
+  container blrtest7 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest7;
+    rwpb:msg-flat "true";
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c71 {
+      rwpb:msg-name Newc71;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+
+    container c72 {
+      rwpb:msg-name Newc72;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+
+  container blrtest8 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest8;
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c81 {
+      rwpb:msg-name Newc81;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+
+    container c82 {
+      rwpb:msg-name Newc82;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+
+
+  container blrtest9 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest9;
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c91 {
+      rwpb:msg-name Newc91;
+      rwpb:msg-flat "true";
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+
+    container c92 {
+      rwpb:msg-name Newc92;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+
+  container blrtest10 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest10;
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c10 {
+      rwpb:msg-name Newc10;
+      rwpb:msg-flat "true";
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+      container d01 {
+        rwpb:msg-name Newd01;
+
+        leaf lnc51 { type uint8; }
+        leaf lnc52 { type uint16; }
+        leaf lsc53 { type string { length "20..40"; } }
+      }
+    }
+  }
+
+  container blrtest11 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest11;
+    rwpb:msg-flat "true";
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c11 {
+      rwpb:msg-name Nc11;
+      rwpb:msg-flat "true";
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+      container d11 {
+        rwpb:msg-name Nd11;
+
+        leaf lnc51 { type uint8; }
+        leaf lnc52 { type uint16; }
+        leaf lsc53 { type string { length "20..40"; } }
+        container d12 {
+          rwpb:msg-name Dn12;
+
+         leaf lnc51 { type uint8; }
+         leaf lnc52 { type uint16; }
+         leaf lsc53 { type string { length "20..40"; } }
+        }
+      }
+    }
+  }
+
+  container blrtest13 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest13;
+    rwpb:msg-flat "true";
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c13n {
+      rwpb:msg-name Nc13;
+      rwpb:msg-flat "true";
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+      container nd13 {
+        rwpb:msg-name N0d13;
+
+        leaf lnc51 { type uint8; }
+        leaf lnc52 { type uint16; }
+        leaf lsc53 { type string { length "20..40"; } }
+        container ppd13 {
+          rwpb:msg-name Pd13;
+
+         leaf lnc51 { type uint8; }
+         leaf lnc52 { type uint16; }
+         leaf lsc53 { type string { length "20..40"; } }
+        }
+      }
+    }
+
+    container sd13 {
+      rwpb:msg-name Pd13;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+
+  container blrtest14 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest14;
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c14 {
+      rwpb:msg-name Newc14;
+      rwpb:msg-flat "true";
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+
+      container test {
+        rwpb:msg-name Newtest;
+
+        leaf lnc51 { type uint8; }
+        leaf lnc52 { type uint16; }
+        leaf lsc53 { type string { length "20..40"; } }
+
+        container new001 {
+          rwpb:msg-name Nnew001;
+
+         leaf lnc51 { type uint8; }
+         leaf lnc52 { type uint16; }
+         leaf lsc53 { type string { length "20..40"; } }
+        }
+      }
+    }
+
+    container d142 {
+      rwpb:msg-name Nd142;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+  container blrtest40 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest40;
+    rwpb:msg-flat "true";
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c10 {
+      rwpb:msg-name C10nnnn;
+      rwpb:msg-flat "true";
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+      container p01 {
+        rwpb:msg-name S01;
+
+        leaf lnc51 { type uint8; }
+        leaf lnc52 { type uint16; }
+        leaf lsc53 { type string { length "20..40"; } }
+      }
+    }
+
+    container r01 {
+      rwpb:msg-name R01new;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+  container blrtest44 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest44;
+    rwpb:msg-flat "true";
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c10 {
+      rwpb:msg-name C10new;
+      rwpb:msg-flat "true";
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+      container d01 {
+        rwpb:msg-name D01new;
+
+        leaf lnc51 { type uint8; }
+        leaf lnc52 { type uint16; }
+        leaf lsc53 { type string { length "20..40"; } }
+      }
+    }
+
+    container r01 {
+      rwpb:msg-name R01new;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+  container blrtest70 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest70;
+    rwpb:msg-flat "true";
+
+    leaf ln51 { type int8; }
+    leaf ln52 { type int16; }
+    leaf ls53 { type string { length "20..40"; } }
+
+    container c10 {
+      rwpb:msg-name C101;
+      rwpb:msg-flat "true";
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+      container d01 {
+        rwpb:msg-name D010;
+
+        leaf lnc51 { type uint8; }
+        leaf lnc52 { type uint16; }
+        leaf lsc53 { type string { length "20..40"; } }
+      }
+    }
+
+    container d01 {
+      rwpb:msg-name D010;
+
+      leaf lnc51 { type uint8; }
+      leaf lnc52 { type uint16; }
+      leaf lsc53 { type string { length "20..40"; } }
+    }
+  }
+
+  container blrtest444 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest444;
+    rwpb:msg-flat "true";
+
+    leaf ln1 { type int8; }
+    leaf ln2 { type int16; }
+    leaf ls1 { type string { length "20..40"; } }
+
+    container normal {
+      rwpb:msg-name Normal1;
+      leaf ln1 { type uint8; }
+      leaf ln2 { type uint16; }
+    }
+
+    list list4 {
+      key "lf1";
+      max-elements 4;
+      list list20 {
+        rwpb:field-inline-max "20";
+        //rwpb:field-tag "1000";
+        key "ln1";
+        leaf ln1 { type string; rwpb:field-string-max "256"; }
+        leaf ln2 { type uint16; }
+      }
+      leaf lf1 { type uint8; }
+    }
+  }
+
+  container blrtest445 {
+    description "A container that uses things with messages";
+    rwpb:msg-new Blrtest445;
+    rwpb:msg-flat "true";
+
+    leaf ln1 { type int8; }
+    leaf ln2 { type int16; }
+    leaf ls1 { type string { length "20..40"; } }
+
+    container normal66 {
+      rwpb:msg-name Normal166;
+      leaf ln1 { type uint8; }
+      leaf ln2 { type uint16; }
+    }
+
+    list list476 {
+      key "lf18";
+      max-elements 4;
+      list list2008 {
+        rwpb:field-inline-max "20";
+        key "ln1";
+        leaf ln1 { type string; rwpb:field-string-max "4"; }
+        leaf ln2 { type uint16; }
+      }
+      leaf lf18 { type uint8; }
+    }
+  }
+
+  grouping grtest {
+    description "A grouping that has message-able types";
+
+    leaf grls {type string { length "20..40"; } }
+    container grtestc {
+      description "Container grtsts01";
+      rwpb:msg-new Rwgrtestc1;
+
+      leaf newgrols01 { type string { length "10"; } }
+    }
+  }
+
+  container testgrp1 {
+    description "A container that uses grop";
+    rwpb:msg-new Rwtestgrp11;
+
+    uses grtest;
+  }
+
+  grouping ngrtest {
+    description "A grouping that has message-able types";
+
+    leaf grls0 {type string { length "20..40"; } }
+    container grtestc0 {
+      description "Container grtsts01";
+      rwpb:msg-new Rwnewgrtestc1;
+      rwpb:msg-flat "true";
+
+      leaf newgrols011 { type string { length "10"; } }
+    }
+  }
+
+  container testgrp2 {
+    description "A container that uses grop";
+    rwpb:msg-new Rwtestgrp21;
+    rwpb:msg-flat "true";
+
+    uses ngrtest;
+  }
+
+}
+

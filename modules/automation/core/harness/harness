@@ -1,0 +1,1245 @@
+#!/usr/bin/env python3
+
+"""
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+@file harness
+@author Jeremy Mordkoff (Jeremy.Mordkoff@riftio.com)
+@date 11/20/14
+@brief RIFT.ware automation harness
+
+This tool has three modes --
+   --auto -- get jobs from the testcase server, run them and report results back to the server
+   --submit -- walk the source tree looking for racfg files and submit them to the testcase server
+   --run (default) -- walk the source tree and run each test you find
+
+
+   control-c handling--
+
+   The first control-c puts the system into a controlled shutdown mode. No more tests will be started and the harness will exit when all scripts are done
+   The second control-c puts the system into an immediate shutdown mode. All scripts are sent SIGTERM and then SIGKILL and when they exit, ths script exits
+   The third control-c causes this script to exit
+
+   INSTALLATION
+       if running this as a daemon (as root) you will need to allow sudo without a tty. run visudo and comment out requiretty
+
+"""
+import argparse
+import glob
+import json
+import logging
+import os
+import re
+import signal
+import subprocess
+import sys
+import tempfile
+import textwrap
+import time
+import traceback
+import socket
+import uuid
+
+from datetime import datetime
+from junit_xml import TestSuite, TestCase
+
+from rw_testconfig import TestConfiguration
+from rw_testcase import TestCaseManager, LocalTestCaseManager
+from ndl import Testbed
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(asctime)-15s %(levelname)s %(message)s', level=logging.INFO)
+print("harness has opened logger %s" % __name__ )
+
+THIS_DIR = os.path.dirname(os.path.realpath(__file__))
+
+def signal_handler(sig, flags):
+    ''' called on sigterm(15) or sigint (2, control-c)
+    '''
+    if sig == signal.SIGUSR1:
+        logger.info("shutdown aborted")
+        RA_TestSuite.die_now = 0
+    else:
+        RA_TestSuite.die_now += 1
+        if RA_TestSuite.die_now == 1:
+            logger.info("clean shutdown started. System will exit when current test(s) have completed. Type control-c again to force current tests to exit immediately")
+        elif RA_TestSuite.die_now == 2:
+            logger.info("sending SIGTERM and/or SIGKILL to all running tests. Type control-c again to exit immediately")
+        else:
+            logger.info("exiting on third signal")
+            sys.exit(0)
+        # os.kill(os.getpid(), signal.SIGCONT)
+
+
+class RA_TestSuite(object):
+    ''' represents one test. It is a container object that include a test_config object,
+
+    '''
+
+    die_now = 0
+
+    def __init__(self, job=None, harness=None, test_case_manager=None):
+        self.job=None
+        self.logfile = None
+        self.logfile_handle = None
+        self.pid = None
+        self.priority = 100
+        self.suts = None
+        self.sut_file = None
+        self.test_config = None
+        self.borrow_testbed = False
+        self.cmdargs = None
+        self.tenants = []
+        self.test_case_manager = test_case_manager
+        self.elapsed_time = datetime.now() - datetime.now()
+
+        if job is not None:
+            self.from_job(job)
+        if harness is not None:
+            self.harness = harness
+        self.task_id = uuid.uuid4().hex[:10]
+
+    def setup(self, rift_root, testcase_config_file):
+        ''' setup this test
+            INPUTS: rift_root -- the rift_root for the test
+                    testcase_config_file -- pathname to the racfg file relative to rift_root
+        '''
+        self.rift_root = rift_root
+        self.config_file = testcase_config_file
+        self.test_config = TestConfiguration(os.path.join(rift_root, testcase_config_file))
+        if not self.test_config.is_valid:
+            logger.error("test config %s is not valid: %s" % ( self.config_file, self.test_config.error ))
+            raise(ValueError, "test config %s is not valid: %s" % ( self.config_file, self.test_config.error ))
+
+    def from_job(self, job):
+        ''' create a test object from a job retrieved from the testcase server
+        '''
+        self.job = job
+        self.setup(self.job['workspace'], self.job['config_file'])
+
+    def release_resources(self):
+        if self.suts is None or self.borrow_testbed:
+            return
+        if self.cmdargs and self.cmdargs.until_fail and self.return_code:
+            print("***** NOT RELEASING RESOURCES ******")
+            return
+        try:
+            self.testbed.release(self.suts.values())
+        except Exception as e:
+            print("exception %s releasing resources" % e)
+        self.suts = None
+
+    def __del__(self):
+        self.close()
+        if self.test_config is not None:
+            del self.test_config
+        self.release_resources()
+
+
+    def submit_job(self):
+        ''' submit a job to the test case server so it can be run now (or later) by another instance of this script running in auto mode
+        '''
+        try:
+            self.test_case_manager.submit_job(self.config_file, self.rift_root)
+            logger.info("submitted %s to job queue" % ( self.config_file ))
+        except Exception as e:
+            logger.critical("error submitting job: %s" % e)
+
+    def generate_env(self):
+        '''generate an environment dictionary that mimics what would be done by rift-shell
+        '''
+        env = dict(os.environ)
+        env_file = os.path.join(env['RIFT_BUILD'], ".rift-env")
+        if not os.path.exists(env_file):
+            raise Exception("%s not found" % env_file)
+        else:
+            rexp = re.compile("export ([^=]+)=([^=]*)$")
+            with open(env_file, "r") as f:
+                for line in f:
+                    s = rexp.match(line.strip())
+                    if s is None:
+                        # This really should never happen as the file being parsed is machine generated
+                        raise ValueError("BAD LINE \"%s\" in %s" % ( line, env_file ))
+                    if len(s.group(2)):
+                        val = re.sub('\${RIFT_ROOT}', self.rift_root, s.group(2) )
+                        env[s.group(1)] = val
+        return env
+
+    def create_sut_file(self):
+        ''' create the sut file that is used by the test to map logical entities (VMs and networks) to actual entities
+        '''
+        all_suts={ 'nets': self.nets ,
+                   'vms':  self.suts }
+        self.sut_file  = tempfile.NamedTemporaryFile(delete=False)
+        sss = json.dumps(all_suts, sort_keys=False, indent=4, separators=(',', ': '))
+        self.sut_file.write(sss.encode('ascii'))
+        self.sut_file.close()
+        os.chmod(self.sut_file.name, 0o777)
+        logger.debug("suts are %s" % ",".join(self.suts.values() ) )
+
+    def build_log_file_path(self, cmdargs):
+        if cmdargs.timestamp:
+            pathname = os.path.join(cmdargs.logdir, self.test_name + "_" + datetime.now().isoformat() + ".log" )
+        else:
+            pathname = os.path.join(cmdargs.logdir, self.test_name + ".log")
+        return pathname
+
+
+    def launch_driver(self, cmdargs, iplist=None):
+        ''' fork and exec the driver which will run the test itself
+        '''
+        driver = os.path.join( os.environ['RIFT_INSTALL'], "usr/rift/systemtest/harness/driver")
+        self.logfile = self.build_log_file_path(cmdargs)
+        if cmdargs.stdout and not cmdargs.execution_mode == 'parallel':
+            f = sys.stdout
+            self.logfile_handle = None
+        elif cmdargs.overwrite:
+            f = open( self.logfile, "w")
+            self.logfile_handle = f
+        else:
+            f = open( self.logfile, "a")
+            self.logfile_handle = f
+
+
+        if cmdargs.openstack:
+            self.sut_file = tempfile.NamedTemporaryFile(delete=False)
+        cmds = [
+                driver,
+                '--log-dir', cmdargs.logdir,
+                '--configfile', self.test_config.configfile,
+                '--sut-file', self.sut_file.name,
+                '--timeout-factor', str(cmdargs.timeout),
+                '--%s' % str(cmdargs.prepare_location),
+        ]
+
+        if cmdargs.user:
+            cmds = cmds + [ '--username', cmdargs.user ]
+        if self.submitted_by is not None:
+            cmds = cmds + [ '--USER', self.submitted_by ]
+        if cmdargs.chown:
+            cmds = cmds + [ '--chown' ]
+        if iplist:
+            cmds = cmds + [ '--ip-list', ','.join(iplist) ]
+        if cmdargs.rsyslog:
+            cmds = cmds + [ '--rsyslog' ]
+        if cmdargs.docker:
+            cmds = cmds + [ '--docker', cmdargs.docker ]
+        if cmdargs.rpm:
+            cmds = cmds + [ '--rpm' ]
+        if cmdargs.rpms_from:
+            cmds = cmds + [ '--rpms-from', cmdargs.rpms_from ]
+
+        if cmdargs.openstack:
+            cmds = cmds + [
+                '--prepare',
+                '--openstack', cmdargs.openstack,
+                '--image', cmdargs.image,
+                '--task-id', self.task_id
+            ]
+
+            for tenant in self.tenants:
+                cmds = cmds +  [ '--tenant', tenant ]
+
+            if self.cmdargs.nfs_root:
+                cmds += [ '--nfs-root', cmdargs.nfs_root ]
+
+            if not self.cmdargs.skip_teardown:
+                cmds += [ '--scrub' ]
+
+
+        logger.info("launch driver %s" % " ".join(cmds))
+        self.pid = subprocess.Popen(cmds, stdout=f, stderr=subprocess.STDOUT, stdin=None )
+
+
+    def start_job(self, cmdargs, testbed):
+        ''' start a job running aynchronously
+            returns True if sucessfull
+            It is common for this to fail due to lack of resources
+
+            @TYPE testbed: Testbed
+        '''
+
+        if self.die_now:
+            return None
+
+        self.testbed = testbed or Testbed()
+        self.cmdargs = cmdargs
+
+        if self.openstack:
+            if not self.tenants:
+                return None
+            self.launch_driver(cmdargs)
+        else:
+            logger.debug("starting resource selection")
+            self.nets, self.suts = self.testbed.select_by_config(self.test_config)
+            if self.suts is None:
+                logger.info( "cannot run %s: insufficient resources. testbed has %d VMs and %d networks" % ( self.test_name, len(self.testbed.vms), len(self.testbed.switches) ))
+                self.bump_priority()
+                self.set_status('Q')
+                return False
+            else:
+                logger.debug("resource selection complete. hosts are %s" % ",".join(self.suts.values() ) )
+
+            if self.test_config.vms:
+                self.testbed.reserve(self.suts.values())
+            logger.info( "Running test suite %s (%s)..." % ( self.test_name, self.test_config.configfile ))
+            try:
+                self.create_sut_file()
+                self.launch_driver(cmdargs)
+            except:
+                self.testbed.release(self.suts.values())
+                raise
+
+        self.set_status('R')
+        self.last_signal = None
+        self.start_time = datetime.now()
+
+        return True
+
+    @property
+    def test_status(self):
+        ''' the status of the test suite ... development, working, or broken
+        '''
+        try:
+            return self.test_config.test_status
+        except AttributeError as e:
+            print(dir(self.test_config))
+            logger.critical("%s: %s" % ( self.long_name, e))
+            return 'unknown'
+
+
+    @property
+    def status(self):
+        ''' job status
+        '''
+        if self.job is not None and 'status' in self.job:
+            return self.job['status']
+        return 'Q'
+
+    @property
+    def submitted_by(self):
+        if self.job is not None and 'submitted_by' in self.job:
+            return self.job['submitted_by']
+        return None
+
+    @property
+    def result(self):
+        ''' job result
+        '''
+        if self.job is not None and 'result' in self.job:
+            return self.job['result']
+        return None
+
+    @property
+    def status_string(self):
+        if self.status == 'C':
+            if self.return_code == 0:
+                return "PASSED"
+            else:
+                return "FAILED"
+        else:
+            return self.test_case_manager.get_status(self.status)
+
+    @property
+    def test_name(self):
+        return self.test_config.test_name
+
+    @property
+    def long_name(self):
+        return self.test_config.configfile
+
+    @property
+    def short_name(self):
+        return os.path.basename(self.test_config.configfile)
+
+    def check_job(self):
+        ''' asynchronous status check
+
+            returns None if the job is still running
+            else it returns the return code
+        '''
+        if self.status != 'R':
+            return
+
+        if not self.pid:
+            logger.debug("task %s has no pid" % self.test_name)
+            return
+        res = self.pid.poll()
+        if res is None:
+            if self.die_now > 1:
+                if self.last_signal == None:
+                    self.pid.send_signal(signal.SIGINT)
+                    self.last_signal = signal.SIGINT
+                elif self.last_signal == signal.SIGINT:
+                    self.pid.send_signal(signal.SIGTERM)
+                    self.last_signal = signal.SIGTERM
+            return None
+        # DONE
+        self.elapsed_time = datetime.now() - self.start_time
+        if self.last_signal == None:
+            self.return_code = self.pid.returncode
+            logger.debug("returncode from %s was %d" % ( self.test_name, self.return_code ))
+        else:
+            self.return_code = TestCaseManager.get_code('ABORTED')
+            logger.debug("%s was %d" % ( self.test_name, self.return_code ))
+        logger.info("task %s complete elapsed time %d seconds, return code is %d" % ( 
+                            self.test_name, 
+                            self.elapsed_time.total_seconds(), 
+                            self.return_code
+                      ))
+        if self.logfile_handle:
+            self.logfile_handle.close()
+
+        if self.sut_file is not None and os.path.exists(self.sut_file.name):
+            os.remove(self.sut_file.name)
+        if not self.cmdargs.openstack:
+            self.release_resources()
+
+        if self.return_code == TestCaseManager.get_code('DEFERRED'):
+            self.set_status('Q', 0)
+            return 0
+        else:
+            self.set_status('C', self.return_code)
+            return self.return_code
+
+
+
+
+    def wait_job(self):
+        ''' synchronous wait for a job to finish
+        '''
+        res = self.check_job()
+        while res is None:
+            time.sleep(1)
+            res = self.check_job()
+        return res
+
+    def close(self):
+        ''' close any open handles
+        '''
+        if self.logfile_handle is not None:
+            self.logfile_handle.close()
+            self.logfile_handle = None
+
+
+
+    def keyword_filter(self, keywords_exclude, keywords_include):
+        ''' filter by keywords. See the usage help for a description
+            include keywords must all be met
+            but if even one exclude keyword matches, skip it
+        '''
+        for keyword in keywords_exclude:
+            if keyword in self.test_config.keywords:
+                logger.debug("excluding %s for keyword %s" % ( self.test_name, keyword ))
+                return False
+
+        for keyword in keywords_include:
+            if not keyword in self.test_config.keywords:
+                logger.debug("excluding %s because it does have keywords: %s" % ( self.test_name, keyword ))
+                return False
+        return True
+
+    def describe(self):
+        print("%20s: %s" % ( "name", self.test_name ))
+        print("%20s: %s" % ( "path", self.config_file ))
+        print("%20s: %s" % ( "status" , self.test_config.test_status ))
+        print("%20s: %s" % ( "keywords" , ",".join(self.test_config.keywords) ))
+        print("%20s: %d" % ( "VMS", len(self.test_config.vms) ))
+        for vm in self.test_config.vms:
+            print("%25s: %d MB,  %d VCPUS, %s huge pages" % ( vm.get('name'), vm.get('memory', 0), vm.get('cpus', 1), vm.get('hugepages','False') ))
+        print("%20s: %d" % ( "timeout (secs)", self.test_config.timeout ))
+        indent = "%20s: " % "desc"
+        for line in textwrap.wrap(self.test_config.description, os.environ.get('COLUMNS', 80), initial_indent=indent, subsequent_indent=' ' * 22 ):
+            print(line)
+        print(" ")
+
+    def bump_priority(self):
+        ''' call this when a job is deferred for lack of resources. It will bump up this job
+            so it will get first crack when resources free up later
+        '''
+        self.priority += 10
+
+
+    def set_status(self, status, result=None):
+        ''' set the status and/or result and push the data to the testcase server if that's where this job came from
+        '''
+        if self.job is None:
+            self.job=dict()
+        self.job['status'] = status
+        if self.logfile is not None:
+            self.job['logfile_path'] = self.logfile
+
+        if self.pid is not None:
+            self.job['pid'] = self.pid.pid
+        if result is not None:
+            self.job['result'] = result
+        self.job['host'] = socket.gethostname()
+        self.job['priority'] = self.priority
+
+        try:
+            if 'url' in self.job:
+                self.test_case_manager.update(self.job)
+            elif status == 'C':
+                self.test_case_manager.submit_log(self.rift_root, self.config_file, self.logfile, self.job['result'] )
+        except Exception as e:
+            logger.error( "WARNING...test_case_manager.update %s failed: %s" % ( self.job, e) )
+
+        logger.debug("update status %s to %s", self.test_config.configfile, status)
+
+
+
+class RA_Harness(object):
+    ''' singleton
+
+        has three major functions (modes)
+            run -- find tests and run them
+            submit -- find tests and submit them to the testcase job server
+            auto -- get tests from the testcase job server and run them
+
+        it can run tests in parallel resources permitting or serial (default)
+    '''
+
+    def __init__(self, cmdargs, test_case_manager):
+        self.queue = set()
+        self.cmdargs = cmdargs
+        self.last_job = -1
+        self.last_get_job_time = None
+        self.return_code = -1
+        self.workspaces = set()
+        self.tenants = set()
+        self.num_tenants = 0
+        self.test_case_manager = test_case_manager
+
+        '''
+        return_code tracks the work result seen in a run and provides the overall return code
+
+        workspaces tracks which workspaces are in use at the moment
+
+        we can manage resources in two ways:
+            either we grab all of the resources already reserved and we dole them out to the tests
+            OR
+            we ask for resources from the testbed system one test at a time
+        '''
+
+        if self.cmdargs.tenant:
+            self.tenants.update(self.cmdargs.tenant)
+
+        self.num_tenants = len(self.tenants)
+
+        if self.cmdargs.openstack and not self.tenants:
+            tenant = os.getenv('USER', 'demo')
+            logger.debug('No tenants specified, defaulting to using tenant [%s]', tenant)
+            self.tenants = set([tenant])
+
+        self.load_testbed()
+        if not os.path.exists(self.cmdargs.logdir):
+            os.makedirs(self.cmdargs.logdir)
+
+        if self.is_auto:
+            self.run_queue()
+        else:
+            self.walk_tree()
+
+
+    def create_junit_xml(self, workspace):
+        tests = [ test for test in self.queue if test.rift_root == workspace and test.status == 'C' ]
+        d = os.path.join(os.environ.get("RIFT_ARTIFACTS"), 'systemtest')
+        if not os.path.exists(d):
+            os.mkdir(d)
+
+        fn = os.path.join(d, 'harness.xml')
+        if tests:
+            logger.debug("writing %s with %d tests" % (fn, len(tests)) )
+            test_cases = []
+            for test in tests:
+                test_case = TestCase( test.test_config.test_name, 'Harness', test.elapsed_time.total_seconds())
+                if test.return_code:
+                    test_case.add_failure_info('return code from driver %d' % test.return_code)
+                    logger.debug("recording test failure for %s" % test.test_config.test_name )
+                test_cases.append(test_case)
+            ts = TestSuite("Test Harness", test_cases)
+            with open(fn, "w") as f:
+                TestSuite.to_file(f,[ts], prettyprint=False)
+            logger.debug(TestSuite.to_xml_string([ts]))
+        else:
+            logger.info("no test cases from workspace %s found" % workspace)
+
+    def load_testbed(self):
+        self.testbed = None
+
+        if self.cmdargs.nouser or self.cmdargs.openstack:
+            self.testbed = None
+            return
+
+        # first try to see if the user has reserved any already
+        self.testbed = Testbed(url='auto', user=self.cmdargs.user)
+        if not self.testbed.hosts:
+            # if the host list is empty, the testbed is useless so discard it
+            self.testbed = None
+        else:
+            logger.info( "Using %d resources pre-allocated by %s: %s" % (len(self.testbed.vms), self.cmdargs.user,",".join(self.testbed.vms)))
+            if self.cmdargs.iplist:
+                iplist = self.cmdargs.iplist.split(',')
+                deleteme = []
+                for host in self.testbed.hosts.itervalues():
+                    if host.ipaddress not in iplist:
+                        logger.info("NOT using %s (%s) because it is not in iplist" % ( host.name, host.ipaddress ))
+                        deleteme.append(host)
+                for host in deleteme:
+                    del self.testbed.hosts[host.name]
+                    del host
+                logger.info("trimmed testbed has %d hosts" % len(self.testbed.hosts))
+ 
+    def update_return_code(self, rc):
+        if rc > self.return_code:
+            self.return_code = rc
+            
+    def add_job(self, job):
+        ''' add a job retrieved from the testcase server to our queue
+        '''
+        new_test_suite = RA_TestSuite(job=job, harness=self, test_case_manager=self.test_case_manager)
+        self.queue.add(new_test_suite)
+        logger.debug('added job %s' % job['id'] )
+
+    def clean_queue(self):
+        logger.debug("cleaning run queue....")
+        remove = set()
+        for test in self.queue:
+            if test.status in ['C', 'A']:
+                remove.add(test)
+        for test in remove:
+            self.queue.remove(test)
+            del(test)
+
+    def count_jobs_by_status(self, status):
+        if not isinstance(status, list):
+            status = list(status)
+        return len([j for j in self.queue if j.status in status])
+
+    def find_job(self, job):
+        ''' find a job that is in our queue
+        '''
+        for test in self.queue:
+            if test.job['id'] == job['id']:
+                return test
+        return None
+
+    def get_new_jobs(self):
+        ''' Check on the server for any new jobs
+            Rate limit requests to once every 20 seconds
+            keep track of the job id's and prevent creating duplicates
+            returns True if any jobs were added to the queue
+        '''
+        if self.last_get_job_time is not None:
+            delta = datetime.now() - self.last_get_job_time
+            if delta.total_seconds() < 20:
+                return False
+        self.last_get_job_time = datetime.now()
+        try:
+            jobs = self.test_case_manager.get_queue()
+        except Exception as e:
+            logger.error("Error %s retrieving job queue from reservation server" % e)
+            return False
+        if len(jobs) == 0:
+            logger.debug("no jobs found on server")
+            return False
+
+        ''' mark all queued jobs as aborted
+            if they are still in the queue, update will bring them back
+        '''
+        for test in self.queue:
+            if test.job['status'] == 'Q':
+                test.job['status'] = 'A'
+
+        res = False
+        for job in jobs:
+            logger.debug("examining new job %s %s" % (job['workspace'], job['config_file']) )
+            if job['status'] != 'Q': 
+                logger.warning("testcase server returned job %d with status %s when asked for jobs of status 'Q'" % ( job['id'], job['status'] ) )
+                continue
+            job_id = int(job['id'])
+            if job_id > self.last_job:
+                self.last_job = job_id
+                try:
+                    self.add_job(job)
+                except Exception as e:
+                    logger.warning("error adding job %d to work queue: %s" % ( job['id'], e ))
+                else:
+                    res = True
+            else:
+                self.update_job(job)
+        return res
+
+    @property
+    def is_auto(self):
+        ''' are we running in 'auto' mode ??
+        '''
+        return self.cmdargs.mode == 'auto'
+
+    def print_queue(self, log=False):
+        ''' Show the task queue
+
+            @TYPE test: RA_TestSuite
+        '''
+        if len(self.queue) == 0 and log:
+            return
+        if len(self.queue):
+            if not log: 
+                print("%s %26s %s" % ( "=" * 21, datetime.now(), "=" * 21 ))
+            for test in self.queue:
+                if test.status == 'C':
+                    message = "rc %d ET %d seconds" % ( test.result, test.elapsed_time.total_seconds() )
+                elif test.status == 'R':
+                    et = datetime.now() - test.start_time
+                    message = "ET %d seconds (time limit %d seconds)" % ( et.total_seconds(), test.test_config.timeout * self.cmdargs.timeout )
+                else:
+                    message = "priority %d" % ( test.priority )
+                if log:
+                    logger.info("== %7s %s %s" % ( test.status_string, test.test_name, message ))
+                else:
+                    print("== %7s %s %s" % ( test.status_string, test.test_name, message ))
+            if len(self.queue) > 1 and not log:
+                print("=" * 70)
+        else:
+            print("== %s: Test Queue is EMPTY" % datetime.now())
+        if not log:
+            if RA_TestSuite.die_now:
+                print("== harness is in SHUTDOWN MODE. No new tests will be started")
+            if self.cmdargs.until_fail:
+                print("== until-fail is ACTIVE")
+
+    def run_queue(self):
+        ''' run jobs. This routine might seem a little long, but I wanted the
+            logic to be absolutely explicit so it is a little wordy
+
+        @TYPE test: RA_TestSuite
+
+        sleep 10 seconds between checks unless something interesting happens
+        '''
+
+        self.return_code=-1
+        try_start_next_loop = True
+        last_start = last_display = datetime.now()
+        while RA_TestSuite.die_now < 3:
+            try_start = try_start_next_loop
+            try_start_next_loop = False
+            display = False
+
+            if self.count_jobs_by_status('R') == 0:
+                sleep_time = 10
+            else:
+                sleep_time = 5
+
+            ''' check to see if any more jobs were submitted to the test case server
+                or if the priority of any of the existing queued jobs has changed
+            '''
+            if self.is_auto:
+                if self.get_new_jobs():
+                    try_start = True
+
+            ''' no harm in trying to start some jobs if none are running
+            '''
+            if self.count_jobs_by_status('R') == 0:
+                try_start = True
+
+            ''' try to start jobs every 60 seconds just in case some resources freed up
+                elsewhere
+            '''
+            et = datetime.now() - last_start
+            if et.total_seconds() > 60:
+                try_start = True
+
+            ''' do not start more jobs in serial mode if any jobs are running
+            '''
+            if self.cmdargs.execution_mode == 'serial' and self.count_jobs_by_status('R') > 0:
+                try_start = False
+
+            if self.cmdargs.until_fail and self.return_code > 0:
+                try_start = False
+
+            ''' Start new jobs if resources are free
+            '''
+            logger.debug("run queue: try_start is %s" % try_start )
+            if RA_TestSuite.die_now == 0 and try_start:
+                last_start = datetime.now()
+                if self.start_new_jobs():
+                    sleep_time = 1
+                    display = True
+
+            ''' time to quit ?
+            '''
+            if self.cmdargs.until_fail and self.count_jobs_by_status('R') == 0:
+                print("== exiting on failure") 
+                return
+
+
+            ''' check on all existing jobs
+            '''
+            for test in self.queue:
+                if test.status == 'R':
+                        rc = test.check_job()
+                        if rc is not None:
+                            logger.debug("updating job status %s" % rc )
+                            self.update_return_code(rc)
+                            # something completed, so resources may be available now to start a new test
+                            try_start_next_loop = True
+                            sleep_time = 0
+                            display = True
+                            if self.cmdargs.openstack:
+                                self.free_tenants(test)
+                            else:
+                                self.free_workspace(test.rift_root)
+                            if self.cmdargs.stdout and self.cmdargs.execution_mode == 'parallel':
+                                cmd = 'cat %s' % (test.logfile)
+                                try:
+                                    logger.info("\n== Start of output log for %s ==", test.test_name)
+                                    subprocess.check_call(cmd, shell=True)
+                                    logger.info("\n== End of output log for %s ==", test.test_name)
+                                except Exception as e:
+                                    logger.info("Failed to dump log output for test %s" % (test.test_name))
+                            try:
+                                self.create_junit_xml(test.rift_root)
+                            except Exception as e:
+                                logger.info("Error creating workspace junit file: %s" % e )
+
+            ''' console logging
+                show the queue when something interesting happens or every 60 seconds
+            '''
+            if sys.stdout.isatty():
+                et = datetime.now() - last_display
+                if et.total_seconds() >= self.cmdargs.display_interval:
+                    display = True
+                if display:
+                    self.print_queue()
+                    last_display = datetime.now()
+
+            ''' time to quit?
+            '''
+            if RA_TestSuite.die_now and self.count_jobs_by_status('R') == 0:
+                # if no jobs running, time to quit
+                return
+            if (not self.is_auto) and (self.count_jobs_by_status(['Q', 'R']) == 0):
+                # auto mode never exits
+                return
+
+            ''' delete completed jobs
+            '''
+            if self.is_auto:
+                self.clean_queue()
+
+            if sleep_time:
+                for i in range(sleep_time):
+                    time.sleep(1)
+
+            # reload the testbed when possible to see if new resources are now avail
+            if self.count_jobs_by_status('R') == 0:
+                self.load_testbed()
+
+    def scrub_tenant(self, cloud_host, tenant, user, task_id=None):
+        logger.info("Cleaning up openstack [%s@%s]", tenant, cloud_host)
+        scrub_cmd = (
+            '{rift_install}/usr/rift/systemtest/harness/scrub_tenant.py '
+            '--cloud-host {cloud_host} '
+            '--tenant {tenant} '
+            '--user {user} '
+        ).format(
+            rift_install=os.environ['RIFT_INSTALL'],
+            cloud_host=cloud_host,
+            tenant=tenant,
+            user=user,
+        )
+
+        if self.cmdargs.docker:
+            scrub_cmd += '--docker {docker} '.format(docker=self.cmdargs.docker)
+
+        if task_id:
+            scrub_cmd += '--task-id {task_id} '.format(task_id=task_id)
+
+        subprocess.check_call(scrub_cmd, shell=True)
+
+
+    def allocate_tenants(self, test):
+        if self.num_tenants < test.test_config.required_tenants:
+            logger.error("Insufficient tenant resources to run test %s. Found %d : Required %d", test.test_name, self.num_tenants, test.test_config.required_tenants)
+            test.set_status('C', result=3)
+            test.return_code = 3
+            return None
+
+        if len(self.tenants) < test.test_config.required_tenants:
+            logger.info('Waiting for more free tenants to run %s' % (test.test_name))
+            return None
+
+        logger.info("Allocating %d tenants for test: %s", test.test_config.required_tenants, test.test_name)
+        test.tenants = [self.tenants.pop() for _ in range(0, test.test_config.required_tenants)]
+        logger.info("Allocated tenants %s for test: %s", test.tenants, test.test_name)
+
+        if self.cmdargs.clean:
+            try:
+                rift_shell = "%s/rift-shell" % os.environ['RIFT_ROOT']
+                archive_cmd = (
+                    "{rift_shell} -e -r -- "
+                    "rwyangutil --archive-mgmt-persist-ws test-name:{test_name} --remove-schema-dir "
+                ).format(
+                    rift_shell=rift_shell,
+                    test_name=test.test_config.test_name
+                )
+                print("===== harness archiving confd perist directories - %s" % (archive_cmd))
+                subprocess.check_call(archive_cmd, shell=True)
+            except Exception as e:
+                logger.error("exception caught while archiving confd data", exc_info=True)
+
+            for tenant in test.tenants:
+                self.scrub_tenant(test.openstack, tenant, self.cmdargs.user)
+
+            if self.cmdargs.rsyslog:
+                pid_path = '{rift_artifacts}/rsyslog_*/rsyslog.pid'.format(rift_artifacts=os.environ['RIFT_ARTIFACTS'])
+                pid_files = glob.glob(pid_path)
+                if pid_files:
+                    kill_cmd = "kill $(cat {pid_path})".format(pid_path=pid_path)
+                    try:
+                        subprocess.check_call(kill_cmd, shell=True)
+                    except subprocess.CalledProcessError:
+                        pass
+
+                    cleanup_cmd = "rm {pid_path}".format(pid_path=pid_path)
+                    try:
+                        subprocess.check_call(cleanup_cmd, shell=True)
+                    except subprocess.CalledProcessError:
+                        pass
+
+
+
+
+    def free_tenants(self, test):
+        for tenant in test.tenants:
+            self.tenants.add(tenant)
+        test.tenants = []
+        
+
+    def take_workspace(self, ws):
+        ''' check if a workspace is in use or not
+            mark it as in use if it was free and return True
+            else return False
+        '''
+        if ws not in self.workspaces:
+            self.workspaces.add(ws)
+            return True
+        return False
+
+    def free_workspace(self, ws):
+        self.workspaces.remove(ws)
+
+    def start_new_jobs(self):
+        ''' try to start new jobs
+            returns True if any jobs were started
+        '''
+        todolist = [ job for job in self.queue if job.status == 'Q' ]
+        res = False
+        for test in sorted(todolist, key=lambda x: x.priority, reverse=True ):
+            if test.status == 'Q':
+                if self.cmdargs.openstack: # running on openstack
+                    test.openstack = self.cmdargs.openstack
+                    try:
+                        self.allocate_tenants(test)
+                    except Exception as e:
+                        logger.error("Failed to allocate test resources - %s" % (e))
+                        test.set_status('C', result=TestCaseManager.get_code('EXCEPTION'))
+                        raise
+
+                    if not test.tenants:
+                        continue
+
+                    try:
+                        logger.info("Using {} to run test {} on {}".format(test.tenants, test.test_name, test.openstack))
+                        if test.start_job(self.cmdargs, self.testbed):
+                            res = True
+                        else:
+                            self.free_tenants(test)
+                    except Exception as e:
+                        logger.error("error %s from start_job" % e)
+                        test.set_status('C', result=TestCaseManager.get_code('EXCEPTION'))
+                        self.free_tenants(test)
+                        raise
+
+                else: # running on reserved hosts
+                    if not self.take_workspace(test.rift_root):
+                        logger.debug("workspace %s is in use" % test.rift_root)
+                        continue
+                    try:
+                        if test.start_job(self.cmdargs, self.testbed):
+                            res = True
+                        else:
+                            self.free_workspace(test.rift_root)
+                    except Exception as e:
+                        logger.error("error %s from start_job" % e)
+                        test.set_status('C', result=TestCaseManager.get_code('EXCEPTION'))
+                        self.free_workspace(test.rift_root)
+                        raise
+
+            if res and self.cmdargs.execution_mode == 'serial':
+                break
+        return res
+
+    def update_job(self, job):
+        ''' update the fields in our job object that could have been changed by the server
+        '''
+        test_suite = self.find_job(job)
+        if test_suite is not None:
+            for field in [ 'priority', 'status' ]:
+                test_suite.job[field] = job[field]
+
+
+    def walk_tree(self):
+        ''' walk the workspace source tree and look for test config files (racfg) and
+        either run them or submit them as jobs to the testcase server
+        '''
+        # @TYPE test: RA_TestSuite
+        re_racfg=re.compile("^.*\.racfg$")
+        RIFT_INSTALL = os.environ['RIFT_INSTALL']
+        HERE=os.path.realpath(os.path.dirname(sys.argv[0]))
+        driver = os.path.join(HERE, "driver")
+        test_ids = dict()
+        self.queue=[]
+        test_list = []
+
+        if self.cmdargs.test_name:
+            try:
+                test_name_re = re.compile(self.cmdargs.test_name)
+            except:
+                print("INVALID REGULAR EXPRESSION: \"%s\"" % self.cmdargs.test_name )
+                sys.exit(1)
+        else:
+            test_name_re = None
+            if self.cmdargs.test_list:
+                test_list = self.cmdargs.test_list
+
+        run_specific_tests = len(test_list)
+
+
+        treetop = os.path.join(RIFT_INSTALL, self.cmdargs.top)
+        logger.info("Looking for racfg files under %s" % treetop)
+        for root, _dirs, files in os.walk(treetop):
+            for fn in files:
+                if not re_racfg.match(fn):
+                    continue
+
+                if run_specific_tests:
+                    if len(filter(lambda f: f + ".racfg" == fn, test_list)) == 0:
+                        continue
+
+                config_file = os.path.relpath(os.path.join(root, fn), RIFT_INSTALL)
+                test_suite = RA_TestSuite(test_case_manager=self.test_case_manager)
+                try:
+                    test_suite.setup(RIFT_INSTALL, config_file)
+                except Exception as e:
+                    print("error %s" % e)
+                    continue
+                if test_suite.test_name in test_ids:
+                    msg = "DUPLICATE test ID detected: %s defined in %s and %s" % \
+                        ( test_suite.test_name, test_suite.long_name, test_ids[test_suite.test_name] )
+                    logger.critical(msg)
+                    raise ValueError(msg)
+
+                test_ids[test_suite.test_name] = test_suite.long_name
+
+                if self.cmdargs.test_status != "any" and test_suite.test_status != self.cmdargs.test_status:
+                    logger.debug("skipping %s because status is %s" % ( test_suite.test_name, test_suite.test_status ))
+                    del test_suite
+                    continue
+
+                if not test_suite.keyword_filter(self.cmdargs.exclude, self.cmdargs.include):
+                    del test_suite
+                    continue
+                if test_name_re and not test_name_re.match(test_suite.test_name):
+                    logger.debug("excluding %s due to no name match" % test_suite.test_name )
+                    continue
+                logger.debug("adding %s to queue" % config_file )
+                self.queue.append(test_suite)
+
+
+        if self.cmdargs.mode == 'list':
+            for test in self.queue:
+                test.describe()
+        elif self.cmdargs.mode == 'submit':
+            for test in self.queue:
+                test.submit_job()
+        else:
+            logger.info("found %d job(s), starting execution" % len(self.queue))
+            self.run_queue()
+
+            logger.info("DONE")
+            self.print_queue(log=True)
+
+
+def main():
+
+    parser = argparse.ArgumentParser(description="RIFT.ware test harness" )
+    #
+    # MODE
+    parser.add_argument('mode', choices=['run', 'submit', 'auto', 'list'],
+                        help='runtime mode: run tests in this workspace(default), submit jobs to the testcase servers, or (auto) get and run tests from the server',
+                        default="run")
+    #
+    # LOGGING
+    parser.add_argument('-l', '--log-dir', dest='logdir',  type=str,
+                        help='Where to store log files (default ".")', default=".")
+    parser.add_argument('--overwrite', dest='overwrite', action='store_true', help='overwrite existing log files')
+    parser.add_argument('--timestamp', dest='timestamp', action='store_true', help='uniquify log file names using timestamps')
+    #
+    # KEYWORDS
+    parser.add_argument('-i', '--include', dest='include', action='append',
+                        help='only select tests that include this keyword. If repeated, the test must match all keywords. Call this script more than once to implement or.',
+                        default=[] )
+    parser.add_argument('-e', '--exclude', dest='exclude', action='append',
+                        help='exclude tests that specify these keywords. If repeated, any test that matches any keyword is excluded. if a test is both included and excluded by keywords, exclude wins' ,
+                        default=[] )
+    parser.add_argument('--status', dest='test_status', choices=['working', 'broken', 'development', 'any'], default='working', help='select tests by status. Irrelevent when selecting tests by name' )
+    parser.add_argument('--name', dest='test_name', type=str, help='select test by name (regular expression match')
+
+    #
+    # USER
+    parser.add_argument('-u', '--user', dest='user', type=str, help='username to use for reserving resources')
+    parser.add_argument('--iplist', dest='iplist', type=str, help='list of the ipaddresses of the VMs you do want to use.', default='' )
+    parser.add_argument('--no-user', dest='nouser', action='store_true', help='disable using any pre-reserved resources')
+
+    # DEBUG
+    parser.add_argument('--debug', dest='debug', action='store_true')
+    parser.add_argument('--stdout', dest='stdout', action='store_true', help='send all output to stdout')
+
+    # Serial or parallel
+    # only applies to run and auto mode
+    parallel_group = parser.add_mutually_exclusive_group(required=False)
+    parallel_group.add_argument('--serial', dest='execution_mode', action='store_const', const='serial', help='run tests serially')
+    parallel_group.add_argument('--parallel', dest='execution_mode', action='store_const', const='parallel', help='run tests in parallel')
+    parser.set_defaults(execution_mode='serial')
+
+    # Remote or Local
+    location_group = parser.add_mutually_exclusive_group(required=False)
+    location_group.add_argument(
+        '--local',
+        dest='prepare_location',
+        action='store_const',
+        const='local',
+        help=('''
+Spawn initial test resources locally. This currently implies docker is used when preparing launchpad.
+If no docker controller address is specified the current environment is assumed to be the location where the launchpad should be run.
+        '''),
+    )
+    location_group.add_argument(
+        '--remote',
+        dest='prepare_location',
+        action='store_const',
+        const='remote',
+        help="Spawn initial test resources remotely. This currently implies openstack is used when preparing launchpad.",
+    )
+    parser.set_defaults(prepare_location='local')
+
+
+    parser.add_argument('--nfs-root', dest='nfs_root', action='store', help='location of RIFT_INSTALL in nfs mounted workspace')
+    parser.add_argument('--reserve', dest='reserve', action='store_true', help='Use the reservation system rather than openstack to host tests')
+    parser.add_argument('--clean', dest='clean', action='store_true', help='Clean tenant before executing test')
+    parser.add_argument('--skip-teardown', dest='skip_teardown', action='store_true', help='Skip tearing down prepared resources')
+    parser.add_argument('--openstack', default='10.66.4.102', dest='openstack', action='store', help='prepare hosts on specified openstack controller')
+    parser.add_argument('--docker', default=None, dest='docker', action='store', help='prepare hosts as docker containers on specified docker controller (currently not used for cloud account in tests)')
+    parser.add_argument('--tenant', dest='tenant', action='append', help='tenant in which to initialize resources')
+    parser.add_argument('--image', dest='image', action='store', help='image to use to boot prepared resources') 
+    parser.add_argument('--rpm', dest='rpm', action='store_true', help='Install rpms from workspace and run system from installed rpms')
+    parser.add_argument('--rpms-from', action='store', help='Use rpms from specified workspace rather than current')
+
+    parser.add_argument('--top', dest='top', default=os.path.join(os.environ['RIFT_INSTALL'],'usr'), type=str, help='portion of RIFT_INSTALL to search for config files (run and submit modes only')
+
+    parser.add_argument('--timeout-factor', dest='timeout', default=1, type=int, help='multiplier for testcase timeouts')
+
+    parser.add_argument('--chown', dest='chown', default=False, action='store_true', help='chown all files in .install to be owned by this user')
+
+    parser.add_argument('--until-fail', dest='until_fail', action='store_true', help='exit on error')
+    parser.add_argument('--repeat', dest='repeat', default=1, type=int, help='repeat count. Use -1 for forever')
+    parser.add_argument('--target', dest='target', type=str, help='target directory on the VM, defaults to this systems RIFT_ROOT')
+    parser.add_argument('--rsyslog', dest='rsyslog', action='store_true', help='start rsyslog server and direct system and test ouptut to it')
+
+    # List of specific tests to be run
+    # Should only be used in 'run' mode
+    parser.add_argument('--tests', nargs='+', dest='test_list', help="List of specific tests (racfg file name(s) w/o extension) to be run")
+
+    parser.add_argument('--update', dest='display_interval', type=int, default=60)
+
+    cmdargs = parser.parse_args()
+    cmdargs.logdir = os.path.abspath(cmdargs.logdir)
+
+    signal.signal(signal.SIGINT,  signal_handler )
+    signal.signal(signal.SIGTERM, signal_handler )
+    signal.signal(signal.SIGUSR1, signal_handler )
+
+    for output_path in  ['systemtest', 'moduletest' ]:
+        os.makedirs( os.path.join(os.environ['RIFT_ARTIFACTS'], output_path), exist_ok=True)
+
+    if os.getenv('SITE') == 'blr':
+        cmdargs.openstack = '10.96.4.5'     # Use grunt5 as openstack controller host for 'blr'
+
+    if not cmdargs.image:
+        if cmdargs.rpm:
+            cmdargs.image = "{rift_root}/images/rift-root-latest.qcow2".format(rift_root=os.environ.get('RIFT_ROOT'))
+        else:
+            cmdargs.image = "{rift_root}/images/rift-ui-lab-latest.qcow2".format(rift_root=os.environ.get('RIFT_ROOT'))
+
+    if cmdargs.reserve:
+        test_case_manager = TestCaseManager()
+        cmdargs.openstack = None
+    else:
+        test_case_manager = LocalTestCaseManager()
+
+    if not cmdargs.user:
+        if cmdargs.openstack:
+            cmdargs.user = os.environ.get('USER') + "_automation"
+        else:
+            cmdargs.user= os.environ.get('USER')
+
+    if not cmdargs.tenant:
+        if cmdargs.openstack:
+            cmdargs.tenant = [os.getenv('USER') + "_automation"]
+
+    if cmdargs.test_name:
+        cmdargs.test_status='any'
+
+    if cmdargs.debug:
+        logger.setLevel(logging.DEBUG)
+    rc=0
+    while cmdargs.repeat:
+        if cmdargs.until_fail and (rc or RA_TestSuite.die_now):
+            break
+        harness = RA_Harness(cmdargs, test_case_manager)
+        if harness.return_code > rc:
+            rc=harness.return_code
+        if cmdargs.repeat > 0:
+            cmdargs.repeat -= 1
+    return rc
+
+
+if __name__ == '__main__':
+    if os.environ.get('RIFT_ARTIFACTS', None):
+        for d in [ 'systemtest', 'moduletests' ]:
+            os.makedirs(os.path.join(os.environ.get('RIFT_ARTIFACTS'), d), exist_ok=True)
+    try:
+        sys.exit(main())
+    except Exception as e:
+        print("Exception: %s" % str(e))
+        traceback.print_exc()
+        sys.exit(127)
+
+
+
+# vim: se tabstop=4 et st=4:

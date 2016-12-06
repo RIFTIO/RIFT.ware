@@ -1,0 +1,62 @@
+#!/bin/bash
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Austin Cormier
+# Creation Date: 2014/06/05
+#
+# Ensures that there are no uncommitted/unpushed changes in 
+# any of the supermodules or superproject.
+#
+# Usage: git check-superclean
+#
+# Check that the superproject and all submodules are completely clean.
+# This means no files modified, untracked, unpushed, uncommitted, etc 
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$DIR/git-common-functions.sh"
+
+function check_superclean(){
+  $DIR/git-check-unpushed
+  if [ $? -ne 0 ]; then
+    log "ERROR: Unpushed changes in branch: $line"
+    return 1
+  fi
+}
+
+function check_for_unpushed_in_submodules(){
+  while read line; do
+
+    pushd $line > /dev/null
+      check_superclean || return 1
+    popd > /dev/null
+
+  done < <(foreach_initialized_submodule)
+}
+
+function check_for_unpushed_in_superproject(){
+  check_superclean
+  if [ $? -ne 0 ]; then
+    log "ERROR: Superproject is not in a super clean state."
+    return 1
+  fi
+}
+
+## Check for modified content and uncommitted changes
+check_clean || exit 1
+
+## For for unmerged/unpushed changes
+check_for_unpushed_in_superproject || exit 1
+check_for_unpushed_in_submodules || exit 1

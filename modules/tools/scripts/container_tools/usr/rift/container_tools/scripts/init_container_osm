@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+yum -y install wget
+mkdir rift
+cd rift
+wget -O - http://repo.riftio.com/releases/open.riftio.com/OSM/mkvmimg.tar | tar xf -
+bash ./mkvmimg --container --modes ui
+yum install -y riftware-launchpad
+systemctl start rwlp

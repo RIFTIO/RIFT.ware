@@ -1,0 +1,150 @@
+message config_protobuf_m
+{
+  message service_realm_c
+  {
+    message port_c
+    {
+      message ethernet_c
+      {
+        message bind_c
+        {
+          optional string ip_interface = 1 [default=""];
+        }
+        optional bind_c bind = 1;
+        optional string name = 2 [default=""];
+      }
+      optional ethernet_c ethernet = 1;
+    }
+    optional port_c port = 1;
+    message vpn_context_c
+    {
+      message ip_interface_group_c
+      {
+        message bind_c
+        {
+          optional string ipsec_policy = 1 [default=""];
+        }
+        optional bind_c bind = 1;
+        message ip_interface_c
+        {
+          optional string address = 1 [default=""];
+          optional string name = 2 [default=""];
+        }
+        optional ip_interface_c ip_interface = 2;
+        optional string name = 3 [default=""];
+      }
+      optional ip_interface_group_c ip_interface_group = 1;
+      optional string name = 2 [default=""];
+    }
+    optional vpn_context_c vpn_context = 2;
+    message service_c
+    {
+      message ipsec_network_c
+      {
+        message ipsec_policy_c
+        {
+          message tunnel_group_c
+          {
+            message tunnel_name_c
+            {
+              message bind_c
+              {
+                optional string vpn_context = 1 [default=""];
+              }
+              optional bind_c bind = 1;
+              optional string remote_peer = 2 [default=""];
+              optional string name = 3 [default=""];
+            }
+            optional tunnel_name_c tunnel_name = 1;
+          }
+          optional tunnel_group_c tunnel_group = 1;
+          message ipsecsa_params_c
+          {
+            message name_c
+            {
+              optional string name = 1 [default=""];
+            }
+            optional name_c name = 1;
+            message default_v_c
+            {
+            }
+            optional default_v_c default_v = 2;
+          }
+          optional ipsecsa_params_c ipsecsa_params = 2;
+          message ikesa_params_c
+          {
+            message name_c
+            {
+              optional string name = 1 [default=""];
+            }
+            optional name_c name = 1;
+            message default_v_c
+            {
+            }
+            optional default_v_c default_v = 2;
+          }
+          optional ikesa_params_c ikesa_params = 3;
+          optional string name = 4 [default=""];
+        }
+        optional ipsec_policy_c ipsec_policy = 1;
+        message ipsecsa_params_c
+        {
+          message name_c
+          {
+            message proposal_list_c
+            {
+              optional string name = 1 [default=""];
+            }
+            optional proposal_list_c proposal_list = 1;
+          }
+          optional name_c name = 1;
+          message default_v_c
+          {
+            message proposal_list_c
+            {
+              optional string name = 1 [default=""];
+            }
+            optional proposal_list_c proposal_list = 1;
+          }
+          optional default_v_c default_v = 2;
+        }
+        optional ipsecsa_params_c ipsecsa_params = 2;
+        message ikesa_params_c
+        {
+          message name_c
+          {
+            message proposal_list_c
+            {
+              optional string name = 1 [default=""];
+            }
+            optional proposal_list_c proposal_list = 1;
+          }
+          optional name_c name = 1;
+          message default_v_c
+          {
+            optional string dpd = 1 [default=""];
+            message proposal_list_c
+            {
+              optional string value = 1 [default=""];
+            }
+            optional proposal_list_c proposal_list = 2;
+          }
+          optional default_v_c default_v = 2;
+        }
+        optional ikesa_params_c ikesa_params = 3;
+        message proposal_c
+        {
+          optional string lifetime_seconds = 1 [default=""];
+          optional string authentication_algorithm = 2 [default=""];
+          optional string name = 3 [default=""];
+        }
+        optional proposal_c proposal = 4;
+        optional string name = 5 [default=""];
+      }
+      optional ipsec_network_c ipsec_network = 1;
+    }
+    optional service_c service = 3;
+    optional string name = 4 [default=""];
+  }
+  optional service_realm_c service_realm = 1;
+}

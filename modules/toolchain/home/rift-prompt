@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+#
+# These functions can be used to create an informative prompt for your shell. If
+# you are over-riding the PROMPT_COMMAND in your .bashrc file, one approach you
+# can take is,
+#
+# your mileage may vary
+# this software is provided as-is in the hopes that some may find it useful.
+#
+#
+#   my_rift_prompt() {
+#     if type -t __rw_workspace_tag >/dev/null; then
+#        PS1="$(__rw_workspace_tag) [\u@\h]\$ "
+#     else
+#        PS1="[\u@\h]\$ "
+#     fi
+#   }
+#   
+#   if [ -n "$RIFT_ROOT" ]; then
+#        . $RIFT_ROOT/rift-prompt
+#        PROMPT_COMMAND=my_rift_prompt
+#   fi
+
+
+#
+# This will prepend your prompt with the name of the workspace you are in (if
+# you are in the workspace), or 'INVALID' if you are not in the workspace to
+# inform you that the environment variables setup by the rift shell will be
+# incorrect if you are in another workspace.
+
+__rw_in_workspace(){
+  local path=$(realpath $PWD)
+  [[ "${path}" != "${path#${RIFT_ROOT}}" ]] && echo "true"
+}
+
+__rw_workspace_tag() {
+    local G="\[\033[0;32m\]" # green
+    local R="\[\033[0;31m\]" # red
+    local NONE="\[\033[0m\]" # unsets color to term's fg color
+
+  if [[ "$(__rw_in_workspace)" ]]; then
+    echo -e "${G}${RIFT_WORKSPACE}${NONE}:"
+  else
+    echo -e "${R}INVALID${NONE}:"
+  fi
+}

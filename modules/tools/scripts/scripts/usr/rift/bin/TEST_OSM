@@ -1,0 +1,33 @@
+#!/bin/bash
+
+
+set -e
+CONTAINER=${1:-osm}
+image=${2:-fc20}
+
+if [ ! -f riftware_install.sh ]; then
+    wget -O riftware_install.sh 'https://osm.etsi.org/gitweb/?p=osm/riftware.git;a=blob_plain;f=scripts/util/riftware_install.sh;hb=HEAD'
+    echo -e '\n\n please review riftware_install.sh and then run this script again\n\n'
+    exit 0
+fi
+    
+
+if ! lxc info $CONTAINER >/dev/null 2>&1; then
+    echo -e "\n\nCreating container $CONTAINER using image $image\n"
+    lxc launch $image $CONTAINER
+else
+    echo -e "\n\n using existing container $CONTAINER \n"
+fi
+
+
+lxc file push riftware_install.sh ${CONTAINER}/root/
+while ! lxc exec ${CONTAINER} ip addr show dev eth0 | grep -q 'inet '; do
+    echo waiting for network
+    sleep 1
+done
+lxc exec ${CONTAINER} ip addr show dev eth0
+sleep 1
+lxc exec ${CONTAINER} -- bash -ex /root/riftware_install.sh
+
+ADDRESS=$(lxc exec ${CONTAINER} ip addr show dev eth0 | awk '/inet ([0-9.]+)/ { print $2 }' | cut -f1 -d/)
+echo "installation complete. Open a browser on https://${ADDRESS}:8443 in about 30 seconds"

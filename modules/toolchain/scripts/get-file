@@ -1,0 +1,147 @@
+#!/bin/bash
+
+# Tool: get-file
+#
+# Make sure a file exists by trying a series of URLs to get it.  On a successful return, the file
+# is always updated by copying it from one of the URLs provided.
+
+set -o errexit
+set -o nounset
+
+params="$(getopt -o hvd -l help,verbose,debug --name "$0" -- "$@")"
+if [[ $? -ne 0 ]]; then
+    echo "Failed parsing options." >&2
+    exit 1
+fi
+
+eval set -- $params
+
+VERBOSE=
+DEBUG=
+
+while true; do
+    case "$1" in
+	-h|--help)
+	    echo
+	    echo "NAME:"
+	    echo "  $0"
+	    echo
+	    echo "SYNOPSIS:"
+	    echo "  $0 -h|--help"
+	    echo "  $0 [-v|--verbose] [-d|--debug] <target> <url>..."
+	    echo
+	    echo "DESCRIPTION:"
+	    echo "  Install a file from one of a list of URLs"
+	    echo
+	    echo "OPTIONS:"
+	    echo "  -v --verbose: more verbosity!"
+	    echo "  -d --debug:   way more verbosity!"
+	    echo
+	    echo "ARGUMENTS:"
+	    echo
+	    echo "  <target>: the path that the file will be copied to"
+	    echo "  <url>...: a list of URLs to try in order.  For each URL,"
+	    echo "        if the URL is a file: URL and it points to a non-empty"
+	    echo "        file on the current system then the file is copied."
+	    echo "        Note that a file: URL must start with file:///  - host"
+	    echo "        is not supported for file URLs."
+	    echo "        If the URL has a host (i.e. if it is not a file: URL)"
+	    echo "        and the host is reachable, then the file will be retrieved"
+	    echo "        from the URL."
+	    echo
+	    exit 0;;
+	-v|--verbose) VERBOSE=1; shift;;
+	-d|--debug) DEBUG=1; VERBOSE=1; shift;;
+	    
+	--) shift; break;;
+	*) echo "Not implemented: $1" >&2; exit 1;;
+    esac
+done
+
+if [[ $# -lt 2 ]]; then
+   echo "$0: must specify pathname and a list of URLs"
+   exit 1
+fi
+
+readonly TARGET=$1
+shift
+
+# This function parses a URL into global variables.
+function parse_url() {
+    # This regex is derived from the Wikipedia article on URLs - it may
+    # not be completely accurate, and certainly doesn't handle non-7-bit-ascii
+    if [[ $1 =~ ([a-zA-Z][a-zA-Z0-9.-]+)://((([a-zA-Z][a-zA-Z0-9.-]+)(:([a-zA-Z][a-zA-Z0-9.-]+)@))?([a-zA-Z][a-zA-Z0-9.-]+)(:([0-9]+))?)?(/[^?#]*)(\?([^#]*))?(\#(.*))? ]]; then
+	scheme=${BASH_REMATCH[1]}
+	user=${BASH_REMATCH[4]}
+	password=${BASH_REMATCH[6]}
+	host=${BASH_REMATCH[7]}
+	port=${BASH_REMATCH[9]}
+	path=${BASH_REMATCH[10]}
+	query=${BASH_REMATCH[12]}
+	fragment=${BASH_REMATCH[14]}
+	if [[ $DEBUG ]]; then
+	    echo scheme=$scheme
+	    echo user=$user
+	    echo password=$password
+	    echo host=$host
+	    echo port=$port
+	    echo path=$path
+	    echo query=$query
+	    echo fragment=$fragment
+	fi
+    else
+	echo "Internal error: Cannot parse URL: $1"
+	exit 1
+    fi
+}
+
+for url in "$@"; do
+
+    if [[ $VERBOSE ]]; then echo "Looking at URL: $url"; fi
+    
+    parse_url $url    
+
+    if [[ $host ]]; then
+	# A file: URL will normally not have a host, so no point in checking visibility of host if there isn't one in the URL
+	if ! host $host > /dev/null 2>&1; then
+	    if [[ $VERBOSE ]]; then echo "The URL provided has an unreachable host, so ignore it..."; fi
+	    continue
+	fi
+    fi
+
+    if [[ $scheme == 'file' ]]; then
+	if [[ ! -s $path ]]; then
+	    if [[ $VERBOSE ]]; then echo "File named by URL either doesn't exist or is empty, so don't use it."; fi
+	    continue
+	fi
+    fi
+
+    echo "Trying to get"
+    echo "     $TARGET"
+    echo "from"
+    echo "     $url"
+    
+    if curl -o $TARGET $url; then
+	# curl succeeded, so we are done
+	exit 0
+    fi
+
+    # This will rarely be run.  Normally the first valid URL will succeed.
+    echo "curl failed, trying next URL if any"
+
+done
+
+# If we get down here, we've tried and failed to get the file from every URL.
+# Find the first file: url and tell the user to copy the file there.
+for url in "$@"; do
+    parse_url $url
+
+    if [[ $scheme == file ]]; then
+	echo "In order to build, you need to copy the file:"
+	echo "    $(basename $path)"
+	echo "into the directory:"
+	echo "    $(dirname $path)"
+	exit 1
+    fi
+done
+

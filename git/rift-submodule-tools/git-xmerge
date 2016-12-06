@@ -1,0 +1,155 @@
+#!/bin/bash
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Austin Cormier
+# Creation Date: 2014/10/01
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$DIR/git-common-functions.sh"
+
+function merge_in_each_submodule(){
+  # Create an array to store the submodules which had merge conflicts.
+  # This will be used to notify the user which submodules to manually merge.
+  declare -a sm_conflicts=( )
+
+  merge_branch="$1"
+
+  # The input is at the bottom of the while loop.  This is to prevent the body from running
+  # within a subshell preventing access to sm_conflicts changes.
+  while read line; do
+    pushd $line > /dev/null
+      ensure_on_local || return 1
+
+      is_valid_branch_name "origin/$merge_branch"
+      if [ $? -ne 0 ]; then
+        log "WARNING: Branch name $merge_branch not found in submodule: $line"
+        popd > /dev/null
+        continue;
+      fi
+
+      is_valid_branch_name $merge_branch
+      if [ $? -ne 0 ]; then
+        log "INFO: Creating local $merge_branch branch in submodule: $line"
+        git branch $merge_branch
+      fi
+
+      log "INFO - Merging $merge_branch into local branch inside of submodule: $line"
+      git merge $merge_branch --no-edit
+      if [ $? -ne 0 ]; then
+        log "WARNING - Failed to automatically merge $merge_branch into local branch: $line"
+        # Add the submodule to the conflicts array, and move on to the next.
+        sm_conflicts=("${sm_conflicts[@]}" "$line")
+
+        popd > /dev/null
+        continue
+      fi
+
+      ensure_on_local || return 1
+
+    popd > /dev/null
+  done < <(foreach_initialized_submodule)
+
+  num_conflicts=${#sm_conflicts[@]}
+  if [ $num_conflicts -gt 0 ]; then
+    echo ""
+    echo "$num_conflicts submodule(s) had merge conflicts: ${sm_conflicts[@]}."
+    echo "Resolve the merge conflict in each submodule and run 'git-xcommit -a' at the top level then re-run this command to complete the merge."
+    echo "You may also use git xmergetool to run your configured mergetool in each submodule."
+    return 1
+  fi
+}
+
+function auto_commit_submodule_merges(){
+  local branch_name="$1"
+  log "Auto-commiting any submodule merges."
+  git xcommit --author="ruser <RW.User@riftio.com>" -a -m "git-xmerge: Auto-commit submodule merges from $branch_name."
+  if [ $? -ne 0 ]; then
+    log "(ERROR) Failed to auto-commit submodule merges."
+    return 1
+  fi
+}
+
+function auto_commit_supermodule_merges(){
+  local branch_name="$1"
+  log "Auto-commiting any supermodule merges."
+  git xcommit --author="ruser <RW.User@riftio.com>" -a -m "git-xmerge: Auto-commit supermodule merge from $branch_name"
+  if [ $? -ne 0 ]; then
+    log "(ERROR) Failed to auto-commit supermodule merge."
+    return 1
+  fi
+}
+
+function merge_supermodule(){
+  local branch_name="$1"
+  is_valid_branch_name $branch_name || git branch $branch_name
+  log "Merging in the supermodule"
+  git merge "$branch_name" --no-edit
+  if [ $? -ne 0 ]; then
+    log "ERROR: Failed to merge in supermodule."
+    return 1
+  fi
+}
+
+function verify_all_submodules_have_branch(){
+  branch_name=$1
+
+  while read line; do
+    pushd $line > /dev/null
+      ensure_on_local || return 1
+      is_valid_branch_name "$branch_name"
+      if [ $? -ne 0 ]; then
+        log "ERROR: Submodule $line does not have $branch_name" branch.""
+        log "ERROR: You must run 'git xcheckout $branch_name' followed by 'git xpull' then git xcheckout <current_branch> before merging."
+        popd > /dev/null
+        return 1
+      fi
+    popd > /dev/null
+  done < <(foreach_initialized_submodule)
+}
+
+# Verify branch argument
+if [ $# -ne 1 ]; then
+  log "ERROR: You must provide a branch argument to git xmerge."
+  exit 1
+fi
+
+branch_name=$1
+is_valid_branch_name "origin/$branch_name"
+if [ $? -ne 0 ]; then
+  log "ERROR - Branch not found: $branch_name"
+  exit 1
+fi
+
+if is_valid_branch_name "$branch_name"; then
+  if [ "$(git rev-parse $branch_name)" != "$(git rev-parse origin/$branch_name)" ]; then
+    log "ERROR - $branch_name and origin/$branch_name have diverged.  Please run git-xpull on $branch_name branch before merging."
+    exit 1
+  fi
+fi
+
+check_for_detached_head || exit 1
+check_clean || exit 1
+
+verify_all_submodules_have_branch $branch_name || exit 1
+
+merge_in_each_submodule $branch_name || exit 1
+auto_commit_submodule_merges $branch_name || exit 1
+
+merge_supermodule $branch_name || exit 1
+auto_commit_supermodule_merges $branch_name || exit 1
+
+echo ""
+echo "Merge completed."

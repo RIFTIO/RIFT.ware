@@ -1,0 +1,18 @@
+{
+	"test_name":"TC_SAMPLE_0100",
+	"commandline":"sample_test_script.py --sut_file {sut_file} --config_file {config_file} --user {user} --opt rift_root={rift_root} --opt iplist={iplist} --opt target_vm={target_vm} --opt logdir={logdir} --opt debug={debug}",
+	"test_description":"This is a sample test config file",
+	"status":"development",
+	"keywords":["sample"],
+	"timelimit": 600,
+	"networks":[],
+    "target_vm": "VM",
+  "vms":[
+    {
+      "name": "VM",
+      "hugepages": false,
+      "memory": 8192,
+      "cpus": 1
+    }
+  ]
+}

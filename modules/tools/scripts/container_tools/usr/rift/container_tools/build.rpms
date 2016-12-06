@@ -1,0 +1,279 @@
+# fc20: Fedora Core 20
+# ub16: Ubuntu 16.04
+
+fc20: Xvfb
+ub16: xvfb
+
+asciidoc
+
+fc20: autoconf-2.69-14.fc20.noarch
+ub16: autoconf
+
+fc20: automake-1.13.4-5.fc20.noarch
+ub16: automake
+
+bc
+
+fc20: bison-2.7-3.fc20.x86_64
+ub16: bison
+
+fc20: boost-devel
+fc20: boost-filesystem
+ub16: libboost-dev
+ub16: libboost-filesystem-dev
+
+bzip2
+
+fc20: cairo-gobject-devel
+ub16: libcairo-gobject2
+
+chrpath
+
+fc20: clang-3.3-4.fc20.x86_64
+ub16: clang
+
+fc20: cmake-2.8.12.1-1.fc20.x86_64
+ub16: cmake
+
+cscope
+
+curl
+dos2unix
+
+doxygen
+
+fc20: elfutils-libelf-devel
+ub16: libelf-dev
+ub16: elfutils
+
+fc20: emacs-el
+ub16: emacs24-el
+
+flex
+
+fc20: flex-devel
+# No flex-devel for Ubuntu
+
+fc20: fontconfig-devel
+ub16: libfontconfig1-dev
+
+fc20: gamin-devel
+ub16: libgamin-dev
+
+fc20: gcc-4.8.2-7.fc20.x86_64
+ub16: gcc
+
+fc20: gcc-c++-4.8.2-7.fc20.x86_64
+# No gcc-c++ for Ubuntu
+
+git
+
+fc20: glade3-libgladeui
+ub16: libgladeui-dev
+
+fc20: gnome-common-3.10.0-1.fc20.noarch
+ub16: gnome-common
+
+fc20: go
+ub16: golang
+
+fc20: gperf
+ub16: gperf
+
+fc20: gtk+
+fc20: gtk-doc
+ub16: libgtk2.0-dev
+ub16: libgtk2.0-doc
+
+fc20: icu
+ub16: icu-devtools
+
+intltool
+
+fc20: jemalloc-devel
+ub16: libjemalloc-dev
+
+fc20: json-c-devel-0.11-3.fc20.x86_64
+ub16: libjson-c-dev
+
+lcov
+
+fc20: libX11-devel
+fc20: libXfixes-devel
+ub16: libx11-dev
+ub16: libxfixes-dev
+
+fc20: libXft-devel
+ub16: libxft-dev
+
+fc20: libattr-devel
+ub16: libattr1-dev
+
+fc20: libcap-devel
+ub16: libcap-dev
+
+fc20: libcurl-devel
+ub16: libcurl4-gnutls-dev
+
+fc20: libdb-devel
+ub16: libdb-dev
+
+fc20: libev-devel
+ub16: libev-dev
+
+fc20: libevent-devel
+ub16: libevent-dev
+
+fc20: libffi-devel
+ub16: libffi-dev
+
+fc20: libgudev1
+ub16: libgudev-1.0-dev
+
+fc20: libguestfs-tools-c
+ub16: libguestfs-tools
+
+fc20: libicu-devel-50.1.2-10.fc20.x86_64
+ub16: libicu-dev
+
+fc20: libnl-devel
+fc20: libnl3-devel
+ub16: libnl-3-dev
+
+fc20: libpcap-devel
+ub16: libpcap-dev
+
+fc20: libssh2-devel
+ub16: libssh2-1-dev
+
+fc20: libtalloc-devel
+ub16: libtalloc-dev
+
+fc20: libtool-2.4.2-23.fc20.x86_64
+ub16: libtool
+
+fc20: libudev-devel
+ub16: libudev-dev
+
+fc20: libunwind-devel
+ub16: libunwind-dev
+
+fc20: libuuid-devel
+ub16: libuuid1
+
+fc20: libxml-devel
+ub16: 
+
+fc20: libxml2-devel
+ub16: libxml2-dev
+
+fc20: libxslt-devel
+ub16: libxslt1-dev
+
+fc20: lua-devel
+ub16: libtolua-dev
+
+lua-markdown
+
+lyx
+fc20: luajit-devel
+ub16: libluajit-5.1-dev
+
+fc20: make-4.0-3.1.fc22.x86_64
+ub16: make
+
+fc20: maven-local
+ub16: 
+
+fc20: mesa-libGL-devel
+ub16: libgl1-mesa-dev
+
+fc20: nbd
+ub16: nbdkit
+
+fc20: ncurses-devel
+ub16: libncursesw5-dev
+
+npm
+openssh-server
+patchelf
+pdftk
+
+fc20: pycairo-devel
+ub16: python-cairo-dev
+
+python-nose
+python-pip
+python-sphinx
+
+fc20: python-tools
+
+fc20: python3-cairo-devel
+ub16: python3-cairo-dev
+
+fc20: qemu-img
+ub16: qemu-utils
+
+ruby
+
+fc20: rubygem-asciidoctor-0.1.4-1.fc20.noarch
+ub16: asciidoctor
+
+# Not sure where fc20 gets fop from
+ub16: fop
+
+sharutils
+
+fc20: strongswan-charon-nm.x86_64
+ub16: strongswan-charon
+
+fc20: strongswan.x86_64
+ub16: strongswan
+
+fc20: systemtap-sdt-devel
+ub16: systemtap-sdt-dev
+
+texi2html
+texinfo
+
+fc20: texlive-latex2man-bin
+
+unzip
+
+# fc20 gets vala from ext
+ub16: valac
+ub16: libvala-0.30-dev
+
+
+fc20: valgrind-devel
+ub16: valgrind
+
+wget
+
+fc20: xml-common
+
+xmlto
+
+fc20: rpm-build 
+fc20: rpmlint
+fc20: patchelf
+
+ub16: libkqueue-dev
+ub16: libpthread-workqueue-dev
+ub16: libxerces-c-dev
+ub16: uthash-dev
+ub16: protobuf-compiler
+ub16: nodejs-legacy
+ub16: libmsgpack-dev
+ub16: uuid-dev
+ub16: libblocksruntime0
+ub16: libblocksruntime-dev
+ub16: libboost-regex-dev
+ub16: tcpdump-dev
+
+# Needed to build debian packages, could be moved to a new mode in the future:
+ub16: git-build-recipe
+ub16: pbuilder
+ub16: dh-autoreconf
+ub16: apt-utils
+fc20: createrepo

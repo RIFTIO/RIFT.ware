@@ -1,0 +1,382 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rw-mgmtagt-log
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwvcs-mgmtagent-log";
+  prefix "rwmgmtagtlog";
+
+  import rw-notify-ext {
+    prefix "rw-notify";
+  }
+
+  import rw-log {
+    prefix "rw-log";
+  }
+
+  import rw-mgmtagt {
+    prefix "rw-mgmtagt";
+  }
+  
+  revision 2015-01-14 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Management Agent Logging";
+  }
+
+  /* Management Agent Logging 70000 - 71000 */
+
+  notification instance-info {
+    rw-notify:log-event-id 00070001;
+    description "Management agent instance info notifications";
+    uses rw-log:severity-info;
+
+    leaf instance {
+      type rw-log:pointer;
+    }
+    leaf log {
+      type string;
+    }
+  }
+
+  notification instance-crit-info {
+    rw-notify:log-event-id 00070002;
+    description "Management agent instance critical info notifications";
+    uses rw-log:severity-info-critinfo;
+
+    leaf instance {
+      type rw-log:pointer;
+    }
+    leaf log {
+      type string;
+    }
+  }
+  
+  notification instance-notice {
+    rw-notify:log-event-id 00070003;
+    description "Management agent instance notifications";
+    uses rw-log:severity-notice;
+
+    leaf instance {
+      type rw-log:pointer;
+    }
+    
+    leaf log {
+      type string;
+    }
+  }
+
+  notification instance-error {
+    rw-notify:log-event-id 00070004;
+    description "Management agent instance errors";
+    uses rw-log:severity-error;
+
+    leaf instance {
+      type rw-log:pointer;
+    }
+    
+    leaf log {
+      type string;
+    }
+  }
+
+  notification instance-debug {
+    rw-notify:log-event-id 00070005;
+    description "Management agent instance debug logs";
+    uses rw-log:severity-debug;
+
+    leaf instance {
+      type rw-log:pointer;
+    }
+    
+    leaf log {
+      type string;
+    }
+  }
+
+  notification instance-debug-detailed {
+    rw-notify:log-event-id 00070006;
+    description "Management agent instance detailed debug logs";
+    uses rw-log:severity-debug;
+
+    leaf instance {
+      type rw-log:pointer;
+    }
+
+    leaf log {
+      type string;
+    }
+
+    leaf description {
+      type string;
+    }
+  }
+
+
+  notification client-debug {
+    rw-notify:log-event-id 00070010;
+    description "Management agent client debug logs";
+    uses rw-log:severity-debug;
+
+    leaf nb-req-type {
+      type rw-mgmtagt:nb-req-type;
+    }    
+
+    leaf client {
+      type rw-log:pointer;
+    }
+    
+    leaf log {
+      type string;
+    }
+
+    leaf data {
+      type string;
+    }
+  }
+
+
+  notification client-fd-log {
+    rw-notify:log-event-id 00070011;
+    description "Management agent client logs with fd";
+    uses rw-log:severity-debug;
+
+    leaf nb-req-type {
+      type rw-mgmtagt:nb-req-type;
+    }    
+
+    leaf client {
+      type rw-log:pointer;
+    }
+
+    leaf log {
+      type string;
+    }
+    
+    leaf fd {
+      type int32;
+    }
+  }
+
+  notification client-error {
+    rw-notify:log-event-id 00070012;
+    description "Management agent client error logs";
+    uses rw-log:severity-error;
+
+    leaf nb-req-type {
+      type rw-mgmtagt:nb-req-type;
+    }    
+
+    leaf client {
+      type rw-log:pointer;
+    }
+    
+    leaf log {
+      type string;
+    }
+
+    leaf data {
+      type string;
+    }
+  }
+
+  notification client-notice {
+    rw-notify:log-event-id 00070013;
+    description "Management agent client notice logs";
+    uses rw-log:severity-notice;
+    
+    leaf nb-req-type {
+      type rw-mgmtagt:nb-req-type;
+    }    
+    
+    leaf client {
+      type rw-log:pointer;
+    }
+    
+    leaf log {
+      type string;
+    }
+    
+    leaf data {
+      type string;
+    }
+  }
+
+
+  notification client-sb-req-debug {
+    rw-notify:log-event-id 00070014;
+    description "Management agent instance debug logs";
+    uses rw-log:severity-debug;
+
+    leaf sb-req-type {
+      type rw-mgmtagt:sb-req-type;
+    }
+    
+    leaf xaction {
+      type rw-log:pointer;
+    }
+
+    leaf nb-req-type {
+      type rw-mgmtagt:nb-req-type;
+    }    
+
+    leaf client {
+      type rw-log:pointer;
+    }
+
+
+    leaf log {
+      type string;
+    }
+
+    leaf description {
+      type string;
+    }
+  }
+
+  notification client-crit-info {
+    rw-notify:log-event-id 00070015;
+    description "Management agent client critical info logs";
+    uses rw-log:severity-info-critinfo;
+
+    leaf nb-req-type {
+      type rw-mgmtagt:nb-req-type;
+    }
+
+    leaf client {
+      type rw-log:pointer;
+    }
+
+    leaf log {
+      type string;
+    }
+
+    leaf data {
+      type string;
+    }
+  }
+
+
+  notification dommgr-debug {
+    rw-notify:log-event-id 00070020;
+    description "Management Agent XML Manager";
+    uses rw-log:severity-debug;
+
+    leaf fn-name {
+      type string;
+    }
+    
+    leaf log {
+      type string;
+    }
+
+  }
+
+  notification dommgr-notice {
+    rw-notify:log-event-id 00070021;
+    description "Management Agent XML Manager notice logs";
+    uses rw-log:severity-notice;
+
+    leaf fn-name {
+      type string;
+    }
+
+
+    leaf log {
+      type string;
+    }
+  }
+  
+  notification dommgr-error {
+    rw-notify:log-event-id 00070022;
+    description "Management Agent XML Manager error logs";
+    uses rw-log:severity-error;
+
+    leaf fn-name {
+      type string;
+    }
+
+    leaf log {
+      type string;
+    }
+  }
+
+  notification uagent-request-start {
+    rw-notify:log-event-id 00070030;
+    description "Management Agent XML Manager Start of request";
+    uses rw-log:severity-error;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification uagent-request-stop {
+    rw-notify:log-event-id 00070031;
+    description "Management Agent XML Manager Stop of request";
+    uses rw-log:severity-error;
+    leaf log {
+      type string;
+    }
+  }
+
+  notification confd-upgrade-debug {
+    rw-notify:log-event-id 00070035;
+    description "Management Agent Confd upgrade debug logs";
+    uses rw-log:severity-debug;
+
+    leaf fn-name {
+      type string;
+    }
+
+    leaf log {
+      type string;
+    }
+  }
+
+  notification confd-upgrade-notice {
+    rw-notify:log-event-id 00070036;
+    description "Management Agent Confd upgrade notice logs";
+    uses rw-log:severity-notice;
+
+    leaf fn-name {
+      type string;
+    }
+
+    leaf log {
+      type string;
+    }
+  }
+
+  notification confd-upgrade-error {
+    rw-notify:log-event-id 00070037;
+    description "Management Agent Confd upgrade error logs";
+    uses rw-log:severity-error;
+
+    leaf fn-name {
+      type string;
+    }
+
+    leaf log {
+      type string;
+    }
+  }
+
+}

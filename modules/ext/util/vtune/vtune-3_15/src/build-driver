@@ -1,0 +1,671 @@
+#!/bin/sh
+
+#
+# File: build-driver
+#
+# Description: script to build the SEP driver
+#
+# Version: 1.7
+#
+# Copyright (C) 2008-2014 Intel Corporation.  All Rights Reserved.
+# 
+#     This file is part of SEP Development Kit
+# 
+#     SEP Development Kit is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     version 2 as published by the Free Software Foundation.
+# 
+#     SEP Development Kit is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with SEP Development Kit; if not, write to the Free Software
+#     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# 
+#     As a special exception, you may use this file as part of a free software
+#     library without restriction.  Specifically, if other files instantiate
+#     templates or use macros or inline functions from this file, or you compile
+#     this file and link it with other files to produce an executable, this
+#     file does not by itself cause the resulting executable to be covered by
+#     the GNU General Public License.  This exception does not however
+#     invalidate any other reasons why the executable file might be covered by
+#     the GNU General Public License.
+#
+
+# set the path to include "standard" locations so commands below can be found
+
+PATH="/sbin:/usr/sbin:/usr/local/sbin:/bin:/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/local/gnu/bin:.:"${PATH}""
+export PATH
+
+# ------------------------------ COMMANDS ------------------------------------
+
+CUT="cut"
+ECHO="echo"
+GREP="grep"
+HEAD="head"
+SED="sed"
+UNAME="uname"
+WHICH="which"
+
+COMMANDS_TO_CHECK="${CUT} ${GREP} ${HEAD} ${UNAME}"
+
+# if any of the COMMANDS_TO_CHECK are not executable, then exit script
+
+OK="true"
+for c in ${COMMANDS_TO_CHECK} ; do
+  CMD=`${WHICH} $c 2>&1` ;
+  if [ -z "${CMD}" ] ; then
+    OK="false"
+    echo "ERROR: unable to find command \"$c\" !"
+  fi
+done
+if [ ${OK} != "true" ] ; then
+  echo "Please add the above commands to your PATH and re-run the script ... exiting."
+  exit 255
+fi
+
+# ------------------------------ CONSTANTS -----------------------------------
+
+# base driver name and version
+DRIVER_BASE=sep
+DRIVER_MAJOR=3
+DRIVER_MINOR=15
+# basic name of driver
+DRIVER_NAME=${DRIVER_BASE}${DRIVER_MAJOR}_${DRIVER_MINOR}
+
+# ------------------------------ VARIABLES -----------------------------------
+
+SCRIPT=$0
+SCRIPT_ARGS="$*"
+SCRIPT_DIR=`dirname "$SCRIPT"`
+PLATFORM=`${UNAME} -m`
+KERNEL_VERSION=`${UNAME} -r`
+MACHINE_TYPE=`${UNAME} -m`
+DRIVER_DIRECTORY=$PWD
+DRIVER_SOURCE_DIRECTORY=$PWD
+PER_USER_MODE="NO"
+
+# ------------------------------ FUNCTIONS -----------------------------------
+
+# function to show usage and exit
+
+print_usage_and_exit()
+{
+  echo ""
+  echo "Usage: $0 [ options ]"
+  echo ""
+  echo " where \"options\" are the following:"
+  echo ""
+  echo "    --help | -h"
+  echo "      prints out usage"
+  echo ""
+  echo "    --non-interactive | -ni"
+  echo "      attempts to automatically build the driver using"
+  echo "      default values without prompting for user input"
+  echo ""
+  echo "    --print-driver-name"
+  echo "      returns the name of the driver that would be built"
+  echo "      based on the current running kernel"
+  echo ""
+  echo "    --install-dir=path"
+  echo "      \"path\" is an existing, writable directory where the"
+  echo "      driver will be copied after it is successfully built;"
+  echo "      this defaults to \"${DRIVER_DIRECTORY}\""
+  echo ""
+  echo "    --print-kernel-checksum"
+  echo "      returns kernel checksum information for running kernel;"
+  echo "      this can be used to verify driver/kernel compatibility"
+  echo ""
+  echo "    --kernel-file=file"
+  echo "      \"file\" is pathname of kernel file for currently"
+  echo "      running kernel; used for comparing kernel checksums;"
+  echo "      this can be either compressed (vmlinuz) or"
+  echo "      uncompressed (vmlinux) kernel file, but must be the"
+  echo "      kernel that was booted; this defaults to \"/boot/vmlinuz-${KERNEL_VERSION}\""
+  echo ""
+  echo "    --kernel-version=version"
+  echo "      \"version\" is version string of kernel that should"
+  echo "      be used for checksum or for building the driver;"
+  echo "      this defaults to \"${KERNEL_VERSION}\""
+  echo ""
+  echo "    --kernel-src-dir=path"
+  echo "      \"path\" directory of the configured kernel source tree;"
+  echo "      several paths are searched to find a suitable default,"
+  echo "      including \"/lib/modules/${KERNEL_VERSION}/{source,build}\","
+  echo "      \"/usr/src/linux-${KERNEL_VERSION}\", and \"/usr/src/linux\""
+  echo ""
+  echo "    --c-compiler=c_compiler"
+  echo "      \"c_compiler\" is the C compiler used to compile the kernel;"
+  echo "      this defaults to \"gcc\""
+  echo ""
+  echo "    --make-command=make_command"
+  echo "      \"make_command\" is the make command used to build the kernel;"
+  echo "      this defaults to \"make\""
+  echo ""
+  echo "    --make-args=args"
+  echo "      arguments to pass to make command (e.g., \"-n\" causes all make"
+  echo "      commands to be shown but does not actually carry them out,"
+  echo "      \"V=1\" shows the detailed build commands, etc.)"
+  echo ""
+  echo "    --exit-if-driver-exists"
+  echo "      exits if a pre-built driver for the current running"
+  echo "      kernel exists in the driver install directory"
+  echo ""
+  echo "    --non-verbose"
+  echo "      decrease the amount of (helpful) messages"
+  echo ""
+  echo "    --config-file=file"
+  echo "      \"file\" is pathname of configuration file to read"
+  echo "      default VARIABLE=VALUE entries from; NOTE: order of"
+  echo "      this option (relative to the other options) matters"
+  echo ""
+  echo "    --per-user | -pu"
+  echo "      build the driver in secure sampling mode"
+  echo ""
+  echo ""
+  exit 0
+}
+
+# print kernel checksum info for future comparision
+# check for kernel file in kernel source tree
+#  KERNEL_FILE=${KERNEL_SRC_DIR}/vmlinux
+#  KERNEL_FILE=`cat /proc/cmdline | tr ' ' '\n' | grep BOOT_FILE | cut -d '=' -f 2`
+
+print_kernel_checksum()
+{
+  KERNEL_FILE=$1
+  MD5SUM=`${WHICH} ${MD5SUM:-md5sum} 2>&1`
+
+  if [ -x "${MD5SUM}" ] ; then
+    if [ -r "${KERNEL_FILE}" ] ; then
+      CHECKSUM=`${MD5SUM} ${KERNEL_FILE}`
+      echo "${CHECKSUM}  ${kernel_version}  ${MACHINE_TYPE}"
+    fi
+  fi
+}
+
+read_config_file()
+{
+  CONFIG_FILE=$1
+  if [ -r "${CONFIG_FILE}" ] ; then
+    driver_install_dir=`${GREP} "^VDK_INSTALL_DIR=" ${CONFIG_FILE} | ${SED} -e s^VDK_INSTALL_DIR=^^`
+    c_compiler=`${GREP} "^VDK_C_COMPILER=" ${CONFIG_FILE} | ${SED} -e s^VDK_C_COMPILER=^^`
+    make_command=`${GREP} "^VDK_MAKE_COMMAND=" ${CONFIG_FILE} | ${SED} -e s^VDK_MAKE_COMMAND=^^`
+    kernel_src_dir=`${GREP} "^VDK_KERNEL_SRC_DIR=" ${CONFIG_FILE} | ${SED} -e s^VDK_KERNEL_SRC_DIR=^^`
+  else
+    if [ $non_verbose -eq 1 ] ; then
+      echo ""
+      echo "Warning: unable to access config file \"${CONFIG_FILE}\" ... option ignored ..."
+    fi
+  fi
+}
+
+get_first() {
+  echo $1
+}
+
+exit_if_file_inaccessible()
+{
+  proposed_file=$1
+  attr=${2:-f}
+  # check for executable
+  if [ "$attr" = "x" ] ; then
+    file=`${WHICH} $proposed_file 2>&1`
+    if [ ! -$attr "$file" ] ; then
+      echo "ERROR: file \"$proposed_file\" either does not exist or is not an executable!"
+      exit 111
+    fi
+  # otherwise assume regular file
+  else
+    if [ ! -$attr "$proposed_file" ] ; then
+      echo "ERROR: \"$proposed_file\" is either not a file or is not accessible!"
+      exit 111
+    fi
+  fi
+}
+
+exit_if_directory_inaccessible()
+{
+  dir=$1
+  err=$2
+  if [ ! -d "$dir" ] ; then
+    echo "ERROR: \"$dir\" either does not exist or is not a directory!"
+    exit $err
+  fi
+  if [ ! -r "$dir" ] ; then
+    echo "ERROR: directory \"$dir\" is not accessible!"
+    exit $err
+  fi
+}
+
+non_interactive=0
+print_driver_name=0
+print_kernel_checksum=0
+use_install_dir=0
+build_kernel=2  #  0=no, 1=yes, 2=maybe
+exit_if_driver_exists=0
+non_verbose=0
+
+while [ $# -gt 0 ] ; do
+  case "$1" in
+    --help | -h)
+      print_usage_and_exit
+      ;;
+    --non-interactive | -ni)
+       non_interactive=1
+       ;;
+    --print-driver-name)
+       print_driver_name=1
+       build_kernel=0
+       ;;
+    --install-dir=*)
+       driver_install_dir=`echo $1 | sed s?^--install-dir=??g`
+       use_install_dir=1
+       ;;
+    --kernel-file=*)
+       kernel_file=`echo $1 | sed s?^--kernel-file=??g`
+       ;;
+    --kernel-version=*)
+       kernel_version=`echo $1 | sed s?^--kernel-version=??g`
+       ;;
+    --kernel-src-dir=*)
+       kernel_src_dir=`echo $1 | sed s?^--kernel-src-dir=??g`
+       ;;
+    --c-compiler=*)
+       c_compiler=`echo $1 | sed s?^--c-compiler=??g`
+       ;;
+    --make-command=*)
+       make_command=`echo $1 | sed s?^--make-command=??g`
+       ;;
+    --make-args=*)
+       make_args=`echo $1 | sed s?^--make-args=??g`
+       ;;
+    --print-kernel-checksum)
+       print_kernel_checksum=1
+       build_kernel=0
+       ;;
+    --exit-if-driver-exists)
+       exit_if_driver_exists=1
+       ;;
+    --non-verbose)
+       non_verbose=1
+       ;;
+    --config-file=*)
+       config_file=`echo $1 | sed s?^--config-file=??g`
+       read_config_file $config_file
+       ;;
+    --per-user | -pu)
+       PER_USER_MODE="YES"
+       ;;
+    *)
+       echo ""
+       echo "Invalid option: \"$1\""
+       print_usage_and_exit
+       ;;
+  esac
+  shift
+done
+
+if [ -z "${kernel_version}" ] ; then
+  kernel_version=${KERNEL_VERSION}
+fi
+
+if [ -z "${kernel_src_dir}" ] ; then
+  kernel_src_dir=/usr/src/linux-${kernel_version}
+else
+  exit_if_directory_inaccessible $kernel_src_dir 110
+fi
+
+if [ -z "${kernel_file}" ] ; then
+  kernel_file=/boot/vmlinuz-${kernel_version}
+else
+  exit_if_file_inaccessible $kernel_file
+fi
+
+if [ -z "${c_compiler}" ] ; then
+  c_compiler=gcc
+else
+  exit_if_file_inaccessible $(get_first $c_compiler) x
+fi
+
+if [ -z "${make_command}" ] ; then
+  make_command=make
+else
+  exit_if_file_inaccessible $make_command x
+fi
+
+# function to describe default option
+
+show_preamble()
+{
+  if [ $non_verbose -eq 0 ] ; then
+    echo ""
+    echo "Options in brackets \"[ ... ]\" indicate default values"
+    echo "that will be used when only the ENTER key is pressed."
+  fi
+  echo ""
+}
+
+# function to return absolute path location (from script directory)
+
+get_absolute_path()
+{
+  target_dir=$1
+  if [ -d ${target_dir} ] ; then
+    cd ${SCRIPT_DIR} -
+    cd ${target_dir} -
+    actual_dir=$PWD
+    cd ${SCRIPT_DIR} -
+    echo "${actual_dir}"
+  else
+    echo "${target_dir}"
+  fi
+}
+
+# function to repeat this script or exit with error code
+
+repeat_or_exit()
+{
+  EXIT_CODE=$1
+  echo ""
+  # for now, just exit with error
+  exit ${EXIT_CODE}
+  if [ $non_interactive -eq 1 ] ; then
+    exit ${EXIT_CODE}
+  fi
+  echo -n "Retry building the driver? (yes/no) [Yes] "
+  read YESNO
+  if [ "${YESNO}" = "N" -o "${YESNO}" = "n" -o "${YESNO}" = "no" -o "${YESNO}" = "No" ] ; then
+    echo ""
+    exit ${EXIT_CODE}
+  else
+    exec ${SCRIPT} ${SCRIPT_ARGS}
+  fi
+  echo ""
+}
+
+# ----------------------------- PRE-CHECK ------------------------------------
+
+# check if OS and platform is supported
+
+# if ARCH variable is set, unset it to avoid conflicts below
+
+unset ARCH
+
+if [ "${PLATFORM}" = "x86_64" ] ; then
+  ARCH="x32_64"
+elif [ "${PLATFORM}" = "i386" -o "${PLATFORM}" = "i486" -o "${PLATFORM}" = "i586" -o "${PLATFORM}" = "i686" ] ; then
+  ARCH="x32"
+else
+  echo ""
+  echo "ERROR: Unsupported platform \"${PLATFORM}\" ... exiting."
+  echo ""
+  exit 254
+fi
+
+# determine if using kernel 2.6 sources or later
+
+KS_MAKEFILE=${kernel_src_dir}/Makefile
+if [ -r ${KS_MAKEFILE} ] ; then
+  KS_VERSION=`${GREP} "^VERSION" ${KS_MAKEFILE} | ${HEAD} -1 | ${SED} -e 's/ //g' | ${CUT} -d '=' -f 2`
+  KS_PATCHLEVEL=`${GREP} "^PATCHLEVEL" ${KS_MAKEFILE} | ${HEAD} -1 | ${SED} -e 's/ //g' | ${CUT} -d '=' -f 2`
+  KS_SUBLEVEL=`${GREP} "^SUBLEVEL" ${KS_MAKEFILE} | ${HEAD} -1 | ${SED} -e 's/ //g' | ${CUT} -d '=' -f 2`
+  KERNEL_26X=`echo "${KS_VERSION}.${KS_PATCHLEVEL}.${KS_SUBLEVEL}" | ${GREP} ^2.6.`
+  KERNEL_3XY=`echo "${KS_VERSION}.${KS_PATCHLEVEL}.${KS_SUBLEVEL}" | ${GREP} ^3.`
+else
+  KERNEL_26X=`echo ${kernel_version} | ${GREP} ^2.6.`
+  KERNEL_3XY=`echo ${kernel_version} | ${GREP} ^3.`
+fi
+KERNEL_SUPPORTED="${KERNEL_26X}${KERNEL_3XY}"
+
+# if not using kernel 2.6.x or later, then exit with error
+
+if [ -z "${KERNEL_SUPPORTED}" ] ; then
+  echo ""
+  echo "ERROR: Linux kernels prior to 2.6.x are unsupported ... exiting."
+  echo ""
+  exit 254
+fi
+
+# print checksum and exit, if requested
+
+if [ $print_kernel_checksum -eq 1 ] ; then
+  print_kernel_checksum $kernel_file
+  exit 0
+fi
+
+# check whether kernel is for UP or SMP
+
+SMP=`${UNAME} -v | ${GREP} SMP`
+if [ -z "${SMP}" ] ; then
+  ARITY="up"
+else
+  ARITY="smp"
+fi
+
+# check driver file extension
+
+EXT="ko"
+
+if [ "$PER_USER_MODE" = "YES" ]; then
+    PER_USER_EXT="-pu"
+fi
+
+# name of the driver that will be built (see Makefile)
+
+DRIVER_FILENAME=${DRIVER_NAME}${PER_USER_EXT}-${ARCH}-${kernel_version}${ARITY}.${EXT}
+
+if [ $print_driver_name -eq 1 ] ; then
+  echo "${DRIVER_FILENAME}"
+  exit 0
+fi
+
+# ----------------------- BUILD / INSTALL DRIVER -----------------------------
+
+if [ -z "$driver_install_dir" ] ; then
+  driver_install_dir=${DRIVER_DIRECTORY}
+else
+  exit_if_directory_inaccessible $driver_install_dir 101
+fi
+
+if [ -d $driver_install_dir ] ; then
+  DRIVER_DIRECTORY=$driver_install_dir
+fi
+
+DRIVER_DIRECTORY=`get_absolute_path ${DRIVER_DIRECTORY}`
+
+# if specifed, check whether pre-built driver exists and exit if it does
+
+if [ $exit_if_driver_exists -eq 1 ] ; then
+  if [ -r $driver_install_dir/${DRIVER_FILENAME} ] ; then
+    echo ""
+    echo "Found pre-built driver: $driver_install_dir/${DRIVER_FILENAME}"
+    echo ""
+    exit 0
+  else
+    show_preamble
+    echo "Pre-built driver \"${DRIVER_FILENAME}\" was NOT found"
+    echo "in directory \"$driver_install_dir\" ."
+    echo ""
+    echo -n "Proceed with building a driver for this kernel? (Yes/No) [Yes] "
+    if [ $non_interactive -eq 1 ] ; then
+      YESNO=y
+    else
+      read YESNO
+    fi
+    echo ""
+    if [ "${YESNO}" = "N" -o "${YESNO}" = "n" -o "${YESNO}" = "no" -o "${YESNO}" = "No" ] ; then
+      exit 100
+    fi
+  fi
+else
+  if [ $non_interactive -eq 0 ] ; then
+    show_preamble
+  fi
+fi
+
+# prompt for C compiler
+
+OLD_CC=${CC}
+NEW_CC=""
+CURRENT_CC="$c_compiler"
+CC_FILE=`${WHICH} $(get_first $c_compiler) 2>/dev/null`
+if [ -z "${CC_FILE}" ] ; then
+  CURRENT_CC=$c_compiler
+fi
+if [ $non_verbose -eq 0 -o $non_interactive -eq 0 ] ; then
+  echo -n "C compiler to use: [ ${CC_FILE} ] "
+fi
+if [ $non_interactive -eq 0 ] ; then
+  read NEW_CC
+  echo ""
+else
+  if [ $non_verbose -eq 0 ] ; then
+    echo ""
+  fi
+fi
+if [ -z "${NEW_CC}" ] ; then
+  NEW_CC=${CURRENT_CC}
+fi
+CC_FILE=`${WHICH} $(get_first ${NEW_CC}) 2>/dev/null`
+if [ -z "${CC_FILE}" -o -d "${CC_FILE}" ] ; then
+  echo "ERROR: invalid or inaccessible C compiler \"${NEW_CC}\" !"
+  repeat_or_exit 255
+fi
+
+export CC="${CC_FILE}"
+
+# prompt for make command
+
+NEW_MAKE=""
+CURRENT_MAKE=`${WHICH} $make_command 2>&1`
+if [ -z "${CURRENT_MAKE}" ] ; then
+  CURRENT_MAKE=$make_command
+fi
+if [ $non_verbose -eq 0 -o $non_interactive -eq 0 ] ; then
+  echo -n "Make command to use: [ ${CURRENT_MAKE} ] "
+fi
+if [ $non_interactive -eq 0 ] ; then
+  read NEW_MAKE
+  echo ""
+else
+  if [ $non_verbose -eq 0 ] ; then
+    echo ""
+  fi
+fi
+if [ -z "${NEW_MAKE}" ] ; then
+  NEW_MAKE=${CURRENT_MAKE}
+fi
+CHECK_MAKE=`${WHICH} "${NEW_MAKE}" 2>&1`
+if [ -z "${CHECK_MAKE}" -o -d "${CHECK_MAKE}" ] ; then
+  echo "ERROR: invalid or inaccessible make command \"${NEW_MAKE}\" !"
+  repeat_or_exit 255
+fi
+
+export MAKE="${CHECK_MAKE}"
+
+# ---------------------------------------------------------------------------
+
+# prompt for kernel source directory
+
+DEFAULT_KERNEL_SRC_DIR=${kernel_src_dir}
+
+# check if kernel source directory contains "configured" kernel headers
+# (e.g., at a minimum, "version.h" file and "asm" directory must exist);
+# if not, then specify a bogus (non-existent) directory so subsequent
+# search heuristics are used
+if [ -r ${DEFAULT_KERNEL_SRC_DIR}/include/linux/version.h ] ; then
+  if [ ! -d ${DEFAULT_KERNEL_SRC_DIR}/include/asm -o ! -L ${DEFAULT_KERNEL_SRC_DIR}/include/asm ] ; then
+    DEFAULT_KERNEL_SRC_DIR=./bogus_directory$$
+  fi
+else
+  DEFAULT_KERNEL_SRC_DIR=./bogus_directory$$
+fi
+
+# search heuristic for determining default kernel source directory
+if [ ! -d ${DEFAULT_KERNEL_SRC_DIR} ] ; then
+  DEFAULT_KERNEL_SRC_DIR=/lib/modules/${kernel_version}/build
+  if [ ! -d ${DEFAULT_KERNEL_SRC_DIR} ] ; then
+    DEFAULT_KERNEL_SRC_DIR=/lib/modules/${kernel_version}/source
+    if [ ! -d ${DEFAULT_KERNEL_SRC_DIR} ] ; then
+      if [ -n "${KERNEL_26X}" ] ; then
+        DEFAULT_KERNEL_SRC_DIR=/usr/src/linux-2.6
+      else
+        DEFAULT_KERNEL_SRC_DIR=/usr/src/linux-3.0
+      fi
+      if [ ! -d ${DEFAULT_KERNEL_SRC_DIR} ] ; then
+        DEFAULT_KERNEL_SRC_DIR=/usr/src/linux
+        if [ ! -d ${DEFAULT_KERNEL_SRC_DIR} ] ; then
+          # punt ...
+          DEFAULT_KERNEL_SRC_DIR=${kernel_src_dir}
+        fi
+      fi
+    fi
+  fi
+fi
+
+CURRENT_KERNEL_SRC_DIR=${KERNEL_SRC_DIR:-${DEFAULT_KERNEL_SRC_DIR}}
+
+if [ $non_verbose -eq 0 -o $non_interactive -eq 0 ] ; then
+  echo -n "Kernel source directory: [ ${CURRENT_KERNEL_SRC_DIR} ] "
+fi
+if [ $non_interactive -eq 0 ] ; then
+  read KERNEL_SRC_DIR
+else
+  if [ $non_verbose -eq 0 ] ; then
+    echo ""
+  fi
+fi
+if [ -z "${KERNEL_SRC_DIR}" ] ; then
+  KERNEL_SRC_DIR=${CURRENT_KERNEL_SRC_DIR}
+fi
+KERNEL_SRC_DIR=`get_absolute_path ${KERNEL_SRC_DIR}`
+if [ ! -d ${KERNEL_SRC_DIR} ] || [ ! -x ${KERNEL_SRC_DIR} ] ; then
+  echo "ERROR: invalid or inaccessible kernel source directory \"${KERNEL_SRC_DIR}\" !"
+  repeat_or_exit 110
+fi
+
+# make the driver
+
+make_args="KERNEL_VERSION=$kernel_version KERNEL_SRC_DIR=$KERNEL_SRC_DIR PER_USER_MODE=$PER_USER_MODE $make_args"
+
+if [ -x "${MAKE}" ] ; then
+  ${MAKE} CC="$CC" MAKE=$MAKE $make_args clean default
+  ERR=$?
+  if [ $ERR -ne 0 ] ; then
+    repeat_or_exit 100
+  fi
+else
+  echo "ERROR: unable to access make command \"${MAKE}\" !"
+  repeat_or_exit 255
+fi
+
+echo ""
+
+# where to install the driver once it is successfully built
+
+if [ ! -w $driver_install_dir ] ; then
+  echo "Warning: directory \"$driver_install_dir\" is not writable."
+  echo ""
+  driver_install_dir=.
+  use_install_dir=0
+fi
+
+if [ $use_install_dir -eq 1 ] ; then
+  # install the previously built driver to specified location
+  make_args="$make_args INSTALL=${DRIVER_DIRECTORY} install"
+  ${MAKE} $make_args
+fi
+
+ERR=$?
+
+if [ ${ERR} -ne 0 ] ; then
+  repeat_or_exit 101
+fi
+
+# all done
+
+echo ""
+exit 0

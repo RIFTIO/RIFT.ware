@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config
+    xmlns="http://riftio.com/ns/riftware-1.0/rw-manifest"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://riftio.com/ns/riftware-1.0/rw-manifest ./rw-manifest.xsd">
+
+  <manifest>
+    <!--
+	Define which profile that rwmain will select from the list of profiles
+    -->
+    <profile-name>default</profile-name>
+    <profile>
+      <name>default</name>
+      <bootstrap-phase>
+
+	<rwtasklet>
+    	  <plugin-name>rwinit-c</plugin-name>
+	</rwtasklet>
+
+	<rwtrace>
+	  <enable>true</enable>
+	  <filter>
+	  </filter>
+	</rwtrace>
+
+      </bootstrap-phase>
+
+      <init-phase>
+
+	<!--
+	    The environment variables section contains per RiftWare process variables
+	    The set specificed in the manifest are the hardcoded intialization values
+	    These values can be overwritten for newly started RiftWare processes
+	-->
+	<environment>
+	  <python-variable>rwcolony_instance_id = 1</python-variable>
+	  <python-variable>rwvm_instance_id = 1</python-variable>
+	  <python-variable>rw_component_name = 'rwcolony-cli'</python-variable>
+	  <action>
+	    <name>Annex the rwcolony-cli VM into the currently running VM</name>
+	    <start>
+	      <component-name>$python(rw_component_name)</component-name>
+	      <instance-id>$python(rwcolony_instance_id)</instance-id>
+	      <instance-name>$python("rwcolony-%d" % rwcolony_instance_id)</instance-name>
+	    </start>
+	  </action>
+	</environment>
+
+	<!--
+	    The init-phase is used to fully initialize a RiftWare process:
+	    - This contains a specification of the RiftWare component inventory
+	    - This defines the static intialization procedure for a RiftWare system
+	-->
+
+	<inventory>
+	  <component>
+	    <name>RW.Init</name>
+	    <rwtasklet>
+	      <plugin-directory>./usr/lib/rift/plugins/rwinit-c</plugin-directory>
+    	      <plugin-name>rwinit-c</plugin-name>
+	    </rwtasklet>
+	  </component>
+	</inventory>
+
+	<rwvcs>
+          <component>
+            <component-name>rwreaper</component-name>
+            <reaper>
+              <exe-name>./usr/bin/rwvcs_reaper</exe-name>
+            </reaper>
+          </component>
+          
+	  <component>
+	    <component-name>rwcolony</component-name>
+	    <rwcolony>
+	      <event-list>
+		<event>
+		  <name>onentry</name>
+		  <match>
+		  </match>
+
+		  <action>
+		    <name>Start rwcolony-broker</name>
+		    <start>
+		      <python-variable>rwvm_instance_id = 2</python-variable>
+		      <python-variable>rw_component_name = 'rwcolony-broker'</python-variable>
+                      <python-variable>vm_ip_address = '10.0.0.16'</python-variable>
+		      <component-name>rwcolony-broker</component-name>
+		      <instance-id>$python(rwvm_instance_id)</instance-id>
+		      <instance-name>rwcolony-broker</instance-name>
+		    </start>
+		  </action>
+
+                  <action>
+                    <name>Wait for the broker to start</name>
+                    <sleep>
+                      <wait-time-usec>1000000</wait-time-usec>
+                    </sleep>
+                  </action>
+
+		  <action>
+		    <name>Start rwcolony-uagent</name>
+		    <start>
+		      <python-variable>rwvm_instance_id = 3</python-variable>
+		      <python-variable>rw_component_name = 'rwcolony-uagent'</python-variable>
+                      <python-variable>vm_ip_address = '10.0.0.17'</python-variable>
+		      <component-name>rwcolony-uagent</component-name>
+		      <instance-id>$python(rwvm_instance_id)</instance-id>
+		      <instance-name>rwcolony-uagent-1</instance-name>
+		    </start>
+		  </action>
+
+                  <action>
+                    <name>Wait for the uagent to start</name>
+                    <sleep>
+                      <wait-time-usec>1000000</wait-time-usec>
+                    </sleep>
+                  </action>
+
+		  <action>
+		    <name>Start rwcolony-dtsperf</name>
+		    <start>
+		      <python-variable>rwvm_instance_id = 1</python-variable>
+		      <python-variable>rw_component_name = 'rwcolony-dtsperf'</python-variable>
+                      <python-variable>vm_ip_address = '10.0.0.18'</python-variable>
+		      <component-name>rwcolony-dtsperf</component-name>
+		      <instance-id>$python(rwvm_instance_id)</instance-id>
+		      <instance-name>rwcolony-dtsperf</instance-name>
+		    </start>
+		  </action>
+
+
+		</event>
+	      </event-list>
+	    </rwcolony>
+	  </component>
+
+	  <component>
+	    <component-name>rwcolony-cli</component-name>
+	    <rwvm>
+	      <event-list>
+		<event>
+		  <name>onentry</name>
+		  <match>
+		    <component-name>RW.Init</component-name>
+		  </match>
+
+		  <action>
+		    <name>Annex this rwvm into our rwcolony instance list</name>
+		    <annex>
+		      <component-name>rwcolony-cli</component-name>
+		      <instance-id>$python(rwvm_instance_id)</instance-id>
+		      <instance-name>$python("rwcolony-cli-%d" % rwvm_instance_id)</instance-name>
+		    </annex>
+		  </action>
+
+                  <action>
+                    <name>Startup of RW.Reaper</name>
+                    <start>
+                      <component-name>rwreaper</component-name>
+                      <instance-id>$python(rwvm_instance_id)</instance-id>
+                      <instance-name>$python("rwreaper-%d" % rwvm_instance_id)</instance-name>
+                    </start>
+                  </action>
+
+
+		  <action>
+		    <name>Start the rwcolony</name>
+		    <start>
+		      <component-name>rwcolony</component-name>
+		      <instance-id>1</instance-id>
+		      <instance-name>$python("rwcolony-%d" % rwcolony_instance_id)</instance-name>
+		    </start>
+		  </action>
+
+
+		  <action>
+		    <name>Start the rwtasklet client in this process</name>
+		    <start>
+                      <python-variable>cmdargs_str = '"load cli manifest cli_rwdtsperf.xml"'</python-variable>
+		      <component-name>RW.Cli</component-name>
+		      <instance-id>1</instance-id>
+		      <instance-name>$python("rwcli-%d" % rwcolony_instance_id)</instance-name>
+		    </start>
+		  </action>
+
+		</event>
+	      </event-list>
+	    </rwvm>
+	  </component>
+
+	  <component>
+	    <component-name>rwcolony-uagent</component-name>
+	    <rwvm>
+	      <event-list>
+		<event>
+		  <name>onentry</name>
+		  <match>
+		    <component-name>RW.Init</component-name>
+		  </match>
+
+		  <action> 
+		    <name>Start the rwtasklet server in this process</name>
+		    <start>
+                      <python-variable>cmdargs_str = 'ipport:UID sockpath:./rw-uAgent.sock module:config_rwdtsperf'</python-variable>
+		      <component-name>RW.uAgent</component-name>
+		      <instance-id>1</instance-id>
+		      <instance-name>$python("rwuagent-%d" % rwcolony_instance_id)</instance-name>
+		    </start>
+		  </action>
+		</event>
+	      </event-list>
+	    </rwvm>
+	  </component>
+
+	  <component>
+	    <component-name>rwcolony-broker</component-name>
+	    <rwvm>
+	      <event-list>
+		<event>
+		  <name>onentry</name>
+		  <match>
+		    <component-name>RW.Init</component-name>
+		  </match> 
+		  
+		  <action>
+		    <name>Start the rwmsgbroker in this process</name>
+		    <start>
+		      <component-name>RW.msgbroker</component-name>
+		      <instance-id>1</instance-id>
+		      <instance-name>$python("rwmsgbroker-%d" % rwcolony_instance_id)</instance-name>
+		    </start>
+		  </action>
+		</event>
+	      </event-list>
+	    </rwvm>
+	  </component>
+
+	  <component>
+	    <component-name>rwcolony-dtsperf</component-name>
+	    <rwvm>
+	      <event-list>
+		<event>
+		  <name>onentry</name>
+		  <match>
+		    <component-name>RW.Init</component-name>
+		  </match>
+
+		  <action>
+		    <name>Start the rwtasklet client in this process</name>
+		    <start>
+                      <python-variable>cmdargs_str = 'blargh' </python-variable>
+		      <component-name>RW.Dtsperf</component-name>
+		      <instance-id>1</instance-id>
+		      <instance-name>$python("rwdtsperf-%d" % rwcolony_instance_id)</instance-name>
+		    </start>
+		  </action>
+		</event>
+	      </event-list>
+	    </rwvm>
+	  </component>
+
+
+	  <component>
+            <component-name>RW.uAgent</component-name>
+            <rwtasklet>
+              <plugin-directory>./usr/lib/rift/plugins/rwuagent-c</plugin-directory>
+              <plugin-name>rwuagent-c</plugin-name>
+            </rwtasklet>
+          </component>
+
+	  <component>
+	    <component-name>RW.Cli</component-name>
+	    <rwtasklet>
+	      <plugin-directory>./usr/lib/rift/plugins/rwcli-c</plugin-directory>
+    	      <plugin-name>rwcli-c</plugin-name>
+	    </rwtasklet>
+	  </component>
+
+	  <component>
+	    <component-name>RW.Dtsperf</component-name>
+	    <rwtasklet>
+	      <plugin-directory>./usr/lib/rift/plugins/rwdtsperf-c</plugin-directory>
+    	      <plugin-name>rwdtsperf-c</plugin-name>
+	    </rwtasklet>
+	  </component>
+
+	  <component>
+	    <component-name>RW.msgbroker</component-name>
+	    <rwtasklet>
+	      <plugin-directory>./usr/lib/rift/plugins/rwmsgbroker-c</plugin-directory>
+    	      <plugin-name>rwmsgbroker-c</plugin-name>
+	    </rwtasklet>
+	  </component>
+
+	</rwvcs>
+	  <settings>
+	    <rwinit>
+	      <startup-sequence>
+		<component>
+		  <name>RW.Init</name>
+		  <arguments>
+		  </arguments>
+		</component>
+	      </startup-sequence>
+	    </rwinit>
+	    <rwtrace></rwtrace>
+            <rwmsg>
+              <enable-broker>true</enable-broker>
+              <broker-port>1500</broker-port>
+              <broker-host>localhost</broker-host>
+            </rwmsg>
+	    <rwvcs>
+	      <collapse-each-rwvm>false</collapse-each-rwvm>
+	      <collapse-each-rwprocess>false</collapse-each-rwprocess>
+	    </rwvcs>
+	  </settings>
+
+
+	</init-phase>
+
+      </profile>
+    </manifest>
+
+  </config>

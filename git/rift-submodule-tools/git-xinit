@@ -1,0 +1,142 @@
+#!/bin/bash
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Austin Cormier
+# Creation Date: 2014/09/30
+#
+# Initialize a set of submodules under the main supermodule tree.
+# Listed submodules are initialized via the xcheckout script.  If no
+# submodules are provided, then all submodules are initialized.
+#
+# Will not re-initialize submodules that do not exist.
+#
+# Usage: git-xinit [-s <include_submodule_path>...] [-e <exclude_submodule_path>...]
+#
+# Arguments:
+#  -s <submodule_path> A list of submodule paths to checkout.  This must follow
+#                      any generic checkout arguments passed in.  If no -s argument is passed in,
+#                      then all uninitialized submodules will be checked out.
+#  -e <submodule_path> A list of submodule paths to NOT checkout.  This must follow
+#                      any generic checkout arguments passed in.
+
+SCRIPT_NAME=$(basename $0)
+log(){
+  echo "$SCRIPT_NAME: $@"
+}
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$DIR/git-common-functions.sh"
+
+if [ ! -e ".gitmodules" ]; then
+  log "ERROR - .gitmodules not found.  Are you sure you're at the repository's root directory?"
+  exit 1
+fi
+
+declare -a include_submodules
+declare -a exclude_submodules
+function collect_args(){
+  while [ $# -ne 0 ]; do
+    # The -s arguments denotes the start of the list of submodules to check out
+    if [ "$1" == "-s" ]; then
+      shift
+      while [ $# -ne 0 ]; do
+        if [ $1 == "-e" ]; then
+          break
+        fi
+        include_submodules=("${include_submodules[@]}" "$1")
+        shift
+      done
+      continue
+    fi
+    if [ "$1" == "-e" ]; then
+      shift
+      while [ $# -ne 0 ]; do
+        if [ $1 == "-s" ]; then
+          break
+        fi
+        exclude_submodules=("${exclude_submodules[@]}" "$1")
+        shift
+      done
+      continue
+    fi
+    shift
+  done
+  return 0
+}
+
+##
+# Takes two arrays, a included submodule list and excluded submodule list
+# and returns the set difference (included - excluded).  If the included
+# list is empty, then treat as ALL submodules.
+#
+# ${!1} - Included submodule array
+# ${!2} - Excluded submodule array
+##
+function filter_submodules(){
+  declare -a included=("${!1}")
+  declare -a excluded=("${!2}")
+
+  # If the included list was empty, then put all submodules into the array
+  if [ ${#included[@]} -eq 0 ]; then
+    while read submodule; do
+       included=("${included[@]}" "$submodule")
+    done < <(foreach_uninitialized_submodule)
+  fi
+
+  # Exclude submodules passed in via -e parameter
+  for exclude in "${excluded[@]}"; do
+    included=(${included[@]/$exclude/})
+  done
+
+  # Output the list of submodules to be captured via subshell (i.e. a=$(filter_submodules ...)
+  echo ${included[@]}
+}
+
+
+submodules=""
+if [ $# -eq 0 ]; then
+  log "INFO - Initializing all uninitialized submodules."
+  submodules="$(get_uninitialized_submodules)"
+else
+  collect_args $@ || exit 1
+  submodules=$(filter_submodules include_submodules[@] exclude_submodules[@])
+fi
+
+if [ "$submodules" == "" ]; then
+  log "WARNING: No submodules to initialize."
+  exit 0
+fi
+
+check_submodules_clean $submodules || exit 1
+
+git submodule init $submodules
+if [ $? -ne 0 ]; then
+  log "ERROR - Failed to initialize submodules: $submodules"
+  exit 1
+fi
+
+git submodule update $submodules
+if [ $? -ne 0 ]; then
+  log "ERROR - Failed to update submodules: $submodules"
+  exit 1
+fi
+
+git xupdate $submodules
+if [ $? -ne 0 ]; then
+  log "CRITICAL: Failed to update submodules."
+  exit 1
+fi
+

@@ -1,0 +1,23 @@
+Packet I/O Tool Kit
+------------------
+
+Issue List:
+----------
+
+
+
+
+Todo List:
+---------
+
+- Running DPDK as shared library
+
+-  Fix DPDK port alloc/closing - reusing freed port, instead of keep incrementing nb_ports
+
+-  Write more unit tests for Raw PMD
+
+-  Write unit test for PIOT
+
+-  resolve "TBD" items marked in the code
+
+-  Performance tuning

@@ -1,0 +1,87 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file rwlogd.proto
+ * @author Sameer Nayak
+ * @date 2014/12/01
+ * @brief rwlogd tasklet service definitions
+ */
+
+import "descriptor.proto";
+import "rwpbapi.proto";
+
+message RwlogdStatus {
+  option (rw_msgopts) = {flat:true };
+  enum Msgstatus {
+    SUCCESS         = 0; /*!< Used to indicate a successful operation */
+    FAILURE         = 1; /*!< Used to indicate a failed operation */
+    DUPLICATE       = 2; /*!< Used to indicate a duplicate operation */
+    NOTFOUND        = 3; /*!< Used to indicate that data was not found */
+    BOUNDS          = 4; /*!< Used to indicate that limits exceeded */
+    BACKPRESSURE    = 5; /*!< Used to indicate backpressure, typically EAGAIN */
+    TIMEOUT         = 6; /*!< Used to indicate a timeout */
+    EXISTS          = 7; /*!< Used to indicate that entry already exists */
+    NOTEMPTY        = 8; /*!< Used to indicate that entry is not empty */
+    NOTCONNECTED    = 9; /*!< Used to indicate that item is not connected */
+  }
+  required Msgstatus status = 1;
+}
+
+message RwlogdRegisterReq {
+  required string my_key = 1;
+}
+
+message RwlogdRegisterRsp {
+  required string my_key = 1;
+}
+
+service rwlogd {
+  option (rw_srvopts) = { srvnum:100 };
+  rpc RegisterClient(RwlogdRegisterReq) returns(RwlogdRegisterRsp) {
+    option (rw_methopts) = { methno:1 blocking:false};
+  };
+}
+
+message RwlogdFileSendLogReq {
+  required string my_key = 1;
+  required string sink_name = 2;
+}
+
+message RwlogdFileSendLogRsp {
+  required string my_key = 1;
+}
+
+message RwlogdSendLogReq {
+  required bytes log_msg = 1;
+}
+
+service RwlogdPeerAPI {
+  option (rw_srvopts) = { srvnum:150 };
+
+  rpc file_send_log(RwlogdFileSendLogReq) returns(RwlogdFileSendLogRsp) {
+    option (rw_methopts) = {methno:1 pri:RW_METHPRI_MEDIUM blocking:false};
+  }
+
+  rpc send_log(RwlogdSendLogReq) returns(RwlogdStatus) {
+    option (rw_methopts) = {methno:2 pri:RW_METHPRI_MEDIUM blocking:false};
+  }
+}

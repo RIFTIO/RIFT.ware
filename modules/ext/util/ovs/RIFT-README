@@ -1,0 +1,5 @@
+OVS is not built with riftware. 
+This repo is used to track all the changes that were done for riftware. 
+
+Please make sure to put all the changes for rift under
+#ifndef RIFT_OVS_CHANGES_DISABLED

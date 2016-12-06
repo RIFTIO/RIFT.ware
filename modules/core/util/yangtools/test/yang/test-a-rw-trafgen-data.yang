@@ -1,0 +1,300 @@
+module test-a-rw-trafgen-data
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-trafgen-data";
+  prefix "rw-trafgen-data";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import test-a-mano-base {
+    prefix "manobase";
+  }
+
+  import test-a-rw-vnf-base-types{
+    prefix "rwvnfbasetypes";
+  }
+
+  import test-a-rw-vnf-base-opdata {
+    prefix "rwvnfbaseopdata";
+  }
+
+  revision 2014-03-31 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Trafgen Data";
+  }
+
+  typedef template-type {
+    description "Types of templates that are configured on ports";
+    type enumeration {
+      enum single-template;
+      enum range-template;
+      enum sequence-template;
+      enum pcap;
+    }
+  }
+
+  augment /manobase:vnf-opdata/manobase:vnf {
+    container aggregate-trafgen-info {
+      config false;
+      rwpb:msg-new AggregateTrafgenInfo;
+      container cat-on-nn-on {
+        list latency-distribution {
+          rwpb:msg-new RwLatencyDistributionCATOnNNOn;
+          rwpb:field-inline-max yang;
+          max-elements 128;
+          key "range-start";
+          leaf range-start {
+            type uint32;
+            description "range-start";
+          }
+          leaf range-end {
+            type uint32;
+            description "range-end";
+          }
+          leaf packets {
+            type rwt:zero-based-counter64;
+            description "number of packets";
+          }
+        }
+      }
+      container cat-on-nn-off {
+        list latency-distribution {
+          rwpb:msg-new RwLatencyDistributionCATOnNNOff;
+          rwpb:field-inline-max yang;
+          max-elements 128;
+          key "range-start";
+          leaf range-start {
+            type uint32;
+            description "range-start";
+          }
+          leaf range-end {
+            type uint32;
+            description "range-end";
+          }
+          leaf packets {
+            type rwt:zero-based-counter64;
+            description "number of packets";
+          }
+        }
+      }
+      container cat-off-nn-on {
+        list latency-distribution {
+          rwpb:msg-new RwLatencyDistributionCATOffNNOn;
+          rwpb:field-inline-max yang;
+          max-elements 128;
+          key "range-start";
+          leaf range-start {
+            type uint32;
+            description "range-start";
+          }
+          leaf range-end {
+            type uint32;
+            description "range-end";
+          }
+          leaf packets {
+            type rwt:zero-based-counter64;
+            description "number of packets";
+          }
+        }
+      }
+      container cat-off-nn-off {
+        list latency-distribution {
+          rwpb:msg-new RwLatencyDistributionCATOffNNOff;
+          rwpb:field-inline-max yang;
+          max-elements 128;
+          key "range-start";
+          leaf range-start {
+            type uint32;
+            description "range-start";
+          }
+          leaf range-end {
+            type uint32;
+            description "range-end";
+          }
+          leaf packets {
+            type rwt:zero-based-counter64;
+            description "number of packets";
+          }
+        }
+      }
+    }
+  }
+
+  augment /manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:port-state {
+    container trafgen-info {
+      rwpb:msg-new RwTrafgenInfo;
+      rwpb:msg-flat true;
+      config false;
+      leaf descr-string {
+        description "description comment for load balancer";
+        rwpb:field-string-max 32;
+        type string;
+      }
+      leaf tx_state {
+        type rwvnfbasetypes:on-off;
+        description "Current state of Trafgen trasmit off/on";
+      }
+
+      leaf tx_rate {
+        type uint32;
+        description "Configured Tx Rate";
+      }
+      leaf tx_count {
+        type uint32;
+        description "Counfigured Tx Count";
+      }
+      leaf pkt_size {
+        type uint32;
+        description "size of packet transmitted on the port";
+      }
+      leaf tx_burst {
+        type uint32;
+        description "transmit burst size on the port";
+      }
+      leaf tx_mode {
+        type template-type;
+        description
+          "Packet generation mode template configured for the port";
+      }
+      leaf packet-count {
+        type uint32;
+        description "transmit packet count for the port";
+      }
+      leaf tx-cycles {
+        type uint32;
+        description "transmit tx cycles for the port";
+      }
+      leaf src_l4_port {
+        type uint32;
+        description "Source L4 port of Transmitted packet";
+      }
+      leaf dst_l4_port {
+        type uint32;
+        description "Destination L4 port of Transmitted packet";
+      }
+      leaf src_ip_address {
+        type rwt:ip-address;
+        rwpb:field-string-max 46;
+        description "source ip address of Transmitted packet";
+      }
+      leaf dst_ip_address {
+        type rwt:ip-address;
+        rwpb:field-string-max 46;
+        description "destination ip address of Transmitted packet";
+      }
+      leaf src_mac_address {
+        type rwt:mac-address;
+        rwpb:field-string-max 18;
+        description "source mac address of Transmitted packet";
+      }
+      leaf dst_mac_address {
+        type rwt:mac-address;
+        rwpb:field-string-max 18;
+        description "destination mac address of Transmitted packet";
+      }
+      list queue{
+        rwpb:field-inline-max yang;
+        max-elements 4;
+        key "qid";
+        leaf qid{
+          type uint32;
+        }
+        leaf average{
+          type rwt:zero-based-counter64;
+        }
+        leaf minimum {
+          type rwt:zero-based-counter64;
+        }
+        leaf maximum {
+          type rwt:zero-based-counter64;
+        }
+        leaf mean-deviation{
+          type rwt:zero-based-counter64;
+        }
+        leaf num-packets{
+          type rwt:zero-based-counter64;
+        }
+      }
+
+      leaf average-latency {
+        type rwt:zero-based-counter64;
+        description "average latency";
+      }
+      leaf minimum-latency {
+        type rwt:zero-based-counter64;
+        description "Minimum calculataed latency";
+      }
+      leaf maximum-latency {
+        type rwt:zero-based-counter64;
+        description "maximum latency";
+      }
+      leaf mean-deviation {
+        type rwt:zero-based-counter64;
+        description "";
+      }
+
+      list latency-distribution {
+        rwpb:field-inline-max yang;
+        max-elements 128;
+        key "range-start";
+        leaf range-start {
+          type uint32;
+          description "range-start";
+        }
+        leaf range-end {
+          type uint32;
+          description "range-end";
+        }
+        leaf packets {
+          type rwt:zero-based-counter64;
+          description "number of packets";
+        }
+      }
+    }
+  }
+
+  augment /rwvnfbaseopdata:start/rwvnfbaseopdata:input/rwvnfbaseopdata:vnf{
+    container trafgen-traffic {
+      rwpb:msg-new RwStartTrafgenTraffic;
+      uses rwvnfbaseopdata:vnf-key;
+      leaf port-name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+        type string;
+      }
+    }
+  }
+
+
+  augment /rwvnfbaseopdata:stop/rwvnfbaseopdata:input/rwvnfbaseopdata:vnf{
+    container trafgen-traffic {
+      rwpb:msg-new RwStopTrafgenTraffic;
+      uses rwvnfbaseopdata:vnf-key;
+      leaf port-name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+        type string;
+      }
+    }
+  }
+
+  augment /rwvnfbaseopdata:clear-data/rwvnfbaseopdata:input/rwvnfbaseopdata:vnf {
+    container trafgen-counters {
+      rwpb:msg-new RwClearTrafgenCounters;
+      uses rwvnfbaseopdata:vnf-key;
+      leaf port-name {
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+        type string;
+      }
+    }
+  }
+
+}

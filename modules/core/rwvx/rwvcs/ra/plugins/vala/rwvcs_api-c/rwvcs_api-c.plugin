@@ -1,0 +1,7 @@
+[Plugin]
+Module=rwvcs_api-c
+Name=rwvcs_api-c
+Description=This plugin is for RIFT.io RW.Init tasklet
+Authors=RIFT.io
+Copyright=Copyright © 2014 RIFT.io
+Website=http://www.riftio.com

@@ -1,0 +1,1518 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file rw-appmgr.yang
+ * @author Aniruddha Atale
+ * @date 08/11/2014
+ * @brief RiftWare CLI for FastPath Controller
+ */
+
+module rw-appmgr-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwappmgr";
+  prefix "rwappmgr";
+
+  import rw-base-d {
+    prefix rwbase;
+  }
+
+  import rw-cli-ext { 
+    prefix "rwcli";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix "rwt";
+  }
+
+  import rw-3gpp-types-d {
+    prefix "rw-3gpp";
+  }
+  
+  revision 2014-08-11 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Application Manager";
+  }
+
+  typedef trafsim-proto-type {
+    description "Protocol to be simulated";
+    type enumeration {
+      enum diameter;
+      enum radius;
+      enum pktgen;
+    }
+  }
+
+  typedef trafsim-operation-mode {
+    description "Trafsim mode of operation";
+    type enumeration {
+      enum server;
+      enum client;
+    }
+  }
+
+  typedef diameter-interface-type {
+    description "Diameter Interface";
+    type enumeration {
+      enum Gx;
+      enum Gy;
+      enum Rf;
+    }
+  }
+
+  typedef lte-ue-mobility-state {
+    description "The state of a UE in a LTE Call, as used to display state
+                 information. This is only the state of the UE in the mobility
+                 aspect";
+    type enumeration {
+      enum Idle;
+      enum Connecting;
+      enum Connected;
+      enum Disconnecting;
+      enum Disconnected;
+      enum Unknown;
+    }
+  }
+
+  typedef lte-ue-data-state {
+    description "The state of a UE as it relates to transfer of data. This state
+                 is valid only when the mobility state of the UE is Connected";
+    type enumeration {
+      enum InProgress;
+      enum Idle;
+      enum Unknown;
+    }
+  }
+
+  typedef lte-ue-script-state {
+    description "The state of a UE script";
+    type enumeration {
+      enum Active;
+      enum Complete;
+      enum Error;
+      enum Unknown;
+    }
+  }
+
+    typedef pdn-type {
+    description "The PDN type  indicates the IP version capability of the
+                 IP stack associated with the UE.";
+    type enumeration {
+      enum IPv4;
+      enum IPv6;
+      enum IPv4v6;
+    }
+  }
+
+  grouping bind-info {
+    container network-context {
+      description "network context name";
+      leaf name {
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+    }
+    
+    leaf ip-address {
+      description "Listen IP address";
+      type rwt:ip-address;
+      rwpb:field-string-max 46;
+      rwpb:field-inline "true";
+    }
+    leaf port {
+      description "Listen port";
+      type uint16;
+      default "3868";
+    }
+    leaf instances-per-vm {
+      description "Maximum external application instances per VM";
+      type uint32;
+      default "4";
+    }
+    leaf number-of-vm {
+      description "Total VM in colony running external application";
+      type uint32;
+    }    
+
+  }
+
+  grouping diameter-interface-selection {
+    choice diameter-interface-type {
+      case Gx {
+        leaf Gx {
+          description "Gx interface";
+          type empty;
+        }
+      }
+      case Gy {
+        leaf Gy {
+          description "Gy interface";
+          type empty;
+        }
+      }
+      case Rf {
+        leaf Rf {
+          description "Rf interface";
+          type empty;
+        }
+      }
+    }
+  }
+
+  grouping gtpc-statistics-group-1 {
+    description "This grouping represents the statistics that a GTPC initiaitor
+                 sent, and are recieved by a session responder";
+    leaf create-session-request {
+      type uint32;
+    }
+    leaf modify-bearer-request {
+      type uint32;
+    }
+    leaf delete-session-request {
+      type uint32;      
+    }
+    container delete-bearer-response {
+      leaf accepted {
+        type uint32;
+      }
+      leaf rejected {
+        type uint32;
+      }
+    }
+  }
+    
+  grouping gtpc-statistics-group-2 {
+    description "This grouping represents the statistics that a GTPC responder
+                 sent, and are recieved by a session initiator";
+
+    container create-session-response {
+      leaf accepted {
+        type uint32;
+      }
+      leaf rejected {
+        type uint32;
+      }
+    }
+
+    container modify-bearer-response {
+      leaf accepted {
+        type uint32;
+      }
+      leaf rejected {
+        type uint32;
+      }
+    }
+
+    container delete-session-response {
+      leaf accepted {
+        type uint32;
+      }
+      leaf rejected {
+        type uint32;
+      }
+    }
+
+    leaf delete-bearer-request {
+      type uint32;
+    }
+  }
+
+  grouping gtpc-statistics-group-3 {
+    description "This is the group of statistics that could be send by either
+                 a session initiator or a session terminator";
+
+    leaf echo-request {
+      type uint32;
+    }
+
+    leaf echo-response {
+      type uint32;
+    }
+  }
+
+  grouping gtpu-statistics {
+    leaf bytes-transmitted {
+      type uint32 {
+        //units "KB";
+      }
+    }
+
+    leaf bytes-received {
+      type uint32 {
+        //units "KB";
+      }
+    }
+
+    leaf packets-transmitted {
+      type uint32 {
+//        units "KB";
+      }
+    }
+
+    leaf packets-received {
+      type uint32 {
+//        units "KB";
+      }
+    }        
+  }
+  
+  augment /rwbase:colony {
+
+    list trafsim-service {
+      description "Trafsim Service";
+      rwcli:new-mode "trafsim-service";
+      max-elements 8;
+
+      key "name";
+
+      leaf name {
+        description "Name of trafsim service";
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+        type string;
+      }
+      container protocol-mode {
+        description "Trafsim Protocol Type";
+        choice trafsim-proto-type {
+          case diameter {
+            container diameter-sim {
+              rwcli:new-mode "diameter-sim";
+              rwpb:msg-new DiameterSim;
+              container operational-mode {
+                choice trafsim-operation-mode {
+                  case server {
+                    container diameter-server {
+                      rwcli:new-mode "diameter-server";
+                      rwpb:msg-new DiameterServer;
+                      container diameter-interface {
+                        uses diameter-interface-selection;
+                      }
+                      uses bind-info;
+                    }
+                  } // case server
+                  case client {
+                    container diameter-client {
+                      rwcli:new-mode "diameter-client";
+                      rwpb:msg-new DiameterClient;
+                      container diameter-interface {
+                        uses diameter-interface-selection;
+                      }
+                      uses bind-info;
+                      leaf server-address {
+                        description "Server IP address";
+                        type rwt:ip-address;
+                        rwpb:field-inline "true";
+                        rwpb:field-string-max 46;
+                      }
+                      leaf server-port {
+                        description "Server port";
+                        type uint16;
+                      }
+                      leaf call-rate {
+                        description "Call-Rate";
+                        type uint32;
+                      }
+                    } // container diameter-client
+                  } // case client
+                } // choice trafsim-operation-mode
+              } // container operational mode
+            } // container diameter-sim
+          } // case diameter
+          case radius {
+            container radius-sim {
+              rwcli:new-mode "radius-sim";
+              rwpb:msg-new RadiusSim;
+
+              choice trafsim-operation-mode {
+                case server {
+                  rwcli:new-mode "radius-server";
+                
+                } // case server
+                case client {
+                  rwcli:new-mode "radius-client";
+                } // case client
+              
+              } //choice trafsim-operation-mode
+            } // container radius-sim         
+          } // case radius
+
+          case pktgen {
+            container pktgen-sim {
+              rwcli:new-mode "pktgen-sim";
+              rwpb:msg-new PktgenSim;
+              //rwpb:msg-flat true;
+
+              container network-context {
+                description "network context name";
+                leaf name {
+                  type string;
+                  rwpb:field-inline "true";
+                  rwpb:field-string-max 64;
+                }
+              }
+              leaf instances-per-vm {
+                description "Maximum external application instances per VM";
+                type uint32;
+                default "4";
+              }
+              leaf number-of-vm {
+                description "Total VM in colony running external application";
+                type uint32;
+              }    
+              leaf test-file-name {
+                type string;
+                rwpb:field-string-max 256;
+                rwpb:field-inline "true";
+                description "test file name";
+              }
+              leaf test-result-file-name {
+                type string;
+                rwpb:field-string-max 256;
+                rwpb:field-inline "true";
+                description "test result file name";
+              }
+            } // container pktgen-sim         
+          } // case pktgen
+          case lte {
+            container lte-sim {
+              container operational-mode {
+                choice trafsim-operation-mode {
+                  case server {
+                    container saegw {
+                      rwcli:new-mode "saegw";
+                      container network-context {
+                        leaf name {
+                          description "network context name";
+                          type string;
+                          rwpb:field-inline "true";
+                          rwpb:field-string-max 64;
+                        }
+                      }
+                      container egress-network-context {
+                        leaf name {
+                          description "network context name";
+                          type string;
+                          rwpb:field-inline "true";
+                          rwpb:field-string-max 64;
+                        }
+                      }
+                      container egress-nat {
+                        leaf nat-ip-address {
+                          description "NAT IP Address";
+                          type rwt:ip-address;
+                        }
+                      }
+                      
+                      container sgw {
+                        leaf s11-address {
+                          type rwt:ip-address;
+                        }
+                        leaf s5-address {
+                          description "Listen IP address";
+                          type rwt:ip-address;
+                        }
+                      } // SGW Ends
+                    
+                      container pgw {
+                        leaf s5-address {
+                          description "Listen IP address";
+                          type rwt:ip-address;
+                        }                        
+                        leaf apn {
+                          type rwt:domain-name;
+                        }                        
+                      } // PGW Ends
+
+                      container dns {
+                        leaf primary-ipv4-address {
+                          description "Primary DNS IPv4 address";
+                          type rwt:ip-address;
+                        }                        
+                        leaf secondary-ipv4-address {
+                          description "Secondary DNS IPv4 address";
+                          type rwt:ip-address;
+                       }
+                        leaf primary-ipv6-address {
+                          description "Primary DNS IPv6 address";
+                          type rwt:ip-address;
+                        }                        
+                        leaf secondary-ipv6-address {
+                          description "Secondary DNS IPv6 address";
+                          type rwt:ip-address;
+                       }
+                      }
+                    
+                      leaf gtpu-address {
+                        type rwt:ip-address;
+                      }
+                    
+                      leaf ue-address-pool {
+                        type rwt:ip-prefix;
+                      }
+
+                      leaf ue-ipv6-prefix-pool {
+                        type rwt:ip-prefix;
+                      }
+
+                      leaf apn {
+                        type rw-3gpp:apn;
+                      }
+
+                    }
+                  } // case server
+                  case client {
+                    container mme-enb-sim {
+                      rwcli:new-mode "mme-enb-sim";
+                      container network-context {
+                        leaf name {
+                          description "network context name";
+                          type string;
+                          rwpb:field-inline "true";
+                          rwpb:field-string-max 64;
+                        }
+                      }
+
+                      container mme {
+                        leaf s11-address {
+                          description "Listen IP address";
+                          type rwt:ip-address;
+                        }
+
+                        container serving-network {
+                          uses rw-3gpp:plmn-id;
+                        }
+
+                      }
+                      container enb {
+                        leaf gtpu-address {
+                          type rwt:ip-address;
+                        }
+                        container tai {
+                          uses rw-3gpp:tai;
+                        }
+                        container ecgi {
+                          uses rw-3gpp:ecgi;
+                        }                        
+                      }
+                    }
+                  } // case client
+                } // choice ltesim-operation-mode
+              } // container operational mode
+            } // container lte-sim
+          } // case lte
+        } // choice trafsim-proto-type
+      } // container trafsim-mode
+
+      container service-statistics {
+        //rwpb:msg-flat true;
+        config false;
+        rwpb:msg-new TrafsimStats;
+        
+        container counters {
+          config false;
+
+          container protocol {
+            config false;
+
+            list commands {
+              rwpb:msg-new ProtocolCmdCounters;
+              //rwpb:msg-flat true;
+              config false;
+              key "rwappmgr-instance";
+
+              leaf rwappmgr-instance {
+                type uint32;
+                description "RW.APPMgr instance";
+              }
+
+              list command {
+                rwpb:field-inline-max yang;
+                max-elements 128;
+            
+                key "name";
+            
+                leaf name {
+                  type string;
+                  rwpb:field-string-max 256;
+                  description "Command Name";
+                }
+            
+                leaf periodic-sent {
+                  description "Number of messages sent in the last second.";
+                  type uint64;
+                }
+
+                leaf periodic-received {
+                  description "Number of messages received in the last second.";
+                  type uint64;
+                }
+
+                leaf cumulative-sent {
+                  description "Number of total messages sent";
+                  type uint64;
+                }
+
+                leaf cumulative-received {
+                  description "Number of total messages received";
+                  type uint64;
+                }
+              }
+            }
+
+            list avps {
+              rwpb:msg-new ProtocolAvpCounters;
+              //rwpb:msg-flat true;
+              config false;
+              key "rwappmgr-instance";
+
+              leaf rwappmgr-instance {
+                type uint32;
+                description "RW.APPMgr instance";
+              }
+
+              list avp {
+                rwpb:field-inline-max yang;
+                max-elements 1024;
+            
+                key "name";
+                
+                leaf name {
+                  type string;
+                  rwpb:field-string-max 256;
+                  description "AVP Name";
+                }
+            
+                leaf periodic-sent {
+                  description "Number of messages sent in the last second.";
+                  type uint64;
+                  default 0;
+                }
+
+                leaf periodic-received {
+                  description "Number of messages received in the last second.";
+                  type uint64;
+                  default 0;
+                }
+
+                leaf cumulative-sent {
+                  description "Number of total messages sent";
+                  type uint64;
+                  default 0;
+                }
+
+                leaf cumulative-received {
+                  description "Number of total messages received";
+                  type uint64;
+                  default 0;
+                }
+              }
+            }
+          }
+
+          list timer {
+            rwpb:msg-new TimerCounters;
+            //rwpb:msg-flat true;
+            key "rwappmgr-instance";
+
+            leaf rwappmgr-instance {
+              type uint32;
+              description "RW.APPMgr instance";
+            }
+
+            
+            leaf t_0ms_25ms {
+              description "0ms <= n < 25ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_25ms_50ms {
+              description "25ms <= n < 50ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_50ms_75ms {
+              description "50ms <= n < 75ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_75ms_100ms {
+              description "75ms <= n < 100ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_100ms_115ms {
+              description "100ms <= n < 115ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_115ms_120ms {
+              description "115ms <= n < 120ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_120ms_167ms {
+              description "120ms <= n < 167ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_167ms_200ms {
+              description "167ms <= n < 200ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_200ms_300ms {
+              description "200ms <= n < 300ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_300ms_400ms {
+              description "300ms <= n < 400ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_400ms_500ms {
+              description "400ms <= n < 500ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_500ms_600ms {
+              description "500ms <= n < 600ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_600ms_700ms {
+              description "600ms <= n < 700ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_700ms_800ms {
+              description "700ms <= n < 800ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_800ms_900ms {
+              description "800ms <= n < 900ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_900ms_1000ms {
+              description "900ms <= n < 1000ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_1000ms_2000ms {
+              description "1000ms <= n < 2000ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_2000ms_3000ms {
+              description "2000ms <= n < 3000ms";
+              type uint64;
+              default 0;
+            }
+            leaf t_3000ms_ {
+              description "n >= 3000ms";
+              type uint64;
+              default 0;
+            }
+          }
+          container mme {
+            rwpb:msg-new MmeCounters;
+
+            container transmitted {
+              uses gtpc-statistics-group-1;
+              uses gtpc-statistics-group-3;
+            }
+
+            container received {
+              uses gtpc-statistics-group-2;
+              uses gtpc-statistics-group-3;
+            }
+
+            container enb {
+              container gtpu {
+                uses gtpu-statistics;
+              }
+            }
+
+          }
+
+          container saegw {
+            rwpb:msg-new SgwCounters;
+            container transmitted {
+              uses gtpc-statistics-group-2;
+              uses gtpc-statistics-group-3;
+            }
+            
+            container received {
+              uses gtpc-statistics-group-1;
+              uses gtpc-statistics-group-3;
+            }
+            
+            container gtpu {
+              uses gtpu-statistics;
+            }
+          }              
+        }
+
+        list traffic {
+          rwpb:msg-new TrafficCounters;
+          //rwpb:msg-flat true;
+
+          config false;
+
+          
+          key "rwappmgr-instance";
+
+          leaf rwappmgr-instance {
+            type uint32;
+            description "RW.APPMgr instance";
+          }
+
+          leaf service_status {
+            description "Trafsim Service status";
+            type enumeration {
+              enum started;
+              enum stopped;
+            }
+          }
+
+          leaf assigned-call-rate {
+            description "Assigned Call Rate";
+            type uint64;
+          }
+          
+          container periodic {
+            config false;
+
+            leaf call-rate {
+              description "Instantaneous Call rate";
+              type uint64;
+              default 0;
+            }
+        
+            leaf incoming-calls {
+              description "Incoming calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf outgoing-calls {
+              description "Outgoing calls";
+              type uint64;
+              default 0;
+            }
+      
+            leaf rx-msg-per-sec {
+              description "Msgs Received per sec";
+              type uint64;
+              default 0;
+            }
+
+            leaf tx-msg-per-sec {
+              description "Msgs Sent per sec";
+              type uint64;
+              default 0;
+            }
+
+            leaf unexpected-msg {
+              description "Unexpected messages received";
+              type uint64;
+              default 0;
+            }
+
+            leaf current-calls {
+              description "Current Active calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-calls {
+              description "Successful calls made";
+              type uint64;
+              default 0;
+            }
+
+            leaf failed-calls {
+              description "Failed calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf refused-calls {
+              description "Refused calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf aborted-calls {
+              description "Aborted calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf timedout-calls {
+              description "Timedout calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-traffic-calls {
+              description "Successfull traffic calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-init-calls {
+              description "Successfull init calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-default-calls {
+              description "Successfull default calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-abort-calls {
+              description "Successfull abort calls";
+              type uint64;
+              default 0;
+            }
+          }
+
+          container cumulative {
+        
+            leaf call-rate {
+              description "Instantaneous Call rate";
+              type uint64;
+              default 0;
+            }
+        
+            leaf incoming-calls {
+              description "Incoming calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf outgoing-calls {
+              description "Outgoing calls";
+              type uint64;
+              default 0;
+            }
+      
+            leaf rx-msg-per-sec {
+              description "Msgs Received per sec";
+              type uint64;
+              default 0;
+            }
+
+            leaf tx-msg-per-sec {
+              description "Msgs Sent per sec";
+              type uint64;
+              default 0;
+            }
+
+            leaf unexpected-msg {
+              description "Unexpected messages received";
+              type uint64;
+              default 0;
+            }
+
+            leaf current-calls {
+              description "Current Active calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-calls {
+              description "Successful calls made";
+              type uint64;
+              default 0;
+            }
+
+            leaf failed-calls {
+              description "Failed calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf refused-calls {
+              description "Refused calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf aborted-calls {
+              description "Aborted calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf timedout-calls {
+              description "Timedout calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-traffic-calls {
+              description "Successfull traffic calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-init-calls {
+              description "Successfull init calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-default-calls {
+              description "Successfull default calls";
+              type uint64;
+              default 0;
+            }
+
+            leaf successful-abort-calls {
+              description "Successfull abort calls";
+              type uint64;
+              default 0;
+            }
+          }
+        }
+      } // container trafsim-service-statistics
+    } // container service
+  } // augment /rwbase:colony  
+
+  container ltesim {
+    description "This container has all the configuration and state information
+                 for lte-sim based applications in Riftware";
+
+    list ue-sim {
+      rwpb:msg-new UeSim;
+      rwpb:application-request-point;
+      description "For simulating a LTE network, UEs are needed. The UE
+                   simulator object helps configuring parameters for a
+                   set of UE.";
+
+      key "name";
+      unique "imsi";
+      unique "imei";
+      unique "msisdn";
+
+      leaf name {
+        description "The name to a UE list helps identify this template in other
+                     commands, especially RPC, in a Riftware environment geared
+                     towards testing the EPC or LTE";
+
+        type string {
+          length 1..20;
+        }
+      }
+
+      leaf imsi {
+        type rw-3gpp:rw-imsi;
+        description "The IMSI of the start element of the template";
+      }
+
+      leaf imei {
+        type rw-3gpp:rw-imei;
+        description "The IMEI of the start element of the template";
+      }
+
+      leaf msisdn {
+        type rw-3gpp:rw-msisdn;
+        description "The MSISDN of the start element of the template";
+      }
+    }
+
+    list ue-state {
+      rwpb:msg-new UeStatus;
+      config false;
+      key "imsi";
+      description "The configuration of UE is based on templates, so that tests
+                   can run multiple times with different UE. The state of a UE
+                   is bound to a single instance. The IMSI is used as a key to
+                   the state, and as in the case of configuration, the misisdn
+                   and IMEI are unique for state as well";
+
+      leaf imsi {
+        type rw-3gpp:rw-imsi;
+        description "The IMSI of the start element of the template";
+      }
+
+      leaf imei {
+        type rw-3gpp:rw-imei;
+        description "The IMEI of the start element of the template";
+      }
+
+      leaf msisdn {
+        type rw-3gpp:rw-msisdn;
+        description "The MSISDN of the start element of the template";
+      }
+
+      container state {
+        leaf mobility {
+          description "The state of the UE in the control plane";
+          type lte-ue-mobility-state;
+        }
+        leaf data-transfer {
+          description "The state of the UE in data tranfer";
+          type lte-ue-data-state;
+        }
+      }
+
+      leaf pdn-ipv4-address {
+        type rwt:ip-address;
+      }
+
+      leaf pdn-ipv6-address {
+        type rwt:ip-address;
+      }
+
+      leaf mme {
+        type rwt:ip-address;
+      }
+
+      leaf enb {
+        type rwt:ip-address;
+      }
+
+      leaf sgw {
+        type rwt:ip-address;
+      }
+
+      leaf uplink-pkts {
+        type uint32;
+      }
+
+      leaf uplink-bytes {
+        type uint64;
+      }
+
+      leaf downlink-pkts {
+        type uint32;
+      }
+
+      leaf downlink-bytes {
+        type uint64;
+      }
+
+      container dns {
+        list ipv4 {
+          key "addr";
+          leaf addr {
+              type rwt:ip-address;
+          }
+        }
+        list ipv6 {
+          key "addr";
+          leaf addr {
+              type rwt:ip-address;
+          }
+        }
+      }
+
+      container serving-network {
+        uses rw-3gpp:plmn-id;
+      }
+
+      container ue-ambr {
+        uses rw-3gpp:ambr;
+      }
+      
+      list pdn-connections {
+        key "apn";
+
+        leaf apn {
+          type rwt:domain-name;
+        }
+
+        leaf pdn-type {
+          type pdn-type;
+        }
+
+        leaf pgw {
+          type rwt:ip-address;
+        }
+
+        container apn-ambr {
+          description "The Aggregate maximum bit rate in Mbps for uplink and
+                       downlink directions on this APN";
+          
+          uses rw-3gpp:ambr;
+        }
+        
+        list bearers {
+          key id;
+
+          leaf id {
+            type uint8 {
+              range 5..15;
+            }
+          }
+
+          leaf pgw-teid {
+            type uint32;
+          }
+
+          leaf enb-teid {
+            type uint32;
+          }
+
+          leaf sgw-teid {
+            type uint32;
+          }
+
+          container qos {
+              leaf qci {
+                type uint32;
+              }
+              leaf ar-pl {
+                type boolean;
+              }
+              leaf ar-pv {
+                type uint8;
+              }
+              leaf ar-pci {
+                type boolean;
+              }
+          }
+        }
+      }
+    }
+    
+    list test-script {
+      config false;
+      description "A list of tests are available on installing LTE SIM Riftware
+                   application. The scripts are named, and information regarding
+                   the parameters of the script are also available";
+      key "id";
+
+      leaf id {
+        type string {
+          length 1..64;
+        }
+      }
+
+      leaf name {
+        type string;
+      }
+
+      leaf path {
+        type string;
+      }
+
+      leaf description {
+        type string;
+      }
+
+      leaf code {
+        type string;
+      }
+      
+      container apn {
+        leaf name {
+          description "The Network Identifier part of an Access Point name";
+          type rw-3gpp:apn;
+        }
+
+        container apn-ambr {
+          description "The Aggregate maximum bit rate in Mbps for uplink and
+                       downlink directions on this APN";
+          
+          uses rw-3gpp:ambr;
+        }
+      }      
+    }
+  }
+
+  augment /rwbase:mytest-cont/rwbase:mylist/rwbase:deep1/rwbase:deep2 {
+    leaf appmgr-leaf {
+      type string;
+    }
+  }
+
+  augment /rwbase:mytest-cont/rwbase:addcont {
+    list appmgr-list {
+      key "key1";
+
+      leaf key1 {
+        type string;
+      }
+
+      leaf notkey {
+        type string;
+      }
+    }
+
+    leaf tleaf {
+      type uint32;
+    }
+  }
+
+  augment /rwbase:vcs/rwbase:resources/rwbase:vm/rwbase:memory {
+    leaf appmgr-memory {
+      type string;
+    }
+  }
+  
+  rpc trafsim-start {
+    input {      
+      container colony {
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+        leaf name {
+          rwpb:field-inline "true";
+          rwpb:field-string-max 64;
+          type string;
+        }
+        container trafsim-service {
+          leaf name {
+            rwpb:field-inline "true";
+            rwpb:field-string-max 64;
+            type string;
+          }
+          
+          container execute-script {
+            leaf id {
+              rwpb:field-inline "true";
+              rwpb:field-string-max 64;
+              
+              description "ID of script to be executed";
+              type string;
+              mandatory true;
+            }                  
+            leaf ue-sim-name {
+              rwpb:field-inline "true";
+              rwpb:field-string-max 64;
+              
+              type string;
+              mandatory true;
+            }                                    
+          }          
+        }
+      }
+    } // input
+    output {
+      container script
+      {
+        leaf execution-id {
+          type uint32;
+        }
+      }
+    }
+  } // rpc trafsim-start
+
+  
+  rpc trafsim-stop {
+    input {
+      container colony {
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+        leaf name {
+          rwpb:field-inline "true";
+          rwpb:field-string-max 64;
+          type string;
+        }
+        container trafsim-service {
+          leaf name {
+            rwpb:field-inline "true";
+            rwpb:field-string-max 64;
+            type string;
+          }
+          container ue-sim {
+            leaf imsi {
+              rwpb:field-inline "true";
+              rwpb:field-string-max 64;
+              type string;
+            }
+          }
+        }  
+      }
+    } // input
+  } // rpc trafsim-stop
+
+  rpc trafsim-pause {
+    input {
+      container colony {
+        rwpb:msg-new PauseTraffic;
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+        leaf name {
+          rwpb:field-inline "true";
+          rwpb:field-string-max 64;
+          type string;
+        }
+        container trafsim-service {
+          leaf name {
+            rwpb:field-inline "true";
+            rwpb:field-string-max 64;
+            type string;
+          }
+        }  
+      }
+    } // input
+  } // rpc trafsim-pause
+
+  rpc trafsim-resume {
+    input {
+      container colony {
+        rwpb:msg-new ResumeTraffic;
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+        leaf name {
+          rwpb:field-inline "true";
+          rwpb:field-string-max 64;
+          type string;
+        }
+        container trafsim-service {
+          leaf name {
+            rwpb:field-inline "true";
+            rwpb:field-string-max 64;
+            type string;
+          }
+        }  
+      }
+    } // input
+  } // rpc trafsim-resume
+
+  rpc trafsim-adjust {
+    input {
+      container colony {
+        rwpb:msg-new AdjustTraffic;
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+        leaf name {
+          rwpb:field-inline "true";
+          rwpb:field-string-max 64;
+          type string;
+        }
+        container trafsim-service {
+          leaf name {
+            rwpb:field-inline "true";
+            rwpb:field-string-max 64;
+            type string;
+          }
+          leaf call-rate {
+            description "Call-Rate";
+            type uint32;
+          }
+        }  
+      }
+    } // input
+  } // rpc trafsim-pause
+
+  rpc trafsim-show {
+    input {
+      container colony {
+        rwpb:msg-new ShowTraffic;
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+        leaf name {
+          rwpb:field-inline "true";
+          rwpb:field-string-max 64;
+          type string;
+        }
+        container trafsim-service {
+          leaf name {
+            rwpb:field-inline "true";
+            rwpb:field-string-max 64;
+            type string;
+          }
+
+          leaf execution-id {
+            type uint32;
+          }
+        }
+      }
+    }
+    output {
+      rwpb:msg-new GroupidStats;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+      container calls {
+        leaf success {
+          type uint32;
+        }
+        leaf failure {
+          type uint32;
+        }
+        leaf total {
+          type uint32;
+        }
+        leaf active {
+          type uint32;
+        }
+      }
+      container script {
+        leaf state {
+          description "The state of the UE script";
+          type lte-ue-script-state;
+        }
+        leaf duration-secs {
+          description "Runtime of the UE test script";
+          type uint32;
+        }
+        leaf exit-code {
+          description "Exit code of the script.";
+          type int32;
+        }
+      }
+    }
+  }
+
+  // Augment RPC input
+  augment /rwbase:tracing/rwbase:input {
+    leaf appmr_tracing_ip {
+      description "Augmenting rpc input";
+      type uint32;
+    }
+    container appmr_rpc_cont {
+      leaf l1 {
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+    }
+  }
+
+  augment /rwbase:tasklet/rwbase:info/rwbase:components/rwbase:component_info/rwbase:component_info {
+    case cluster-info {
+
+      leaf cluster-name {
+        type string;
+      }
+
+      leaf number-mvms {
+        type uint32;
+      }
+    }
+  }
+}

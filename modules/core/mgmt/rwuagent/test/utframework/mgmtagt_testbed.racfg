@@ -1,0 +1,18 @@
+{
+  "test_name":"TC_MGMTAGT_TESTBED",
+  "commandline":"./mgmt_agent_test.sh",
+  "target_vm":"VM",
+  "test_description":"Mgmt Agent Testbed tests",
+  "status":"working",
+  "keywords":["nightly","smoke", "smoke_stable"],
+  "timelimit": 2400,
+  "networks":[],
+  "vms":[
+    {
+      "name": "VM",
+      "hugepages": false,
+      "memory": 16384,
+      "cpus": 4
+    }
+  ]
+}

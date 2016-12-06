@@ -1,0 +1,81 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+/**
+ * @file tailf-raw.tailf.yang
+ * @author Tom Seidenberg
+ * @date 2014/08/12
+ * @brief Test tail-f yang annotations. This is the annotation file.
+ */
+
+module tailf-raw.tailf
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/tailf-raw.tailf";
+  prefix "tfra";
+
+  import tailf-common { prefix tailf; }
+  import tailf-raw { prefix tfr; }
+
+  tailf:annotate-module 'tailf-raw' {
+
+    tailf:annotate-statement 'typedef[name="e1"]' {
+      tailf:annotate-statement 'type' {
+        tailf:annotate-statement 'enum[name="lf1"]' {
+          tailf:code-name "enum_e1_lf1";
+        }
+        tailf:annotate-statement 'enum[name="lf2"]' {
+          tailf:code-name "enum_e1_lf2";
+        }
+        tailf:annotate-statement 'enum[name="n1"]' {
+          tailf:code-name "enum_e1_n1";
+        }
+      }
+    }
+  }
+
+  tailf:annotate /tfr:n1/tfr:lf4 {
+    tailf:id-value 3000000000;
+  }
+
+  tailf:annotate /tfr:top2 {
+    tailf:id-value 3000000001;
+  }
+
+  tailf:annotate /tfr:n1 {
+    tailf:code-name "notif_n1";
+  }
+
+  tailf:annotate /tfr:top1/tfr:lf588506805 {
+    tailf:id-value 3333000001;
+  }
+
+  tailf:annotate /tfr:top1/tfr:lf116142732 {
+    tailf:id-value 3333000002;
+  }
+
+  // ATTN: RIFT-2006: This does not work - the id-value does not take
+  //tailf:annotate /tfr:n1 {
+  //  tailf:id-value 3000000003;
+  //}
+  //tailf:annotate /tfr:top1/tfr:n1 {
+  //  tailf:id-value 3000000003;
+  //}
+}
+

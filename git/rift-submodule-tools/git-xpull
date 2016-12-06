@@ -1,0 +1,180 @@
+#!/bin/bash
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Austin Cormier
+# Creation Date: 2014/05/22
+#
+# This script simplifies the git submodule rollup process
+# For each initialized submodule we do the following:
+#   1. Checkout the current supermodule branch (<smb>) and pull to merge <smb> into orgin/<smb>. (Should always be a fast forward merge.)
+#   2. Merge the local development branch into <smb>.
+#     a. If there is a merge conflict, notify the user, abort the merge, and exit the xpull script to allow user to complete merge in submodule.
+#   3. Re-create the local branch off of the new <smb> (git checkout -B local).
+#
+# After all submodules have been merged, do the following at the top-level superproject:
+#  1. Perform an x-commit at the top-level to save the state of the submodules.
+#  2. Perform a pull to synchronize supermodule with latest in orgin.
+#
+# Example: git-xpull <git pull arg>..
+
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$DIR/git-common-functions.sh"
+
+function pull_in_each_submodule(){
+  # Create an array to store the submodules which had merge conflicts.
+  # This will be used to notify the user which submodules to manually merge.
+  declare -a sm_conflicts=( )
+
+  merge_branch="$1"
+  super_branch="$(get_current_branch)"
+
+  # The input is at the bottom of the while loop.  This is to prevent the body from running
+  # within a subshell preventing access to sm_conflicts changes.
+  while read line; do
+    pushd $line > /dev/null
+      ensure_on_local || return 1
+
+      git fetch --all
+      # If the branch actually exists in the origin, then perform a pull to sync up.
+      is_valid_branch_name "origin/$merge_branch"
+      if [ $? -eq 0 ]; then
+        log "INFO - Merging origin/$merge_branch into local branch inside of submodule: $line"
+        git pull --no-edit origin $merge_branch
+        if [ $? -ne 0 ]; then
+          log "WARNING - Failed to automatically merge origin/$merge_branch into local branch: $line"
+          # Add the submodule to the conflicts array, and move on to the next.
+          sm_conflicts=("${sm_conflicts[@]}" "$line")
+
+          popd > /dev/null
+          continue
+        fi
+      fi
+
+      log "INFO - Checking out $super_branch in submodule: $line"
+      git checkout $super_branch
+      if [ $? -ne 0 ]; then
+        log "ERROR - Checking out $super_branch failed inside of submodule: $line"
+
+        popd > /dev/null
+        return 1
+      fi
+
+      log "INFO - Attempting to merge local into $super_branch in submodule: $line"
+      git merge local --log --no-edit
+      if [ $? -ne 0 ]; then
+        log "ERROR - Automatic merge of local into $super_branch failed inside of submodule: $line."
+        log "This should not occur since we just merged $super_branch into local."
+        # Aborting merge
+        log "INFO - Aborting automatic merge: $line"
+        git merge --abort
+        # Move back to the local branch
+        git checkout local
+
+        popd > /dev/null
+        return 1
+      fi
+
+      # Create a new local branch based off of master
+      log "INFO - Resetting local branch off of $super_branch."
+      git checkout -B local || return 1
+
+      ensure_on_local || return 1
+
+    popd > /dev/null
+  done < <(foreach_initialized_submodule)
+
+  num_conflicts=${#sm_conflicts[@]}
+  if [ $num_conflicts -gt 0 ]; then
+    echo "$num_conflicts submodule(s) had merge conflicts: ${sm_conflicts[@]}."
+    echo "Resolve the merge conflicts manually or via git xmergetool"
+    echo ""
+    echo "*** After you have resolved the conflicts run 'git-xcommit -a' followed by git-xpull again."
+    return 1
+  fi
+}
+
+function create_super_branch_in_each_submodule(){
+  super_branch="$(get_current_branch)"
+
+  while read line; do
+    pushd $line > /dev/null
+
+      ensure_on_local || return 1
+
+      # If the branch is already created, let's just continue to the next submodule.
+      is_valid_branch_name "$super_branch"
+      if [ $? -eq 0 ]; then
+        popd > /dev/null
+        continue
+      fi
+
+      git branch "$super_branch"
+      if [ $? -ne 0 ]; then
+        log "ERROR - Failed to create $super_branch in submodule: $line"
+        popd > /dev/null
+        return 1
+      fi
+
+    popd > /dev/null
+  done < <(foreach_initialized_submodule)
+}
+
+function auto_commit_submodule_merges(){
+  log "Auto-commiting any submodule merges."
+  git xcommit --author="ruser <RW.User@riftio.com>" -a -m "git-xpull: Auto-commit submodule merges."
+  if [ $? -ne 0 ]; then
+    log "ERROR - Failed to auto-commit submodule merges."
+    return 1
+  fi
+}
+
+function pull_supermodule(){
+  # pull super-module
+  # If the branch actually exists in the origin, then perform a pull to sync up.
+  super_branch="$(get_current_branch)"
+  [ "$super_branch" == "HEAD" ] && return 1
+  merge_branch="$1"
+
+  is_valid_branch_name "origin/$super_branch"
+  if [ $? -eq 0 ]; then
+    log "Pulling in the supermodule"
+    git fetch --all
+    git pull --no-edit origin $merge_branch
+    if [ $? -ne 0 ]; then
+      log "ERROR - Failed to pull in supermodule."
+      return 1
+    fi
+  fi
+}
+
+check_for_detached_head || exit 1
+check_clean || exit 1
+
+if [ $# -gt 1 ]; then
+  log "Error: Too many arguments.  git-xpull only takes a single branch option."
+  exit 1
+fi
+
+merge_branch="$(get_current_branch)"
+if [ $# -eq 1 ]; then
+  merge_branch=$1
+fi
+
+create_super_branch_in_each_submodule || exit 1
+pull_in_each_submodule $merge_branch || exit 1
+auto_commit_submodule_merges || exit 1
+pull_supermodule $merge_branch || exit 1

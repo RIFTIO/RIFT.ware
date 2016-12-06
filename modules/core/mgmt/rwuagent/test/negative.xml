@@ -1,0 +1,5 @@
+<data xmlns="http://riftio.com/ns/riftware-1.0/rw-base">
+  <valid:validation xmlns:valid="http://riftio.com/ns/core/mgmt/uagent/test/validation">
+    <valid:ref>asdf</valid:ref>
+  </valid:validation>
+</data>

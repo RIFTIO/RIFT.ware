@@ -1,0 +1,10 @@
+RIFT.fastpath, dpdk, Data Plane Development Kit, BSD 3-Clause, http://dpdk.org/download
+RIFT.core, gperftools, Multi-threaded Malloc and Performance Analysis Tools, BSD 3-Clause, https://code.google.com/p/gperftools/
+RIFT.app, stream, Benchmark for measuring memory bandwidth, XXX, http://www.cs.virginia.edu/stream/ref.html
+RIFT.core, urcu, Userspace RCU Library, LGPLv2, git://git.lttng.org/userspace-rcu.git
+RIFT.core, vtune, Kernel Module for Perfomance Analysis, GPLv2,
+#
+#
+# 
+RIFT.core, ovs, OVS is not built with riftware. This repo is used to track all the changes that were done for riftware., Multi, RIFT modified http://openvswitch.org Source ???
+RIFT.ext, sipp, SIP load tester, GPLv2, https://github.com/SIPp/sipp.git

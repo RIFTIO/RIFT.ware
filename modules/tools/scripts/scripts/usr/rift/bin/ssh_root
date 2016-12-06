@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+# USAGE 
+# ssh_root [-n] host_or_ip [command....]
+#
+# ssh into host by name or IP 
+# -n is passed to ssh and will close stdin. This is useful if you are running 
+# it from a service or cron job
+# if command is specified, it is executed and then this returns
+# otherwise an interactive shell is created
+
+term=""
+if [ "$1" == "-n" ]; then
+    term="-n"
+    shift
+fi
+
+if [ $# -lt 1 ]; then
+	echo $0: 'args are system/ip [cmd [args...]]'
+	exit 1
+fi
+
+sys=$1
+shift
+
+if [ ! -f ~/.ssh/id_grunt ]; then
+    cp ${RIFT_INSTALL}/etc/id_grunt ~/.ssh/id_grunt
+    chmod 600 ~/.ssh/id_grunt
+fi
+if [ $# -eq 0 ]; then
+	term="$term -tt"
+fi
+
+exec ssh $term -i ~/.ssh/id_grunt -o StrictHostKeyChecking=no root@$sys "$@"
+
+
+

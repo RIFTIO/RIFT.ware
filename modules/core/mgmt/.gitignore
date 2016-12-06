@@ -1,0 +1,37 @@
+*.pyc
+# Object file directories
+.install
+.obj
+.build
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.elc
+auto-save-list
+tramp
+.\#*
+
+# vi
+*.swp
+
+libunwind/libunwind-1.1/doc/unw_get_proc_info.man
+
+#cscope
+cscope.files
+cscope.*
+.idea/
+.idea/.name
+autom4te.cache
+*/.idea/workspace.xml
+static-config.json
+*/launchpad/config
+build/
+*/test/components/js/
+*/src/base/less/*.css
+*/src/theme/**/*.css
+*/test/components/modules
+# Temporary
+rwmgmt-ui/rwmgmt-ui/

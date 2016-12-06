@@ -1,0 +1,251 @@
+#!/bin/bash
+#
+# enable_txt: Script to enable TXT
+# 5-13-2015 -- WW
+# 
+
+SYSCFG=/usr/bin/syscfg/syscfg
+modprobe ipmi_devintf
+
+declare YELLOW='\033[33m'
+declare RED='\033[31m'
+declare NORMAL='\033[00;00m'
+declare GREEN='\033[32m'
+
+#use TXT_TAG file to tracking what has been done by this script
+#1: password has been set, need to enable bios
+#2: bios has been set, need to enable txt
+TXT_TAG=/root/_txt_to_be_enabled
+script_fullpath=$(readlink -f $0)
+ipmi_passwd="riftIO_ipmi2"
+#ipmi_passwd="\"\""
+script_dir=$(dirname $script_fullpath)
+script_name=$(basename $script_fullpath) 
+#set_BIOS=${script_dir}/setbiosseting_intel
+#get_BIOS=${script_dir}/getbiosseting_intel
+
+
+
+mkdir -p /var/log/tpm
+LOGFILE=/var/log/tpm/enabling_tpm_$(date +'%Y%m%dT%H%M%S').log
+
+
+abort() {
+    _msg=$@
+    echo -e "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]:${RED}  -Err- ${_msg}${NORMAL}" >&2
+    echo "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]: -Err- ${_msg}" >> $LOGFILE
+    echo -e "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]:${RED}  -Aborting..${NORMAL}" >&2
+    exit 1
+}
+
+err() {
+    _msg=$@
+    echo -e "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]:${RED}  -Err- ${_msg}${NORMAL}" >&2
+    echo "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]: -Err- ${_msg}" >> $LOGFILE
+}
+
+function warn()
+{
+    _msg=$@
+    echo -e "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]:${YELLOW}  -Warn- ${_msg}${NORMAL}" >&2
+    echo "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]: -Info- ${_msg}" >> $LOGFILE
+}
+
+function info()
+{
+    _msg=$@
+    echo -e "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]:${NORMAL}  -Info- ${_msg}"
+    echo "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]: -Info- ${_msg}" >> $LOGFILE
+}
+
+function okinfo()
+{
+    _msg=$@
+    echo -e "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]:${GREEN}  -Info- ${_msg}${NORMAL}"
+    echo "-[$(date +'%Y-%m-%dT%H:%M:%S%z')]: -Info- ${_msg}" >> $LOGFILE
+}
+
+
+get_tpm_ver(){
+  dmesg | awk '/tpm_tis.*device-id/{print $5}' 
+}
+get_tpm_stat() {
+  dmesg | awk '/tpm_tis.*TPM is/{print $7}'  
+}
+
+rpm -qi $SYSCFG > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   yum install $SYSCFG -y
+fi
+
+get_current_tpm_bios_stat(){
+  VT=$($get_BIOS "Intel(R) Virtualization Technology")
+  VTDIO=$($get_BIOS "Intel(R) VT for Directed I/O")
+  TPM=$($get_BIOS "TPM Administrative Control")
+  TXT=$($get_BIOS "Intel(R) TXT")
+  
+  info "Intel(R) Virtualization Technology: -$VT-"
+  info "Intel(R) VT for Directed I/O: -$VTDIO-"
+  info "TPM Administrative Control: -$TPM-"
+  info "Intel(R) TXT: -$TXT)"
+
+}
+
+function is_bios_password_set(){
+  return=0
+  $SYSCFG /bap "" "" > /dev/null 2>&1 &&  return=1
+  echo $return
+}
+
+function get_BIOS(){
+   output=$(eval $(echo $SYSCFG /d biossettings "$@" 2>&1))
+   echo "$output" | grep -q Current && echo "$output" | grep Current | cut -d: -f2
+}
+
+function enable_BIOS(){
+#return val:
+# 0 different value set and need reboot
+# 1 same value, no need reboot
+# 2 failed, no need reboot
+  setting=$1
+  rval=0
+  current_value=$(get_BIOS "$setting")
+  if [ "$current_value" == " Enabled" ]; then
+     info BIOS setting: -$setting has already been enabled.
+     return 1 
+  fi
+  output=$(eval $(echo $SYSCFG /bcs $ipmi_passwd "$setting" 1 2>&1))
+  #echo "$output" >> $LOGFILE
+  if `echo $output | grep -q Successfully`; then
+    okinfo BIOS setting: -$setting has been enabled.
+    rval=0
+  else
+    warn BIOS setting: -$setting failed enabled.
+    rval=2
+  fi
+  #echo $reval
+  return $reval
+}
+
+
+function set_BIOS(){
+#return val:
+# 0 different value set and need reboot
+# 1 same value, no need reboot
+# 2 failed, no need reboot
+   setting=$1
+   target_value=$2
+   #echo "target: $target_value"
+   current_value=$(get_BIOS "$setting")
+   #already=0 
+   #[ `echo $current_value | grep -q -i enable` ] && [ "$target_value" == "1" ] && already=1 
+   #[ `echo $current_value | grep -q -i disable` ] && [ "$target_value" == "0" ] && already=1 
+   #if [ `echo $current_value | grep -i enable` ] && [ $target_value == "1" ]; then
+   #if [ $already -eq 1 ]; then
+   #   info BIOS setting: -$setting- is already set to  $current_value.
+   #   return 1
+   #fi
+   output=$(eval $(echo $SYSCFG /bcs $ipmi_passwd "$setting" $target_value 2>&1))
+   echo "$output" >> $LOGFILE
+   if `echo $output | grep -q Successfully`; then
+      okinfo BIOS setting: -$setting has been set to $target_value
+      rval=0
+   else
+      warn BIOS setting: -$setting failed set to $target_value
+      rval=2
+   fi
+   echo $reval
+   return $reval
+}
+
+
+
+############################################
+# Main script
+
+
+
+tpm_ver=`get_tpm_ver`
+tpm_stat=`get_tpm_stat`
+
+
+
+info This sicript is run from $TERM
+
+
+if [ "x$tpm_ver" == "x" ]; then
+   err "TPM not found!" 
+   exit 1   
+else 
+   okinfo "TPM v$tpm_ver is found"
+fi
+
+if [ $(is_bios_password_set) == "1" ]; then
+   warn BIOS admin password is not set. Setting it to standard. Server will reboot then continue enable TPM with rc.local script.
+   wall Server will reboot for enabling TPM.
+   $SYSCFG /bap '' $ipmi_passwd > /dev/null 2>&1 
+   touch $TXT_TAG
+   echo 1 > $TXT_TAG
+   echo $script_fullpath >> /etc/rc.d/rc.local
+   sleep 3 
+   init 6
+else
+   okinfo "BIOS admin password has been set"
+   echo 1 > $TXT_TAG
+fi
+
+
+if [ "$tpm_stat" == "disabled/deactivated" ]; then
+   warn TPM is ${tpm_stat}. Going to enable TPM. Please expect multiple reboot during this process.
+else
+   okinfo "TPM is already activated."
+   enable_BIOS "\"Intel(R) Virtualization Technology\""  && need_reboot="true"
+   enable_BIOS "\"Intel(R) VT for Directed I/O\""  && need_reboot="true"
+   enable_BIOS "\"Intel(R) TXT\"" && need_reboot="true"
+   rm -f $TXT_TAG
+   sed -i "/$script_name/d" /etc/rc.d/rc.local
+   if [ "$need_reboot" == "true" ]; then
+     echo "Server is going to reboot and rc.local script has been restored"
+     wall Server will reboot for enabling TPM.
+     sleep 5
+     init 6
+   fi
+   exit 0
+fi
+
+
+
+[ -f $TXT_TAG ] || abort "No stage file found, don't know what to do."
+
+stage=$(cat $TXT_TAG)
+
+case ${stage} in
+  2)
+    #TODO: Need a box with TPM newly installed to verify if this is really needed. 
+       enable_BIOS "\"Intel(R) TXT\"" && need_reboot="true"
+       rm -f $TXT_TAG
+       sed -i "/$script_name/d" /etc/rc.d/rc.local
+       if [ "$need_reboot" == "true" ]; then
+         info "Server is going to reboot and rc.local script has been restored"
+         wall Server will reboot for enabling TPM.
+         sleep 5
+         init 6
+       fi
+       ;;
+  1)
+       enable_BIOS "\"Intel(R) Virtualization Technology\""  && need_reboot="true"
+       enable_BIOS "\"Intel(R) VT for Directed I/O\""  && need_reboot="true"
+       enable_BIOS "\"TPM Administrative Control\""  && need_reboot="true"
+       touch $TXT_TAG
+       echo 2 > $TXT_TAG
+       sed -i "/$script_name/d" /etc/rc.d/rc.local
+       echo $script_fullpath >> /etc/rc.d/rc.local
+       if [ "$need_reboot" == "true" ]; then
+         echo "Server is going to reboot and rc.local script has been restored"
+         wall Server will reboot for enabling TPM.
+         sleep 5
+         init 6
+       fi
+       ;;
+esac
+

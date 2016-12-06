@@ -1,0 +1,162 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file rw-fpath-log.yang
+ * @author Rift.IO
+ * @date 30/12/2014
+ * @brief RiftWare Log Event Definitions for rw-fpath logging
+ */
+
+module rw-fpath-log-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwfpath-log";
+  prefix "rwfpathlog";
+
+  import rw-notify-ext-d {
+    prefix "rwnotify";
+  }
+
+  import rw-log-d {
+    prefix "rwlog";
+  }
+
+  revision 2014-12-30 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT Fastpath Logging";
+  }
+
+  /*
+   * rw-fpath Logs - ID space 00001000 - 00001999
+   */
+
+  notification fpath-event-emergency {
+    rwnotify:log-event-id 00010000;
+      description
+         "rw-fpath emergency log";
+      uses rwlog:severity-emergency;
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification fpath-event-alert {
+    rwnotify:log-event-id 00010001;
+      description
+         "rw-fpath alert log";
+      uses rwlog:severity-alert;
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification fpath-event-critical {
+    rwnotify:log-event-id 00010002;
+      description
+         "rw-fpath critical log";
+      uses rwlog:severity-critical;
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification fpath-event-error {
+    rwnotify:log-event-id 00010003;
+      description
+         "rw-fpath error log";
+      uses rwlog:severity-error;
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification fpath-event-warning {
+    rwnotify:log-event-id 00010004;
+      description
+         "rw-fpath waring log";
+      uses rwlog:severity-warning;
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification fpath-event-notice {
+    rwnotify:log-event-id 00010005;
+      description
+         "rw-fpath notice log";
+      uses rwlog:severity-notice;
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification fpath-event-info {
+    rwnotify:log-event-id 00010006;
+      description
+         "rw-fpath info log";
+      uses rwlog:severity-info;
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification fpath-event-debug {
+    rwnotify:log-event-id 00010007;
+      description
+         "rw-fpath debug log";
+      uses rwlog:severity-debug;
+      leaf log  {
+        type string;
+      }
+  }
+
+  notification port-error {
+    rwnotify:log-event-id 00010008;
+      description
+         "rw-fpath port error log";
+      uses rwlog:severity-error;
+      leaf portname  {
+        type string;
+      }
+      leaf errormsg  {
+        type string;
+      }
+  }
+
+  notification port-info {
+    rwnotify:log-event-id 00010009;
+      description
+         "rw-fpath port info log";
+      uses rwlog:severity-info;
+      leaf portname  {
+        type string;
+      }
+      leaf infomsg  {
+        type string;
+      }
+  }
+
+  /*
+   * END - rw-fpath Logs ID  space : 00001000 - 00001999
+   */
+}

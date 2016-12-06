@@ -1,0 +1,15 @@
+#!/bin/bash
+
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export PATH=$PATH:${THIS_DIR}/git/rift-submodule-tools
+
+if [ ! -e ${THIS_DIR}/modules/toolchain/CMakeLists.txt ]; then
+    (cd ${THIS_DIR} && git xinit -s modules/toolchain)
+    if [ $? -ne 0 ]; then
+      echo "ERROR: Failed to check out modules/toolchain" >&2
+      exit 1
+    fi
+fi
+echo "PLATFORM is $($THIS_DIR/modules/toolchain/home/get_platform.sh)" >&2
+
+exec ${THIS_DIR}/modules/toolchain/home/rift-shell -d "${THIS_DIR}" "$@"

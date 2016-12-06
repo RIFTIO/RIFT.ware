@@ -1,0 +1,72 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rw-vnf-base-opdata.tailf
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-vnf-base-opdata-annotation";
+  prefix "rw-vnf-base-opdata-ann";
+    
+  import mano-base {
+    prefix manobase;
+  }
+  import rw-vnf-base-opdata {
+    prefix rwvnfbaseopdata;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:logical-port" {
+    tailf:callpoint rw_callpoint;
+  }
+  tailf:annotate "/manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:port-state" {
+    tailf:callpoint rw_callpoint;
+  }
+  tailf:annotate "/manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:network-context-state" {
+    tailf:callpoint rw_callpoint;
+  }
+  tailf:annotate "/rwvnfbaseopdata:clear-data" {
+    tailf:actionpoint rw_actionpoint;
+  }
+  tailf:annotate "/rwvnfbaseopdata:start" {
+    tailf:actionpoint rw_actionpoint;
+  }
+  tailf:annotate "/rwvnfbaseopdata:insmod" {
+    tailf:actionpoint rw_actionpoint;
+  }
+  tailf:annotate "/rwvnfbaseopdata:stop" {
+    tailf:actionpoint rw_actionpoint;
+  }
+  tailf:annotate "/manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:virtual-fabric-access-point" {
+    tailf:callpoint rw_callpoint;
+  }
+  tailf:annotate "/manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:virtual-service-access-point" {
+    tailf:callpoint rw_callpoint;
+  }
+  tailf:annotate "/manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:flow-hashbin" {
+    tailf:callpoint rw_callpoint;
+  }
+  tailf:annotate "/manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:flow-signature" {
+    tailf:callpoint rw_callpoint;
+  }
+  tailf:annotate "/manobase:vnf-opdata/manobase:vnf/rwvnfbaseopdata:classifiers" {
+    tailf:callpoint rw_callpoint;
+  }
+}

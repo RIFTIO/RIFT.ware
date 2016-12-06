@@ -1,0 +1,83 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module document
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/document";
+  prefix "doc";
+
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "This YANG module is used as an example in documenting the use of
+               YANG in riftware.It also attempts to model a document";
+
+  revision 2014-05-27 {
+    description "Initial version"; }
+
+  grouping table-entry { 
+    list entry {
+      key "title";
+      rwpb:msg-new TableEntry;
+      leaf title {
+        description "Title of a chapter, table, figure etc";
+        type string;
+      }
+      
+      leaf page.no {
+        description "Page on which the title appears";
+        type uint16;
+      }
+    }
+  }
+
+  container table-of-contents {
+    rwpb:msg-new Toc;
+    description "Sections, and the page numbers";
+    uses table-entry;
+  }
+
+  container table-of-figures {
+    description "Table of figures";
+    uses table-entry;
+  }
+
+  container main-book {
+    rwpb:msg-new MainBook;
+    rwpb:msg-flat true;
+
+
+    list chapters {
+      rwpb:field-inline-max "10";
+      key "number";
+      
+      leaf number {
+        description "The chapter number";
+        type uint8;
+      }
+      
+      leaf title-in.section {
+        description "The title of the chapeter";
+        type string;
+        rwpb:field-string-max 30;
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+[Plugin]
+Module=basic_functor-JS_LOADER
+Loader=JS_LOADER
+Name=BasicFunctor-JS_LOADER
+Description=This is a 'JS_LOADER' plugin for functor test cases.
+Authors=Anil Gunturu
+Copyright=Copyright © 2014 RIFT.io
+Website=http://www.riftio.com

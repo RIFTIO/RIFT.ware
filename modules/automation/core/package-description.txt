@@ -1,0 +1,2 @@
+This is a placeholder for a longer description
+of the rw.automation.core package.

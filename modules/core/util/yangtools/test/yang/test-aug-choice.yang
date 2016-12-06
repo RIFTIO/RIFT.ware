@@ -1,0 +1,57 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module test-aug-choice
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/yang/test-aug-choice";
+  prefix "tac";
+
+  import testncx { prefix "tn"; }
+
+  description "tests for RIFT-4498: yangpbc crashes when augmenting a choice";
+
+  augment /tn:top/tn:b {
+    // Add a new choice to a container
+    choice ch-aug-ch {
+      leaf s-aug-1 { type string; }
+      leaf s-aug-2 { type string; }
+    }
+  }
+
+  augment /tn:top/tn:b/tn:ch {
+    // Add a new case to a choice
+    case ch-aug {
+      leaf s-aug-3 { type string; }
+    }
+    leaf s-aug-4 { type string; }
+  }
+
+  augment /tn:top/tn:b/tn:ch/tn:c1 {
+    // Add a new leaf to a case
+    leaf s-aug-5 { type string; }
+    leaf s-aug-6 { type string; }
+  }
+
+  augment /tn:top/tn:b/tn:ch/tn:c3/tn:ch3-1 {
+    // Add a new leaf to a container in a case
+    leaf s-aug-7 { type string; }
+    leaf s-aug-8 { type string; }
+  }
+}

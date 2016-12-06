@@ -1,0 +1,75 @@
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Anil Gunturu
+# Creation Date: 8/29/2013
+# 
+
+# - This is an internal template to drive valac calls
+#
+
+# set up switch-yard for compile flags
+set(VALA_COMPILE_FLAGS "@VALA_COMPILE_FLAGS@")
+@vala_config_flags@
+# figure out what CMAKE_CFG_INTDIR is at configure and build time
+if(NOT "@CMAKE_CFG_INTDIR@" STREQUAL ".")
+  set(CFG "${CMAKE_CFG_INTDIR}")
+else()
+  set(CFG @CMAKE_BUILD_TYPE@)
+endif()
+# select compile flags
+if(VALA_COMPILE_FLAGS_${CFG})
+  set(VALA_COMPILE_FLAGS
+    "${VALA_COMPILE_FLAGS} ${VALA_COMPILE_FLAGS_${CFG}}")
+endif()
+
+# expand all references to CMAKE_CFG_INTDIR
+set(command "@command@")
+set(out_files "@out_files@")
+if(NOT "@CMAKE_CFG_INTDIR@" STREQUAL ".")
+  string(REPLACE "@CMAKE_CFG_INTDIR@" "${CMAKE_CFG_INTDIR}" command "${command}")
+  string(REPLACE "@CMAKE_CFG_INTDIR@" "${CMAKE_CFG_INTDIR}" out_files "${out_files}")
+endif()
+
+# make sure output-directories exist
+set(dirs)
+foreach(f IN LISTS out_files)
+  get_filename_component(d "${f}" PATH)
+  get_filename_component(d "${d}" ABSOLUTE)
+  list(APPEND dirs "${d}")
+endforeach()
+list(REMOVE_DUPLICATES dirs)
+foreach(d IN LISTS dirs)
+  file(MAKE_DIRECTORY "${d}")
+endforeach()
+
+# tell user
+if(VERBOSE)
+  string(REPLACE ";" " " msg "${command}")
+  message("${msg}")
+endif()
+
+# do the thing
+execute_process(COMMAND
+  ${command}
+  RESULT_VARIABLE result
+  OUTPUT_VARIABLE output
+  ERROR_VARIABLE output
+  )
+
+# check whether the thing failed
+if(result)
+  message(FATAL_ERROR "${output}")
+endif()

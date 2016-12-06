@@ -1,0 +1,257 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rw-vcs
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-vcs";
+  prefix "rw-vcs";
+
+  import rw-notify-ext {
+    prefix "rwnotify";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-log {
+    prefix "rwlog";
+  }
+
+  import rw-base {
+    // Required for RIFT-6464, TODO: RIFT-6483 which will allow this to be removed.
+    prefix "rwbase";
+  }
+
+  import rw-manifest {
+    prefix "rw-manifest";
+  }
+
+  import rwvcs-types {
+    prefix "rwvcstypes";
+  }
+
+  revision 2014-10-22 {
+    description "Initial revision";
+    reference "RIFT Virtual Container System";
+  }
+
+  // Shitty names are because fpath defines the same RPCs and the CLI doesn't
+  // understand namespaces.
+  rpc vstart {
+    input {
+      rwpb:msg-new "VStartInput";
+      leaf component-name {
+        description "Name of the component to create a new instance of";
+        type string;
+        mandatory true;
+      }
+
+      leaf parent-instance {
+        description "Instance-name of the parent of the new instance";
+        type string;
+        mandatory true;
+      }
+
+      leaf recover {
+        description "Recover the component";
+        type boolean;
+        default false;
+      }
+    }
+
+    output {
+      rwpb:msg-new "VStartOutput";
+      leaf rw_status {
+        description "Return status of the start operation";
+        type uint32;
+      }
+
+      leaf instance-name {
+        description "On success, the instance-name of the started component";
+        type string;
+      }
+    }
+  }
+
+  rpc vstop {
+    input {
+      rwpb:msg-new "VStopInput";
+      leaf instance-name {
+        description "Instance-name of instance to stop";
+        type string;
+        mandatory true;
+      }
+    }
+
+    output {
+      rwpb:msg-new "VStopOutput";
+      leaf rw_status {
+        description "Return status of the stop operation";
+        type uint32;
+      }
+    }
+  }
+
+  rpc vcrash {
+    input {
+      rwpb:msg-new "VCrashInput";
+      leaf instance-name {
+        description "Instance-name of instance to crash";
+        type string;
+        mandatory true;
+      }
+      leaf skip-heartbeat {
+        description "Skip heartbeats from publisher - used for unit testing";
+        type empty;
+      }
+    }
+
+    output {
+      rwpb:msg-new "VCrashOutput";
+      leaf rw_status {
+        description "Return status of the stop operation";
+        type uint32;
+      }
+    }
+  }
+
+  rpc vsnap {
+    input {
+      rwpb:msg-new "VSnapInput";
+      leaf instance-name {
+        description "Instance-name of instance to grab a Snap";
+        type string;
+        mandatory true;
+      }
+    }
+
+    output {
+      rwpb:msg-new "VSnapOutput";
+      leaf rw_status {
+        description "Return status of the stop operation";
+        type uint32;
+      }
+    }
+  }
+
+//rpc vrestart {
+//  input {
+//    leaf instance-name {
+//      description "Instance-name of instance to restart";
+//      type string;
+//      mandatory true;
+//    }
+//  }
+
+//  output {
+//    leaf rw_status {
+//      description "Return status of the restart operation";
+//      type uint32;
+//    }
+//  }
+//}
+
+  // VCS notification event-ids are numbered 10xxx
+  notification vtasklet_start {
+    rwnotify:log-event-id 00010000;
+    description "Tasklet started";
+    uses rwlog:severity-info-critinfo;
+
+    leaf tasklet-name {
+      type string;
+      description "Tasklet name";
+    }
+
+    leaf tasklet-instance {
+      type uint32;
+      description "Tasklet instance";
+    }
+  }
+
+  notification core_reporter_starting {
+    rwnotify:log-event-id 00010001;
+    rwpb:msg-new "CoreReporterStarting";
+    description "Core report scanner starting";
+    uses rwlog:severity-info;
+    leaf coredir {
+      type string;
+      description "Scan directory";
+    }
+  }
+
+  notification core_found {
+    rwnotify:log-event-id 00010002;
+    rwpb:msg-new "CoreFound";
+    description "Core file found";
+    uses rwlog:severity-error;
+    leaf corefile {
+      type string;
+      description "Core filename";
+    }
+    leaf coredesc {
+      type string;
+      description "Core description";
+    }
+    leaf coretime {
+      type string;
+      description "Core timestamp";
+    }
+    leaf backtrace {
+      type string;
+      description "Core backtrace";
+    }
+  }
+
+  notification start_serf {
+    rwnotify:log-event-id 00010003;
+      description
+         "Serf start log";
+      uses rwlog:severity-info;
+      leaf instance_name  {
+        type string;
+      }
+      leaf vm_ip_address  {
+        type string;
+      }
+      leaf lead_vm_ip_address  {
+        type string;
+      }
+  }
+
+  notification heartbeat-alarm {
+    description "Tasklet heartbeat failed";
+    leaf name {
+      type string;
+    }
+  }
+
+  notification vmstate-change {
+    description "VM State change notification";
+    leaf name {
+      type string;
+    }
+    leaf vmstate {
+      description "VM-state - whether this VM is Activ or Standby.";
+      type rwvcstypes:vm-state;
+    }
+  }
+
+}

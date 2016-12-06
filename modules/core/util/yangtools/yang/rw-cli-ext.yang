@@ -1,0 +1,70 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file rw-cli-ext.yang
+ * @author Tim Mortsolf, Anil Gunturu, Tom Seidenberg
+ * @date 2013/03/21
+ * @brief RiftWare yang-based CLI extensions
+ */
+
+module rw-cli-ext
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-cli-ext";
+  prefix "rwcli";
+
+  revision 2014-03-28 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT yang extensions for defining CLI behaviour.";
+  }
+
+  extension plugin-api {
+    argument "typename";
+    description
+      "Takes as argument a name string.  The name string indicates the
+      plugin-api to invoke";
+  }
+
+  extension cli-print-hook {
+    argument "typename";
+    description
+      "Takes as argument a name string.  The name string indicates the
+      cli print hook to invoke";
+  }
+
+  extension new-mode {
+    argument "modestring";
+    description
+      "Define a container or list as a CLI mode.  The modestring
+      defines the CLI prompt to be used.";
+  }
+
+  extension show-key-keyword {
+    // no argument
+    description
+      "When a List with keys is modeled as a node, keyword for keys are
+       suppressed from the CLI. To show the keyword for keys, this 
+       extension is used.";
+  }
+
+} // rw-cli-ext

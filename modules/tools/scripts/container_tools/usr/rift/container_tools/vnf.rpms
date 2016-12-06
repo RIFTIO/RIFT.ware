@@ -1,0 +1,25 @@
+fc20: libnl3-3.2.21-2.fc20.x86_64
+ub16: libnl-3-200
+
+zookeeper-java.noarch
+
+fc20: libpcap
+ub16: libpcap0.8
+
+fc20: boost-filesystem-1.54.0-9.fc20.x86_64
+ub16: libboost-filesystem1.58.0
+fc20: boost-system-1.54.0-9.fc20.x86_64
+ub16: libboost-system1.58.0
+fc20: boost-thread-1.54.0-9.fc20.x86_64
+ub16: libboost-thread1.58.0
+fc20: i40evf-1.5.14
+
+npm
+pciutils
+
+fc20: qat_guest
+
+fc20: icu
+ub16: icu-devtools
+
+fc20: vconfig

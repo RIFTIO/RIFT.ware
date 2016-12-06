@@ -1,0 +1,39 @@
+###############################################################################
+In order to build this product from opensource, it is necessary to copy in
+confd packages from Cisco first:
+
+If you do NOT have access to the licensed package confd-6.0.linux.x86_64.zip
+from Cisco:
+
+  Download confd-basic-6.0.linux.x86_64.zip from Cisco DevNet Downloads
+  at https://developer.cisco.com/site/confD/downloads/ and extract the file to
+  a location on your system.
+
+  The zip archive contains several files, but you need only the following two:
+  - confd-basic-6.0.linux.x86_64.installer.bin
+  - confd-basic-6.0.libconfd.tar.gz
+
+  Move or copy the extracted confd files to this directory on the VM.  Note
+  that there are empty placeholder files already in place.
+  Type y (yes) if you are prompted to overwrite existing files.
+
+  # mv confd-basic-6.0.linux.x86_64.installer.bin modules/core/utils/confd
+  # mv confd-basic-6.0.libconfd.tar.gz  modules/core/utils/confd
+
+If you DO have access to the licensed package confd-6.0.linux.x86_64.zip
+from Cisco:
+
+  Download confd-6.0.linux.x86_64.zip from Cisco DevNet Downloads
+  at https://developer.cisco.com/site/confD/downloads/ and extract the file to
+  a location on your system.
+
+  The zip archive contains several files, but you need only the following two:
+  - confd-6.0.linux.x86_64.installer.bin
+  - confd-6.0.libconfd.tar.gz
+
+  Move or copy the extracted confd files to this directory on the VM.  Note
+  that there are empty placeholder files already in place.
+  Type y (yes) if you are prompted to overwrite existing files.
+
+  # mv confd-6.0.linux.x86_64.installer.bin modules/core/utils/confd
+  # mv confd-6.0.libconfd.tar.gz  modules/core/utils/confd

@@ -1,0 +1,87 @@
+#!/bin/bash
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# 3 July 2016 -- Jeremy Mordkoff -- added Ubuntu support
+
+LAB=${1:-eng}
+
+START=`date`
+echo "enabling ldap for user authentication....."
+
+case $LAB in
+	eng) SERVER=boson.eng.riftio.com
+	     CERTFILE=cacert.pem
+	     CERT=http://riftnet.eng.riftio.com/ks/cacert.pem;;
+	blr) SERVER=ganga.blr.riftio.com
+	     CERTFILE=cacert.asc
+	     CERT=http://riftnet.blr.riftio.com/ks/cacert.asc;; 
+	*) echo "Unsupported LAB: $LAB"; exit 1;;
+esac
+
+
+if python3 -mplatform | grep -qi ubuntu; then
+	export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+	apt-get install -q -y ldap-auth-client nscd ldap-utils auth-client-config wget
+	auth-client-config -t nss -p lac_ldap
+	wget $CERT -O /etc/ssl/certs/$CERTFILE
+	cat <<EOF >/etc/ldap/ldap.conf
+TLS_CACERT      /etc/ssl/certs/$CERTFILE
+URI ldap://$SERVER/
+SASL_NOCANON    on
+BASE dc=riftio,dc=com
+EOF
+	cat <<EOF >/etc/ldap.conf
+BASE dc=riftio,dc=com
+uri ldap://$SERVER/
+ldap_version 3
+rootbinddn cn=directory manager,dc=riftio,dc=com
+pam_password md5
+EOF
+	pam-auth-update
+	/etc/init.d/nscd restart
+else
+	export PATH=$PATH:/usr/sbin:/sbin
+	time yum install -y nss-pam-ldapd sssd-client sssd openldap-clients sssd-common authconfig sssd-ldap
+	systemctl stop sssd.service
+	rm -f /var/lib/sss/db/cache_default.ldb
+	
+	time authconfig --enableldap --enableldapauth \
+	        --ldapserver=$SERVER \
+			--ldapbasedn=dc=riftio,dc=com \
+	        --enableldaptls \
+			--ldaploadcacert=$CERT \
+			--enablesssd --enablesssdauth --enablelocauthorize \
+			--enablesysnetauth --update
+	
+	if [[ `uname -r` =~ fc21 ]]; then
+	    cd `dirname $0`
+	    HERE=`/bin/pwd`
+	    setup=`dirname $HERE`
+	    skel=$setup/skel.fc21
+	    cp $skel/etc/sssd/sssd.conf /etc/sssd
+	fi
+	
+	systemctl enable sssd.service
+	systemctl start sssd.service
+	systemctl enable nslcd
+	systemctl start nslcd
+fi
+
+echo "...done"
+
+END=`date`
+echo "===== TIMER ===== ${START} -> ${END} ";
+

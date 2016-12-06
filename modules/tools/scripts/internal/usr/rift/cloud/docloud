@@ -1,0 +1,47 @@
+#!/bin/bash
+
+HERE=$(realpath $(dirname $0))
+
+echo="echo"
+cmd="$HERE/../env/ssh_root"
+parallel=0
+show_owner=0
+show_flavor=0
+
+while getopts foupr1 opt; do
+    case $opt in
+        r)  cmd="$HERE/../env/ssh_rift";;
+        u)  cmd="ssh";;
+        1)  echo="echo -n";;
+        p)  parallel=1;;
+        o)  show_owner=1;;
+        f)  show_flavor=1;;
+        *) echo "USAGE $0 [-1] [-r] [-p] cmd  -1 = one line, -r as rift"; exit;;
+    esac
+done
+while [ $OPTIND -gt 1 ]; do
+    shift
+    let OPTIND--
+done
+
+vms=`$HERE/cloudtool vm list -i`
+trap 'exit 2' 2
+for ip in $vms; do
+    if [ $show_owner == 1 ]; then
+        owner=`$HERE/GetVM $ip owner`
+    fi
+    if [ $show_flavor == 1 ]; then
+        flavor=`$HERE/GetVM $ip flavor`
+    fi
+    $echo $ip $owner $flavor ...
+    if [ $parallel == 1 ]; then
+        $cmd $ip "$@" >/tmp/docloud.$$.$ip 2>&1 &
+        echo $ip started, logging to /tmp/docloud.$$.$ip
+    else
+        $cmd $ip "$@" 
+    fi
+done
+if [ $parallel == 1 ]; then
+    echo "logs are in /tmp/docloud.$$.*"
+    wait
+fi

@@ -1,0 +1,90 @@
+#
+# Did the following installs:
+# sudo apt-get install protobuf-c-compiler
+# sudo apt-get install protobuf-c0
+# sudo apt-get install protobuf-c0-dev
+# this gets protoc-c
+#
+# sudo apt-get install protobuf-compiler
+# sudo apt-get install libprotobuf-dev
+# sudo apt-get install libprotoc-dev
+#
+
+#PROTOC=protobuf-2.5.0rc1/src/.libs/protoc
+
+PROTOCC:=../../protobuf-c/protobuf-c-0.15/src/protoc-c
+
+CC=gcc
+CFLAGS=-g -Wall -Werror -I../uthash-master/src/ -I../protobuf-c/protobuf-c-0.15/src/
+LD=gcc
+CPP=g++
+
+all: samples dso_dump pb2c run_pb2c run_pb2c_tests
+
+samples: sample_protobufs/ex1.proto sample_protobufs/sample1.proto sample_protobufs/ipsec_state.proto
+	cp sample_protobufs/*.proto gen
+	(cd gen ; $(PROTOCC) ex1.proto  --c_out=. --descriptor_set_out=ex1.dso )
+	(cd gen ; protoc ex1.proto  --cpp_out=. )
+	(cd gen ; $(PROTOCC) ex2.proto  --c_out=. --descriptor_set_out=ex2.dso )
+	(cd gen ; $(PROTOCC) ex2_base1.proto  --c_out=. --descriptor_set_out=ex2_base1.dso )
+	(cd gen ; $(PROTOCC) ex2_base2.proto  --c_out=. --descriptor_set_out=ex2_base2.dso )
+	(cd gen ; $(PROTOCC) ex2_base3.proto  --c_out=. --descriptor_set_out=ex2_base3.dso )
+	(cd gen ; $(PROTOCC) ex2_base4.proto  --c_out=. --descriptor_set_out=ex2_base4.dso )
+	(cd gen ; $(PROTOCC) tim.proto  --c_out=. --descriptor_set_out=tim.dso )
+	(cd gen ; $(PROTOCC) ipsec_state.proto  --c_out=. --descriptor_set_out=ipsec_state.dso )
+	(cd gen ; $(PROTOCC) sample1.proto  --c_out=. --descriptor_set_out=sample1.dso )
+	(cd gen ; $(PROTOCC) tim.proto --c_out=. )
+	(cd gen ; $(PROTOCC) ex1.proto --c_out=. )
+	(cd gen ; $(PROTOCC) ex2.proto --c_out=. )
+	(cd gen ; $(PROTOCC) ex2_base1.proto --c_out=. )
+	(cd gen ; $(PROTOCC) ex2_base2.proto --c_out=. )
+	(cd gen ; $(PROTOCC) ex2_base3.proto --c_out=. )
+	(cd gen ; $(PROTOCC) ex2_base4.proto --c_out=. )
+	(cd gen ; protoc ipsec_state.proto --cpp_out=. )
+
+
+dp: ../protobuf-2.5.0rc1/src/google/protobuf/descriptor.proto
+	cp ../protobuf-2.5.0rc1/src/google/protobuf/descriptor.proto gen
+	( cd gen ; protoc descriptor.proto  --cpp_out=. )
+	( cd gen ; $(PROTOCC) descriptor.proto --c_out=. )
+
+
+dso_dump: dso_dump.cpp dp
+	g++ $(CFLAGS) -I../protobuf-2.5.0rc1/src dso_dump.cpp -I. -o dso_dump -L../protobuf-2.5.0rc1/src/.libs -lprotoc -lprotobuf -lpthread
+
+
+
+pb2c: pb2c.c dp
+	$(CC) $(CFLAGS) -Igen pb2c.c -o pb2c -lprotobuf-c
+
+run_pb2c: samples pb2c
+	( cd gen ; ../pb2c --dsofile=ex1.dso --genfilebase=ex1_cstructs )
+	( cd gen ; ../pb2c --dsofile=sample1.dso --genfilebase=sample1_cstructs )
+	( cd gen ; ../pb2c --dsofile=sample1.dso --scope-flatnames --genfilebase=sample1_flat_cstructs )
+	( cd gen ; ../pb2c --dsofile=ipsec_state.dso --genfilebase=ipsec_state_cstructs )
+	( cd gen ; ../pb2c --dsofile=ipsec_state.dso --scope-flatnames --genfilebase=ipsec_state_flat_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2_base4.dso --genfilebase=ex2_base4_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2_base4.dso --scope-flatnames --genfilebase=ex2_base4_flat_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2.dso --genfilebase=ex2_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2.dso --scope-flatnames --genfilebase=ex2_flat_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2_base1.dso --genfilebase=ex2_base1_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2_base1.dso --scope-flatnames --genfilebase=ex2_base1_flat_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2_base2.dso --genfilebase=ex2_base2_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2_base2.dso --scope-flatnames --genfilebase=ex2_base2_flat_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2_base3.dso --genfilebase=ex2_base3_cstructs )
+	(cd gen ; ../pb2c --dsofile=ex2_base3.dso --scope-flatnames --genfilebase=ex2_base3_flat_cstructs )
+	(cd gen ; ../pb2c --dsofile=tim.dso --scope-flatnames --genfilebase=tim_flat_cstructs )
+	(cd gen ; ../pb2c --dsofile=tim.dso --scope-flatnames --flat-msg-lvl 3 --genfilebase=tim_flatX_cstructs )
+	(cd gen ; ../pb2c --dsofile=tim.dso --genfilebase=tim_cstructs )
+
+run_pb2c_tests: run_pb2c pb2c_test
+	./pb2c_test
+
+pb2c_test: pb2c_test.cpp pb2c_test_cfiles.c pb2c_xml.c
+	$(CC) $(CFLAGS) -I. -c pb2c_test_cfiles.c -o gen/pb2c_test_cfiles.o
+	$(CC) $(CFLAGS) -I. -c pb2c_xml.c -o gen/pb2c_xml.o
+	$(CPP) $(CFLAGS) -I. -c pb2c_test.cpp -o gen/pb2c_test.o
+	g++ gen/pb2c_test.o gen/pb2c_xml.o gen/pb2c_test_cfiles.o -lprotobuf-c -o pb2c_test
+
+clean:
+	rm -rf gen/* desc *~ cscope* dso_dump pb2c pb2c_test

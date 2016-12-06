@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+if [ $(whoami) != "root" ]; then
+	echo "MUST be root to get a privileged container with LXC"
+	exit 1
+fi
+container=${1:-rift}
+image=${2:-fc20}
+script=${3:-init_container_osm}
+echo building container ${container} based on image ${image} using script ${script}
+lxc launch ${image} ${container}
+
+output=$(lxc exec ${container} -- ping -c 1 repo.riftio.com)
+while [[ ! $output =~ "1 received" ]]; do
+	echo "waiting for DNS"
+	sleep 1
+	output=$(lxc exec ${container} -- ping -c 1 repo.riftio.com)
+done
+lxc file push ${script} ${container}/root/${script}
+lxc exec  ${container} -- bash /root/${script}

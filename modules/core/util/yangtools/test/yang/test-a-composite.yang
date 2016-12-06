@@ -1,0 +1,61 @@
+
+module test-a-composite
+{
+  namespace "http://riftio.com/ns/riftware-1.0/test-a-composite";
+  prefix "rwcomp";
+
+  import test-a-mano-base
+  {
+    prefix "manobase";
+  }
+
+  import rwuagent-cli-d 
+  { 
+    prefix "rwuagent-cli"; 
+  }
+
+  import test-a-rw-ipreceiverapp-data
+  {
+    prefix "rw-ipreceiverapp-data";
+  }
+
+  import test-a-rw-vnf-base-config
+  {
+    prefix "rwvnfbase";
+  }
+
+  import rw-base-d
+  {
+    prefix "rw-base";
+  }
+
+  import test-a-rw-dest-nat
+  {
+    prefix "rw-dest-nat";
+  }
+
+  import test-a-rw-ip-receiver-app
+  {
+    prefix "rw-ip-receiver-app";
+  }
+
+  import test-a-rw-vnf-base-opdata
+  {
+    prefix "rwvnfopdata";
+  }
+
+  import test-a-rw-sfmgr-data
+  {
+    prefix "rw-sfmgr-data";
+  }
+
+  import test-a-rw-trafgen-data
+  {
+    prefix "rw-trafgen-data";
+  }
+
+  import test-a-rw-fpath-data
+  {
+    prefix "rw-fpath-data";
+  }
+}

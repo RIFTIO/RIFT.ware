@@ -1,0 +1,4 @@
+See CMakeLists.txt for packages that are created from this submodule.
+
+install-launchpad is a standalone script designed to be pulled down and run
+from a web server.  It should be put up on open.riftio.com or similar.

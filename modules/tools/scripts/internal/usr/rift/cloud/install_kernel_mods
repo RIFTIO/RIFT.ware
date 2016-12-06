@@ -1,0 +1,79 @@
+#!/bin/bash
+
+set -e
+
+function print_usage() {
+    echo "Usage: $0 [--rift-install] "
+    echo "       Optional arguments"
+    echo "       --rift-install Rift install directory"
+    exit 1
+}
+
+##
+# Parse options
+##
+while [[ $# > 0 ]]
+do
+key="$1"
+shift
+case $key in
+    --rift-install)
+    RIFT_INSTALL="$1"
+    shift
+    ;;
+    *)
+    print_usage
+    ;;
+esac
+done
+
+if [ -z "$RIFT_INSTALL" ]; then
+        RIFT_INSTALL=$(dirname $(dirname $(realpath $(dirname $0))))
+fi
+echo "loading kernel mods from $RIFT_INSTALL"
+cd $RIFT_INSTALL
+k=`uname -r`
+
+export PATH=$PATH:/sbin:/usr/sbin
+
+mods=".install/usr/lib/modules/$k/extra/dpdk/kmod/igb_uio.ko
+.install/usr/lib/modules/$k/extra/dpdk/kmod/rte_kni.ko
+.install/usr/lib/modules/$k/extra/vtunes/pax/pax-x32_64-${k}smp.ko
+.install/usr/lib/modules/$k/extra/vtunes/vtsspp/vtsspp-x32_64-${k}smp.ko
+.install/usr/lib/modules/$k/extra/vtunes/sep3_15-x32_64-${k}smp.ko"
+
+# igb_uio requires uio and is not needed when running raw sockets
+# rte_kini is always needed
+# the other three are only needed for performance debugging
+
+for mod in $mods; do
+	if [ ! -f $mod ]; then
+		echo $mod not found
+		exit 1
+	fi
+done
+
+Rmmod() {
+        if lsmod | grep -q $1; then
+                /usr/sbin/rmmod  $1
+        fi
+}
+
+Rmmod sep3_15
+Rmmod rte_kni
+Rmmod vtsspp
+Rmmod pax
+Rmmod igb_uio
+
+modprobe uio
+
+for mod in $mods; do
+	insmod $mod
+	if [ $? -ne 0 ]; then
+		echo error loading $mod
+    exit 1
+	fi
+done
+echo "KERNEL MODULES LOADED"
+
+

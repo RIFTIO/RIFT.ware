@@ -1,0 +1,8 @@
+[Plugin]
+Module=basic_functor-lua
+Loader=lua5.1
+Name=Basic Lua Functor
+Description=This is a 'lua' plugin for basic plugin unit tests
+Authors=Anil Gunturu
+Copyright=Copyright © 2014 RIFT.io
+Website=http://www.riftio.com

@@ -1,0 +1,11 @@
+ub16: rw.tools-scripts=${RIFTWARE_VERSION}
+
+ub16: rw.toolchain-rwbase=${RIFTWARE_VERSION}
+ub16: rw.toolchain-rwtoolchain=${RIFTWARE_VERSION}
+ub16: rw.core.mgmt-mgmt=${RIFTWARE_VERSION}
+ub16: rw.core.util-util=${RIFTWARE_VERSION}
+ub16: rw.core.rwvx-rwvx=${RIFTWARE_VERSION}
+ub16: rw.core.rwvx-rwdts=${RIFTWARE_VERSION}
+ub16: rw.automation.core-RWAUTO=${RIFTWARE_VERSION}
+
+ub16: rw.ext.util-rw.ext.util_foss=${RIFTWARE_VERSION}

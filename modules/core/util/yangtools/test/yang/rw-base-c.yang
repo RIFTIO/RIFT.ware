@@ -1,0 +1,687 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rw-base-c
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-base";
+  prefix "rw-base";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix rwt;
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  revision 2014-05-29 {
+    description
+      "Initial revision. This YANG file defines common groupings, typedefs, and
+       containers available on Riftware";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  typedef log-level {
+    description
+      "Different logging levels that can be set for the fpath
+       application ";
+    type enumeration {
+      enum disable;
+      enum emergency;
+      enum alert;
+      enum critical;
+      enum error;
+      enum warn;
+      enum notice;
+      enum crit-info;
+      enum info;
+      enum debug;
+    }
+  }
+
+  typedef category_type {
+    description
+      "Different Riftware categories";
+    type enumeration {
+      enum scheduler;
+      enum cli;
+      enum ncclntlib;
+      enum fastpath;
+    }
+  }
+
+  typedef component_type {
+    type enumeration {
+      enum RWCOLLECTIVE;
+      enum RWSECTOR;
+      enum RWCOLONY;
+      enum RWCLUSTER;
+      enum RWVM;
+      enum RWPROC;
+      enum RWTASKLET;
+    }
+  }
+
+  typedef state_type {
+    type enumeration {
+      enum CRASHED;
+      enum STOPPING;
+      enum STOPPED;
+      enum STARTING;
+      enum STARTED;
+    }
+  }
+
+
+  typedef cpu-percentage {
+    description "A type to use for CPU utilization percentages. ";
+
+    type decimal64 {
+      fraction-digits 7;
+      range "0.0 .. 100.0";
+    }
+  }
+
+  /** Groupings **/
+  /*
+    +--rw service-realm* [name]
+    +--rw name
+    +--network-context(...)
+    +--port(...)
+  */
+  grouping service-realm {
+    list service-realm {
+      rwpb:msg-new ConfigServiceRealm;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+      rwpb:field-inline-max "yang";
+
+      max-elements 32;
+
+      key "name";
+
+      leaf name {
+        type string;
+        rwpb:field-string-max 64;
+      }
+      uses port;
+    }
+  } // grouping service-realm
+
+  /*
+    +--rw network-context* [name]
+    +--rw name
+    +--rw vitual-fabric
+    +--rw interface* [name]
+    |  +--rw name
+    |  +--rw address
+    |  +--rw type
+    |     +--rw loopback
+    +--rw ip
+    +--rw route* [prefix]
+    |  +--rw prefix
+    |  +--rw gateway
+    |  +--rw interface-name
+    +--rw arp* [address]
+    +--rw address
+    +--rw macaddress
+    +--rw interface-name
+  */
+
+  list colony {
+    rwpb:msg-new ConfigColony;
+    rwcli:new-mode "colony";
+
+    max-elements 32;
+
+    key "name";
+
+    leaf name {
+      type string;
+      rwpb:field-inline "true";
+      rwpb:field-string-max 64;
+    }
+
+    list network-context {
+
+      rwpb:msg-new ConfigNetworkContext;
+      rwcli:new-mode "network-context";
+      rwpb:msg-proto-max-size "196032";
+
+      max-elements 32;
+
+      key "name";
+
+      leaf name {
+        type string;
+        rwpb:field-inline "true";
+        rwpb:field-string-max 64;
+      }
+    }
+  }
+
+
+  /*
+    +--rw  port
+    +--rw ethernet* [name]
+    +--rw name
+    +--rw bind
+    +-- rw bind
+  */
+  grouping port {
+    container port {
+      rwpb:msg-new ConfigPort;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      list ethernet {
+        rwcli:new-mode "ethernet";
+
+        rwpb:field-inline-max "yang";
+
+        max-elements 32;
+
+        key name;
+
+        leaf name {
+          type string;
+          rwpb:field-string-max 64;
+        }
+
+        container bind {
+          leaf ip-interface {
+            type leafref {
+              path "/config/service-realm/network-context/ip-interface-group/ip-interface/name";
+            }
+          }
+        }
+      }
+    }
+  } // grouping port
+
+  /*
+    +--rw node* [id]
+    +--rw id
+  */
+  list node {
+    rwpb:msg-new Node;
+    rwpb:msg-flat true;
+    rwpb:msg-proto-max-size "12653976";
+    rwpb:field-inline "true";
+    rwpb:field-inline-max "yang";
+    rwcli:new-mode "node";
+
+    max-elements 1;
+    key "id";
+
+    leaf id {
+      type uint32;
+      description "Identity of the node" ;
+    }
+  }
+
+  container tasklet {
+    config false;
+    rwpb:msg-new ShowTaskletInfo;
+    description "Tasklet related information";
+
+    container info {
+      description "Provdides tasklet related information";
+
+      grouping colony_info {
+        container colony_info {
+          description "Rift colony information";
+          rwpb:msg-new ColonyInfo;
+        }
+      }
+
+      grouping cluster_info {
+        container cluster_info {
+          description "Rift cluster information";
+          rwpb:msg-new ClusterInfo;
+        }
+      }
+
+      grouping vm_info {
+        container vm_info {
+          description "Rift VM information";
+          rwpb:msg-new VmInfo;
+
+          leaf vm_parent {
+            type boolean;
+          }
+
+          leaf vm-ip-address {
+            description "RWVM IP address";
+            type rwt:ip-address;
+            rwpb:field-string-max 46;
+          }
+
+          leaf pid {
+            description "Process ID";
+            type uint32;
+          }
+
+          leaf leading {
+            description "If this vm is a leader, the instance name of the grouping it leads";
+            type string;
+          }
+        }
+      }
+
+      grouping proc_info {
+        container proc_info {
+          description "";
+          rwpb:msg-new ProcInfo;
+
+          leaf proc_parent {
+            type boolean;
+          }
+
+          leaf pid {
+            description "Process ID";
+            type uint32;
+          }
+
+          leaf native {
+            description "Native Linux Process";
+            type boolean;
+            default false;
+          }
+
+        }
+      }
+
+      grouping tasklet_info {
+        container tasklet_info {
+          description "";
+          rwpb:msg-new TaskletInfo;
+          config false;
+        }
+      }
+
+      grouping component_info {
+        list component_info {
+          description "";
+          key "instance_name";
+          rwpb:msg-new ComponentInfo;
+          config false;
+
+          leaf component_type {
+            description "";
+            type component_type;
+          }
+
+          leaf component_name {
+            description "";
+            type string;
+          }
+
+          leaf instance_id {
+            description "";
+            type uint64;
+          }
+
+          leaf instance_name {
+            description "";
+            type string;
+          }
+
+          leaf state {
+            description "Current component state";
+            type state_type;
+          }
+
+          leaf rwcomponent_parent {
+            description "";
+            type leafref {
+              path "../../../components/component_info/instance_name";
+            }
+          }
+
+          leaf-list rwcomponent_children {
+            description "";
+            type leafref {
+              path "../../../components/component_info/instance_name";
+            }
+          }
+
+          choice component_info {
+            case colony_info {
+              uses colony_info;
+            }
+            case cluster_info {
+              uses cluster_info;
+            }
+            case vm_info {
+              uses vm_info;
+            }
+            case proc_info {
+              uses proc_info;
+            }
+            case tasklet_info {
+              uses tasklet_info;
+            }
+          }
+        }
+      }
+
+      container components {
+        uses component_info;
+      }
+    }
+
+
+    leaf resource {
+      description "Provdides tasklet resource usage information";
+      type empty;
+    }
+  }
+
+  container messaging {
+    rwpb:msg-new ShowMessagingInfo;
+    description "Message broker information";
+    leaf info {
+      description "Provides message passing information";
+      type empty;
+    }
+
+    // all the substance lives as augments in rwmsg's rwmsg-data.yang
+
+  }
+
+  container vcs {
+    config false;
+
+    description "Riftware resource management is centered around the VCS.";
+    container resources {
+
+      description "The resources that are used by each vm";
+      rwpb:msg-new VcsResource;
+
+      list vm {
+        description "Each VM Instance resource usage";
+        key "id";
+
+        leaf id {
+          description "A unique identifier assigned to the VM. This is initially
+                       assigned in the manifest";
+
+          type uint32;
+        }
+
+        container cpu {
+          description "The utlization of CPU on the VM";
+
+          container aggregate {
+            description "CPU utlization aggregated over all available CPU";
+
+            leaf user {
+              type cpu-percentage;
+            }
+
+            leaf system {
+              type cpu-percentage;
+            }
+
+            leaf idle {
+              type cpu-percentage;
+            }
+          }
+
+          list individual {
+            key "id";
+
+            leaf id {
+              type uint8;
+              description "CPU ID";
+            }
+
+            leaf user {
+              type cpu-percentage;
+            }
+
+            leaf system {
+              type cpu-percentage;
+            }
+
+            leaf idle {
+              type cpu-percentage;
+            }
+          }
+        }
+
+        container memory {
+          leaf curr-usage {
+            description "The physical memory available to the VM that is currently used";
+
+            type uint32;
+            units "kB";
+          }
+
+          leaf total {
+            description "The physical memory available to the VM";
+
+            type uint32;
+            units "kB";
+          }
+        }
+
+        container storage {
+          leaf curr-usage {
+            description "The secondary memory available to the VM that is currently used";
+
+            type uint32;
+            units "kB";
+          }
+
+          leaf total {
+            description "The secondary memory available to the VM";
+
+            type uint32;
+            units "kB";
+          }
+        }
+
+        list processes {
+          rwpb:msg-new VcsProcess;
+          key "instance-name";
+
+          leaf instance-name {
+            description "Process instance-name";
+            type string;
+          }
+
+          leaf file-descriptors {
+            description "Number of open file";
+            type uint32;
+          }
+
+          leaf cpu {
+            description "CPU utilization";
+            type cpu-percentage;
+          }
+
+          leaf memory {
+            description "Resident physical memory";
+
+            type uint32;
+            units "kB";
+          }
+        }
+      }
+    }
+  }
+
+  rpc tracing {
+    description "Sets the logging related parameters";
+    input {
+      container set {
+        rwpb:msg-new RwTracing;
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+
+        leaf level {
+          description
+            "Specify logging level - Allowed values are emergency, alert,
+             critical, error, warn, notice, info, debug";
+
+          type log-level;
+        }
+
+        list network-context {
+          rwcli:new-mode "network-context";
+          key "name";
+          rwpb:field-inline-max yang;
+          max-elements 1;
+
+          leaf name {
+            description "Context name";
+            type string;
+            rwpb:field-string-max 46;
+          }
+
+          leaf interface {
+            description "Interface name";
+            type string;
+            rwpb:field-string-max 46;
+          } 
+
+          list fastpath {
+            rwcli:new-mode "interface";
+            key "name";
+            rwpb:field-inline-max yang;
+            max-elements 1;
+
+            leaf name {
+              description "Filter name";
+              type string;
+              rwpb:field-string-max 46;
+            }
+
+            leaf protocol {
+              description "Protocol";
+              type string;
+              rwpb:field-string-max 46;
+            }
+
+            leaf src-port {
+              description "Source port number";
+              type int32;
+            }
+
+            leaf dst-port {
+              description "Destination port number";
+              type int32;
+            }
+
+            leaf src-net {
+              description "Source net address";
+              type rwt:ip-address;
+              rwpb:field-string-max 46;
+            }
+
+            leaf dst-net {
+              description "Destination net address";
+              type rwt:ip-address;
+              rwpb:field-string-max 46;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  container logging {
+    container filter {
+      list category {
+        description "Specify category";
+        rwpb:msg-new RwLoggingCategory;
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+        config true;
+
+        max-elements 1;
+        key "name";
+
+        leaf name {
+          description "Specify category - Allowed values are scheduler, cli, ncclntlib, fastpath";
+          type category_type;
+        }
+
+        list event {
+          description "Specify event";
+          key "id";
+          max-elements 1;
+
+          leaf id {
+            description "Specify event-id";
+            type int32;
+          }
+        }
+        list attribute {
+          description "Specify attribute key";
+          key "key";
+          max-elements 1;
+
+          leaf key {
+            description "Key value";
+            type string;
+            rwpb:field-string-max 64;
+          }
+
+          leaf value {
+            description "Specify attribute value";
+            type string;
+            rwpb:field-string-max 64;
+          }
+        }
+        leaf severity-level {
+          description
+            "Specify logging severity level - Allowed values are emergency, alert,
+             critical, error, warn, notice, info, debug";
+          type log-level;
+        }
+      }
+    }
+  }
+
+  container return_status {
+    rwpb:msg-new ReturnStatus;
+    rwpb:msg-flat true;
+    rwpb:field-inline "true";
+    config "false";
+
+    leaf error_number {
+      type int32;
+      description "Error number";
+    }
+    leaf error_string {
+      type string;
+      rwpb:field-string-max 128;
+      description "Error string value";
+    }
+  }
+}

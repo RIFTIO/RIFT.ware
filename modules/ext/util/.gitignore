@@ -1,0 +1,24 @@
+# Object file directories
+.install
+.obj
+.build
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.elc
+auto-save-list
+tramp
+.\#*
+
+# vi
+*.swp
+
+#cscope
+cscope.files
+cscope.out
+
+#liburcu
+liburcu/liburcu/autom4te.cache

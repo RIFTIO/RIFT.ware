@@ -1,0 +1,98 @@
+# .bashrc
+# function to go to the top of the build tree (look for .gitmodules.deps)
+
+function findtop() { 
+        NEWDIR=`pwd`
+        while [ ${NEWDIR} != "/" ] ; do
+                if [ -e ${NEWDIR}/.gitmodules.deps ] ; then
+                        break;
+                fi
+                NEWDIR=`dirname ${NEWDIR}`
+        done
+        [ "$NEWDIR" == "/" ] && echo "not in workspace"
+        echo ${NEWDIR}
+}
+
+function cdtop() { 
+	cdtemp=`findtop`
+	[ "$cdtemp" == "/" ] && return
+	cd $cdtemp
+}
+	
+
+# function to go to the install dir
+function cdinstall() {
+	cdtemp=`findtop`
+	[ "$cdtemp" == "/" ] && return
+	cd $cdtemp/.install
+}
+
+# function to switch to build directory from source dir
+function cdbuild() {
+        OLDDIR=`pwd`
+        NEWDIR=`findtop`
+	[ "$NEWDIR" == "/" ] && return
+        RELATIVE_PATH=${OLDDIR:${#NEWDIR}+1}
+        if [[ $RELATIVE_PATH == .build* ]] ; then
+                echo "already in .build directory"
+                return
+        fi
+        
+        array=(${RELATIVE_PATH//\// })
+        SUBMODULE=""
+        for i in "${!array[@]}"
+        do
+                if [[ $SUBMODULE != "" ]] ; then
+                        SUBMODULE="$SUBMODULE/${array[i]}"
+                else
+                        SUBMODULE=${array[i]}
+                fi
+
+                if [ -e ${NEWDIR}/${SUBMODULE}/.git ] ; then
+                        break;
+                fi
+        done
+        
+        SUBDIR=${SUBMODULE//\//_}
+        SUBDIR=${SUBDIR/modules_/}
+        PROJECTDIR=${RELATIVE_PATH:${#SUBMODULE}+1}
+        echo $NEWDIR/.build/${SUBMODULE}/src/${SUBDIR}-build/$PROJECTDIR
+        cd $NEWDIR/.build/${SUBMODULE}/src/${SUBDIR}-build/$PROJECTDIR
+}
+
+# function to switch to src directory from build directory
+function cdsrc() {
+        OLDDIR=`pwd`
+	NEWDIR=`findtop`
+	[ "$NEWDIR" == "/" ] && return
+
+        RELATIVE_PATH=${OLDDIR:${#NEWDIR}+1}
+        if [[ $RELATIVE_PATH != .build* ]] ; then
+                echo "already in source directory"
+                return
+        fi
+
+        RELATIVE_PATH=${RELATIVE_PATH/.build\/}
+        
+        array=(${RELATIVE_PATH//\// })
+        SUBMODULE=""
+        for i in "${!array[@]}"
+        do
+                if [[ $SUBMODULE != "" ]] ; then
+                        SUBMODULE="$SUBMODULE/${array[i]}"
+                else
+                        SUBMODULE=${array[i]}
+                fi
+
+                if [ -e ${NEWDIR}/${SUBMODULE}/.git ] ; then
+                        break;
+                fi
+        done
+        
+        SUBDIR=${SUBMODULE//\//_}
+        SUBDIR=${SUBDIR/modules_/}
+        PROJECTDIR=${RELATIVE_PATH:${#SUBMODULE}+1}
+        PROJECTDIR=${PROJECTDIR/src\/$SUBDIR-build\/}
+        echo $NEWDIR/${SUBMODULE}/$PROJECTDIR
+        cd $NEWDIR/${SUBMODULE}/$PROJECTDIR
+}

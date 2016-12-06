@@ -1,0 +1,47 @@
+#!/usr/bin/python
+
+# This script helps in cloning a git repository
+# 
+
+import argparse
+import shlex
+from subprocess import call, Popen
+import sys
+
+##
+# Command line argument specification
+##
+desc= """This script helps in cloning a git repository"""
+
+parser = argparse.ArgumentParser(description=desc)
+
+parser.add_argument('-r', '--repo', dest='repo',
+                    type=str, default='rift',
+                    help='Repository name to clone (default: %(default)s)')
+parser.add_argument('dir', nargs='?', default='rift',
+                    help='Directory to clone the repository into (default: %(default)s)')
+cmdargs = parser.parse_args()
+
+
+cmd_list = []
+if cmdargs.repo == "rift":
+    clone_cmd = "git clone git@git:rift.git "+ cmdargs.dir
+    cmd_list.append(clone_cmd)
+
+    # Force pushes to always resolve to Burlington Git server
+    set_url_cmd = "cd " + cmdargs.dir + "; git remote set-url --push origin git@git.eng.riftio.com:rift.git"
+    cmd_list.append(set_url_cmd)
+
+elif cmdargs.repo == "scripts":
+    clone_cmd = "git clone git@git:scripts.git "+ cmdargs.dir
+    cmd_list.append(clone_cmd)
+
+# Run each command in the command list
+for cmd in cmd_list:
+    proc = Popen(cmd, shell=True)
+    proc.communicate()
+
+    if proc.returncode != 0:
+        print "Clone command failed: %s" % cmd
+        break
+

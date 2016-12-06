@@ -1,0 +1,13 @@
+#!/bin/bash
+
+
+echo "Installing loganalyzer via link to ${RIFT_INSTALL}"
+if [ -d /var/www/html ] ; then
+  if [ x${RIFT_INSTALL} != x -a -d ${RIFT_INSTALL} ] ; then
+    sudo rm -R -f /var/www/html/loganalyzer
+    sudo ln -s /usr/share/loganalyzer/src /var/www/html/loganalyzer
+    sudo systemctl restart httpd
+  fi
+else
+  echo 'No /var/www/html directory?'
+fi

@@ -1,0 +1,31 @@
+# Object file directories
+.install
+.obj
+.build
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.elc
+auto-save-list
+tramp
+.\#*
+
+# vi
+*.swp
+
+# python compiled
+*.pyc
+
+libunwind/libunwind-1.1/doc/unw_get_proc_info.man
+
+#cscope
+cscope.files
+cscope.*
+
+#pytest temporary directory
+.cache
+
+autom4te.cache

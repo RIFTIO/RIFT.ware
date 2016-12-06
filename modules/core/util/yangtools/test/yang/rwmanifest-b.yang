@@ -1,0 +1,706 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rwmanifest-b
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwmanifest";
+  prefix "rwmanifest";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix "rwt"; }
+
+  // DO NOT remove this import ietf-inet-types line below - it is REQUIRED
+  // The compile-time warning is a known issue
+  import ietf-inet-types { prefix "inet"; revision-date 2013-07-15; }
+
+  description
+    "RW.Manifest definition.
+    A RiftWare manifest is used to bootstrap a running instance of RiftWare.";
+
+  revision 2014-03-12 {
+    description
+      "Initial implementation of RW.Manifest.";
+    reference
+      "RW.VX Software Component Document";
+  }
+
+  typedef rwcal-cloud-type {
+    type enumeration {
+      // This type is only to be used for unit testing.  It is a mock driver
+      // that does not actually communicate with anything over the network,
+      // rwther, it has a number of prebaked properties that are used to verify
+      // the rwcal_cloud APIs during unit testing.
+      enum MOCK;
+      enum EC2_US_EAST;
+      enum OPENSTACK_AUTH_URL;
+    }
+  }
+
+  grouping rwvcs-variable-list {
+    leaf-list python-variable {
+      description "List of Python variable assignments";
+      type string;
+    }
+  }
+
+  grouping rwvcs-sequence {
+    list action {
+      description "This section contains a sequence of RW.VCS actions";
+      key "name";
+      rwpb:msg-new VcsAction;
+
+      leaf name {
+        description "Name of the action within the sequence";
+        type string;
+      }
+
+      grouping rwvcs-python-loop {
+        leaf python-loop-expression {
+          description "Python expression";
+          type string;
+        }
+
+        leaf python-loop-iterate {
+          description "Python iteration";
+          type string;
+        }
+      }
+      uses rwvcs-python-loop;
+
+      choice action {
+        case annex {
+          container annex {
+            leaf component-name {
+              description "Name of the component type in the inventory";
+              type string;
+            }
+            leaf instance-id {
+              description "ID of the component instance in the inventory";
+              type string;
+            }
+            leaf instance-name {
+              description "Name of the component instance in the inventory";
+              type string;
+            }
+          }
+        }
+
+        case start {
+          container start {
+            uses rwvcs-variable-list;
+            leaf component-name {
+              description "Name of the component type in the inventory";
+              type string;
+            }
+            leaf instance-id {
+              description "ID of the component instance in the inventory";
+              type string;
+            }
+            leaf instance-name {
+              description "Name of the component instance in the inventory";
+              type string;
+            }
+          }
+        }
+
+        case sleep {
+          container sleep {
+            leaf wait-time-usec {
+              description "Time to wait while sleeping";
+              type uint32;
+            }
+          }
+        }
+      } // choice action
+    } // list action
+  } // grouping rwvcs-sequence
+
+  grouping rwvcs-event-list {
+    container event-list {
+      description "";
+      rwpb:msg-new VcsEventList;
+
+      list event {
+        description "This section contains a list of RW.VCS events";
+        key "name";
+        rwpb:msg-new VcsEvent;
+
+        leaf name {
+          description "Name of the event";
+          type string;
+        }
+
+        container match {
+          description "This section identifies match criteria needed to perform this sequence";
+          rwpb:msg-new EventMatch;
+
+          leaf component-name {
+            description "Rule to match the currently running component";
+            mandatory false;
+            type string;
+          }
+        }
+
+        uses rwvcs-sequence;
+      } // list event
+    } // container event-list
+  } // grouping rwvcs-event-list
+
+  grouping rwvcs-reaper {
+    container reaper {
+      description "This section defines a RW.VCS reaper component";
+      rwpb:msg-new VcsReaper;
+
+      leaf exe-name {
+        description "";
+        type string;
+      }
+    }
+  }
+
+  grouping rwvcs-rwcolony {
+    container rwcolony {
+      description "This section defines a RW.VCS rwcolony component";
+      rwpb:msg-new VcsRwColony;
+
+      uses rwvcs-event-list;
+    }
+  }
+
+  grouping rwvcs-rwcluster {
+    container rwcluster {
+      description "This section defines a RW.VCS rwcluster component";
+      rwpb:msg-new VcsRwCluster;
+
+      uses rwvcs-event-list;
+    }
+  }
+
+  grouping rwvcs-rwvm {
+    container rwvm {
+      description "This section defines a RW.VCS rwvm component";
+      rwpb:msg-new VcsRwVm;
+
+      leaf pool-name {
+        description "";
+        type string;
+      }
+      uses rwvcs-event-list;
+    }
+  }
+
+  grouping rwvcs-rwproc {
+    container rwproc {
+      description "This section defines a RW.VCS rwproc component";
+      rwpb:msg-new VcsRwproc;
+
+      uses rwvcs-sequence;
+
+      choice contains {
+        case rwtasklets {
+          list component {
+            description "This section defines the RiftWare virtual components within the rwproc";
+            key "component-name";
+            rwpb:msg-new VcsRwprocComponent;
+
+            leaf component-name {
+              description "";
+              type string;
+            }
+
+            leaf instance-id {
+              description "ID of the component instance in the inventory";
+              type string;
+            }
+
+            leaf instance-name {
+              description "Name of the component instance in the inventory";
+              type string;
+            }
+
+            choice component {
+              case rwvcs-rwtasklet {
+                uses rwvcs-rwtasklet;
+              }
+            }
+          } // list component
+        } // case rwtasklets
+
+        case native {
+          container native {
+            rwpb:msg-new VcsRwprocNative;
+
+            leaf environment {
+              description "Runtime environment for native process";
+              type string;
+            }
+
+            leaf exe-path {
+              description "Path to native process executable";
+              type string;
+            }
+
+            leaf args {
+              description "Arguments to pass to native process";
+              type string;
+            }
+          }
+        } // case native
+      } // choice contains
+    } // container rwproc
+  } // grouping rwvcs-rwproc
+
+  grouping rwvcs-rwtasklet {
+    container rwtasklet {
+      description "This section defines a RW.VCS rwtasklet component";
+      rwpb:msg-new VcsRwTasklet;
+
+      leaf plugin-directory {
+        description "";
+        type string;
+      }
+
+      leaf plugin-name {
+        description "";
+        type string;
+      }
+
+      leaf plugin-version {
+        description "";
+        type string;
+      }
+    }
+  }
+
+  grouping rwvcs-component-list {
+    list component {
+      description "This section defines the RiftWare virtual components";
+      key "component-name";
+
+      leaf component-name {
+        description "";
+        type string;
+      }
+
+      choice component {
+        case rwvcs-reaper {
+          uses rwvcs-reaper;
+        }
+        case rwvcs-rwcolony {
+          uses rwvcs-rwcolony;
+        }
+        case rwvcs-rwcluster {
+          uses rwvcs-rwcluster;
+        }
+        case rwvcs-rwvm {
+          uses rwvcs-rwvm;
+        }
+        case rwvcs-rwproc {
+          uses rwvcs-rwproc;
+        }
+        case rwvcs-rwtasklet {
+          uses rwvcs-rwtasklet;
+        }
+      }
+    } // list component
+  } // grouping rwvcs-component-list
+
+  grouping bootstrap-phase {
+    container bootstrap-phase {
+      description "This section contains the bootstrap phase configuration";
+      rwpb:msg-new BootstrapPhase;
+
+      container rwtasklet {
+        description "";
+        rwpb:msg-new Tasklet;
+
+        leaf plugin-directory {
+          description "";
+          type string;
+        }
+
+        leaf plugin-name {
+          description "";
+          type string;
+        }
+
+        leaf plugin-version {
+          description "";
+          type string;
+        }
+      } // container rwtasklet
+
+      container rwtrace {
+        description "";
+        rwpb:msg-new Trace;
+
+        leaf enable {
+          description "";
+          mandatory false;
+          type boolean;
+        }
+        choice destination {
+          case console {}
+          case file {
+            leaf file {
+              description "";
+              type string;
+            }
+          }
+          case memory-ring {}
+          case syslog {}
+        }
+        leaf level {
+          description "";
+          mandatory false;
+          type uint32 { range "0..9"; }
+        }
+        container filter {
+          leaf file {
+            description "";
+            mandatory false;
+            type string;
+          }
+          leaf line {
+            description "";
+            mandatory false;
+            type uint32;
+          }
+        }
+      } // container rwtrace
+
+      leaf rwcal-type {
+        description "RWCAL type";
+        type string;
+       }
+
+      container zookeeper {
+        leaf master-ip {
+          description "IP address for master zookeeper";
+          type string;
+        }
+
+        leaf unique-ports {
+          description "Use zookeeper ports based on UID";
+          type boolean;
+        }
+
+        leaf zake {
+          description "Use zake to simulate the zookeeper in-memory";
+          type boolean;
+          default false;
+        }
+      }
+
+      container rwcal-cloud {
+        leaf cloud-type {
+          description "Provider type for AWS EC2 US_EAST region";
+          type rwcal-cloud-type;
+        }
+
+        leaf auth-key {
+          description "User Key for authentication with cloud";
+          type string;
+        }
+
+        leaf auth-secret {
+          description "Secret key for authentication with cloud";
+          type string;
+        }
+
+        leaf auth-url {
+          description "URL for authentication with cloud provider.  [optional]";
+          mandatory false;
+          type string;
+        }
+      }
+
+    } // container bootstrap-phase
+  } // grouping bootstrap-phase
+
+  grouping init-phase {
+    container init-phase {
+      description "This section contains the init phase configuration";
+      rwpb:msg-new InitPhase;
+
+      container environment {
+        description "This section contains all of the manifest environment variables";
+        rwpb:msg-new Environment;
+
+        uses rwvcs-variable-list;
+        uses rwvcs-sequence;
+      }
+
+      container inventory {
+        description "This section contains all of the manifest inventory items";
+        rwpb:msg-new Inventory;
+
+        list component {
+          description "";
+          key "name";
+          rwpb:msg-new IComponent;
+
+          leaf name {
+            description "";
+            type string;
+          }
+
+          choice component {
+            container rwlibrary {
+              rwpb:msg-new ICLibrary;
+              leaf so-file {
+                description "";
+                type string;
+              }
+            }
+
+            container rwtasklet {
+              rwpb:msg-new ICTasklet;
+              description "";
+
+              leaf plugin-directory {
+                description "";
+                type string;
+              }
+
+              leaf plugin-name {
+                description "";
+                type string;
+              }
+
+              leaf plugin-version {
+                description "";
+                type string;
+              }
+            } // container rwtasklet
+
+            container rwmain {
+              rwpb:msg-new ICRwmain;
+              description "";
+
+              leaf rwmain-directory {
+                description "";
+                type string;
+              }
+
+              leaf rwmain-exename {
+                description "";
+                type string;
+              }
+            } // container rwmain
+          } // choice component
+        } // list component
+      } // container inventory
+
+      container rwvcs {
+        description "";
+        rwpb:msg-new Vcs;
+
+        uses rwvcs-component-list;
+      } // container rwvcs
+
+      container rwcal {
+        description "";
+
+        list rwvm-pool {
+          description "";
+          key "name";
+          rwpb:msg-new RwVmPool;
+
+          leaf name {
+            description "";
+            type string;
+          }
+
+          choice rwvm-pool {
+            case static-vm-list {
+              list static-vm-list {
+                description "";
+                key "vm-name";
+
+                leaf vm-name {
+                  description "";
+                  type string;
+                }
+
+                leaf vm-ip-address {
+                  description "";
+                  type rwt:ip-address;
+                  rwpb:field-string-max 46;
+                }
+              }
+            } // case static-vm-list
+            case static-vm-range {
+              description "";
+
+              container static-vm-range{
+                description "";
+
+                container vm-name-range {
+                  description "";
+
+                  leaf base-name {
+                    description "";
+                    type string;
+                    mandatory "true";
+                  }
+
+                  leaf low-index {
+                    description "";
+                    type uint32;
+                    mandatory "true";
+                  }
+
+                  leaf high-index {
+                    description "";
+                    type uint32;
+                    mandatory "true";
+                  }
+                }
+
+                container vm-ip-range {
+                  description "";
+
+                  leaf low-addr {
+                    description "";
+                    type rwt:ip-address;
+                    rwpb:field-string-max 46;
+                    mandatory "true";
+                  }
+                  leaf high-addr {
+                    description "";
+                    type rwt:ip-address;
+                    rwpb:field-string-max 46;
+                    mandatory "true";
+                  }
+                }
+              }
+            } // case static-vm-range
+          } // pool-type
+        } // list rwvm-pool
+      } // container rwcal
+
+      container settings {
+        description "This section contains the init phase settings for each RiftWare component";
+        rwpb:msg-new Settings;
+
+        container rwinit {
+          description "";
+          rwpb:msg-new Init;
+
+          container startup-sequence {
+            description "This section contains an ordered set of RW components to start";
+            rwpb:msg-new StartupSequence;
+
+            list component {
+              key "name";
+              rwpb:msg-new SSComponent;
+
+              leaf name {
+                description "";
+                type string;
+              }
+
+              container arguments {
+                description "Additional configuration arguments for the component";
+
+                leaf-list arg {
+                  description "An argument";
+                  type string;
+                }
+              } // container arguments
+            } // list component
+          } // container startup-sequence
+        } // container rwinit
+
+        container rwtrace {
+          description "";
+        } // container rwtrace
+
+        container rwmsg {
+          description "rwmsg settings";
+          leaf enable-broker {
+            description "When this flag is set the tasklets are required to enable message broker";
+            type boolean;
+          }
+          leaf broker-port {
+            description "Port number where the broker is running";
+            type uint16;
+          }
+          leaf broker-host {
+            description "Host name where the broker is running";
+            type string;
+          }
+        }
+
+        container rwvcs {
+          description "This section contains the init phase settings for each RiftWare component";
+          rwpb:msg-new SettingsRwvcs;
+
+          leaf collapse-each-rwvm {
+            description "This configures each rwvm to collapse into a single real VM";
+            type boolean;
+          }
+
+          leaf collapse-each-rwprocess {
+            description "This configures each rwprocess to collapse into a single real process";
+            type boolean;
+          }
+
+          leaf no-autostart {
+            description "This disables the autostart section of the init-phase";
+            type boolean;
+          }
+
+          leaf register-uagent {
+            description "This configures whether to register with the uagent";
+            type boolean;
+          }
+        } // container rwvcs
+      } // container settings
+    } // container init-phase
+  } // grouping init-phase
+
+  container config {
+    container manifest {
+      description "This section contains the entire manifest";
+      rwpb:msg-new Manifest;
+
+      leaf profile-name {
+        description "The name of the profile to use within the manifest";
+        type string;
+      }
+
+      list profile {
+        description "This list of manifest profiles";
+        key name;
+        rwpb:msg-new Profile;
+
+       leaf name {
+         description "The name of this manifest profile";
+         type string;
+       }
+
+       uses bootstrap-phase;
+       uses init-phase;
+      } // container manifest
+    } // container manifest
+  } // container config
+}

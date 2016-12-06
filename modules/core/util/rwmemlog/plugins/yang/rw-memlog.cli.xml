@@ -1,0 +1,9 @@
+<cli>
+  <plugin-list>
+     <plugin name="rwcli_plugin" typelib="rwcli_plugin/1.0"/>
+  </plugin-list>
+
+  <modifications>
+     <addPrintHook path="rw-memlog-state" hook="rwcli_plugin:print_rwmemlog_state"/>
+  </modifications>
+</cli>

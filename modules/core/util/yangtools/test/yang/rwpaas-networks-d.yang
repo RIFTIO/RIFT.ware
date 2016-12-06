@@ -1,0 +1,166 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rwpaas-networks-d
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rwpaas-networks";
+  prefix "rwnetworks";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix "rwt"; }
+  import ietf-inet-types { prefix "inet"; }
+  import ietf-yang-types { prefix "yang"; }
+  import rwpaas-environments-d { prefix "rwenvironments"; }
+
+  revision 2015-01-28 {
+    description
+      "Initial revision. This YANG file captures the
+      data model for provisioning PaaS layer networks and ports.";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  list virtual-network-descriptors {
+    description
+      "List of IP networks for environment. These networks are 
+       provisioned by VNF Infrastructure Manager (VIM).
+       Specifically, these are environment networks in the
+       cloud. The VMs attach to one or more of these
+       environment networks during the bootup.";
+
+    key name;
+    leaf name {
+      description "Name of the network.";
+      type string;
+    }
+
+    leaf environment {
+      type leafref {
+        path "/rwenvironments:environments/rwenvironments:name";
+      }
+    }
+
+    list subnets {
+      description
+        "List of subnets in the network.";
+
+      key name;
+      leaf name {
+        description
+          "Name of the subnet.";
+        type string;
+      }
+
+      leaf ip-version {
+        description
+          "IP protocol version (4 or 6).";
+        type inet:ip-version;
+      }
+
+      leaf subnet {
+        description
+          "IPv4 or IPv6 network prefix. For example 1.1.1.0/24.";
+        type inet:ip-prefix;
+      }
+
+      leaf enable-dhcp {
+        description
+          "Enable DHCP on this network. If a VDU is attached to this
+           subnet and DHCP is enabled, if will get an IP addresses
+           from the DHCP server during the bootup.";
+        type boolean;
+      }
+      list allocation-pools {
+         description
+           "List of pools that DHCP server can use for allocating the
+            IP address. The addresses out the the pools can managed by 
+            the applications running in the VDU.";
+         key id;
+         leaf id {
+           type uint16;
+         }
+
+         leaf start-ip-address {
+           description
+             "Start IP address of the allocation pool.";
+           type inet:ip-address;
+         }
+
+         leaf end-ip-address {
+           description
+             "End IP address of the allocation pool.";
+           type inet:ip-address;
+         }
+       }
+    }
+  }
+
+  list virtual-port-descriptors {
+    description
+        "List of virtual port descriptors.";
+
+    key name;
+    leaf name {
+      description
+          "Name of the virtual port descriptor.";
+      type string;
+    }
+
+    leaf environment {
+      type leafref {
+        path "/rwenvironments:environments/rwenvironments:name";
+      }
+    }
+
+    leaf vnic-type {
+      description
+          "Defines the virtual NIC type associated with the port.
+           The following types are supported:
+           virtio - Traditional virtual port based on VIRTIO.
+           direct - Direct PCI passthrough without macvtap.
+           macvtap - PCI passthrough with macvtap.";
+      type enumeration {
+        enum vnic-type-virtio;
+        enum vnic-type-direct;
+        enum vnic-type-macvtap;
+      }
+    }
+
+    leaf network {
+      type leafref {
+        path "../../virtual-network-descriptors/name";
+      }
+    }
+
+    leaf subnet {
+      description
+          "References the subnet associated with the port.";
+
+      type leafref {
+        path "../../virtual-network-descriptors[name = current()/../network]/subnets/name";
+      }
+    }
+
+    leaf is-external {
+      description "Flag to indicate external interfaces for the VNF.";
+      type boolean;
+    }
+  }
+}

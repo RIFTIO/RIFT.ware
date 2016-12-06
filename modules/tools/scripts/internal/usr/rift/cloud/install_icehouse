@@ -1,0 +1,33 @@
+#!/bin/bash -xe
+
+# This entire script should be obsolete soon
+# cobbler can install of this for us
+
+if [ `whoami` != "root" ]; then
+    echo MUST be root
+    exit 1
+fi
+
+hostname=`hostname -s`
+if [[ $hostname != "tapti" && ! $hostname =~ ^grunt[0-9]+$ ]]; then
+    echo MUST be on a grunt or tapti
+    exit 1
+fi
+
+if [ ! -f /etc/yum.repos.d/rw_icehouse.repo ]; then
+    cp -f ${RIFT_ROOT:-/usr/rift}/scripts/setup/skel/etc/yum.repos.d/* /etc/yum.repos.d/
+fi
+
+# this should not be necessary some day
+for repo in updates3 icehouse rw_icehouse;  do
+    yum-config-manager --enable $repo
+done
+
+# it used to be a file, now its a dir
+rm -rf /usr/lib/python2.7/site-packages/cmd2* /usr/lib/python2.7/site-packages/ply-3.4-py2.7.egg-info /usr/lib/python2.7/site-packages/ecdsa-0.11-py2.7.egg-info
+yum clean all
+yum -y remove mariadb
+yum -y update  # probably should add this but it needs to be tested
+yum -y install mariadb-galera-server.x86_64 openstack-swift* puppet
+yum -y groupinstall icehouse 
+yum -y groupinstall rw_icehouse 

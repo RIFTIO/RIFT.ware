@@ -1,0 +1,5 @@
+#!/bin/bash
+
+
+git xinit -s modules/tools/CI
+exec modules/tools/CI/jenkins/run-steps "$@"

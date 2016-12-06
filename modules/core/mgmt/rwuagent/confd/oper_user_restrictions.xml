@@ -1,0 +1,22 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm">
+    <rule-list>
+      <name>oper</name>
+      <group>oper</group>
+      <rule>
+        <name>rw-cloud</name>
+        <module-name>rw-cloud</module-name>
+        <path>/cloud</path>
+        <access-operations>create update delete</access-operations>
+        <action>deny</action>
+      </rule>
+      <rule>
+        <name>uagent</name>
+        <module-name>rw-mgmtagt</module-name>
+        <path>/uagent</path>
+        <access-operations>create update delete</access-operations>
+        <action>deny</action>
+      </rule>
+    </rule-list>
+  </nacm>
+</config>

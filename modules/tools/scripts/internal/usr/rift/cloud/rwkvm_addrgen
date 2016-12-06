@@ -1,0 +1,115 @@
+#!/usr/bin/python
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Anil Gunturu
+# Creation Date: 07/24/2014
+# 
+
+# This tool generates a MAC address for a KVM based VM name
+import argparse
+import re
+import sys
+import pdb
+
+##
+desc="""This tool generates a MAC address for a KVM based VM name
+     """
+parser = argparse.ArgumentParser(description=desc)
+
+# Parser for reattach subcommand - attach the device back to host
+parser.add_argument('vmname',
+                     type=str,
+                     help='VM name')
+
+parser.add_argument('-x', '--pfsense-static-dhcp-xml', dest='xml',
+                    action='store_true',
+                    help='output in xml format (for consumption by pfsense)')
+
+parser.add_argument('-i', '--ip', dest='ip', action='store_true', help='output IP address only')
+
+args = parser.parse_args()
+
+def print_help():
+    print """The VM name must be represented in one of the following formats:
+    rwkvm_grunt<id>_vm<id>, where        
+        grunt<id> represents grunt machine id (1 <= id <= 16)
+        vm<id> represents VM id (1 <= id <= 8)"""
+    sys.exit(1)
+
+def genaddr(vmname):
+    addr = []
+    m = re.match(r'rwkvm_grunt(\d*)_vm(\d*)', vmname)
+    if m:
+        grunt_id = int(m.group(1))
+        vm_id = int(m.group(2))
+        # for now support 16 grunts and 8 VMs per grunt
+        # future expansion is possible
+        if (grunt_id > 16) or (vm_id > 8):
+            return addr
+        # start @ 10.64.100, allocate 8 addresses for each grunt
+        # if more than 8 addresses are needed in future advance to 10.64.101
+        byte3 = (vm_id-1)/8+100
+        byte4 = (grunt_id-1)*8+(vm_id-1)%8+1
+        addr.append("52:54:00:00:%02X:%02X" % (byte3, byte4))
+        addr.append("10.64.%d.%d" % (byte3, byte4))
+        return addr
+
+def print_pfsense_static_dhcp_entry(vmname, mac, ip):
+    print  """
+                <staticmap>
+                        <mac>%s</mac>
+                        <ipaddr>%s</ipaddr>
+                        <hostname>%s</hostname>
+                        <descr/>
+                        <filename/>
+                        <rootpath/>
+                        <defaultleasetime/>
+                        <maxleasetime/>
+                        <gateway/>
+                        <domain>eng.riftio.com</domain>
+                        <domainsearchlist>eng.riftio.com;riftio.com</domainsearchlist>
+                        <ddnsdomain/>
+                        <tftp/>
+                        <ldap/>
+                </staticmap>""" %(mac, ip, vmname)
+
+def genaddr_all(xml):
+    for g in range(1, 17):
+        for v in range(1, 9):
+            vmname = """rwkvm_grunt%s_vm%s""" %(g, v)
+            if xml:
+                print_pfsense_static_dhcp_entry(vmname, genaddr(vmname)[0], genaddr(vmname)[1])
+            else:
+                print "%20s %s %s" %(vmname, genaddr(vmname)[0], genaddr(vmname)[1])
+            
+##
+# Main
+##
+if __name__ == "__main__":
+    if args.vmname == "all":
+        genaddr_all(args.xml)
+    else:
+        addr = genaddr(args.vmname)
+        if addr:
+            if args.xml:
+                print_pfsense_static_dhcp_entry(args.vmname, addr[0], addr[1])
+            elif args.ip:
+                print addr[1]
+            else:
+                print "%20s %s %s" %(args.vmname, addr[0], addr[1])
+        else:
+            print_help()

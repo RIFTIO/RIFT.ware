@@ -1,0 +1,155 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+/**
+ * @file test-json-schema.yang
+ * @brief Test YangNode to Json conversion
+ */
+
+module test-json-schema
+{
+  namespace "http://riftio.com/ns/riftware-1.0/test-yang-json.yang";
+  prefix "tjs";
+
+  import test-json-schema-aug-base { prefix "tjsab"; }
+
+  identity company {
+    description "A company";
+  }
+
+  identity product {
+    description "A product";
+  }
+
+  identity riftio {
+    base company;
+    description "RIFT.io";
+  }
+
+  identity cloud-platform {
+    base product;
+    description "RIFT.io product";
+  }
+
+  container top {
+    description "Top Container";
+
+    leaf-list leaflist { 
+      type string;
+    }
+
+    leaf leaf-1 {
+      type string;
+    }
+    leaf leaf-2 {
+      description "Leaf number 2";
+      type uint32;
+    }
+
+    leaf linstid { type instance-identifier; }
+
+    leaf n1 {config true; type int8 {range "-12..14";} }
+
+    leaf leaf-4 {
+      type enumeration {
+        enum I_E_A { value 991; }
+        enum I_E_B { value 992; }
+        enum I_E_C { value 993; }
+      }
+    }
+
+    list list-1 {
+      description "List no. 1";
+      key "id name";
+
+      leaf id {
+        type uint16;
+      }
+
+      leaf name {
+        type string;
+      }
+
+      container list-cont {
+        description 
+          "List 1 Container for the lack of good names";
+        leaf yours-truly {
+          type string;
+        }
+      }
+
+      list int-list-1 {
+        description "Internal list to list 1";
+        key "item";
+        leaf item {
+          type string;
+        }
+        leaf name {
+          type string;
+        }
+      }
+    }
+
+    leaf leaf-5 {
+      description "Leafref example";
+      type leafref {
+        path "../tjs:leaf-2";
+      }
+    }
+
+    container leaf_bin {
+      description "for test RwYangDom.EmptyLeaf";
+      leaf empty1 { type empty; }
+      leaf empty2 { type empty; }
+      leaf bool1 { type boolean; }
+      leaf bool2 { type boolean; }
+      leaf bool3 { type boolean; }
+    }
+
+    leaf bit-leaf {
+      description "Bit leaf ";
+      type bits {
+        bit aggregate {
+          position 0;
+        }
+        bit timeout {
+          position 1;
+        }
+        bit sync {
+          position 2;
+        }
+      }
+    }
+
+    leaf hidden {
+      type binary;
+    }
+
+  }
+
+  augment /tjsab:base-cont/tjsab:person {
+       list company-list {
+         key "iref1";
+         leaf iref1 { type identityref { base "company"; } }
+         leaf iref2 { type identityref { base "product"; } }
+       }
+  }
+}
+

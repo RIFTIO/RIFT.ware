@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config
+    xmlns="http://riftio.com/ns/riftware-1.0/rw-manifest"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://riftio.com/ns/riftware-1.0/rw-manifest ./rw-manifest.xsd">
+
+  <manifest>
+
+    <bootstrap-phase>
+
+      <rwtasklet>
+    	  <plugin-name>rwinit-c</plugin-name>
+      </rwtasklet>
+
+      <rwtrace>
+	<enable>true</enable>
+	<filter>
+	</filter>
+      </rwtrace>
+
+    </bootstrap-phase>
+
+    <init-phase>
+
+      <inventory>
+
+	<component>
+	  <name>RW.uAgent</name>
+	  <rwtasklet>
+	    <plugin-directory>./usr/lib/rift/plugins/rwuagent-c</plugin-directory>
+    	    <plugin-name>rwuagent-c</plugin-name>
+	  </rwtasklet>
+	</component>
+
+	<component>
+	  <name>RW.Cli</name>
+	  <rwtasklet>
+	    <plugin-directory>./usr/lib/rift/plugins/rwcli-c</plugin-directory>
+    	    <plugin-name>rwcli-c</plugin-name>
+	  </rwtasklet>
+	</component>
+
+      </inventory>
+
+      <settings>
+
+	<rwinit>
+	  <startup-sequence>
+
+	    <component>
+	      <name>RW.uAgent</name>
+	      <arguments>
+	        <arg>ipport:UID</arg>
+	        <arg>sockpath:./rw-uAgent.sock</arg>
+              </arguments>
+	    </component>
+
+	    <component>
+	      <name>RW.Cli</name>
+	      <arguments/>
+	    </component>
+
+	  </startup-sequence>
+	</rwinit>
+
+	<rwtrace></rwtrace>
+
+      </settings>
+
+    </init-phase>
+
+  </manifest>
+
+</config>

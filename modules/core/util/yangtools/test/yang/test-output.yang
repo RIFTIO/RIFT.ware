@@ -1,0 +1,21 @@
+module test-output
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/test/yang/test-output";
+  prefix "to";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description "Test from_xml_v2 for rpc output containing output element";
+  revision 2016-07-27 { description "Initial version"; }
+
+  rpc test-rpc {
+    input {
+      leaf input { type string; }
+      leaf output { type string; }
+    }
+    output {
+      leaf input { type string; }
+      leaf output { type string; }
+    }
+  }
+}

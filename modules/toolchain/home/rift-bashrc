@@ -1,0 +1,215 @@
+#!/bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+# Define the root and workspace paths by the location of this script, which must
+# be at the top level of the repository.
+export RIFT_WORKSPACE=$(basename $RIFT_ROOT)
+
+######### PUBLIC FUNCTIONS #####################################################
+#
+# These are functions that the user can alias or override from their bashrc (so
+# they should proceed sourcing the users .bashrc file). Any function that is
+# consider essential to code or work performed in a RIFT workspace should be
+# defined as a private function.
+#
+
+# Updates the RIFT environmental variables
+function rift-refresh-env(){
+  THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  /usr/bin/env RIFT_PLATFORM=${RIFT_PLATFORM} RIFT_INSTALL=${RIFT_INSTALL} RIFT_ARTIFACTS=${RIFT_ARTIFACTS} RIFT_BUILD=${RIFT_BUILD} RIFT_CONFIG=${RIFT_CONFIG} python3 ${THIS_DIR}/rift_env.py
+  source ${RIFT_CONFIG}
+}
+
+# Changes to the root directory
+function rift-goto-root(){
+  cd ${RIFT_ROOT}
+}
+
+# SSH to remote host and automatically start in equivalent rift-shell
+function rift-ssh(){
+  sudo=""
+  if [ $# -gt 0 -a $1 == "--sudo" ]; then
+    sudo="sudo"
+    shift
+  fi
+
+  include_build_dirs=""
+  if [ $RIFT_INCLUDE_BUILD_DIRS == 1 ]; then
+    include_build_dirs="--include-build-dirs"
+  fi
+  ssh $@ -t -t "cd ${RIFT_ROOT}; ${sudo} RIFT_ROOT_SAVE_OLDPWD=${PWD} ./rift-shell -e ${include_build_dirs}"
+}
+
+function cdtop() {
+  rift-goto-root
+}
+
+# Changes to the .install directory
+function cdinstall() {
+	cd ${RIFT_INSTALL}
+}
+
+# function to switch to build directory from source dir
+function cdbuild() {
+  OLDDIR=`pwd`
+  if [[ ${OLDDIR} == ${RIFT_BUILD}* ]] ; then
+    echo "already in RIFT_BUILD directory"
+    return
+  fi
+
+  NEWDIR=${RIFT_ROOT}
+  [ "$NEWDIR" == "/" ] && return
+  RELATIVE_PATH=${OLDDIR:${#NEWDIR}+1}
+
+  array=(${RELATIVE_PATH//\// })
+  SUBMODULE=""
+  for i in "${!array[@]}"
+  do
+    if [[ $SUBMODULE != "" ]] ; then
+      SUBMODULE="$SUBMODULE/${array[i]}"
+    else
+      SUBMODULE=${array[i]}
+    fi
+
+    if [ -e ${NEWDIR}/${SUBMODULE}/.git ] ; then
+      break;
+    fi
+  done
+
+  SUBDIR=${SUBMODULE//\//_}
+  SUBDIR=${SUBDIR/modules_/}
+  PROJECTDIR=${RELATIVE_PATH:${#SUBMODULE}+1}
+  echo ${RIFT_BUILD}/${SUBMODULE}/src/${SUBDIR}-build/$PROJECTDIR
+  cd ${RIFT_BUILD}/${SUBMODULE}/src/${SUBDIR}-build/$PROJECTDIR
+}
+
+# function to switch to src directory from build directory
+function cdsrc() {
+  OLDDIR=`pwd`
+  NEWDIR=${RIFT_ROOT}
+  [ "$NEWDIR" == "/" ] && return
+
+  if [[ $OLDDIR != ${RIFT_BUILD}* ]] ; then
+    echo "already in source directory"
+    return
+  fi
+
+  RELATIVE_PATH=${OLDDIR/${RIFT_BUILD}\/}
+
+  array=(${RELATIVE_PATH//\// })
+  SUBMODULE=""
+  for i in "${!array[@]}"
+  do
+    if [[ $SUBMODULE != "" ]] ; then
+      SUBMODULE="$SUBMODULE/${array[i]}"
+    else
+      SUBMODULE=${array[i]}
+    fi
+
+    if [ -e ${NEWDIR}/${SUBMODULE}/.git ] ; then
+      break;
+    fi
+  done
+
+  SUBDIR=${SUBMODULE//\//_}
+  SUBDIR=${SUBDIR/modules_/}
+  PROJECTDIR=${RELATIVE_PATH:${#SUBMODULE}+1}
+  PROJECTDIR=${PROJECTDIR/src\/$SUBDIR-build}
+  echo $NEWDIR/${SUBMODULE}/$PROJECTDIR
+  cd $NEWDIR/${SUBMODULE}/$PROJECTDIR
+}
+
+######### PRIVATE FUNCTIONS ####################################################
+#
+# These are functions that should not be overwritten by the user. Prepend the
+# function by a double underscore to mark it as a private function.
+#
+
+__rw_restore_saved_env_vars() {
+  # Iterate on all current environment variables 
+  while read env_line; do
+    # Split the envvar key and value by =
+    IFS='=' read -a env_key_val <<< "${env_line}";
+    env_key="${env_key_val[0]}"
+    env_val="${env_key_val[1]}"
+
+    # If the key starts with the save prefix, then restore the 
+    # original environment variable.
+    if [[ ${env_key} == RIFT_ROOT_SAVE_* ]]; then
+      # Strip the prefix
+      saved_key=${env_key#"RIFT_ROOT_SAVE_"}
+
+      # Restore the saved environment variable
+      export "${saved_key}"="${env_val}"
+    fi
+  done < <(env)
+}
+
+__rw_add_paths() {
+  # Add PATH for quick access to harness
+  export PATH="${PATH}:${RIFT_INSTALL}/usr/rift/systemtest/harness"
+
+}
+
+# Source the functions in rift-prompt so that they are available if anyone wants
+# to use them from their .bashrc or .bash_profile
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source ${THIS_DIR}/rift-prompt
+
+# Set a make alias to run parallel builds.
+alias rwmake="make -j16"
+
+if [ -n "${PS1}" ]; then
+  if [ -f "${HOME}"/.bash_profile ]; then
+    source ${HOME}/.bash_profile
+  fi
+else
+  # Source the user bashrc, if it is available
+  if [[ -f ${HOME}/.bashrc ]]; then
+    source ${HOME}/.bashrc
+  fi
+fi
+
+# Set a consistent umask across all environments.
+# This was done because some installs (confd), use
+# explicit install permissions.  And if there install permissions
+# conlifct with default umask, we get RPM install errors from
+# build cache.  See RIFT-2745
+umask 002
+
+# Prevent running as root from creating files in the workspace
+# that the real user cannot delete
+if [ $(id -u) == "0" ]; then
+   umask 000
+fi
+
+__rw_restore_saved_env_vars
+
+if ! ${RIFT_CONFIG_USE_EXISTING}; then
+  rift-refresh-env
+else
+  source ${RIFT_CONFIG}
+fi
+if [ $RIFT_INCLUDE_BUILD_DIRS == 0 ]; then
+  export GI_TYPELIB_PATH=$(echo $GI_TYPELIB_PATH | tr ':' '\n' | grep -v ${RIFT_BUILD} | tr '\n' ':')
+  export PLUGINDIR=$(echo $PLUGINDIR | tr ':' '\n' | grep -v ${RIFT_BUILD} | tr '\n' ':')
+fi
+if [ -f "${HOME}/.riftshell.rc" ]; then
+    source ${HOME}/.riftshell.rc
+fi
+__rw_add_paths

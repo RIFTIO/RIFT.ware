@@ -1,0 +1,313 @@
+Details on pristine tracking of GIT upstream dpdk repository:
+
+Upstream for packages being maintained in publically accessible git
+repositories may be directly imported, tracked, and merged using the
+git subtree utility.  (Note that this is not the 'git merge -s
+subtree' merge strategy).
+
+Should upstream cease to be available in GIT, we can revert to manual
+creation of a pristine branch for the package and feed it with
+tarballs.
+
+/*****IGNORE******/
+Import a new upstream project's HEAD on branch master into the
+repository-local path DPDK/2.0.0, as a single changeset (the
+--squash):
+
+  git subtree add --prefix=DPDK/2.0.0 -m 'Initial dpdk upgrade from 1.6.0' --squash git://dpdk.org/dpdk -b 2.0.0 HEAD
+
+Merge any new changes since the import or last merge into the local liburcu work:
+
+  git subtree pull --prefix=DPDK/2.0.0 -m 'Merge ' --squash git://dpdk.org/dpdk HEAD
+/*******IGNORE*/
+
+
+git clone git://dpdk.org/dpdk
+
+For more details:
+
+  /usr/share/doc/git/contrib/subtree/git-subtree.txt
+  https://github.com/apenwarr/git-subtree/blob/master/git-subtree.txt
+
+
+
+
+RIFT.io
+-------
+
+The dpdk in this directory was cloned from git clone git://dpdk.org/dpdk
+
+We fixed bug(s) in this DPDK tree:
+
+See: DPDK/<VERSION>/scripts/relpath.sh
+
+ALSO added these config files:
+  <VERSION>/config/defconfig_x86_64-riftio-linuxapp-gcc
+
+For reference, the following sample standalone build make invocations work:
+
+make -j 12 install T=x86_64-riftio-linuxapp-gcc V=1 RTE_OUTPUT=/tmp/build RTE_KERNELDIR=/lib/modules/`uname -r`/build
+make clean V=1 RTE_OUTPUT=/tmp/build
+
+
+Changes made in DPDK for RIFT.io Integartion:
+----------------------------------------
+directories/files added:
+-----------------
+./lib/librw_pmd_raw/
+./lib/librw_pmd_tun/
+./lib/librw_piot/
+./app/test-rwpiot/
+./app/test/test_pmd_raw.c
+./app/test/test_pmd_tun.c
+
+new compilation flags
+---------------------
+config options:
+CONFIG_RTE_LIBRW_PIOT        
+CONFIG_RTE_LIBRW_PMD_RAW     
+CONFIG_RTE_LIBRW_PMD_TUN    
+CONFIG_RTE_TEST_RW_PIOT      
+
+
+files changed
+-------------
+modified:   ../CMakeLists.txt
+Changes: Package name change
+todo: None
+
+modified:   app/Makefile
+Changes: Added test-rwpiot
+todo: None
+
+modified:   app/test-pmd/testpmd.c
+
+Changes: Reset the mdata_flag for metadata
+todo: No need to do the changes if we always set the new flags at all the entry points. We do it now for packets on the wire, packets from the kernel. We need to address the entry points where the packet comes from vfabric or other application using the output api.
+
+        modified:   app/test/Makefile
+Changes: Added new test files
+todo: None
+
+        modified:   app/test/test.h
+Changes: Added new test files
+todo: None
+
+        modified:   app/test/test_lpm6.c
+Changes: Need the definition in the google test framework for riftware
+todo: Can be removed once we move away from the dpdk lpm tables.
+
+        modified:   app/test/test_mbuf.c
+Changes: mbuf now takes more than one cache line
+todo: use the userdata pointer instead
+
+        modified:   config/common_linuxapp
+Changes: # commented out for RW.fpath. Defined in riftware config PIOT
+todo : None
+
+        modified:   config/defconfig_x86_64-native-linuxapp-gcc
+Changes: Use default
+todo : No need to make the change
+
+        modified:   lib/Makefile
+Changes: Adding riftware libs
+todo: remove raw and use dpdk raw. 
+
+        modified:   lib/librte_cmdline/cmdline_socket.c
+Changes: gdb ctrl-c
+todo : None
+
+        modified:   lib/librte_cmdline/cmdline_socket.h
+Changes: gdb ctrl-c
+todo : None
+        modified:   lib/librte_eal/common/eal_common_dev.c
+Changes: methods to find the driver and initialize use the devname
+todo: None
+
+        modified:   lib/librte_eal/common/eal_common_pci.c
+Changes: Probe by pci address
+todo: None
+
+        modified:   lib/librte_eal/common/include/arch/x86/rte_memcpy.h
+Changes: removed the optimized memcpy
+todo: put it back
+
+        modified:   lib/librte_eal/common/include/generic/rte_cpuflags.h
+Changes: cpp changes
+todo: undo the changes and ask intel to change
+
+        modified:   lib/librte_eal/common/include/rte_dev.h
+Changes: methods to find the driver and initialize use the devname
+todo: None
+
+        modified:   lib/librte_eal/common/include/rte_eal.h
+Changes: methods to initialize without threads, log hooks, and exit cleanup
+todo: None
+
+        modified:   lib/librte_eal/common/include/rte_interrupts.h
+Changes: methods to disable interrupt thread
+todo: None
+
+        modified:   lib/librte_eal/common/include/rte_pci.h
+hanges: Probe by pci address
+todo: None
+        modified:   lib/librte_eal/common/include/rte_string_fns.h
+Changes:#define rte_snprintf snprintf
+todo: none
+
+        modified:   lib/librte_eal/linuxapp/eal/eal.c
+Changes: Memsize
+todo : make it configurable in rift config
+
+        modified:   lib/librte_eal/linuxapp/eal/eal_hugepage_info.c
+Changes: hugepage fix, DPDK does not consider "reserved" hugepages while doing initial mapping * adjust "num_pages" by subtracting "resv_pages"
+todo: None
+
+        modified:   lib/librte_eal/linuxapp/eal/eal_interrupts.c
+Changes: methods to disable interrupt thread
+todo: Use this for raw socket reads than the one attached to CoreFoundation
+
+        modified:   lib/librte_eal/linuxapp/eal/eal_log.c
+Changes: Logging
+todo: None
+
+        modified:   lib/librte_eal/linuxapp/eal/eal_pci.c
+Changes: methods to find the driver and initialize use the devname
+todo: None
+
+        modified:   lib/librte_eal/linuxapp/eal/eal_thread.c
+
+
+        modified:   lib/librte_eal/linuxapp/eal/include/exec-env/rte_kni_common.h
+        modified:   lib/librte_eal/linuxapp/kni/kni_dev.h
+        modified:   lib/librte_eal/linuxapp/kni/kni_misc.c
+        modified:   lib/librte_eal/linuxapp/kni/kni_net.c
+
+Changes: KNI changes. Multiple to support distributed network system and also for different devices with different options like no_tx, loopback....
+todo: None
+
+        modified:   lib/librte_ether/rte_ethdev.c
+Changes: methods to find the driver and initialize use the address (pci)
+todo: None
+
+        modified:   lib/librte_ether/rte_ethdev.h
+Changes: methods to find the driver and initialize use the address (pci)
+todo: check to get rid of interrupt handle.
+
+        modified:   lib/librte_ether/rte_ether.h
+Changes: define lacp macro
+todo: Use Intel lacp
+
+        modified:   lib/librte_ip_frag/rte_ip_frag.h
+Changes: More stats
+todo : none
+
+        modified:   lib/librte_ip_frag/rte_ip_frag_common.c
+Changes: Delete stale fragments instead of keeping them without the assumtpion that we will always receive some fragments
+todo: None
+
+        modified:   lib/librte_ip_frag/rte_ipv4_fragmentation.c
+Changes: FLAT MBUF CHANGES
+todo: Optimize code to use single mbufs. Can be removed.
+
+        modified:   lib/librte_ip_frag/rte_ipv6_fragmentation.c
+Changes: FLAT MBUF CHANGES
+todo: Optimize code to use single mbufs. Can be removed.
+
+        modified:   lib/librte_kni/rte_kni.c
+        modified:   lib/librte_kni/rte_kni.h
+        modified:   lib/librte_kni/rte_kni_fifo.h
+Changes: KNI changes. Multiple to support distributed network system and also for different devices with different options like no_tx, loopback....
+todo: None
+
+        modified:   lib/librte_mbuf/rte_mbuf.h
+
+Changes: meta data changes
+todo: Use the user data pointer instead
+
+        modified:   lib/librte_mempool/rte_mempool.c
+Changes: Expose the tailq for fastpath mempool changes
+todo: None
+
+        modified:   lib/librte_mempool/rte_mempool.h
+Changes: Expose the tailq for fastpath mempool changes
+todo: None
+
+        modified:   lib/librte_pmd_ring/rte_eth_ring.c
+Changes: More counters
+todo: None
+
+        modified:   mk/rte.app.mk
+Changes: Linking piot, pmd driver for rift
+todo: None
+
+        modified:   scripts/relpath.sh
+Changes:
+todo : None
+
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+ README
+Newfiles:
+      ../dpdk16.04/app/test-rwpiot/
+        ../dpdk16.04/config/defconfig_x86_64-riftio-linuxapp-gcc
+        ../dpdk16.04/drivers/net/rw_raw/
+        ../dpdk16.04/drivers/net/rw_sim/
+        ../dpdk16.04/drivers/net/rw_tun/
+        ../dpdk16.04/lib/librte_eal/linuxapp/kni/kni_netlink.c
+        ../dpdk16.04/lib/librte_eal/linuxapp/kni/kni_netlink.h
+        ../dpdk16.04/lib/librw_piot/
+        ../dpdk16.04/rift-README
+Modified files:
+  modified:   ../CMakeLists.txt
+        modified:   drivers/net/rw_sim/rw_virt_eth_switch.c
+        modified:   ../dpdk16.04/app/Makefile
+        modified:   ../dpdk16.04/app/test/test_mbuf.c
+        modified:   ../dpdk16.04/drivers/net/Makefile
+        modified:   ../dpdk16.04/drivers/net/e1000/em_ethdev.c
+        modified:   ../dpdk16.04/drivers/net/fm10k/fm10k_ethdev.c
+        modified:   ../dpdk16.04/drivers/net/ring/rte_eth_ring.c
+        modified:   ../dpdk16.04/lib/Makefile
+        modified:   ../dpdk16.04/lib/librte_cmdline/cmdline_socket.c
+        modified:   ../dpdk16.04/lib/librte_cmdline/cmdline_socket.h
+        modified:   ../dpdk16.04/lib/librte_cmdline/rte_cmdline_version.map
+        modified:   ../dpdk16.04/lib/librte_eal/common/eal_common_dev.c
+        modified:   ../dpdk16.04/lib/librte_eal/common/eal_common_pci.c
+        modified:   ../dpdk16.04/lib/librte_eal/common/eal_filesystem.h
+        modified:   ../dpdk16.04/lib/librte_eal/common/eal_private.h
+        modified:   ../dpdk16.04/lib/librte_eal/common/include/rte_dev.h
+        modified:   ../dpdk16.04/lib/librte_eal/common/include/rte_eal.h
+        modified:   ../dpdk16.04/lib/librte_eal/common/include/rte_interrupts.h
+        modified:   ../dpdk16.04/lib/librte_eal/common/include/rte_pci.h
+        modified:   ../dpdk16.04/lib/librte_eal/common/include/rte_string_fns.h
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/eal/eal.c
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/eal/eal_interrupts.c
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/eal/eal_log.c
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/eal/eal_memory.c
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/eal/eal_pci.c
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/eal/eal_pci_vfio_mp_sync.c
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/eal/include/exec-env/rte_kni_common.h
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/eal/rte_eal_version.map
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/kni/Makefile
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/kni/kni_dev.h
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/kni/kni_misc.c
+        modified:   ../dpdk16.04/lib/librte_eal/linuxapp/kni/kni_net.c
+        modified:   ../dpdk16.04/lib/librte_ether/rte_ethdev.c
+        modified:   ../dpdk16.04/lib/librte_ether/rte_ethdev.h
+        modified:   ../dpdk16.04/lib/librte_ether/rte_ether_version.map
+        modified:   ../dpdk16.04/lib/librte_ip_frag/rte_ip_frag.h
+        modified:   ../dpdk16.04/lib/librte_ip_frag/rte_ip_frag_common.c
+        modified:   ../dpdk16.04/lib/librte_ip_frag/rte_ipfrag_version.map
+        modified:   ../dpdk16.04/lib/librte_ip_frag/rte_ipv6_fragmentation.c
+        modified:   ../dpdk16.04/lib/librte_kni/rte_kni.c
+        modified:   ../dpdk16.04/lib/librte_kni/rte_kni.h
+        modified:   ../dpdk16.04/lib/librte_kni/rte_kni_fifo.h
+        modified:   ../dpdk16.04/lib/librte_kni/rte_kni_version.map
+        modified:   ../dpdk16.04/lib/librte_lpm/rte_lpm_version.map
+        modified:   ../dpdk16.04/lib/librte_mbuf/rte_mbuf.h
+        modified:   ../dpdk16.04/lib/librte_mempool/rte_mempool.c
+        modified:   ../dpdk16.04/lib/librte_mempool/rte_mempool.h
+        modified:   ../dpdk16.04/lib/librte_mempool/rte_mempool_version.map
+        modified:   ../dpdk16.04/mk/rte.app.mk
+        modified:   ../dpdk16.04/scripts/relpath.sh

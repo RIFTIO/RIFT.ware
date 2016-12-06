@@ -1,0 +1,145 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rwiaas-cmp-d {
+  namespace "http://riftio.com/ns/riftware-1.0/rwiaas-cmp";   
+  prefix "rwcmp";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix "rwt"; }
+  import ietf-inet-types { prefix "inet"; }
+  import ietf-yang-types { prefix "yang"; }
+  
+  revision 2015-01-28 {
+    description
+      "Initial revision. This YANG file captures the
+      data model for provisioning IaaS layer
+      cloud management platform.";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  typedef cloud-management-platform-type {
+    description "Type of the cloud management platform.";
+    type enumeration {
+      enum unknown {
+        description "Unknowm cloud management platform.";
+        value "0";
+      }
+      enum fedora-openstack {
+        description 
+          "RIFT.ware distribution of fedora and OpenStack.";
+        value "1";
+      }
+      enum rhel-openstack {
+        description 
+          "Red Hat Enterprise Linux OpenSatck Platform.";
+        value "2";
+      }
+      enum vmware-vcenter {
+        description "VMware vCenter";
+        value "3";
+      }
+    }
+  } 
+
+  typedef tenant-network-type {
+    description "Type of the tenant network.";     
+    type enumeration {
+      enum unknown {
+        value "0";       
+      }
+      enum flat {
+        description
+          "Use a flat network, 
+          there is no tenant underlay network.";
+        value "1";
+      }
+      enum vlan {
+        description "Use vlan for tenant underlay network.";
+        value "2";
+      }
+      enum vxlan {
+        description "Use vxlan for tenant underlay network.";
+        value "3";
+      }
+    }
+  } 
+  
+  container cloud-management-platform {
+    description
+      "This container defines the attributes of
+      Cloud Management Platform (CMP).";
+    
+    leaf deployment-name {
+      description "Name of the cloud deployment.";
+      type string;
+    }
+    leaf primary-controller-name {
+      description "Name of the CMP controller.";
+      type string;
+    }
+    leaf primary-controller-fqdn {
+      description 
+        "Fully qualifies domain name for the controller.";
+      type string;
+    }
+    leaf primary-controller-ip-address {
+      description "IP address of the controller";
+      type inet:ip-address;
+    }
+    leaf primary-controller-ipmi-ip-address {
+      description "IPMI interface IP address of the controller";
+      type inet:ip-address;
+    }
+    leaf primary-controller-ipmi-username {
+      description "IPMI username";
+      type inet:ip-address;
+    }
+    leaf primary-controller-ipmi-password {
+      description "IPMI password";
+      type inet:ip-address;
+    }
+    leaf cmp-type {
+      description "Type of CMP.";
+      type cloud-management-platform-type;
+    }
+    leaf network-type {
+      description "Type of the tenant network.";
+      type tenant-network-type;     
+    } 
+    leaf ipmi-network-prefix {
+      description "Prefix for the IPMI network.";
+      type inet:ip-prefix;
+    }
+    leaf tenant-network-prefix {
+      description "Prefix for the tenant network.";
+      type inet:ip-prefix;
+    }
+    leaf public-network-prefix {
+      description "Prefix for external/public network.";
+      type inet:ip-prefix;
+    }
+    leaf floating-ip-range {
+      description "Range of floating IP addresses.";
+      type inet:ip-prefix;
+    }   
+  } 
+} 

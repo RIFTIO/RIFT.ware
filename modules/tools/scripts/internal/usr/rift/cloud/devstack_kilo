@@ -1,0 +1,445 @@
+#! /bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# 
+
+# This script is used for installing openstack
+# using devstack on a grunt machine.
+# This script should be run as regular user.
+# At high level this script does the following:
+# - Copies the OpenStack repository
+# - Run the devstack install scripts as root using the ssh_root script
+
+set -e
+
+function print_usage() {
+    echo "Usage: $0 [-h HOST_IP] [-p PUBLIC_INTERFACE] "
+    echo "       Mandatory arguments"
+    echo "       -h|--host-ip HOST_IP"
+    echo "       -n|--num-interfaces NUM_INTFS"
+    echo "       Mandatory arguments for cmpute node installation"
+    echo "       -c|--controller-ip CONTROLLER_IP"
+    echo "       Optional arguments"
+    echo "       -a|--attserver-ip ATTESTATION_SERVER_IP"
+    echo "       -p|--public-interface PUBLIC_INTERFACE"
+    echo "       -u|--unstack Uninstall openstack"
+    echo "       -j|--rejoin Rejoin openstack"
+    echo "       -v|--vlan-range VLAN_RANGE -- colon separated list of start and end VLAN IDs, e.g. 1:10"
+    echo "       -d|--ovs-dpdk -- Use ovs-dpdk"
+    echo "       -k|--ip-key -- Key for fixed and floating IP"
+    echo "       -s|--vcpu-pin-set -- Set vcpu pin set"
+    echo "       -f|--floating-ip-prefix -- Set floating ip prefix eg. 10.66"
+    exit 1
+}
+
+CURR_DIR=`pwd`
+SSH_ROOT=/usr/rift/bin/ssh_root
+
+
+##
+# Set defaults
+##
+PUBLIC_INTERFACE=eth0
+FIXED_NETWORK_SIZE=256
+MULTI_HOST=1
+UNSTACK=false
+REJOIN=false
+LEGACY=false
+CONTROLLER_IP=""
+CONTROLLER_IP_SET=false
+OVS_DPDK=false
+NUM_INTFS=1
+IP_KEY=222
+FLOATING_IP_PREFIX=10.66
+
+##
+# Parse options
+##
+while [[ $# > 0 ]]
+do
+key="$1"
+shift
+case $key in
+    -h|--host-ip)
+    HOST_IP=$1
+    shift
+    ;;
+    -r|--repo-path)
+    RIFTSTACK_DIR=$1
+    shift
+    ;;
+    -a|--attserver-ip)
+    ATTESTATION_SERVER_IP=$1
+    shift
+    ;;
+    -p|--public-interface)
+    PUBLIC_INTERFACE=$1
+    shift
+    ;;
+    -n|--num-interfaces)
+    NUM_INTFS=$1
+    shift
+    ;;
+    -u|--unstack)
+    UNSTACK=true
+    ;;
+    -j|--rejoin)
+    REJOIN=true
+    ;;
+    -c|--controller-ip)
+    CONTROLLER_IP=$1
+    CONTROLLER_IP_SET=true
+    shift
+    ;;
+    -v|--vlan-range)
+    VLAN_RANGE=$1
+    shift
+    ;;
+    -k|--ip-key)
+    IP_KEY=$1
+    shift
+    ;;
+    -d|--ovs-dpdk)
+    OVS_DPDK=true
+    ;;
+    -s|--vcpu-pin-set)
+    VCPU_PIN_SET=$1
+    shift
+    ;;
+    -f|--floating-ip-prefix)
+    FLOATING_IP_PREFIX=$1
+    shift
+    ;;
+    *)
+    print_usage
+    ;;
+esac
+done
+
+if [[ "$HOST_IP" == "" ]]; then
+    echo "Must specify the host ip address using -h option"
+    print_usage
+fi
+
+if [[ "$HOST_IP" =~ ^[0-9.]+$ ]]; then
+    echo using IP $HOST_IP
+else
+    echo "MUST specify the host IP"
+    print_usage
+fi
+
+if [[ "$CONTROLLER_IP" == "" ]]; then
+    # if the controller ip is not explicitly specified, 
+    # the current install is for controller node
+    CONTROLLER_IP=$HOST_IP
+fi
+
+ 
+HOSTNAME=`hostname`
+GRUNT_SHORTNAME=`hostname -s`
+GRUNT_ID=$(echo $GRUNT_SHORTNAME | sed 's/grunt//')
+FLOATING_RANGE=${FLOATING_IP_PREFIX}.${IP_KEY}.0/24
+FLOATING_ADDR_START=${FLOATING_IP_PREFIX}.${IP_KEY}.100
+FLOATING_ADDR_END=${FLOATING_IP_PREFIX}.${IP_KEY}.150
+PUBLIC_NETWORK_GATEWAY=${FLOATING_IP_PREFIX}.${IP_KEY}.99
+CONTROLLER_HOSTNAME=`$SSH_ROOT $CONTROLLER_IP "hostname -s"`
+FIXED_RANGE=10.0.${IP_KEY}.0/24
+FIXED_NETWORK_SIZE=256
+NETWORK_GATEWAY=10.0.${IP_KEY}.1
+
+VLAN_RANGE=${VLAN_RANGE:=1:10}
+ML2_VLAN_RANGES="physnet1:$VLAN_RANGE"
+OVS_BRIDGE_MAPPINGS="physnet1:br-eth1"
+
+if (( $NUM_INTFS > 1 )); then
+   for (( i=2; i <= $NUM_INTFS; i++ ))
+   do
+     ML2_VLAN_RANGES="$ML2_VLAN_RANGES,physnet$i"
+     OVS_BRIDGE_MAPPINGS="$OVS_BRIDGE_MAPPINGS,physnet$i:br-eth$i"
+   done
+fi
+
+
+if $UNSTACK; then
+    # Uninstall openstack
+    su - stack -c 'cd devstack && ./unstack.sh'
+    su - stack -c 'cd devstack && ./clean.sh'
+
+elif $REJOIN; then
+    # Rejoin the stack after the reboot
+    set +e    
+    if $OVS_DPDK; then
+        echo "OVS_DPDK enabled"
+        /sbin/service ovs-dpdk restart	
+    else
+        service openvswitch start
+        for (( i=1; i <= $NUM_INTFS; i++ ))
+        do
+            ifup eth$i
+            ip link set eth$i promisc on
+        done
+    fi
+    vgs stack-volumes
+    losetup -f --show /opt/stack/data/stack-volumes-backing-file 
+    vgcreate stack-volumes /dev/loop0
+    /sbin/service tgtd restart 
+    /sbin/service httpd restart
+    /sbin/service rabbitmq-server restart
+    /sbin/service mysqld start 
+    set -e
+    su - stack -c /home/stack/devstack/rejoin-stack.sh 
+
+else
+    #Check Neutron pre-requisite
+    if [[ "$HOST_IP" == "$CONTROLLER_IP" ]]; then
+         ifconfig br-ex >/dev/null 
+         if [ $? -ne 0 ]; then
+              echo "OVS bridge br-ex not found"
+              echo "Neutron enable requires that the target host has br-ex OVS bridge configured"    
+              echo "and the primary interface added as a port to the bridge"    
+              print_usage
+         fi
+         if ! ifconfig br-ex | grep -q $HOST_IP; then
+              echo "HOST IP $HOST_IP does not appear to be associated with bridge br-ex"
+              print_usage
+         fi
+    else
+
+         ifconfig $PUBLIC_INTERFACE >/dev/null 
+         if [ $? -ne 0 ]; then
+             echo "PUBLIC INTERFACE $PUBLIC_INTERFACE not found"
+             print_usage
+         fi
+
+         if ! ifconfig $PUBLIC_INTERFACE | grep -q $HOST_IP; then
+             echo "HOST IP $HOST_IP does not appear to be associated with PUBLIC_INTERFACE $PUBLIC_INTERFACE"
+             print_usage
+         fi
+    fi	 
+
+    # clone the openstack repository
+    if [[ "$RIFTSTACK_DIR" == "" ]]; then
+        RIFTSTACK_DIR=/var/tmp/kilo-openstack
+    fi
+
+    # Copy the devstack install files to root home directory
+    cp $RIFTSTACK_DIR/devstack_preinstall.sh /root/
+
+    # Run the devstack preinstall routines. For this to work properly 
+    # "Defaults requiretty" should be commented out in /etc/suoders
+    /root/devstack_preinstall.sh $RIFTSTACK_DIR
+
+    ##Create required ovs bridges
+    if $OVS_DPDK; then
+        echo "OVS_DPDK enabled"
+    else
+        service openvswitch start
+        for (( i=1; i <= $NUM_INTFS; i++ ))
+        do
+            ovs-vsctl add-br br-eth$i
+            ifup eth$i
+	    ip link set eth$i promisc on
+            ovs-vsctl add-port br-eth$i eth$i              
+        done
+    fi
+        	    
+    ##
+    # Create the local.conf file in ~stack/devstack
+    ##
+    su - stack -c "cat <<EOF > devstack/local.conf
+[[local|localrc]]
+ADMIN_PASSWORD=mypasswd
+MYSQL_PASSWORD=mypasswd 
+RABBIT_PASSWORD=mypasswd 
+SERVICE_PASSWORD=mypasswd 
+SERVICE_TOKEN=mypasswd 
+LOG=True 
+DEST=/opt/stack
+SCREEN_LOGDIR=/opt/stack/logs/screen 
+LOGFILE=/opt/stack/logs/stack.sh.log
+LOGDAYS=1
+
+HOST_IP=$HOST_IP 
+PUBLIC_INTERFACE=$PUBLIC_INTERFACE 
+FIXED_RANGE=$FIXED_RANGE 
+FIXED_NETWORK_SIZE=$FIXED_NETWORK_SIZE 
+FLOATING_RANGE=$FLOATING_RANGE
+MULTI_HOST=1 
+KEYSTONE_ADMIN_BIND_HOST=0.0.0.0 
+
+NETWORK_GATEWAY=$NETWORK_GATEWAY 
+PUBLIC_NETWORK_GATEWAY=$PUBLIC_NETWORK_GATEWAY 
+Q_FLOATING_ALLOCATION_POOL=start=$FLOATING_ADDR_START,end=$FLOATING_ADDR_END 
+ENABLE_TENANT_VLANS=True 
+ENABLE_TENANT_TUNNELS=False 
+Q_ML2_PLUGIN_TYPE_DRIVERS=vlan,flat,local
+Q_ML2_TENANT_NETWORK_TYPE=vlan
+ML2_VLAN_RANGES=$ML2_VLAN_RANGES
+OVS_BRIDGE_MAPPINGS=$OVS_BRIDGE_MAPPINGS
+OFFLINE=True 
+Q_USE_SECGROUP=False
+LIBVIRT_FIREWALL_DRIVER=nova.virt.firewall.NoopFirewallDriver
+
+EOF
+"
+    if $CONTROLLER_IP_SET; then
+        if $OVS_DPDK; then
+            su - stack -c "cat <<EOF >> devstack/local.conf
+enable_plugin networking-ovs-dpdk https://github.com/stackforge/networking-ovs-dpdk stable/kilo
+Q_ML2_PLUGIN_MECHANISM_DRIVERS=ovsdpdk
+OVS_NUM_HUGEPAGES=2048
+OVS_DATAPATH_TYPE=netdev
+OVS_GIT_TAG=3ed424e5e5d614e08a58ffe700bbe88ed0514a7b
+OVS_DPDK_VHOST_USER_DEBUG=n
+OVS_LOG_DIR=/opt/stack/logs
+OVS_HUGEPAGE_MOUNT_PAGESIZE=2M
+OVS_ALLOCATE_HUGEPAGES=False
+OVS_DPDK_GIT_TAG=v2.0.0
+BASE_URL=\"file://\\\$DEST/patches\"
+OVS_PATCHES=\"\\\$BASE_URL/ovs1.patch \\\$BASE_URL/ovs3.patch \\\$BASE_URL/ovs2.patch \\\$BASE_URL/ovs4.patch\"
+OVS_DPDK_MEM_SEGMENTS=2048
+EOF
+"
+        else 
+            su - stack -c "cat <<EOF >> devstack/local.conf
+Q_ML2_PLUGIN_MECHANISM_DRIVERS=openvswitch
+EOF
+"
+        fi
+
+        su - stack -c "cat <<EOF >> devstack/local.conf
+DATABASE_TYPE=mysql 
+SERVICE_HOST=$CONTROLLER_IP
+MYSQL_HOST=$CONTROLLER_IP 
+Q_HOST=$CONTROLLER_IP 
+RABBIT_HOST=$CONTROLLER_IP 
+GLANCE_HOSTPORT=$CONTROLLER_IP:9292 
+VNCSERVER_LISTEN=0.0.0.0 
+VNCSERVER_PROXYCLIENT_ADDRESS=$HOST_IP 
+ENABLED_SERVICES=rabbit 
+ENABLED_SERVICES+=,n-cpu,n-novnc,n-cauth,q-agt,neutron 
+
+EOF
+"
+			     
+    else
+        su - stack -c 'cd /opt/stack/networking-ovs-dpdk && sudo python setup.py install'	    
+        su - stack -c "cat <<EOF >> devstack/local.conf
+Q_ML2_PLUGIN_MECHANISM_DRIVERS=openvswitch,ovsdpdk	
+disable_service n-net
+enable_service n-cauth 
+enable_service q-svc
+enable_service q-agt
+enable_service q-dhcp 
+enable_service q-l3
+enable_service q-meta
+enable_service neutron
+enable_service horizon 
+disable_service tempest
+
+EOF
+"
+    fi
+
+    su - stack -c 'cat <<EOF >> devstack/local.conf
+[[post-config|\$NOVA_CONF]]
+[DEFAULT]
+pci_passthrough_whitelist= { \\\\\"vendor_id\\\\\":\\\\\"8086\\\\\",\\\\\"product_id\\\\\":\\\\\"10fb\\\\\"}
+pci_alias={\\\\\"vendor_id\\\\\":\\\\\"8086\\\\\", \\\\\"product_id\\\\\":\\\\\"10fb\\\\\", \\\\\"name\\\\\":\\\\\"PCI_10G_ALIAS\\\\\"}
+
+pci_passthrough_whitelist= { \\\\\"vendor_id\\\\\":\\\\\"8086\\\\\",\\\\\"product_id\\\\\":\\\\\"0443\\\\\"}
+pci_alias={\\\\\"vendor_id\\\\\":\\\\\"8086\\\\\", \\\\\"product_id\\\\\":\\\\\"0443\\\\\", \\\\\"name\\\\\":\\\\\"COLETO_VF_ALIAS\\\\\"}
+
+pci_passthrough_whitelist= { \\\\\"vendor_id\\\\\":\\\\\"8086\\\\\",\\\\\"product_id\\\\\":\\\\\"15a4\\\\\"}
+pci_alias={\\\\\"vendor_id\\\\\":\\\\\"8086\\\\\", \\\\\"product_id\\\\\":\\\\\"15a4\\\\\", \\\\\"name\\\\\":\\\\\"PCI_100G_ALIAS\\\\\"}
+
+scheduler_default_filters=AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,AvailabilityZoneFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,PciPassthroughFilter,NUMATopologyFilter,TrustedFilter
+
+[libvirt]
+cpu_mode=host-model
+
+[database]
+max_pool_size=2000
+
+[api_database]
+max_pool_size=2000
+
+EOF
+'
+    #Set attestation server config
+    if [[ "$HOST_IP" == "$CONTROLLER_IP" ]]; then
+       if [[ "$ATTESTATION_SERVER_IP" != "" ]]; then	    
+            su - stack -c "cat <<EOF >> devstack/local.conf
+[trusted_computing]
+attestation_server=$ATTESTATION_SERVER_IP
+attestation_port=8181
+attestation_server_ca_file=/etc/nova/certfile.cer
+attestation_api_url=/AttestationService/resources
+attestation_auth_blob=i-am-openstack
+
+EOF
+"
+       fi
+    # tune mysql max connection limit
+    cp /etc/my.cnf /etc/my.cnf.org
+    sed -i '/^\[mysqld\]/amax_connections=300' /etc/my.cnf
+
+    fi       
+    
+    if [[ $VCPU_PIN_SET != "" ]]; then
+        sed -i "/^\[DEFAULT\]/avcpu_pin_set=$VCPU_PIN_SET" /home/stack/devstack/local.conf
+    fi
+
+    rm -f /etc/rc.d/rc.local
+
+    ##
+    # Invoke the stack script
+    ##
+    su - stack -c 'cd devstack && ./stack.sh'
+
+    if [[ "$ATTESTATION_SERVER_IP" != "" ]]; then
+        openssl  s_client -connect $ATTESTATION_SERVER_IP:8181 -cipher DHE-RSA-AES256-SHA | tee /etc/nova/certfile.cer &
+        sleep 1
+    fi
+
+
+    echo > /etc/motd
+    systemctl stop firewalld
+    systemctl disable firewalld
+    cd /usr/rift/scripts/cloud
+    ./enable_lab
+    cd /net/boson
+    cd /net/boson/home1
+    install_opt="-h $HOST_IP -j"
+    if $OVS_DPDK; then
+        install_opt="$install_opt -d"
+    else
+        install_opt="$install_opt -n $NUM_INTFS"	    	
+    fi
+    cat  <<EOF > /etc/rc.d/rc.local
+#!/bin/bash
+sleep 100    
+cd /var/tmp/kilo-openstack
+./devstack_kilo $install_opt > /root/kilo-rejoin.log 2>&1 
+if [[ "$HOST_IP" == "$CONTROLLER_IP" ]]; then
+    sleep 20
+    /usr/rift/scripts/cloud/neutron_fix_route
+fi
+EOF
+
+    chmod +x /etc/rc.d/rc.local
+fi

@@ -1,0 +1,4 @@
+[Plugin]
+Module=sender
+Loader=python3
+Name=sender

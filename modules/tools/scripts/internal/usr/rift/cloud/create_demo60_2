@@ -1,0 +1,291 @@
+#! /bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Creation Date: 06/17/2015
+# 
+
+# This script is used for installation of VMs for
+# the demo2 setup
+#Should be run on controller node - 10.66.4.125
+
+set -e
+
+function print_usage() {
+    echo "Usage: $0"
+    echo "       Optional arguments"
+    echo "       -l|--launch-vms Launch VMs"
+    echo "       -d|--delete-vms Delete VMs"
+    echo "       -s|--setup Setup quotas and flavors"
+    echo "       -c|--cleanup Delete quotas and flavors"
+    echo "       -k|--launch-2b-vms"
+    echo "       -o|--launch-2a-vms"
+    echo "       -m|--delete-2b-vms"
+    echo "       -n|--delete-2a-vms"
+    exit 1
+}
+
+##
+# Specifically deletes flavors etc
+##
+function cleanup() {
+
+ 
+
+         # delete all flavors
+         $CLOUDTOOL flavor list | grep 'rw.' | awk '{print \$1}' |
+         while read f; do
+             echo Deleting flavor \$f
+             $CLOUDTOOL flavor delete -n \$f
+         done
+	 #Delete hostagg
+         $CLOUDTOOL hostagg delete -n rw.hostagg.2a_iot -f	 
+         $CLOUDTOOL hostagg delete -n rw.hostagg.2a_cag -f	 
+         $CLOUDTOOL hostagg delete -n rw.hostagg.2b_iot -f	 
+         $CLOUDTOOL hostagg delete -n rw.hostagg.2b_cag -f	 
+}
+
+
+##
+# This function setups openstack quotas and flavors
+##
+function setup() {
+    # Setup quotas and flavors
+
+
+        # install the vm image
+        if ! $CLOUDTOOL image getid -n $IMAGENAME; then
+          echo 'install image'
+          $CLOUDTOOL image create -n $IMAGENAME -f $IMAGEFILE
+        fi
+
+        #cpuset quotas
+        echo 'Setting quotas'
+        $CLOUDTOOL quota set --project demo --memory 1086432 --vcpus 250 --vms 64 --ips 64
+        . /home/stack/devstack/accrc/admin/admin
+        tenant_id=`keystone tenant-list  | awk '/demo/ { print $2; }'`	
+        neutron quota-update --tenant-id $tenant_id --port 250 --network 20 --subnet 20
+			
+        # set rules
+        echo 'Setting rules'
+        $CLOUDTOOL rules set || true
+
+        #create hostaggregates
+        $CLOUDTOOL hostagg create -n rw.hostagg.2a_iot -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.2a_iot -d DEMO_2A_IOT=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.2a_iot -c grunt121.lab.riftio.com
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.2a_iot -c grunt124.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.2a_cag -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.2a_cag -d DEMO_2A_CAG=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.2a_cag -c grunt122.lab.riftio.com
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.2a_cag -c grunt123.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.2b_iot -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.2b_iot -d DEMO_2B_IOT=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.2b_iot -c grunt125.lab.riftio.com
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.2b_iot -c grunt128.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.2b_cag -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.2b_cag -d DEMO_2B_CAG=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.2b_cag -c grunt126.lab.riftio.com
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.2b_cag -c grunt127.lab.riftio.com
+		
+        $CLOUDTOOL flavor create -n rw.2a_iot -m 32768 -d 10 -v 8 -p 2 -B large -t -e DEMO_2A_IOT=1  
+        $CLOUDTOOL flavor create -n rw.2a_cag -m 32768 -d 10 -v 6 -p 4 -B large -t -e DEMO_2A_CAG=1 
+        $CLOUDTOOL flavor create -n rw.2a_hdp -m 16384 -d 20 -v 2 -p 1 -t -e DEMO_2A_CAG=1
+        $CLOUDTOOL flavor create -n rw.2a_mgmt -m 16384 -d 10 -v 2 -t -e DEMO_2A_IOT=1
+
+        $CLOUDTOOL flavor create -n rw.2b_iot -m 32768 -d 10 -v 8 -p 2 -B large -t -e DEMO_2B_IOT=1  
+        $CLOUDTOOL flavor create -n rw.2b_cag -m 32768 -d 10 -v 6 -p 4 -c 16 -B large -t -e DEMO_2B_CAG=1 
+        $CLOUDTOOL flavor create -n rw.2b_hdp -m 16384 -d 20 -v 2 -p 1 -t -e DEMO_2B_CAG=1
+        $CLOUDTOOL flavor create -n rw.2b_mgmt -m 16384 -d 10 -v 2 -t -e DEMO_2B_IOT=1
+
+}
+
+##
+# This function lauches the VMs
+##
+
+function launch_vms() {
+    # Launch the VMs 
+    launch_2a_vms
+    launch_2b_vms 
+
+}
+
+
+function launch_2a_vms() {
+    # Launch the VMs 
+        $CLOUDTOOL vm create -n rw_2a_iot_vm1 -i $IMAGENAME -f rw.2a_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_iot_vm2 -i $IMAGENAME -f rw.2a_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_iot_vm3 -i $IMAGENAME -f rw.2a_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_iot_vm4 -i $IMAGENAME -f rw.2a_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_iot_vm5 -i $IMAGENAME -f rw.2a_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_iot_vm6 -i $IMAGENAME -f rw.2a_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_cag_vm -i $IMAGENAME -f rw.2a_cag -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_pgw_vm -i $IMAGENAME -f rw.2a_cag -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_cli_vm -i $IMAGENAME -f rw.2a_mgmt -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_mgmt_vm -i $IMAGENAME -f rw.2a_mgmt -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_hdp_vm1 -i $IMAGENAME -f rw.2a_hdp -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_hdp_vm2 -i $IMAGENAME -f rw.2a_hdp -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2a_hdp_vm3 -i $IMAGENAME -f rw.2a_hdp -s -N 'private'
+
+        sleep 15
+        $DO_CLOUD /usr/rift/scripts/cloud/enable_lab
+}
+
+function launch_2b_vms() {
+    # Launch the VMs 
+        $CLOUDTOOL vm create -n rw_2b_iot_vm1 -i $IMAGENAME -f rw.2b_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_iot_vm2 -i $IMAGENAME -f rw.2b_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_iot_vm3 -i $IMAGENAME -f rw.2b_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_iot_vm4 -i $IMAGENAME -f rw.2b_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_iot_vm5 -i $IMAGENAME -f rw.2b_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_iot_vm6 -i $IMAGENAME -f rw.2b_iot -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_cag_vm -i $IMAGENAME -f rw.2b_cag -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_pgw_vm -i $IMAGENAME -f rw.2b_cag -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_cli_vm -i $IMAGENAME -f rw.2b_mgmt -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_mgmt_vm -i $IMAGENAME -f rw.2b_mgmt -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_hdp_vm1 -i $IMAGENAME -f rw.2b_hdp -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_hdp_vm2 -i $IMAGENAME -f rw.2b_hdp -s -N 'private'
+        $CLOUDTOOL vm create -n rw_2b_hdp_vm3 -i $IMAGENAME -f rw.2b_hdp -s -N 'private'
+
+        sleep 15
+        $DO_CLOUD /usr/rift/scripts/cloud/enable_lab
+}
+
+function delete_vms() {
+        delete_2a_vms
+        delete_2b_vms
+}
+
+function delete_2a_vms() {
+
+        $CLOUDTOOL vm destroy -n rw_2a_iot_vm1 
+        $CLOUDTOOL vm destroy -n rw_2a_iot_vm2 
+        $CLOUDTOOL vm destroy -n rw_2a_iot_vm3 
+        $CLOUDTOOL vm destroy -n rw_2a_iot_vm4 
+        $CLOUDTOOL vm destroy -n rw_2a_iot_vm5 
+        $CLOUDTOOL vm destroy -n rw_2a_iot_vm6 
+        $CLOUDTOOL vm destroy -n rw_2a_cag_vm 
+        $CLOUDTOOL vm destroy -n rw_2a_pgw_vm 
+        $CLOUDTOOL vm destroy -n rw_2a_cli_vm 
+        $CLOUDTOOL vm destroy -n rw_2a_mgmt_vm
+        $CLOUDTOOL vm destroy -n rw_2a_hdp_vm1
+        $CLOUDTOOL vm destroy -n rw_2a_hdp_vm2
+        $CLOUDTOOL vm destroy -n rw_2a_hdp_vm3
+
+}
+
+function delete_2b_vms() {
+        $CLOUDTOOL vm destroy -n rw_2b_iot_vm1 
+        $CLOUDTOOL vm destroy -n rw_2b_iot_vm2 
+        $CLOUDTOOL vm destroy -n rw_2b_iot_vm3 
+        $CLOUDTOOL vm destroy -n rw_2b_iot_vm4 
+        $CLOUDTOOL vm destroy -n rw_2b_iot_vm5 
+        $CLOUDTOOL vm destroy -n rw_2b_iot_vm6 
+        $CLOUDTOOL vm destroy -n rw_2b_cag_vm 
+        $CLOUDTOOL vm destroy -n rw_2b_pgw_vm 
+        $CLOUDTOOL vm destroy -n rw_2b_cli_vm 
+        $CLOUDTOOL vm destroy -n rw_2b_mgmt_vm
+        $CLOUDTOOL vm destroy -n rw_2b_hdp_vm1
+        $CLOUDTOOL vm destroy -n rw_2b_hdp_vm2
+        $CLOUDTOOL vm destroy -n rw_2b_hdp_vm3
+
+
+}
+
+# Specify the controller node
+CONTROLLER_NODE=10.66.4.125
+
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#CLOUDTOOL=$BASEDIR/cloudtool
+CLOUDTOOL=/usr/rift/scripts/cloud/cloudtool
+IMAGENAME=rwopenstack_vm
+IMAGEFILE=/net/boson/home1/common/vm/rift-root-latest.qcow2
+SSH_ROOT=/usr/rift/bin/ssh_root
+DO_CLOUD=/usr/rift/scripts/cloud/docloud
+LAUNCH_VMS=false
+LAUNCH_2A_VMS=false
+LAUNCH_2B_VMS=false
+DELETE_VMS=false
+DELETE_2A_VMS=false
+DELETE_2B_VMS=false
+SETUP=false
+CLEANUP=false
+
+##
+# Parse options
+##
+while [[ $# > 0 ]]
+do
+key="$1"
+shift
+case $key in
+    -l|--launch-vms)
+    LAUNCH_VMS=true
+    ;;
+    -o|--launch-2a-vms)
+    LAUNCH_2A_VMS=true
+    ;;
+    -k|--launch-2b-vms)
+    LAUNCH_2B_VMS=true
+    ;;
+    -d|--delete-vms)
+    DELETE_VMS=true
+    ;;
+    -m|--delete-2b-vms)
+    DELETE_2B_VMS=true
+    ;;
+    -n|--delete-2a-vms)
+    DELETE_2A_VMS=true
+    ;;
+    -s|--setup)
+    SETUP=true
+    ;;
+    -c|--cleanup)
+    CLEANUP=true
+    ;;
+    *)
+    print_usage
+    ;;
+esac
+done
+
+# done
+
+if $LAUNCH_VMS; then
+    launch_vms
+
+elif $LAUNCH_2A_VMS; then
+    launch_2a_vms
+
+elif $LAUNCH_2B_VMS; then
+    launch_2b_vms
+
+elif $DELETE_VMS; then
+    delete_vms
+
+elif $DELETE_2A_VMS; then
+    delete_2a_vms
+
+elif $DELETE_2B_VMS; then
+    delete_2b_vms
+
+elif $SETUP; then
+    setup
+
+elif $CLEANUP; then
+    cleanup
+fi

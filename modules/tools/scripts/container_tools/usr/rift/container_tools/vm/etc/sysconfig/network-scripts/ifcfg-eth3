@@ -1,0 +1,6 @@
+DEVICE="eth3"
+BOOTPROTO="none"
+ONBOOT="yes"
+TYPE="Ethernet"
+DEFROUTE=no
+PEERDNS=no

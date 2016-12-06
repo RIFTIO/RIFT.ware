@@ -1,0 +1,80 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+/**
+ * @file test-field-merge.yang
+ */
+
+module test-field-merge
+{
+    namespace "http://riftio.com/ns/core/util/yangtools/tests/yang/test-field-merge";
+    prefix "tfm";
+
+    import rw-pb-ext { prefix "rwpb"; }
+
+    description
+    "Test field merge statement";
+
+    revision 2015-06-17 {
+    description "Initial version"; }
+
+    container shop {
+        rwpb:msg-new ToyShop;
+        
+        list inventory {
+            key "item_name";
+            rwpb:field-merge-behavior none;
+            rwpb:msg-new Inventory;
+            
+            leaf item_name {
+                description "Toy name";
+                type string; rwpb:field-string-max "128";
+            }
+
+            leaf item-id {
+                description "Toy identifier";
+                type uint32;
+            }
+        }
+
+        list inventory_2 {
+            key "item-id";
+            rwpb:field-merge-behavior default;
+            rwpb:msg-new Inventory2;
+
+            leaf item_name {
+                description "Toy name";
+                type string; rwpb:field-string-max "128";
+            }
+
+            leaf item-id {
+                description "Toy identifier";
+                type uint32;
+            }
+        }
+
+    } // container shop
+
+    leaf-list all_shops {
+        description "List of all toy shops.";
+        rwpb:field-merge-behavior none;
+        type string; rwpb:field-string-max "64";
+    }
+}

@@ -1,0 +1,66 @@
+module rw-dts-wrapper-test {
+  namespace "http://riftio.com/ns/riftware-1.0/rw-dts-wrapper-test";
+  prefix "rw-dts-wrapper-test";
+
+
+  container simple-op-data {
+
+    config false;
+    leaf toggle {
+      type boolean;
+    }
+  }
+
+  container simple-op-member-data {
+
+    config false;
+    leaf toggle {
+      type boolean;
+    }
+  }
+
+  container complex-op-data {
+    config false;
+    list mirror {
+
+      key "key-1 key-2";
+
+      leaf key-1 {
+        type string;
+      }
+      leaf key-2 {
+        type uint8;
+      }
+      leaf toggle {
+        type boolean;
+      }
+    }
+
+  }
+  
+  container simple-config-data {
+    config true;
+    leaf toggle {
+      type boolean;
+    }    
+  }
+
+  container complex-config-data {
+    config true;
+    list actual {
+
+      key "key-1 key-2";
+
+      leaf key-1 {
+        type string;
+      }
+      leaf key-2 {
+        type uint8;
+      }
+      leaf toggle {
+        type boolean;
+      }
+    }
+  }
+
+}

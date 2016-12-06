@@ -1,0 +1,272 @@
+#! /bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Creation Date: 06/17/2015
+# 
+
+# This script is used for installation of VMs for
+# the demo3 setup
+#Should be run on controller node - 10.66.4.117
+
+set -e
+
+function print_usage() {
+    echo "Usage: $0"
+    echo "       Optional arguments"
+    echo "       -l|--launch-vms Launch VMs"
+    echo "       -d|--delete-vms Delete VMs"
+    echo "       -s|--setup Setup quotas and flavors"
+    echo "       -c|--cleanup Delete quotas and flavors"
+    echo "       -k|--launch-3a-vms"
+    echo "       -o|--launch-3b-vms"
+    echo "       -m|--delete-3a-vms"
+    echo "       -n|--delete-3b-vms"
+    exit 1
+}
+
+##
+# Specifically deletes flavors etc
+##
+function cleanup() {
+
+         # delete all flavors
+         $CLOUDTOOL flavor list | grep 'rw.' | awk '{print \$1}' |
+         while read f; do
+             echo Deleting flavor \$f
+             $CLOUDTOOL flavor delete -n \$f
+         done
+	 #Delete hostagg
+         $CLOUDTOOL hostagg delete -n rw.hostagg.3a_tg -f
+         $CLOUDTOOL hostagg delete -n rw.hostagg.3a_ts -f
+         $CLOUDTOOL hostagg delete -n rw.hostagg.3a_lb -f
+         $CLOUDTOOL hostagg delete -n rw.hostagg.3a_mg -f
+         $CLOUDTOOL hostagg delete -n rw.hostagg.3b_tg -f
+         $CLOUDTOOL hostagg delete -n rw.hostagg.3b_ts -f
+         $CLOUDTOOL hostagg delete -n rw.hostagg.3b_ts -f
+         $CLOUDTOOL hostagg delete -n rw.hostagg.3b_mg -f
+}
+
+
+##
+# This function setups openstack quotas and flavors
+##
+function setup() {
+    # Setup quotas and flavors
+
+
+        # install the vm image
+        if ! $CLOUDTOOL image getid -n $IMAGENAME; then
+          echo 'install image'
+          $CLOUDTOOL image create -n $IMAGENAME -f $IMAGEFILE
+        fi
+
+        #cpuset quotas
+        echo 'Setting quotas'
+        $CLOUDTOOL quota set --project demo --memory 1086432 --vcpus 200 --vms 64 --ips 64
+        . /home/stack/devstack/accrc/admin/admin
+        tenant_id=`keystone tenant-list  | awk '/demo/ { print $2; }'`	
+        neutron quota-update --tenant-id $tenant_id --port 250 --network 20 --subnet 20
+			
+        # set rules
+        echo 'Setting rules'
+        $CLOUDTOOL rules set || true
+
+        #create hostaggregates
+        $CLOUDTOOL hostagg create -n rw.hostagg.3a_tg -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.3a_tg -d 3A_TG=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.3a_tg -c grunt117.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.3a_ts -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.3a_ts -d 3A_TS=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.3a_ts -c grunt119.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.3a_lb -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.3a_lb -d 3A_LB=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.3a_lb -c grunt113.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.3a_mg -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.3a_mg -d 3A_MG=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.3a_mg -c grunt119.lab.riftio.com
+		
+        $CLOUDTOOL hostagg create -n rw.hostagg.3b_tg -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.3b_tg -d 3B_TG=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.3b_tg -c grunt118.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.3b_ts -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.3b_ts -d 3B_TS=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.3b_ts -c grunt120.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.3b_lb -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.3b_lb -d 3B_LB=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.3b_lb -c grunt114.lab.riftio.com
+        $CLOUDTOOL hostagg create -n rw.hostagg.3b_mg -a nova
+        $CLOUDTOOL hostagg setmetadata -n rw.hostagg.3b_mg -d 3B_MG=1
+        $CLOUDTOOL hostagg addhost -n rw.hostagg.3b_mg -c grunt120.lab.riftio.com
+
+        $CLOUDTOOL flavor create -n rw.demo3a_mg -m 16384 -d 10 -v 2 -e 3A_MG=1
+        $CLOUDTOOL flavor create -n rw.demo3a_tg -m 32768 -d 10 -v 20 -p 12 -B large -N 2 -e 3A_TG=1
+        $CLOUDTOOL flavor create -n rw.demo3a_ts -m 32768 -d 10 -v 20 -p 12 -B large -N 2 -e 3A_TS=1
+        $CLOUDTOOL flavor create -n rw.demo3a_lb -m 40960 -d 10 -v 22 -p 4 -s 100 -B large -N 2 -D -T 1 -e 3A_LB=1 
+        $CLOUDTOOL flavor create -n rw.demo3b_mg -m 16384 -d 10 -v 2 -e 3B_MG=1
+        $CLOUDTOOL flavor create -n rw.demo3b_tg -m 32768 -d 10 -v 20 -p 12 -B large -N 2 -e 3B_TG=1
+        $CLOUDTOOL flavor create -n rw.demo3b_ts -m 32768 -d 10 -v 20 -p 12 -B large -N 2 -e 3B_TS=1
+        $CLOUDTOOL flavor create -n rw.demo3b_lb -m 40960 -d 10 -v 22 -p 4 -s 100 -B large -N 2 -D -T 1 -e 3B_LB=1
+
+}
+
+##
+# This function lauches the VMs
+##
+
+function launch_vms() {
+    # Launch the VMs 
+    launch_3a_vms
+    launch_3b_vms 
+
+}
+
+
+function launch_3a_vms() {
+    # Launch the VMs 
+        $CLOUDTOOL vm create -n rw_demo3a_tg_vm -i $IMAGENAME -f rw.demo3a_tg -s -N 'private'
+        $CLOUDTOOL vm create -n rw_demo3a_ts_vm -i $IMAGENAME -f rw.demo3a_ts -s -N 'private'
+        $CLOUDTOOL vm create -n rw_demo3a_lb_vm -i $IMAGENAME -f rw.demo3a_lb -s -N 'private'
+        $CLOUDTOOL vm create -n rw_demo3a_mg_vm -i $IMAGENAME -f rw.demo3a_mg -s -N 'private'
+        $CLOUDTOOL vm create -n rw_demo3a_cli_vm -i $IMAGENAME -f rw.demo3a_mg -s -N 'private'
+
+        sleep 15
+        $DO_CLOUD /usr/rift/scripts/cloud/enable_lab
+}
+
+function launch_3b_vms() {
+    # Launch the VMs 
+
+        $CLOUDTOOL vm create -n rw_demo3b_tg_vm -i $IMAGENAME -f rw.demo3b_tg -s -N 'private'
+        $CLOUDTOOL vm create -n rw_demo3b_ts_vm -i $IMAGENAME -f rw.demo3b_ts -s -N 'private'
+        $CLOUDTOOL vm create -n rw_demo3b_lb_vm -i $IMAGENAME -f rw.demo3b_lb -s -N 'private'
+        $CLOUDTOOL vm create -n rw_demo3b_mg_vm -i $IMAGENAME -f rw.demo3b_mg -s -N 'private'
+        $CLOUDTOOL vm create -n rw_demo3b_cli_vm -i $IMAGENAME -f rw.demo3b_mg -s -N 'private'
+
+        sleep 15
+        $DO_CLOUD /usr/rift/scripts/cloud/enable_lab
+}
+
+function delete_vms() {
+        delete_3a_vms
+        delete_3b_vms
+}
+
+function delete_3a_vms() {
+
+        $CLOUDTOOL vm destroy -n rw_demo3a_tg_vm
+        $CLOUDTOOL vm destroy -n rw_demo3a_ts_vm
+        $CLOUDTOOL vm destroy -n rw_demo3a_lb_vm
+        $CLOUDTOOL vm destroy -n rw_demo3a_mg_vm
+        $CLOUDTOOL vm destroy -n rw_demo3a_cli_vm
+
+
+}
+
+function delete_3b_vms() {
+
+        $CLOUDTOOL vm destroy -n rw_demo3b_tg_vm
+        $CLOUDTOOL vm destroy -n rw_demo3b_ts_vm
+        $CLOUDTOOL vm destroy -n rw_demo3b_lb_vm
+        $CLOUDTOOL vm destroy -n rw_demo3b_mg_vm
+        $CLOUDTOOL vm destroy -n rw_demo3b_cli_vm
+
+
+}
+
+# Specify the controller node
+CONTROLLER_NODE=10.66.4.117
+
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#CLOUDTOOL=$BASEDIR/cloudtool
+CLOUDTOOL=/usr/rift/scripts/cloud/cloudtool
+IMAGENAME=rwopenstack_vm
+IMAGEFILE=/net/boson/home1/common/vm/rift-root-current.qcow2
+SSH_ROOT=/usr/rift/bin/ssh_root
+DO_CLOUD=/usr/rift/scripts/cloud/docloud
+LAUNCH_VMS=false
+LAUNCH_3a_VMS=false
+LAUNCH_3b_VMS=false
+DELETE_VMS=false
+DELETE_3a_VMS=false
+DELETE_3b_VMS=false
+SETUP=false
+CLEANUP=false
+
+##
+# Parse options
+##
+while [[ $# > 0 ]]
+do
+key="$1"
+shift
+case $key in
+    -l|--launch-vms)
+    LAUNCH_VMS=true
+    ;;
+    -o|--launch-3b-vms)
+    LAUNCH_3b_VMS=true
+    ;;
+    -k|--launch-3a-vms)
+    LAUNCH_3a_VMS=true
+    ;;
+    -d|--delete-vms)
+    DELETE_VMS=true
+    ;;
+    -m|--delete-3a-vms)
+    DELETE_3a_VMS=true
+    ;;
+    -n|--delete-3b-vms)
+    DELETE_3b_VMS=true
+    ;;
+    -s|--setup)
+    SETUP=true
+    ;;
+    -c|--cleanup)
+    CLEANUP=true
+    ;;
+    *)
+    print_usage
+    ;;
+esac
+done
+
+# done
+
+if $LAUNCH_VMS; then
+    launch_vms
+
+elif $LAUNCH_3a_VMS; then
+    launch_3a_vms
+
+elif $LAUNCH_3b_VMS; then
+    launch_3b_vms
+
+elif $DELETE_VMS; then
+    delete_vms
+
+elif $DELETE_3a_VMS; then
+    delete_3a_vms
+
+elif $DELETE_3b_VMS; then
+    delete_3b_vms
+
+elif $SETUP; then
+    setup
+
+elif $CLEANUP; then
+    cleanup
+fi

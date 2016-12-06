@@ -1,0 +1,27 @@
+#!/bin/bash
+
+re="Starting ([-a-z]+)\b"
+
+echo building container....
+output=$(lxc launch rift)
+if [[ $output =~ $re ]]; then
+	echo $output
+	container=${BASH_REMATCH[1]}
+	echo container name is $container
+else
+	echo -e "error parsing output for container name:\n$output\n"
+	exit 1
+fi
+
+
+lxc exec  $container -- yum-config-manager --enable RIFT.ware-4.2-testing
+output=$(lxc exec $container -- host repo.riftio.com)
+re="repo\.riftio\.com has address 50\.252\.212\.201"
+while [[ ! $output =~ $re ]]; do
+	echo waiting for DNS
+	sleep 1
+	output=$(lxc exec $container -- host repo.riftio.com)
+done
+lxc exec  $container -- yum makecache
+lxc exec  $container -- yum install -y riftware-launchpad.x86_64
+lxc exec  $container -- systemctl start rwlp

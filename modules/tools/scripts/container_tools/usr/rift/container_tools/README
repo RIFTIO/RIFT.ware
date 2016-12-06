@@ -1,0 +1,20 @@
+
+
+vm_image scripts
+
+LXC instructions
+
+create a fc20 image. Default name is fc20
+    wget http://repo.riftio.com/releases/open.riftio.com/OSM/fc20.tar
+    lxc image import fc20.tar --alias fc20
+
+extract two files from git
+    install rift-container-tools.rpm
+
+execute build_rift_runtime
+   bash /usr/rift/container_tools/scripts/build_rift_runtime
+
+
+
+
+

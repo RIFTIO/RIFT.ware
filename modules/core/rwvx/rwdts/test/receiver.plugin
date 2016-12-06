@@ -1,0 +1,4 @@
+[Plugin]
+Module=receiver
+Loader=python3
+Name=receiver

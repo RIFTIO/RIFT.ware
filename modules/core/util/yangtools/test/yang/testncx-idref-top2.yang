@@ -1,0 +1,54 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file testncx-idref-top2.yang
+ * @author Rajesh Velandy
+ * @date 2014/04/03
+ * @brief yangncx test file for Identity References
+ */
+
+module testncx-idref-top2
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testncx-idref-top2";
+  prefix "tnx-id-top2";
+
+  import testncx-idref-base1 { prefix "tnx-id-base1"; }  // Give it a different prefix
+
+  description "Module testing for yangncxi Idref";
+  revision 2014-04-03 { description "Initial version"; }
+
+  identity french {
+    base tnx-id-base1:language;
+    description "The Language French";
+  }
+
+  identity malayalam {
+    base tnx-id-base1:language;
+    description "The Language Malayalam";
+  }
+
+  leaf language-name {
+    type union {
+      type identityref { base "tnx-id-base1:language"; }
+    }
+  }
+}

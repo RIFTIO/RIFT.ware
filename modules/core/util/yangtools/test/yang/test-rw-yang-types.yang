@@ -1,0 +1,196 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file test-rw-yang-types.yang
+ * @author Tom Seidenberg
+ * @date 2014/04/01
+ * @brief Test rw-yang-types.yang
+ */
+
+module test-rw-yang-types
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/test/yang/test-rw-yang-types";
+  prefix "trwt";
+
+  import rw-yang-types { prefix "rwt"; }
+
+  description
+    "Test rw-yang-types.yang by using all the typedefs.";
+
+  revision 2014-04-01 {
+    description "Initial version";
+  }
+
+  grouping tgroup {
+    leaf ip-version { type rwt:ip-version; }
+    leaf dscp { type rwt:dscp; }
+    leaf ipv6-flow-label { type rwt:ipv6-flow-label; }
+    leaf port-number { type rwt:port-number; }
+    leaf as-number { type rwt:as-number; }
+    leaf ip-address { type rwt:ip-address; }
+    leaf ipv4-address { type rwt:ipv4-address; }
+    leaf ipv6-address { type rwt:ipv6-address; }
+    leaf ip-address-no-zone { type rwt:ip-address-no-zone; }
+    leaf ipv4-address-no-zone { type rwt:ipv4-address-no-zone; }
+    leaf ipv6-address-no-zone { type rwt:ipv6-address-no-zone; }
+    leaf ip-prefix { type rwt:ip-prefix; }
+    leaf ipv4-prefix { type rwt:ipv4-prefix; }
+    leaf ipv6-prefix { type rwt:ipv6-prefix; }
+    leaf domain-name { type rwt:domain-name; }
+    leaf host { type rwt:host; }
+    leaf uri { type rwt:uri; }
+    leaf counter32 { type rwt:counter32; }
+    leaf zero-based-counter32 { type rwt:zero-based-counter32; }
+    leaf counter64 { type rwt:counter64; }
+    leaf zero-based-counter64 { type rwt:zero-based-counter64; }
+    leaf gauge32 { type rwt:gauge32; }
+    leaf gauge64 { type rwt:gauge64; }
+    leaf object-identifier { type rwt:object-identifier; }
+    leaf object-identifier-128 { type rwt:object-identifier-128; }
+    leaf yang-identifier { type rwt:yang-identifier; }
+    leaf date-and-time { type rwt:date-and-time; }
+    leaf timeticks { type rwt:timeticks; }
+    leaf timestamp { type rwt:timestamp; }
+    leaf phys-address { type rwt:phys-address; }
+    leaf mac-address { type rwt:mac-address; }
+    leaf xpath1.0 { type rwt:xpath1.0; }
+    leaf hex-string { type rwt:hex-string; }
+    leaf uuid { type rwt:uuid; }
+    leaf dotted-quad { type rwt:dotted-quad; }
+  }
+
+  container tuses {
+    uses tgroup;
+  }
+
+  container tcont {
+    leaf ip-version { type rwt:ip-version; }
+    leaf dscp { type rwt:dscp; }
+    leaf ipv6-flow-label { type rwt:ipv6-flow-label; }
+    leaf port-number { type rwt:port-number; }
+    leaf as-number { type rwt:as-number; }
+    leaf ip-address { type rwt:ip-address; }
+    leaf ipv4-address { type rwt:ipv4-address; }
+    leaf ipv6-address { type rwt:ipv6-address; }
+    leaf ip-address-no-zone { type rwt:ip-address-no-zone; }
+    leaf ipv4-address-no-zone { type rwt:ipv4-address-no-zone; }
+    leaf ipv6-address-no-zone { type rwt:ipv6-address-no-zone; }
+    leaf ip-prefix { type rwt:ip-prefix; }
+    leaf ipv4-prefix { type rwt:ipv4-prefix; }
+    leaf ipv6-prefix { type rwt:ipv6-prefix; }
+    leaf domain-name { type rwt:domain-name; }
+    leaf host { type rwt:host; }
+    leaf uri { type rwt:uri; }
+    leaf counter32 { type rwt:counter32; }
+    leaf zero-based-counter32 { type rwt:zero-based-counter32; }
+    leaf counter64 { type rwt:counter64; }
+    leaf zero-based-counter64 { type rwt:zero-based-counter64; }
+    leaf gauge32 { type rwt:gauge32; }
+    leaf gauge64 { type rwt:gauge64; }
+    leaf object-identifier { type rwt:object-identifier; }
+    leaf object-identifier-128 { type rwt:object-identifier-128; }
+    leaf yang-identifier { type rwt:yang-identifier; }
+    leaf date-and-time { type rwt:date-and-time; }
+    leaf timeticks { type rwt:timeticks; }
+    leaf timestamp { type rwt:timestamp; }
+    leaf phys-address { type rwt:phys-address; }
+    leaf mac-address { type rwt:mac-address; }
+    leaf xpath1.0 { type rwt:xpath1.0; }
+    leaf hex-string { type rwt:hex-string; }
+    leaf uuid { type rwt:uuid; }
+    leaf dotted-quad { type rwt:dotted-quad; }
+  }
+
+  typedef ip-version { type rwt:ip-version; }
+  typedef dscp { type rwt:dscp; }
+  typedef ipv6-flow-label { type rwt:ipv6-flow-label; }
+  typedef port-number { type rwt:port-number; }
+  typedef as-number { type rwt:as-number; }
+  typedef ip-address { type rwt:ip-address; }
+  typedef ipv4-address { type rwt:ipv4-address; }
+  typedef ipv6-address { type rwt:ipv6-address; }
+  typedef ip-address-no-zone { type rwt:ip-address-no-zone; }
+  typedef ipv4-address-no-zone { type rwt:ipv4-address-no-zone; }
+  typedef ipv6-address-no-zone { type rwt:ipv6-address-no-zone; }
+  typedef ip-prefix { type rwt:ip-prefix; }
+  typedef ipv4-prefix { type rwt:ipv4-prefix; }
+  typedef ipv6-prefix { type rwt:ipv6-prefix; }
+  typedef domain-name { type rwt:domain-name; }
+  typedef host { type rwt:host; }
+  typedef uri { type rwt:uri; }
+  typedef counter32 { type rwt:counter32; }
+  typedef zero-based-counter32 { type rwt:zero-based-counter32; }
+  typedef counter64 { type rwt:counter64; }
+  typedef zero-based-counter64 { type rwt:zero-based-counter64; }
+  typedef gauge32 { type rwt:gauge32; }
+  typedef gauge64 { type rwt:gauge64; }
+  typedef object-identifier { type rwt:object-identifier; }
+  typedef object-identifier-128 { type rwt:object-identifier-128; }
+  typedef yang-identifier { type rwt:yang-identifier; }
+  typedef date-and-time { type rwt:date-and-time; }
+  typedef timeticks { type rwt:timeticks; }
+  typedef timestamp { type rwt:timestamp; }
+  typedef phys-address { type rwt:phys-address; }
+  typedef mac-address { type rwt:mac-address; }
+  typedef xpath1.0 { type rwt:xpath1.0; }
+  typedef hex-string { type rwt:hex-string; }
+  typedef uuid { type rwt:uuid; }
+  typedef dotted-quad { type rwt:dotted-quad; }
+
+  container ttypes {
+    leaf ip-version { type ip-version; }
+    leaf dscp { type dscp; }
+    leaf ipv6-flow-label { type ipv6-flow-label; }
+    leaf port-number { type port-number; }
+    leaf as-number { type as-number; }
+    leaf ip-address { type ip-address; }
+    leaf ipv4-address { type ipv4-address; }
+    leaf ipv6-address { type ipv6-address; }
+    leaf ip-address-no-zone { type ip-address-no-zone; }
+    leaf ipv4-address-no-zone { type ipv4-address-no-zone; }
+    leaf ipv6-address-no-zone { type ipv6-address-no-zone; }
+    leaf ip-prefix { type ip-prefix; }
+    leaf ipv4-prefix { type ipv4-prefix; }
+    leaf ipv6-prefix { type ipv6-prefix; }
+    leaf domain-name { type domain-name; }
+    leaf host { type host; }
+    leaf uri { type uri; }
+    leaf counter32 { type counter32; }
+    leaf zero-based-counter32 { type zero-based-counter32; }
+    leaf counter64 { type counter64; }
+    leaf zero-based-counter64 { type zero-based-counter64; }
+    leaf gauge32 { type gauge32; }
+    leaf gauge64 { type gauge64; }
+    leaf object-identifier { type object-identifier; }
+    leaf object-identifier-128 { type object-identifier-128; }
+    leaf yang-identifier { type yang-identifier; }
+    leaf date-and-time { type date-and-time; }
+    leaf timeticks { type timeticks; }
+    leaf timestamp { type timestamp; }
+    leaf phys-address { type phys-address; }
+    leaf mac-address { type mac-address; }
+    leaf xpath1.0 { type xpath1.0; }
+    leaf hex-string { type hex-string; }
+    leaf uuid { type uuid; }
+    leaf dotted-quad { type dotted-quad; }
+  }
+}

@@ -1,0 +1,91 @@
+#!/usr/bin/python3
+
+import argparse
+import re
+import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--enable','-e',action='append',
+                    metavar='FLAG',help='Enable a flag; select all items flagged. Can be specified multiple times')
+parser.add_argument('--list','-l',action='append',required=True,
+                    metavar='LISTNAME',help='Return the contents of <LIST>.  Can be specified multiple times')
+parser.add_argument('--debug','-d',action='store_true')
+parser.add_argument("input",nargs='*',
+                    help="Files to read in")
+
+args = parser.parse_args()
+
+###############################################################################
+# Tokenise input, removing comments as we go.
+tokens = []
+
+for input in args.input:
+    if args.debug: print("Reading file {name}".format(name=input))
+    with open(input,'r') as f:
+        for line in f:
+            tokens.extend(re.sub(r'#.*','',line).split())
+
+###############################################################################
+# Process input.  The syntax is very simple, so don't try to be too clever...
+
+# This is a mapping from a name to a list
+namedList = {}
+
+while len(tokens) > 0:
+    listName = tokens.pop(0)
+    # If this is a new list, initialize it
+    if listName not in namedList: namedList[listName] = []
+
+    # Expect a '=' immediately after a list name
+    try:
+        equals = tokens.pop(0)
+        if equals != '=':
+            sys.exit("Bad syntax: expected '=' after list name {name}".format(name=listName))
+    except IndexError:
+        sys.exit("Bad syntax: end of file reached before end of list")
+
+    while len(tokens) > 0:
+        item = tokens.pop(0)
+        if item == ';': break
+        namedList[listName].append(item)
+
+###############################################################################
+# Add all specified named lists to the output
+
+output = set()
+
+for l in args.list:
+    if l in namedList:
+        output.update(namedList[l])
+
+###############################################################################
+# Filter out items that are disabled by having a flag that is not --enable
+
+filteredOutput = set()
+
+for o in output:
+    if ':' in o:
+        if args.enable and (o.split(':',1))[0] in args.enable:
+            filteredOutput.add(o.split(':')[1])
+    else:
+        filteredOutput.add(o)
+
+###############################################################################
+# Make sure the same package is not selected with different version numbers.
+pkgRe = re.compile(r'^(?P<name>.*?)-(?P<version>\d+(\.\d+)*(-\d+)?)$')
+
+packageVersion = {}
+
+for o in filteredOutput:
+    m = pkgRe.match(o)
+    if m:
+        if m.group('name') in packageVersion and packageVersion[m.group('name')] != m.group('version'):
+            sys.exit("Too many versions for package {pkg}: {version1} {version2}".format(pkg=m.group('name'),version1=m.group('version'),version2=packageVersion[m.group('name')]))
+        packageVersion[m.group('name')] = m.group('version')
+    else:
+        sys.exit("cannot parse package name {name}".format(name=o))
+
+###############################################################################
+# Print out the results
+
+print(*filteredOutput)

@@ -1,0 +1,70 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rw-dts-tailf
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-dts-tailf";
+  prefix "rw-dts-tailf";
+
+  import rw-dts {
+    prefix rwdts;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate "/rwdts:dts/rwdts:member" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rwdts:dts/rwdts:routers" {
+    tailf:callpoint rw_callpoint;
+  }
+  
+  tailf:annotate "/rwdts:rtr-init-reg-id" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rwdts:rtr-init-reg-keyspec" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rwdts:rtr-peer-reg-keyspec" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rwdts:member-info-bcast" {
+    tailf:callpoint rw_callpoint;
+  }
+  
+  tailf:annotate "/rwdts:journal-info" {
+    tailf:callpoint rw_callpoint;
+  }
+
+  tailf:annotate "/rwdts:start-dts" {
+    tailf:actionpoint rw_actionpoint;
+  }
+
+  tailf:annotate "/rwdts:stop-dts" {
+    tailf:actionpoint rw_actionpoint;
+  }
+
+}

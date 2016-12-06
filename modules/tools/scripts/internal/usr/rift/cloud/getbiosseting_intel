@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+###################################################################
+# @Script name:  getbiossetting_intel 
+###################################################################
+VERSION=1.0
+# @Description:   This script is to query a Intel server BIOS setting. 
+#
+# Usage:
+#   $0 "bios_setting"
+#
+# History:
+# 5/13/2015: V1.0 (Wei):
+#           - 
+
+# 5-13-2015 -- WW
+
+SCRIPT=${0##*\/}
+
+function warn()
+{
+    _msg=$@
+    echo -e "${YELLOW}  -Warn: ${_msg}${NORMAL}"
+    log1 "$(date "+%Y/%m/%d %H:%M:%S") -Warn: $_msg"
+}
+
+function info()
+{
+    _msg=$@
+    echo -e "${NORMAL}  -Info: ${_msg}"
+    log1 "$(date "+%Y/%m/%d %H:%M:%S") -Info: ${_msg}"
+}
+
+function okinfo()
+{
+    _msg=$@
+    echo -e "${GREEN}  -Info: ${_msg}${NORMAL}"
+    log1 "$(date "+%Y/%m/%d %H:%M:%S") -Info: ${_msg}"
+}
+
+setting=$1
+
+#echo syscfg /d biossettings \"$setting\"
+output=$(syscfg /d biossettings "$setting" 2>&1)
+echo "$output" | grep -q Current && echo "$output" | grep Current | cut -d: -f2
+

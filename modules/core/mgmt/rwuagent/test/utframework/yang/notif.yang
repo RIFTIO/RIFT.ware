@@ -1,0 +1,72 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module notif {
+
+  namespace "http://riftio.com/ns/core/mgmt/rwuagent/test/notif";
+  prefix notif;
+
+  import ietf-inet-types { prefix inet; }
+
+  description "System notification";
+
+  revision "2015-10-31" {
+    description "Initial revision";
+  }
+
+  notification new-route {
+    description "Notification for new route";
+    leaf name {
+      description "Route name";
+      type string;
+    }
+
+    leaf id {
+      description "Route ID";
+      type uint16;
+    }
+  }
+
+  notification temp-alarm {
+    description "Temperature threshold alarm";
+    leaf message {
+      description "Alarm message";
+      type string;
+    }
+
+    leaf curr-temp {
+      description "Current temperature";
+      type uint16;
+    }
+
+    leaf thresh-temp {
+      description "Threshold temperature";
+      type uint16;
+    }
+  }
+
+  notification test-tasklet-failed {
+    description "Tasklet failed";
+    leaf message {
+      type string;
+    }
+  }
+
+}

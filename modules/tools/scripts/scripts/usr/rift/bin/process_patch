@@ -1,0 +1,72 @@
+#!/usr/bin/perl 
+
+
+$module="/";
+$pflag=1;
+while (<>) { 
+    chop;
+    s/\s+$//;
+    if  ( /Diffs in supermodule/ ) { 
+        $pflag=1;
+        $module="/";
+        next;
+    }
+    if  ( /Diffs in submodule (.*)/ ) { 
+        $pflag=1;
+        $module="/$1/";
+        next;
+    }
+    if ( /diff --git a\/(.*) b\/(.*)/ ) { 
+        if ( -d $1 ) { 
+            $pflag=0;
+        } else { 
+            $pflag=1;
+            print "diff --git a$module$1 b$module$2\n";
+        }
+        next;
+    }
+    next unless $pflag;
+    if ( /([+-]{3} [ab])\/(.*)/ ){ 
+        print "$1$module$2\n";
+        next;
+    }
+    print "$_\n";
+}
+
+
+__END__
+        
+
+Diffs in supermodule
+diff --git a/modules/automation/systemtest b/modules/automation/systemtest
+--- a/modules/automation/systemtest
++++ b/modules/automation/systemtest
+@@ -1 +1 @@
+-Subproject commit 9c161cc0a89c2dc89cd3d8e9c5b2da42295235df
++Subproject commit 9c161cc0a89c2dc89cd3d8e9c5b2da42295235df-dirty
+diff --git a/scripts/cloud/cloudtool b/scripts/cloud/cloudtool
+index ef3b874..bece437 100755
+--- a/scripts/cloud/cloudtool
++++ b/scripts/cloud/cloudtool
+@@ -27,6 +27,9 @@ from keystoneclient.v2_0 import client as keystone_client
+ from novaclient.exceptions import BadRequest
+ 
+ 
++# TEST TEST
++
++
+ 
+ global nova
+ nova = None
+
+Diffs in submodule modules/automation/systemtest
+diff --git a/rw_testlab/README b/rw_testlab/README
+index d04ce8d..f66b967 100644
+--- a/rw_testlab/README
++++ b/rw_testlab/README
+@@ -1 +1,4 @@
+ see confluence page 
++
++
++TEST TEST
+

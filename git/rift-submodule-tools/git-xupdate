@@ -1,0 +1,86 @@
+#!/bin/bash
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Austin Cormier
+# Creation Date: 2014/09/22
+#
+# Checkout all initialized submodules to the SHA referenced by the superproject.
+# Once there, create a local branch as to not be in a detached head state.
+#
+# Usage: git-xupdate [<submodule>...]
+
+set -o nounset
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$DIR/git-common-functions.sh"
+
+
+function set_remote_url() { 
+      # Extract the current Git push url for the submodule
+      current_push_url="$(git remote -v | grep ^origin.*push | cut -f 2 | cut -d " " -f 1)"
+      # Replace the default "git:" path with git.eng.riftio.com(burlington)
+      new_push_url="${current_push_url/git:/git.eng.riftio.com:}"
+      log "SETTING URL to $new_push_url"
+      # Set the submodule remote push url to always push to burlington
+      git remote set-url --push origin $new_push_url
+      if [ $? -ne 0 ]; then
+        log "ERROR - Failed to set remote push url on submodule: $line."
+        return 1
+      fi
+      return 0
+}
+
+
+function update_submodules_and_attach_local(){
+  submodules="$@"
+  while read line; do
+    if [ "$submodules" != "" ]; then
+      if [[ ! "$submodules" =~ "$line" ]]; then
+        log "DEBUG - Not updating $line.  Not in submodule list"
+        continue;
+      fi
+    fi
+
+    log "INFO - Updating submodule and attaching local: $line"
+    git submodule update "$line"
+    if [ $? -ne 0 ]; then
+      log "ERROR - Failed to update submodule: $line."
+      return 1
+    fi
+
+    pushd "$line" >/dev/null
+      log "INFO - Setting remote push url on submodule: $line"
+      set_remote_url
+      if [ $? -ne 0 ]; then
+            return 1
+      fi
+
+      log "INFO - Attaching local branch on submodule: $line"
+      git checkout -B local
+      if [ $? -ne 0 ]; then
+        log "ERROR - Failed to checkout -B local in submodule: $line."
+        return 1
+      fi
+    popd > /dev/null
+
+  done < <(foreach_initialized_submodule)
+}
+
+submodules="$@"
+## Update the submodules to the revision stored in the
+## superproject and attach the local branch to this.
+set_remote_url || exit 1
+update_submodules_and_attach_local $submodules || exit 1

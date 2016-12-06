@@ -1,0 +1,170 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file testncx-mod-top2.yang
+ * @author Tom Seidenberg
+ * @date 2014/03/25
+ * @brief yangncx test file for modules
+ */
+
+module testncx-mod-top2
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testncx-mod-top2";
+  prefix "tnmt2";
+
+  import testncx-mod-base2 { prefix "tnmb2-t2"; }  // Give it a different prefix
+
+  description "Module testing for yangncx.";
+  revision 2014-03-25 { description "Initial version"; }
+
+  /////////////////////////////////////////////////////////////////////////////
+  typedef t2t1 {
+    type uint16;
+    description "A typedef from top1";
+  }
+
+  typedef t2t2 {
+    type tnmb2-t2:b2t1;
+    description "A typedef of b2t1 from base2, in top1";
+  }
+
+  typedef t2t3 {
+    type tnmb2-t2:b2t2;
+    description "A typedef of b2t2 from base2, in top1";
+  }
+
+  typedef t2t4 {
+    type tnmb2-t2:b2t3;
+    description "A typedef of b2t3 from base2, in top1";
+  }
+
+  typedef t2t5 {
+    type tnmb2-t2:b2t4;
+    description "A typedef of b2t4 from base2, in top1";
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  grouping t2g1 {
+    leaf t2g1-t2t1 {
+      description "A type t2t1 from group t2g1 in top2";
+      type t2t1;
+    }
+
+    leaf t2g1-t2t2 {
+      description "A type t2t2 from group t2g1 in top2";
+      type t2t2;
+    }
+
+    leaf t2g1-t2t3 {
+      description "A type t2t3 from group t2g1 in top2";
+      type t2t3;
+    }
+
+    leaf t2g1-t2t4 {
+      description "A type t2t4 from group t2g1 in top2";
+      type t2t4;
+    }
+
+    leaf t2g1-t2t5 {
+      description "A type t2t5 from group t2g1 in top2";
+      type t2t5;
+    }
+
+    leaf t2g1-b2t1 {
+      description "A type b2t1 from group t2g1 in top2";
+      type tnmb2-t2:b2t1;
+    }
+
+    leaf t2g1-b2t2 {
+      description "A type b2t2 from group t2g1 in top2";
+      type tnmb2-t2:b2t2;
+    }
+
+    leaf t2g1-b2t3 {
+      description "A type b2t3 from group t2g1 in top2";
+      type tnmb2-t2:b2t3;
+    }
+
+    leaf t2g1-b2t4 {
+      description "A type b2t4 from group t2g1 in top2";
+      type tnmb2-t2:b2t4;
+    }
+
+    uses tnmb2-t2:b2g1;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  container t2c1 {
+    leaf t2c1-t2t1 {
+      description "A type t2t1 from container t2c1 in top2";
+      type t2t1;
+    }
+
+    leaf t2c1-t2t2 {
+      description "A type t2t2 from container t2c1 in top2";
+      type t2t2;
+    }
+
+    leaf t2c1-t2t3 {
+      description "A type t2t3 from container t2c1 in top2";
+      type t2t3;
+    }
+
+    leaf t2c1-t2t4 {
+      description "A type t2t4 from container t2c1 in top2";
+      type t2t4;
+    }
+
+    leaf t2c1-t2t5 {
+      description "A type t2t5 from container t2c1 in top2";
+      type t2t5;
+    }
+
+    leaf t2c1-b2t1 {
+      description "A type b2t1 from container t2c1 in top2";
+      type tnmb2-t2:b2t1;
+    }
+
+    leaf t2c1-b2t2 {
+      description "A type b2t2 from container t2c1 in top2";
+      type tnmb2-t2:b2t2;
+    }
+
+    leaf t2c1-b2t3 {
+      description "A type b2t3 from container t2c1 in top2";
+      type tnmb2-t2:b2t3;
+    }
+
+    leaf t2c1-b2t4 {
+      description "A type b2t4 from container t2c1 in top2";
+      type tnmb2-t2:b2t4;
+    }
+
+    uses tnmb2-t2:b2g1;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  container t2c2 {
+    uses t2g1;
+  }
+}
+

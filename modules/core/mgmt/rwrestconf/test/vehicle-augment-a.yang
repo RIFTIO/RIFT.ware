@@ -1,0 +1,100 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file vehicle-augment-a.yang
+ * @author Max Beckett
+ * @date 7/23/2015
+ * @brief YANG definition for unit testing rwrestconf 
+ */
+
+module vehicle-augment-a
+{
+  // exception to naming rule because it's a "real world" analog
+  namespace "http://riftio.com/ns/core/mgmt/rwrestconf/test/vehicle-augment-a";
+  prefix "vehicle-augment-a";
+  
+  import vehicle-a {
+    prefix vehiclea;
+  }
+
+  description "RWRestConf Test Yang";
+  revision 2014-07-23 {
+    description "Initial version"; 
+  }
+
+  container clash {
+    leaf bar {
+      type string;
+    }
+  }
+
+  augment /vehiclea:car {
+
+    list extras {
+
+      key "name-e";
+
+      leaf name-e {
+        type string;
+      }
+
+      container engine {
+
+        leaf horsepower {
+          type string;
+        }
+
+        leaf cylinders {
+          type uint8;
+        }
+      }
+
+      leaf speakers {
+        type uint8;
+      }
+
+      leaf seats {
+        type string;
+      }
+        
+      list features {
+        key "package";
+        leaf package {
+          type string;
+        }
+
+        list items{
+          key "name";
+          leaf name {
+            type string;
+          }
+          leaf price {
+            type uint32;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+

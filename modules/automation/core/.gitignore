@@ -1,0 +1,67 @@
+# Object file directories
+.install
+.obj
+.build
+.artifacts
+.log
+.AppleDouble/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.elc
+auto-save-list
+tramp
+.\#*
+*.db
+
+# vi
+*.swp
+*.swo
+
+# Compiled python
+*.pyc
+
+#cscope
+cscope.*
+cscope
+acscope.*
+
+#pycscope
+pycscope.*
+
+#ctags
+tags
+TAGS
+
+# GNU Global tags
+GPATH
+GRTAGS
+GTAGS
+
+# vim UpdateTypes plugin files
+*.taghl
+
+#logfiles
+cm.*.log
+build.log
+INSTALL
+BUILD
+BUILD.LOG
+
+*.DS_Store
+
+scripts/cloud/image-staging
+scripts/cloud/*.img
+scripts/cloud/*.qcow2
+
+rift-root-*.qcow2
+
+.ropeproject/
+.cache/
+
+.delete*
+*.qcow2
+!images/*.qcow2

@@ -1,0 +1,62 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rw-restportforward
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-restportforward";
+  prefix "rw-restportforward";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-mgmt-schema {
+    prefix "rw-mgmt-schema";
+  }
+
+  description "RW RestPortforward configguration";
+  revision 2015-10-12 {
+    description "Initial version"; 
+  }
+
+  typedef rest-state {
+    type enumeration {
+      enum confd {
+        description
+        "Signifies that confd-rest is the primary rest server.";
+      }
+      enum rift {
+        description
+        "Signifies that rwrestconf is the primary rest server.";
+      }
+    }
+  }
+
+  container rwrestportforward-configuration {
+    rwpb:msg-new "RestPortForwardConfig";    
+    config true;
+
+    leaf primary-rest-server {
+      type rest-state;
+    }
+  }
+
+
+}

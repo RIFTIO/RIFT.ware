@@ -1,0 +1,4 @@
+[Plugin]
+Module=logtesttasklet-python
+Loader=python3
+Name=logtesttasklet-python

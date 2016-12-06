@@ -1,0 +1,370 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module other-config_rwfpath_base
+{
+  namespace "http://riftio.com/ns/riftware-1.0/config_rwfpath_base";
+  prefix "config";
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-yang-types {
+    prefix rwt;
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  revision 2013-03-21 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT IPSec Datatypes";
+  }
+  
+  grouping service-realm { 
+    list service-realm {
+      rwpb:msg-new ConfigServiceRealm;
+
+      max-elements 32;
+
+      key "name";
+
+      leaf name {
+        type string;
+        rwpb:field-string-max 64;
+      }
+      uses network-context;
+      uses port;
+    }
+  } // grouping service-realm
+
+  grouping network-context {
+    list network-context {
+
+      rwpb:msg-new ConfigNetworkContext;
+      rwpb:msg-flat true;
+      rwcli:new-mode "network-context";
+      rwpb:msg-proto-max-size "136368";
+        
+      max-elements 32;
+
+      key "name";
+
+      leaf name {
+        type string;
+        rwpb:field-string-max 64;
+      }
+      list interface {
+        rwpb:msg-new ConfigIpInterface;
+        rwpb:msg-flat true;
+        rwpb:field-inline "true";
+        rwpb:field-inline-max "yang";
+        rwcli:new-mode "ip-interface";
+          
+        max-elements 32;
+          
+        key "name";
+        
+        leaf name {
+            type string;
+            rwpb:field-string-max 64;
+        }
+        
+        leaf address {
+            type rwt:ip-prefix;
+            rwpb:field-string-max 128;
+        }
+      }
+      container ip{
+          rwpb:msg-new ConfigIp;
+          rwpb:msg-flat true;
+          rwpb:field-inline "true";
+          
+          list route{
+              rwpb:msg-new ConfigRoute;
+              rwpb:msg-flat true;
+              rwpb:field-inline "true";
+              rwpb:field-inline-max "yang";
+              
+              max-elements 32;
+
+              key "prefix";
+              
+              leaf prefix {
+                  type rwt:ipv4-prefix;
+                  rwpb:field-string-max 18;
+              }
+              leaf gateway{
+                  type rwt:ipv4-address;
+                  rwpb:field-string-max 15;
+                  mandatory "true";
+              }
+              leaf interface-name{
+                  type string;
+                  rwpb:field-string-max 64;
+                  mandatory "true";
+              }
+          }
+          list arp {
+              rwpb:msg-new ConfigArp;
+              rwpb:msg-flat true;
+              rwpb:field-inline "true";
+              rwpb:field-inline-max "yang";
+
+              max-elements 32;
+
+              key "address";
+              
+              leaf address{
+                  type rwt:ipv4-address;
+                  rwpb:field-string-max 15;
+              }
+              leaf macaddress{
+                  type rwt:mac-address;
+                  rwpb:field-string-max 17;
+                  mandatory "true";
+              }
+              leaf interface-name{
+                  type string;
+                  rwpb:field-string-max 64;
+                  mandatory "true";
+              }
+          }
+      }
+    }
+  } // grouping network-context
+
+  grouping port {
+    container port {
+      rwpb:msg-new ConfigPort;
+      rwpb:msg-flat true;
+
+      list ethernet {
+        rwcli:new-mode "ethernet";
+
+        rwpb:field-inline-max "yang";
+
+        max-elements 32;
+
+        key name;
+
+        leaf name {
+          type string;
+          rwpb:field-string-max 64;
+        }
+
+        container bind {
+          leaf ip-interface {
+            type leafref {
+              path "/config/service-realm/network-context/ip-interface-group/ip-interface/name";
+            }
+          }
+        }
+      }
+    }
+  } // grouping port
+
+  
+  container commit { 
+    rwpb:msg-new RwCommit;
+    rwpb:msg-flat true;
+
+    config false;
+    description "commit the configuration";
+  }
+
+  list node {
+    rwpb:msg-new Node;
+    rwpb:msg-flat true;
+    rwcli:new-mode "node";
+    rwpb:msg-proto-max-size "317788";
+
+    max-elements 1;
+    key "id";
+
+
+    leaf id {
+      type uint32;
+      description "Identity of the node" ;
+    }
+
+    container config {
+      rwpb:msg-new Config;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+      rwcli:new-mode "config";
+      rwpb:msg-proto-max-size "315476";
+    }
+
+    container show {
+      rwpb:msg-new RwShow;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      description "show operational state";
+
+      config false;
+
+      container config {
+
+        description "show configuration";
+
+        leaf text {
+          type empty;
+          description "show configuration in text mode";                
+        }
+
+        leaf fooxml {
+          type empty;
+          description "show configuration in xml mode";
+        }
+
+      }
+
+      container cli {
+
+        description "show cli specific information";
+        leaf history {
+          type empty;
+          description "show history of CLI commands";                
+        }
+        container manifest {
+          description "show manifests loaded for this cli";
+          
+          leaf list-name {        
+            type empty;
+            description "display the list of all loaded";
+          }
+
+          leaf name {
+            type string;
+            rwpb:field-string-max 256;
+            description "display details of the named manifest";
+          }
+
+        }
+      }
+    }
+
+    container start { 
+      rwpb:msg-new RwStart;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      config false;
+      description "start an operation";
+    }
+
+    container stop { 
+      rwpb:msg-new RwStop;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      config false;
+      description "stop an operation";
+    }
+
+    container clear { 
+      rwpb:msg-new RwClear;
+      rwpb:msg-flat true;
+      rwpb:field-inline "true";
+
+      config false;
+
+      description "clear the configuration";
+
+      container cli {
+
+        description "clear data associated with CLI";
+
+        leaf history {
+          description "clear the current CLI history";
+          type empty;
+        }
+      }
+    }
+  }
+  container show {
+    rwpb:msg-new RwTopShow;
+    rwpb:msg-flat true;
+
+    description "show operational state";
+
+    config false;
+
+    container config {
+
+      description "show configuration";
+
+      leaf text {
+        type empty;
+        description "show configuration in text mode";                
+      }
+
+      leaf fooxml {
+        type empty;
+        description "show configuration in xml mode";
+      }
+    }
+
+    container cli {
+
+      description "show cli specific information";
+      leaf history {
+        type empty;
+        description "show history of CLI commands";                
+      }
+      container manifest {
+        description "show manifests loaded for this cli";
+        
+        leaf list-name {        
+          type empty;
+          description "display the list of all loaded";
+        }
+
+        leaf name {
+          type string;
+          rwpb:field-string-max 256;
+          description "display details of the named manifest";
+        }
+
+      }
+    }
+  }
+
+  container logging {
+    rwpb:msg-new RwLogging;
+    rwpb:msg-flat true;
+    description "Sets the logging related parameters";
+
+    config "false";
+  }
+
+  container config {
+    rwpb:msg-new RwConfig;
+    rwpb:msg-flat true;
+    rwpb:msg-proto-max-size "4363816";
+    rwcli:new-mode "config";
+  }
+} // module config_rwfpath_base

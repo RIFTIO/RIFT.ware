@@ -1,0 +1,94 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module test-a-mano-base
+{
+  namespace "http://riftio.com/ns/riftware-1.0/test-a-mano-base";
+  prefix "manobase";
+
+  import ietf-yang-types {
+    prefix "yang";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  revision 2015-08-25 {
+    description
+      "This YANG file provides agument points for VNF specific 
+       configuration and operational data";
+    reference
+      "Derived from earlier versions of base YANG files";
+  }
+
+  container vnf-config {
+    description
+        "Container for VNF configuration data";
+    list vnf {
+      description
+          "The VNF configuration data YANG moodel augments this path";
+      rwcli:new-mode "vnf";
+      key "name instance";
+      leaf name {
+        description
+            "Name of the VNF.";
+        type string;
+      }
+      leaf instance{
+        description
+          "Instance number of the VNF.";
+        type uint32;
+      }
+      leaf id {
+        description
+            "Identifier for the VNF";
+        type yang:uuid;
+      }
+    }
+  }
+
+  container vnf-opdata {
+    description
+        "Container for VNF operational data";
+    config false;
+    list vnf {
+      description
+          "The VNF operational data YANG model augments this path";
+      key "name instance";
+      config false;
+      leaf name {
+        description
+          "Name of the VNF.";
+        type string;
+      }
+      leaf instance{
+        description
+          "Instance number of the VNF.";
+        type uint32;
+      }
+      leaf id {
+        description
+            "Identifier for the VNF";
+        type yang:uuid;
+      }
+    }
+  }
+}

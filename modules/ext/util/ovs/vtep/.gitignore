@@ -1,0 +1,11 @@
+/Makefile
+/Makefile.in
+/vtep-ctl
+/vtep-ctl.8
+/vtep-idl.c
+/vtep-idl.h
+/vtep-idl.ovsidl
+/vtep.5
+/vtep.gv
+/vtep.ovsschema.stamp
+/vtep.pic

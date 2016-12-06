@@ -1,0 +1,16 @@
+#!/bin/bash -xe
+
+if [ `whoami` != "root" ]; then
+    echo MUST be root
+    exit 1
+fi
+
+if [ ! -f /etc/yum.repos.d/rw_icehouse.repo ]; then
+    cp -f ${RIFT_ROOT:-/usr/rift}/scripts/setup/skel/etc/yum.repos.d/* /etc/yum.repos.d/
+fi
+yum install -y yum-utils
+
+# this should not be necessary some day
+for repo in updates3 icehouse rw_icehouse;  do
+    yum-config-manager --enable $repo
+done

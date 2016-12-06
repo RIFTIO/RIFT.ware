@@ -1,0 +1,3 @@
+
+sender = None
+receiver = None

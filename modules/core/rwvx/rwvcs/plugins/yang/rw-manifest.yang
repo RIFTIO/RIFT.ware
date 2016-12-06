@@ -1,0 +1,678 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module rw-manifest
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-manifest";
+  prefix "rw-manifest";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix "rwt"; }
+  import rwvcs-types { prefix "rwvcstypes"; }
+  import ietf-inet-types { prefix "inet"; revision-date 2013-07-15; }
+  import ietf-yang-types { prefix "yang"; }
+
+  description
+    "RW.Manifest definition.
+    A RiftWare manifest is used to bootstrap a running instance of RiftWare.";
+
+  revision 2014-03-12 {
+    description
+      "Initial implementation of RW.Manifest.";
+    reference
+      "RW.VX Software Component Document";
+  }
+
+  typedef rwcal-cloud-type {
+    type enumeration {
+      // This type is only to be used for unit testing.  It is a mock driver
+      // that does not actually communicate with anything over the network,
+      // rather, it has a number of prebaked properties that are used to verify
+      // the rwcal_cloud APIs during unit testing.
+      enum MOCK;
+      enum EC2_US_EAST;
+      enum OPENSTACK_AUTH_URL;
+      enum VSPHERE;
+    }
+  }
+
+  typedef rwmgmt-agent-mode {
+    description
+      "Modes for the RW.MgmtAgent northbound interface.";
+
+    type enumeration {
+      enum CONFD;
+      enum RWXML;
+      enum AUTOMODE;
+    }
+  }
+
+  grouping bootstrap-phase {
+    container bootstrap-phase {
+      description "This section contains the bootstrap phase configuration";
+      rwpb:msg-new BootstrapPhase;
+
+      container rwmgmt {
+        description "Base schema used by the system";
+        rwpb:msg-new BootPhaseMgmt;
+
+        leaf-list northbound-listing {
+          description "Filename of the file enumerating the northbound exposed schema.";
+          type string;
+        }
+
+        leaf agent-mode {
+          description "Select the RW.MgmtAgent northbound interface.";
+          type rwmgmt-agent-mode;
+        }
+
+        leaf persist-dir-name {
+          description "The configuration persistence directory name";
+          type string;
+        }
+      }
+
+      list ip-addrs-list {
+        description "IP Address list for pacemaker/zookeeper/redis etc";
+        key ip-addr;
+        leaf ip-addr {
+          description "";
+          type string;
+        }
+      }
+      container rwtasklet {
+        description "";
+        rwpb:msg-new InitTasklet;
+
+        leaf plugin-directory {
+          description "";
+          type string;
+        }
+
+        leaf plugin-name {
+          description "";
+          type string;
+        }
+
+        leaf plugin-version {
+          description "";
+          type string;
+        }
+      } // container rwtasklet
+
+      container rwtrace {
+        description "";
+        rwpb:msg-new Trace;
+
+        leaf enable {
+          description "";
+          mandatory false;
+          type boolean;
+        }
+        choice destination {
+          case console {}
+          case file {
+            leaf file {
+              description "";
+              type string;
+            }
+          }
+          case memory-ring {}
+          case syslog {}
+        }
+        leaf level {
+          description "";
+          mandatory false;
+          type uint32 { range "0..9"; }
+        }
+        container filter {
+          leaf file {
+            description "";
+            mandatory false;
+            type string;
+          }
+          leaf line {
+            description "";
+            mandatory false;
+            type uint32;
+          }
+        }
+
+      } // container rwtrace
+
+      container log {
+        description "Bootstrap related log config";
+        rwpb:msg-new BootRwLog;
+
+        leaf enable {
+          description "Flag to enable bootstrap logging config";
+          type boolean;
+        }
+        leaf severity {
+          description "Severity level for bootstrap log";
+          type uint32 { range "0..7"; }
+        }
+        leaf bootstrap-time {
+          description "Log Bootstrap duration in seconds";
+          type uint32;
+        }
+        leaf console-severity {
+          description "Console log severity applicable to all categories";
+          type uint32 { range "0..7"; }
+        }
+      }
+
+      leaf rwcal-type {
+        description "RWCAL type";
+        type string;
+       }
+
+      container zookeeper {
+        leaf master-ip {
+          description "IP address for master zookeeper";
+          type string;
+        }
+
+        leaf unique-ports {
+          description "Use zookeeper ports based on UID";
+          type boolean;
+        }
+
+        leaf zake {
+          description "Use zake to simulate the zookeeper in-memory";
+          type boolean;
+          default false;
+        }
+
+        leaf auto-instance-start {
+          description "Value at which auto-assigned instance identifiers should start";
+          type uint32;
+          default 100;
+        }
+      }
+
+      container rwcal-cloud {
+        leaf cloud-type {
+          description "Provider type for AWS EC2 US_EAST region";
+          type rwcal-cloud-type;
+        }
+
+        leaf auth-key {
+          description "User Key for authentication with cloud";
+          type string;
+        }
+
+        leaf auth-secret {
+          description "Secret key for authentication with cloud";
+          type string;
+        }
+
+        leaf auth-url {
+          description "URL for authentication with cloud provider.  [optional]";
+          mandatory false;
+          type string;
+        }
+      }
+
+      container serf {
+        leaf start {
+          description "Start the Serf Agent";
+          type boolean;
+          default false;
+        }
+      }
+
+      container rwvm {
+        description "List of actions that need to be completed to bootstrap a RWVM.
+            On completion of the bootstrap phase the RWVM will be considered to have
+            fully joined the RIFT environment be able to communicate with other components.
+            Any components listed in the bootstrap-phase must be part of the statically
+            defined inventory.";
+
+        list instances {
+          description "List of components to start as part of the bootstrap phase";
+          key component-name;
+
+          leaf component-name {
+            description "Name of the component type in the inventory";
+            type leafref {
+              path
+                  "/rw-manifest:manifest/rw-manifest:inventory/rw-manifest:component/rw-manifest:component-name";
+            }
+          }
+
+          leaf config-ready {
+            description "Config readiness check enable";
+            type boolean;
+            default false;
+          }
+
+          leaf recovery-action {
+            description "Define recovery action if this component fail";
+            type rwvcstypes:recovery-type;
+          }
+
+          leaf data-storetype {
+            description "Define data-store type to store and recover on restart";
+            type rwvcstypes:data-store;
+          }
+
+          leaf mode-active {
+            description "Define active mnode setting";
+            type boolean;
+            default true;
+          }
+        }
+      }
+
+      container rwproc {
+        description "List of actions that need to be completed to bootstrap a RWPROC.
+            On completion of the bootstrap phase the RW will be considered to have
+            fully joined the RIFT environment be able to communicate with other components.
+            Any components listed in the bootstrap-phase must be part of the statically
+            defined inventory.";
+
+        list instances {
+          description "List of components to start as part of the bootstrap phase";
+          key component-name;
+
+          leaf component-name {
+            description "Name of the component type in the inventory";
+            type leafref {
+              path
+                  "/rw-manifest:manifest/rw-manifest:inventory/rw-manifest:component/rw-manifest:component-name";
+            }
+          }
+
+          leaf config-ready {
+            description "Config readiness check enable";
+            type boolean;
+            default false;
+          }
+
+          leaf recovery-action {
+            description "Define recovery action if this component fail";
+            type rwvcstypes:recovery-type;
+          }
+
+          leaf data-storetype {
+            description "Define data-store type to store and recover on
+                restart";
+            type rwvcstypes:data-store;
+          }
+
+          leaf mode-active {
+            description "Define active mnode setting";
+            type boolean;
+            default true;
+          }
+        }
+      }
+
+      container rwsecurity {
+        description "bootstrap configuration for security";
+        leaf use-ssl {
+          description "set to true if the system should start up using ssl.";
+          type boolean;
+        }
+        leaf cert {
+          description "bootstrap ssl certificate";
+          type string;
+        }
+        leaf key {
+          description "bootstrap ssl key";
+          type string;
+        }
+      }
+
+      leaf test-name {
+        description "test-case name";
+        type string;
+      }
+
+      leaf rift-var-root {
+        description "prefix to rift root path";
+        type string;
+      }
+    } // container bootstrap-phase
+  } // grouping bootstrap-phase
+  grouping mgmt-component {
+    uses rwvcstypes:rwvcs-variable-list;
+
+    leaf component-name {
+      description "String which will evaluate to the first component to be
+        started by RWInit.  Similar to action/component-name but cannot be
+        static.";
+      type string;
+    }
+
+    leaf component-type {
+      description "String which will evaluate to the instance-id of the
+        first component to be started by rwmain.  Similar to
+        action/instance-id but cannot be static.";
+      type string;
+    }
+
+    leaf instance-id {
+      description "String which will evaluate to the instance-id of the
+        first component to be started by RWInit.  Similar to
+        action/instance-id but cannot be static.";
+      type string;
+    }
+
+    leaf parent-id {
+      description "String which will evaluate to the parent-id of the
+        component to be started by RWInit.  Similar to
+        action/instance-id but cannot be static.";
+      type string;
+    }
+
+    leaf vm_instance-id {
+      description "String which will evaluate to the vminstance-id of the
+        component to be started by RWInit.  Similar to
+        action/instance-id but cannot be static.";
+      type string;
+    }
+  }
+
+  grouping init-phase {
+    container init-phase {
+      description "This section contains the init phase configuration";
+      rwpb:msg-new InitPhase;
+
+      container environment {
+        description "This section contains all of the manifest environment variables";
+        rwpb:msg-new Environment;
+
+        uses mgmt-component;
+
+        container active-component {
+          uses mgmt-component;
+        }
+
+        container standby-component {
+          uses mgmt-component;
+        }
+      }
+
+      container rwcal {
+        description "";
+
+        list rwvm-pool {
+          description "";
+          key "name";
+          rwpb:msg-new RwVmPool;
+
+          leaf name {
+            description "";
+            type string;
+          }
+
+          choice rwvm-pool {
+            case static-vm-list {
+              list static-vm-list {
+                description "";
+                key "vm-name";
+
+                leaf vm-name {
+                  description "";
+                  type string;
+                }
+
+                leaf vm-ip-address {
+                  description "";
+                  type rwt:ip-address;
+                  rwpb:field-string-max 46;
+                }
+              }
+            } // case static-vm-list
+            case static-vm-range {
+              description "";
+
+              container static-vm-range{
+                description "";
+
+                container vm-name-range {
+                  description "";
+
+                  leaf base-name {
+                    description "";
+                    type string;
+                    mandatory "true";
+                  }
+
+                  leaf low-index {
+                    description "";
+                    type uint32;
+                    mandatory "true";
+                  }
+
+                  leaf high-index {
+                    description "";
+                    type uint32;
+                    mandatory "true";
+                  }
+                }
+
+                container vm-ip-range {
+                  description "";
+
+                  leaf low-addr {
+                    description "";
+                    type rwt:ip-address;
+                    rwpb:field-string-max 46;
+                    mandatory "true";
+                  }
+                  leaf high-addr {
+                    description "";
+                    type rwt:ip-address;
+                    rwpb:field-string-max 46;
+                    mandatory "true";
+                  }
+                }
+              }
+            } // case static-vm-range
+          } // pool-type
+        } // list rwvm-pool
+      } // container rwcal
+
+      container settings {
+        description "This section contains the init phase settings for each RiftWare component";
+        rwpb:msg-new Settings;
+
+        container rwtrace {
+          description "";
+        } // container rwtrace
+
+        container rwmsg {
+          description "rwmsg settings";
+          choice broker {
+            case single-broker {
+              container single-broker {
+                  leaf enable-broker {
+                    description "When this flag is set the tasklets are required to enable message broker";
+                    type boolean;
+                  }
+                  leaf broker-port {
+                    description "Port number where the broker is running";
+                    type uint16;
+                  }
+                  leaf broker-host {
+                    description "Host name where the broker is running";
+                    type string;
+                  }
+              }
+            }
+
+            case multi-broker {
+              container multi-broker {
+                leaf enable {
+                  type boolean;
+                  description "Enable one broker per VM.  Children of the VM will use the local broker";
+                }
+              }
+            }
+          }
+        }
+
+        container rwdtsrouter {
+          description "rwdtsrouter settings";
+          choice dtsrouter {
+            case single-dtsrouter {
+              container single-dtsrouter {
+                leaf enable {
+                  type boolean;
+                  description "Enable single dtsrouter";
+                }
+              }
+            }
+            case multi-dtsrouter {
+              container multi-dtsrouter {
+                leaf enable {
+                  type boolean;
+                  description "Enable one dtsrouter per VM.  Children of the VM will use the local dtsrouter";
+                }
+              }
+            }
+          }
+        }
+
+        container rwvcs {
+          description "This section contains the init phase settings for each RiftWare component";
+
+          leaf collapse-each-rwvm {
+            description "This configures each rwvm to collapse into a single real VM";
+            type boolean;
+          }
+
+          leaf collapse-each-rwprocess {
+            description "This configures each rwprocess to collapse into a single real process";
+            type boolean;
+          }
+
+          leaf no-autostart {
+            description "This disables the autostart section of the init-phase";
+            type boolean;
+          }
+
+          leaf rwmain_path {
+            description "Override for the path to the rwmain executable";
+            type string;
+          }
+
+          leaf reaper_path {
+            description "Override the path to the rwreaper executable";
+            type string;
+          }
+
+          leaf enable-trebuchet {
+            description "Use the trebuchet web server rather than SSH for spawning Rift.VMs";
+            type boolean;
+            default false;
+          }
+        } // container rwvcs
+
+        container mgmt-agent {
+          description "This section contains the init phase settings for management agent";
+
+          leaf netconf-trace {
+            description "Enable/Disable the generation of netconf trace files";
+            type enumeration {
+              enum ENABLE;
+              enum DISABLE;
+              enum AUTO;  // Decided based on RIFT_INSTALL
+            }
+            default AUTO;
+          }
+
+        } // container mgmt-agent
+      } // container settings
+    } // container init-phase
+  } // grouping init-phase
+
+  grouping manifest-components {
+    list component {
+      description
+          "This section defines the RIFT.ware
+           virtual components";
+      key "component-name";
+      rwpb:application-request-point;
+
+      leaf component-name {
+        description "";
+        type string;
+      }
+
+      leaf component-type {
+        description "";
+        type rwvcstypes:component_type;
+        mandatory true;
+      }
+
+      choice component {
+        case rwvcs-rwcollection {
+          uses rwvcstypes:rwvcs-rwcollection;
+        }
+        case rwvcs-rwvm {
+          uses rwvcstypes:rwvcs-rwvm;
+        }
+        case rwvcs-rwproc {
+          uses rwvcstypes:rwvcs-rwproc;
+        }
+        case native-proc {
+          uses rwvcstypes:native-proc;
+        }
+        case rwvcs-rwtasklet {
+          uses rwvcstypes:rwvcs-rwtasklet;
+        }
+      }
+    } // list component
+  } // grouping init-phase
+
+  container manifest {
+    description "This section contains the entire manifest";
+    rwpb:msg-new Manifest;
+    rwpb:application-request-point;
+
+    uses bootstrap-phase;
+    uses init-phase;
+
+    container inventory {
+      description
+          "This section contains all of the manifest
+           inventory items";
+      rwpb:msg-new Inventory;
+
+      uses manifest-components;
+    }
+
+    container operational-inventory {
+      description
+          "This section contains all of the manifest
+           Operational Inventory items";
+      rwpb:msg-new OpInventory;
+
+      uses manifest-components;
+    }
+  } // container manifest
+}
+
+// vim: sw=2
+

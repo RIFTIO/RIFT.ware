@@ -1,0 +1,122 @@
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Anil Gunturu
+# Creation Date: 8/29/2013
+# 
+
+# This script generates the following representations of yang 
+# file for visualization:
+# a) tree format: text based tree of yang files
+# b) jstree format: java script based visual tree that 
+#    can be viewed in a browser
+# c) hypertree format: hyperbolic tree format for visualizing 
+#    yang configuration. Need a tool such as treebolic.
+
+# Need to pass set the YANG_SOURCE_FILES before calling this script
+
+set(schema_path
+  @CMAKE_CURRENT_BINARY_DIR@/usr/data/yang:@CMAKE_INSTALL_PREFIX@/usr/data/yang:@CMAKE_CURRENT_SOURCE_DIR@:${YANG_PATH}) 
+#set(pyang_path /usr/lib/python2.7/site-packages/pyang-1.6-py2.7.egg)
+
+separate_arguments(YANG_SOURCE_FILES)
+
+message("YANG_SOURCE_FILES = ${YANG_SOURCE_FILES}")
+
+set(warn_off)
+if (NOT DEFINED ENV{YANG_ALL_WARNINGS})
+  set(warn_off --ignore-warning=UNUSED_IMPORT)
+endif()
+
+##
+# create documentation directory
+##
+execute_process(
+  # create the documentation directory
+  COMMAND
+  mkdir -p ${OUTFILE_DIR}
+  RESULT_VARIABLE result_code
+  )
+if(result_code)
+  message("Error: ${result_code}")
+  message(FATAL_ERROR "Failed to create documentation directory")
+endif(result_code)
+
+##
+# create hypertree
+##
+execute_process(
+  # generate a hypertree
+  COMMAND
+  pyang -f hypertree 
+  --path=${schema_path} ${warn_off}
+  -o ${OUTFILE_DIR}/${OUTFILE_PREFIX}.hypertree.xml ${YANG_SOURCE_FILES}
+  RESULT_VARIABLE result_code
+  )
+if(result_code)
+  message("Error: ${result_code}")
+  message(FATAL_ERROR "Failed to create hypertree")
+endif(result_code)
+
+##
+# create text based tree
+##
+execute_process(
+  # generate a text based tree
+  COMMAND
+  pyang -f tree 
+  --path=${schema_path} ${warn_off}
+  -o ${OUTFILE_DIR}/${OUTFILE_PREFIX}.tree.txt ${YANG_SOURCE_FILES}
+  RESULT_VARIABLE result_code
+  )
+if(result_code)
+  message("Error: ${result_code}")
+  message(FATAL_ERROR "Failed to create text tree")
+endif(result_code)
+
+##
+# create jstree
+##
+execute_process(
+  # generate a jstree
+  COMMAND
+  pyang -f jstree 
+  --path=${schema_path} ${warn_off}
+  -o ${OUTFILE_DIR}/${OUTFILE_PREFIX}.jstree.html ${YANG_SOURCE_FILES}
+  RESULT_VARIABLE result_code
+  )
+if(result_code)
+  message("Error: ${result_code}")
+  message(FATAL_ERROR "Failed to execute process")
+endif(result_code)
+
+##
+# setup a link for images directory so the jstree is happy
+##
+if(NOT EXISTS ${OUTFILE_DIR}/images/)
+  execute_process(
+    COMMAND 
+    ln -s /usr/share/yang/images ${OUTFILE_DIR}/images
+    RESULT_VARIABLE result_code
+    )
+  if(result_code)
+    # handle the unlikely case where two instances of this code
+    # are running in parallel
+    if(NOT EXISTS ${OUTFILE_DIR}/images/)
+      message("Error: ${result_code}")
+      message(FATAL_ERROR "Failed to create soft link")
+    endif()
+  endif(result_code)
+endif()

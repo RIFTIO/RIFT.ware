@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# 19 Oct 2016 -- Jeremy Mordkoff -- modified for use in production and on Ubuntu
+#
+# updates /etc/host to contain the IPv4 address of this system if it is not already there 
+# or emits an error and returns 1
+
+export PATH=$PATH:/usr/sbin:/sbin
+if [ $(whoami) != root ]; then
+    echo "Must be root" >&2
+    exit 1
+fi
+
+hostnameshort=$(hostname -s)
+if grep -q $hostnameshort /etc/hosts; then
+    # already there, nothing to do
+    exit 0
+fi
+
+addr=`ip addr show | awk '/127.0.0.1/ { next }; /inet / { print $2; exit }'`
+if [ -z "$addr" ]; then
+    echo "error obtaining inet address" >&2
+    exit 1
+fi
+if [[ $addr =~ (.*)/[0-9] ]]; then
+    addr=${BASH_REMATCH[1]}
+fi
+hostname=`hostname`
+hostnameshort=`hostname -s`
+echo -e "# added by UpdateHostsFiles\n$addr $hostname $hostnameshort" >>/etc/hosts
+exit 0

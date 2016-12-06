@@ -1,0 +1,90 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file dts-test.yang
+ * @author Rajesh Velandy
+ * @date 2014/08/08
+ * @brief Top-level yang for testing libncx.
+ */
+
+module testdts-rw-stats
+{
+  namespace "http://riftio.com/ns/core/rwvx/rwdts/test/yang/testdts-rw-stats";
+  prefix "tdtsstats";
+
+  import rw-pb-ext { prefix "rwpb"; }
+
+  description
+    "This yang models stats";
+
+  revision 2015-07-13 {
+    description "Initial version"; }
+
+  grouping routerstats {
+    container stats {
+      rwpb:msg-new Routerstats;
+      description "DTS router statistics";
+
+      leaf topx-begin {
+        type uint64;
+      }
+
+      leaf topx-begin-tran {
+        type uint64;
+      }
+      leaf topx-begin-notran {
+        type uint64;
+      }
+      leaf topx-end {
+        type uint64;
+      }
+      leaf topx-end-notran-success {
+        type uint64;
+      }
+      leaf topx-end-notran-fail {
+        type uint64;
+      }
+      leaf topx-end-commit {
+        type uint64;
+      }
+      leaf topx-end-abort {
+        type uint64;
+      }
+      leaf topx-end-fail {
+        type uint64;
+      }
+      leaf topx-count-5s {
+        type uint64;
+      }
+      leaf topx-rate-5s {
+        type uint64;
+      }
+      leaf topx-latency-5s {
+        type uint64;
+      }
+    }
+  }
+
+  container dts {
+    uses routerstats;
+  }
+}

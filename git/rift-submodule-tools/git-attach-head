@@ -1,0 +1,151 @@
+#!/bin/bash -e
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+## Attaches HEAD if commit and top of branch are identical anyway
+## Fast forwards local branch if HEAD matches top of remote branch.
+## If argument -w is given: warn if HEAD cannot be attached
+## prefer master over other branches
+
+## read input, display help if necessary
+if [[ "$@" == *--help* ]]; then
+    cat<<EOF
+ Attach HEAD to a branch if possible
+
+ This command tries to reattach the head of a git repository to some 
+ branch.
+ If the HEAD and the top of a branch are identical, then this branch
+ is checked out. If this is not the case, but the local branch can be
+ fast forwarded, then the script does so. Prefers "master" over other
+ branches.
+ The option -f runs the command
+   git branch -r --contains HEAD
+ to find branches that contain the current HEAD and checks out the
+ first one found.
+
+ Usage:
+    git attach-head [-w] [-f]
+
+    -w: warn if HEAD cannot be attached
+    -f: Guess branch name, and forward to a newer commit.
+EOF
+    exit 0;
+fi
+
+## from the git mailinglist:
+function git
+{
+    LC_MESSAGES=C command git "$@"
+} 
+export git
+
+## TODO: do some error checking?
+
+## stop if HEAD is a ref already
+if git symbolic-ref -q HEAD > /dev/null ; then
+  exit 0
+fi
+
+## get arguments
+while getopts ":fw" opt; do
+  case $opt in
+    w)
+      w=1
+      #echo "-f was triggered!" >&2
+      ;;
+    f) 
+      fopt=1
+      ## echo "-f was triggered!" >&2
+      ;;
+    \?)
+      # ignore this
+      #echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
+
+HEAD=`git rev-parse HEAD`
+## get first refs for master (prefer master)
+branch=`git show-ref master | grep $HEAD | sed 's/.*refs\///' | sed -e '2,$ d'`
+if [[ ! "$branch" ]]; then
+  ## ok, allow all refs but HEAD and tags/*, get first match
+  branch=`git show-ref | grep $HEAD | sed -e 's/.*refs\///' -e '/HEAD/ d' -e '/tags\// d' | sed -e '2,$ d'`
+fi
+if [[ ! "$branch" ]]; then
+  if [[ ! "$fopt" ]]; then
+    if [[ "$w" ]]; then
+      cat >&2 <<EOF 
+      Warning in $PWD: 
+      Cannot attach HEAD. There are probably unmerged updates available. 
+      Go ("cd") there and use "git -r --contains HEAD" list branches that
+      contain the current commit. Use "git attach-head -f" to attach to 
+      the first branch automatically. Otherwise switch branches with 
+      "git rcheckout <branchname>".
+EOF
+    fi
+  else
+    candidate=`git branch -r --contains HEAD | grep -m 1 -v HEAD`
+    ## remove remote prefix
+    candidate=${candidate#*/}
+    if [[ "$w" ]]; then
+      cat >&2 <<EOF
+      Warning in $PWD:
+      Forwarding from commit $HEAD 
+      to newest version in branch "$candidate". Please make sure that this
+      is the correct branch and commit the change in the supermodules.
+EOF
+    fi
+    git rcheckout "$candidate"
+  fi
+else 
+  ## try to attach head now
+  branch=${branch#heads/}
+  ##echo "Attaching $PWD to $branch..."
+  lbranch=${branch#remotes/*/}
+  if [ "$branch" != "$lbranch" ]; then
+    ## we matched a remote/../ branch
+    rbranch=${branch#remotes/}
+    ## check if a local branch exists that tracks this branch
+    tbranch=`git branch -vv | grep "\[$rbranch" | sed -e 's/  \([^ ]*\) .*/\1/' -e '2,$ d'`
+    if [[ "$tbranch" ]]; then
+      ## check if we can fast forward the corresponding local branch
+      if git branch -vv | grep "  $tbranch" | grep " ahead " -q; then
+        ## cannot, since local branch is ahead -> exit
+        if [[ "$w" ]]; then
+          cat >&2 <<EOF 
+          Warning in $PWD: 
+          Cannot attach HEAD. 
+          The local branch $tbranch is ahead of $rbranch.
+EOF
+        fi
+        exit 0
+      fi
+      lbranch="$tbranch"
+    else
+      ## there is no local tracking branch for $remote: create one
+      git branch "$lbranch" "$rbranch" > /dev/null
+      branch="$lbranch"
+    fi
+  fi
+  git checkout --quiet "$lbranch" > /dev/null
+  if [ "$branch" != "$lbranch" ]; then
+    #echo "Fast forwarding local branch"
+    git merge --quiet --ff-only $HEAD
+  fi
+fi
+
+

@@ -1,0 +1,46 @@
+#!/bin/bash
+
+
+if [ $# -lt 1 ]; then
+	cat <<EOF
+USAGE: $0 rift_root [ cmd ... ]
+examples
+open a new shell with the vars set to use /localdisk/$USER/rift
+	$0 rift 
+
+execute a command in /localdisk/$USER/rift
+
+	$0 rift .install/usr/bin/my_new_tool
+EOF
+		
+        exit 1
+fi
+
+if [ ! -d $1 ]; then
+	if [ -d "/net/`hostname -s`/localdisk/$USER/$1" ]; then
+		top="/net/`hostname -s`/localdisk/$USER/$1"
+	else
+        echo "$1 not found"
+        exit 1
+	fi
+else
+	top="$1"
+fi
+
+cd $top
+if [ $? -ne 0 ]; then
+       echo "error changing directory to $top"
+        exit 1
+fi
+
+shift
+# force pwd to be universal path
+here=`/bin/pwd`
+cd $here
+if [ ! -f rift-shell ]; then
+        echo "$top does not appear to be a valid workspace"
+        exit 1
+fi
+
+./rift-shell -e -- "$@"
+

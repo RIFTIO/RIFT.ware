@@ -1,0 +1,603 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+/**
+ * @file ctype-test.yang
+ * @author Tom Seidenberg
+ * @date 2014/12/31
+ * @brief Test rwpb:field-c-type
+ */
+
+module ctype-test
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/ctype-test";
+  prefix "ctt";
+
+  import rw-pb-ext { prefix "rwpb"; }
+  import rw-yang-types { prefix "rwt"; }
+  import rw-c-types { prefix "rwct"; }
+
+  description "Test rwpb:field-c-type";
+  revision 2014-12-31 { description "Initial version"; }
+
+  rwpb:file-pbc-include "ctype_test.h";
+
+  container ctype-bumpy-leaf {
+    rwpb:msg-new CTypeBumpyLeaf;
+
+    leaf ip {
+      type rwct:rw-ip-addr;
+    }
+    leaf ip4 {
+      type rwct:rw-ipv4-addr;
+    }
+    leaf ip6 {
+      type rwct:rw-ipv6-addr;
+    }
+    leaf ippfx {
+      type rwct:rw-ip-prefix;
+    }
+    leaf ippfx4 {
+      type rwct:rw-ipv4-prefix;
+    }
+    leaf ippfx6 {
+      type rwct:rw-ipv6-prefix;
+    }
+    leaf mac {
+      type rwct:rw-mac-addr;
+    }
+    leaf cid {
+      type rwct:rw-callid;
+    }
+    leaf bin {
+      type binary;
+      rwpb:field-c-type "binary_ctype_t";
+    }
+    leaf dyn {
+      type binary;
+      rwpb:field-c-type "dynalloc_ctype_t";
+    }
+  }
+
+  container ctype-flat-leaf {
+    rwpb:msg-new CTypeFlatLeaf;
+
+    leaf ip {
+      type rwct:rw-ip-addr;
+      rwpb:field-inline true;
+    }
+    leaf ip4 {
+      type rwct:rw-ipv4-addr;
+      rwpb:field-inline true;
+    }
+    leaf ip6 {
+      type rwct:rw-ipv6-addr;
+      rwpb:field-inline true;
+    }
+    leaf ippfx {
+      type rwct:rw-ip-prefix;
+      rwpb:field-inline true;
+    }
+    leaf ippfx4 {
+      type rwct:rw-ipv4-prefix;
+      rwpb:field-inline true;
+    }
+    leaf ippfx6 {
+      type rwct:rw-ipv6-prefix;
+      rwpb:field-inline true;
+    }
+    leaf mac {
+      type rwct:rw-mac-addr;
+      rwpb:field-inline true;
+    }
+    leaf cid {
+      type rwct:rw-callid;
+      rwpb:field-inline true;
+    }
+    leaf bin {
+      type binary;
+      rwpb:field-c-type "binary_ctype_t";
+      rwpb:field-inline true;
+    }
+    leaf dyn {
+      type binary;
+      rwpb:field-c-type "dynalloc_ctype_t";
+      rwpb:field-inline true;
+    }
+  }
+
+  container ctype-bumpy-leaf-list {
+    rwpb:msg-new CTypeBumpyLeafList;
+
+    leaf-list ip {
+      type rwct:rw-ip-addr;
+      max-elements 2;
+    }
+    leaf-list ip4 {
+      type rwct:rw-ipv4-addr;
+      max-elements 2;
+    }
+    leaf-list ip6 {
+      type rwct:rw-ipv6-addr;
+      max-elements 2;
+    }
+    leaf-list ippfx {
+      type rwct:rw-ip-prefix;
+      max-elements 2;
+    }
+    leaf-list ippfx4 {
+      type rwct:rw-ipv4-prefix;
+      max-elements 2;
+    }
+    leaf-list ippfx6 {
+      type rwct:rw-ipv6-prefix;
+      max-elements 2;
+    }
+    leaf-list mac {
+      type rwct:rw-mac-addr;
+      max-elements 2;
+    }
+    leaf-list cid {
+      type rwct:rw-callid;
+      max-elements 2;
+    }
+    leaf-list bin {
+      type binary;
+      max-elements 2;
+      rwpb:field-c-type "binary_ctype_t";
+    }
+    leaf-list dyn {
+      type binary;
+      max-elements 2;
+      rwpb:field-c-type "dynalloc_ctype_t";
+    }
+  }
+
+  container ctype-flat-leaf-list {
+    rwpb:msg-new CTypeFlatLeafList;
+
+    leaf-list ip {
+      type rwct:rw-ip-addr;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+    leaf-list ip4 {
+      type rwct:rw-ipv4-addr;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+    leaf-list ip6 {
+      type rwct:rw-ipv6-addr;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+    leaf-list ippfx {
+      type rwct:rw-ip-prefix;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+    leaf-list ippfx4 {
+      type rwct:rw-ipv4-prefix;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+    leaf-list ippfx6 {
+      type rwct:rw-ipv6-prefix;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+    leaf-list mac {
+      type rwct:rw-mac-addr;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+    leaf-list cid {
+      type rwct:rw-callid;
+      max-elements 5;
+      rwpb:field-inline true;
+    }
+    leaf-list bin {
+      type binary;
+      max-elements 5;
+      rwpb:field-c-type "binary_ctype_t";
+      rwpb:field-inline true;
+    }
+    leaf-list dyn {
+      type binary;
+      max-elements 5;
+      rwpb:field-c-type "dynalloc_ctype_t";
+      rwpb:field-inline true;
+    }
+  }
+
+  container ctype-bumpy-list {
+    rwpb:msg-new CTypeBumpyList;
+
+    list ip {
+      max-elements 2;
+      key "ip";
+      leaf ip {
+        type rwct:rw-ip-addr;
+      }
+    }
+    list ip4 {
+      max-elements 2;
+      key "ip4";
+      leaf ip4 {
+        type rwct:rw-ipv4-addr;
+      }
+    }
+    list ip6 {
+      max-elements 2;
+      key "ip6";
+      leaf ip6 {
+        type rwct:rw-ipv6-addr;
+      }
+    }
+    list ippfx {
+      max-elements 2;
+      key "ippfx";
+      leaf ippfx {
+        type rwct:rw-ip-prefix;
+      }
+    }
+    list ippfx4 {
+      max-elements 2;
+      key "ippfx4";
+      leaf ippfx4 {
+        type rwct:rw-ipv4-prefix;
+      }
+    }
+    list ippfx6 {
+      max-elements 2;
+      key "ippfx6";
+      leaf ippfx6 {
+        type rwct:rw-ipv6-prefix;
+      }
+    }
+    list mac {
+      max-elements 2;
+      key "mac";
+      leaf mac {
+        type rwct:rw-mac-addr;
+      }
+    }
+    list cid {
+      max-elements 2;
+      key "cid";
+      leaf cid {
+        type rwct:rw-callid;
+      }
+    }
+    list bin {
+      max-elements 2;
+      key "bin";
+      leaf bin {
+        type binary;
+        rwpb:field-c-type "binary_ctype_t";
+      }
+    }
+    list dyn {
+      max-elements 2;
+      key "dyn";
+      leaf dyn {
+        type binary;
+        rwpb:field-c-type "dynalloc_ctype_t";
+      }
+    }
+  }
+
+  container ctype-flat-list {
+    rwpb:msg-new CTypeFlatList;
+
+    list ip {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "ip";
+      leaf ip {
+        type rwct:rw-ip-addr;
+        rwpb:field-inline true;
+      }
+    }
+    list ip4 {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "ip4";
+      leaf ip4 {
+        type rwct:rw-ipv4-addr;
+        rwpb:field-inline true;
+      }
+    }
+    list ip6 {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "ip6";
+      leaf ip6 {
+        type rwct:rw-ipv6-addr;
+        rwpb:field-inline true;
+      }
+    }
+    list ippfx {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "ippfx";
+      leaf ippfx {
+        type rwct:rw-ip-prefix;
+        rwpb:field-inline true;
+      }
+    }
+    list ippfx4 {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "ippfx4";
+      leaf ippfx4 {
+        type rwct:rw-ipv4-prefix;
+        rwpb:field-inline true;
+      }
+    }
+    list ippfx6 {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "ippfx6";
+      leaf ippfx6 {
+        type rwct:rw-ipv6-prefix;
+        rwpb:field-inline true;
+      }
+    }
+    list mac {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "mac";
+      leaf mac {
+        type rwct:rw-mac-addr;
+        rwpb:field-inline true;
+      }
+    }
+    list cid {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "cid";
+      leaf cid {
+        type rwct:rw-callid;
+        rwpb:field-inline true;
+      }
+    }
+    list bin {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "bin";
+      leaf bin {
+        type binary;
+        rwpb:field-c-type "binary_ctype_t";
+        rwpb:field-inline true;
+      }
+    }
+    list dyn {
+      max-elements 2;
+      rwpb:msg-flat true;
+      key "dyn";
+      leaf dyn {
+        type binary;
+        rwpb:field-c-type "dynalloc_ctype_t";
+        rwpb:field-inline true;
+      }
+    }
+  }
+
+  container native-bumpy-leaf {
+    rwpb:msg-new NativeBumpyLeaf;
+
+    leaf ip {
+      type rwt:ip-address-no-zone;
+    }
+    leaf ip4 {
+      type rwt:ipv4-address-no-zone;
+    }
+    leaf ip6 {
+      type rwt:ipv6-address-no-zone;
+    }
+    leaf ippfx {
+      type rwt:ip-prefix-non-canonical;
+    }
+    leaf ippfx4 {
+      type rwt:ipv4-prefix-non-canonical;
+    }
+    leaf ippfx6 {
+      type rwt:ipv6-prefix-non-canonical;
+    }
+    leaf mac {
+      type rwt:mac-address;
+    }
+    leaf cid {
+      type rwt:call-id;
+    }
+    leaf bin {
+      type binary;
+    }
+    leaf dyn {
+      type binary;
+    }
+  }
+
+  container native-flat-leaf {
+    rwpb:msg-new NativeFlatLeaf;
+
+    leaf ip {
+      type rwt:ip-address-no-zone;
+      rwpb:field-string-max 51;
+      rwpb:field-inline true;
+    }
+    leaf ip4 {
+      type rwt:ipv4-address-no-zone;
+      rwpb:field-string-max 20;
+      rwpb:field-inline true;
+    }
+    leaf ip6 {
+      type rwt:ipv6-address-no-zone;
+      rwpb:field-string-max 51;
+      rwpb:field-inline true;
+    }
+    leaf ippfx {
+      type rwt:ip-prefix-non-canonical;
+      rwpb:field-string-max 55;
+      rwpb:field-inline true;
+    }
+    leaf ippfx4 {
+      type rwt:ipv4-prefix-non-canonical;
+      rwpb:field-string-max 24;
+      rwpb:field-inline true;
+    }
+    leaf ippfx6 {
+      type rwt:ipv6-prefix-non-canonical;
+      rwpb:field-string-max 55;
+      rwpb:field-inline true;
+    }
+    leaf mac {
+      type rwt:mac-address;
+      rwpb:field-inline true;
+      rwpb:field-string-max 19;
+    }
+    leaf cid {
+      type rwt:call-id;
+      rwpb:field-string-max 43;
+      rwpb:field-inline true;
+    }
+    leaf bin {
+      type binary;
+      rwpb:field-string-max 8;
+      rwpb:field-inline true;
+    }
+    leaf dyn {
+      type binary;
+      rwpb:field-string-max 80;
+      rwpb:field-inline true;
+    }
+  }
+
+  container native-bumpy-leaf-list {
+    rwpb:msg-new NativeBumpyLeafList;
+
+    leaf-list ip {
+      type rwt:ip-address-no-zone;
+      max-elements 2;
+    }
+    leaf-list ip4 {
+      type rwt:ipv4-address-no-zone;
+      max-elements 2;
+    }
+    leaf-list ip6 {
+      type rwt:ipv4-address-no-zone;
+      max-elements 2;
+    }
+    leaf-list ippfx {
+      type rwt:ip-prefix-non-canonical;
+      max-elements 2;
+    }
+    leaf-list ippfx4 {
+      type rwt:ipv4-prefix-non-canonical;
+      max-elements 2;
+    }
+    leaf-list ippfx6 {
+      type rwt:ipv6-prefix-non-canonical;
+      max-elements 2;
+    }
+    leaf-list mac {
+      type rwt:mac-address;
+      max-elements 2;
+    }
+    leaf-list cid {
+      type rwt:call-id;
+      max-elements 2;
+    }
+    leaf-list bin {
+      type binary;
+      max-elements 2;
+    }
+    leaf-list dyn {
+      type binary;
+      max-elements 2;
+    }
+  }
+
+  container native-flat-leaf-list {
+    rwpb:msg-new NativeFlatLeafList;
+
+    leaf-list ip {
+      type rwt:ip-address-no-zone;
+      max-elements 2;
+      rwpb:field-string-max 51;
+      rwpb:field-inline true;
+    }
+    leaf-list ip4 {
+      type rwt:ipv4-address-no-zone;
+      max-elements 2;
+      rwpb:field-string-max 20;
+      rwpb:field-inline true;
+    }
+    leaf-list ip6 {
+      type rwt:ipv6-address-no-zone;
+      max-elements 2;
+      rwpb:field-string-max 51;
+      rwpb:field-inline true;
+    }
+    leaf-list ippfx {
+      type rwt:ip-prefix-non-canonical;
+      max-elements 2;
+      rwpb:field-string-max 55;
+      rwpb:field-inline true;
+    }
+    leaf-list ippfx4 {
+      type rwt:ipv4-prefix-non-canonical;
+      max-elements 2;
+      rwpb:field-string-max 24;
+      rwpb:field-inline true;
+    }
+    leaf-list ippfx6 {
+      type rwt:ipv6-prefix-non-canonical;
+      max-elements 2;
+      rwpb:field-string-max 55;
+      rwpb:field-inline true;
+    }
+    leaf-list mac {
+      type rwt:mac-address;
+      max-elements 2;
+      rwpb:field-string-max 19;
+      rwpb:field-inline true;
+    }
+    leaf-list cid {
+      type rwt:call-id;
+      max-elements 2;
+      rwpb:field-string-max 43;
+      rwpb:field-inline true;
+    }
+    leaf-list bin {
+      type binary;
+      max-elements 2;
+      rwpb:field-string-max 8;
+      rwpb:field-inline true;
+    }
+    leaf-list dyn {
+      type binary;
+      max-elements 2;
+      rwpb:field-string-max 80;
+      rwpb:field-inline true;
+    }
+  }
+}

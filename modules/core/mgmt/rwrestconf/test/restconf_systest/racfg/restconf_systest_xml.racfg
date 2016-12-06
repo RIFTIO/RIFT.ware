@@ -1,0 +1,18 @@
+{
+  "test_name":"TC_RESTCONF_SYSTEST_XML_0100",
+  "commandline":"./restconf_systest.sh --use-xml-mode",
+  "target_vm":"VM",
+  "test_description":"restconf_systest.py",
+  "status":"working",
+  "keywords":["nightly","smoke","smoke_stable"],
+  "timelimit": 600,
+  "networks":[],
+  "vms":[
+    {
+      "name": "VM",
+      "hugepages": false,
+      "memory": 16384,
+      "cpus": 4
+    }
+  ]
+}

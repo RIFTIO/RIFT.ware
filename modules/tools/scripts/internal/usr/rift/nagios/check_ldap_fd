@@ -1,0 +1,109 @@
+#!/usr/local/bin/bash
+# Nagios plugin to monitor LDAP File Descriptors
+# Jason Fowler Feb. 2008
+# University of British Columbia IT
+
+# Command Line Argument
+#
+# ps -aef | grep 'slapd -D /local/sunone/ds/slapd-sunone1' | grep 'diruser' | awk '{print $2}' | xargs -I {} ls /proc/{}/fd | wc | awk '{print $1}'
+
+AWK="/usr/bin/awk"
+BASENAME="/usr/bin/basename"
+ECHO="/bin/echo"
+EGREP="/usr/bin/egrep"
+PS="/usr/bin/ps"
+LDAP="slapd -D /local/sunone/ds/slapd-sunone1"
+DIRUSER="diruser"
+XARGS="/usr/bin/xargs"
+LS="/usr/bin/ls"
+WC="/usr/bin/wc"
+
+THISPROG=$( ${BASENAME} $0 )
+
+CRIT=0
+WARN=0
+VERBOSE=0
+
+E_SUCCESS="0"
+E_WARNING="1"
+E_CRITICAL="2"
+E_UNKNOWN="3"
+
+function print_error {
+   ${ECHO} "Error: $@" >&2
+}
+
+function printv {
+   (( VERBOSE )) && {
+      ${ECHO} "--> $@"
+   }
+}
+
+function print_usage {
+   {
+      ${ECHO} "Usage: ${THISPROG} [-hv]"   
+      ${ECHO} "       -h   Display this usage message"
+      ${ECHO} "       -v   Verbose mode"
+   } >&2
+}
+
+function check_args {
+   if [ "${CRIT}" -eq "0" -o "${WARN}" -eq "0" ]; then
+      ${ECHO} "UNKNOWN: WARN and CRIT are mandatory and must be >0"
+      exit ${E_UNKNOWN}
+   fi
+   ${ECHO} "${WARN}" | ${EGREP} -s "^[0-9]+$"
+   if [ "$?" -ne "0" ]; then
+      ${ECHO} "UNKNOWN: WARN must be an integer"
+      exit ${E_UNKNOWN}
+   fi
+   ${ECHO} "${CRIT}" | ${EGREP} -s "^[0-9]+$"
+   if [ "$?" -ne "0" ]; then
+      ${ECHO} "UNKNOWN: CRIT must be an integer"
+      exit ${E_UNKNOWN}
+   fi
+   if [ "${CRIT}" -le "${WARN}" ]; then
+      ${ECHO} "UNKNOWN: CRIT must be > WARN"
+      exit ${E_UNKNOWN}
+   fi
+}
+
+
+function do_check {
+LDAPQ_ITEMS=$( ${PS} -aef | ${EGREP} "${LDAP}" | ${EGREP} "${DIRUSER}" | ${AWK} '{print $2}' | ${XARGS} -I {} ${LS} /proc/{}/fd | ${WC} | ${AWK} '{print $1}')
+   if [ "${LDAPQ_ITEMS}" = "" ]; then
+      ${ECHO} "OK: No LDAP File Descriptors|Descriptors=0;${WARN};${CRIT}" && exit ${E_SUCCESS}
+   fi  
+   if [ "${LDAPQ_ITEMS}" -ge "${CRIT}" ]; then
+      ${ECHO} "CRITICAL: ${LDAPQ_ITEMS} file descriptors used by LDAP|LDAP=${LDAPQ_ITEMS};${WARN};${CRIT}" && exit ${E_CRITICAL}
+   elif [ "${LDAPQ_ITEMS}" -ge "${WARN}" ]; then
+      ${ECHO} "WARNING: ${LDAPQ_ITEMS} file descriptors used by LDAP|LDAP=${LDAPQ_ITEMS};${WARN};${CRIT}" && exit ${E_WARNING}
+   else
+      ${ECHO} "OK: ${LDAPQ_ITEMS} descriptors used by LDAP|LDAP=${LDAPQ_ITEMS};${WARN};${CRIT}" && exit ${E_SUCCESS}
+   fi
+}
+
+#
+# main()
+#
+while getopts ":hvc:w:" OPTION; do
+  case ${OPTION} in
+     "c")  CRIT=${OPTARG}          ;;
+     "w")  WARN=${OPTARG}          ;;
+     "h")  print_usage && exit 0   ;;
+     "v")  VERBOSE=1               ;;
+     *  )  print_usage && exit 1   ;;
+  esac
+done
+
+shift $(( ${OPTIND} - 1 ))
+
+if [ "$#" -ne "0" ]; then
+   print_usage && exit ${E_UNKNOWN}
+fi
+
+check_args
+do_check
+
+# not reached
+exit ${E_SUCCESS}

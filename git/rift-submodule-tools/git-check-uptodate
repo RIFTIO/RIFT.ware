@@ -1,0 +1,79 @@
+#!/bin/bash
+
+DIR="$( realpath $( dirname "${BASH_SOURCE[0]}" ) )"
+source "$DIR/git-common-functions.sh"
+
+check_module_uptodate() {
+
+    sub=$1
+    localbranch=$2
+    remotebranch=$3
+    git fetch  --all
+    LOCAL=$(git rev-parse ${localbranch})
+    if [ -z "$(git branch --list -r origin/${remotebranch})" ]; then
+        echo "New branch"
+        return
+    fi
+    REMOTE=$(git rev-parse origin/${remotebranch})
+    BASE=$(git merge-base ${localbranch} origin/${remotebranch})
+
+    if [ $VERBOSE -eq 1 ]; then
+        cat <<-EOF
+            MODULE $sub
+            LOCAL $localbranch $LOCAL
+            REMOTE $remotebranch $REMOTE
+            BASE $BASE
+EOF
+    fi
+
+    if [ "$LOCAL" = "$REMOTE" ]; then
+        echo "$sub is Up-to-date"
+    elif [ "$LOCAL" = "$BASE" ]; then
+        echo "Need to pull in $sub"
+        NEED_TO_PULL=1
+    elif [ "$REMOTE" = "$BASE" ]; then
+        echo "Need to push in $sub"
+        NEED_TO_PUSH=1
+        MODS_NEED_TO_PUSH="${MODS_NEED_TO_PUSH} $sub"
+    else
+        echo "$sub has diverged"
+        NEED_TO_PULL=1
+        NEED_TO_PUSH=1
+        MODS_NEED_TO_PUSH="${MODS_NEED_TO_PUSH} $sub"
+    fi
+}
+
+NEED_TO_PUSH=0
+NEED_TO_PULL=0
+MODS_NEED_TO_PUSH=""
+VERBOSE=0
+if [ $# -gt 0 ]; then
+    VERBOSE=1
+fi
+
+check_for_detached_head || exit 1
+check_clean || exit 1
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+while read line; do
+    pushd $line >/dev/null
+    check_module_uptodate $line local $branch
+    popd >/dev/null
+done < <(foreach_initialized_submodule)
+check_module_uptodate "supermodule" $branch $branch
+
+
+if [ $NEED_TO_PUSH == 1 ]; then
+	echo "#### you have unpushed commits in $MODS_NEED_TO_PUSH"
+	if [ $NEED_TO_PULL == 1 ]; then
+		echo "#### BUT you need to xpull first"
+    fi
+elif [ $NEED_TO_PULL == 1 ]; then
+    echo "you need to pull"
+fi
+
+exit $NEED_TO_PULL
+
+
+# vi: expandtab tabstop=4

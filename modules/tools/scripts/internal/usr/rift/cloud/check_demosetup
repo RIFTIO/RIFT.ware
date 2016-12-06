@@ -1,0 +1,90 @@
+#! /bin/bash
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Anil Gunturu
+# Creation Date: 07/24/2014
+# 
+
+##
+# This script is used for quick check of demo_setup
+##
+
+set -e
+
+function print_usage() {
+    echo "Usage: $0 [ -k|s|l ] "
+    echo "       Optional arguments"
+    echo "       -k|--killall Kill the previous instance of rwmain"
+    echo "       -s|--setup Pre-setup to run rwmain"
+    echo "       -l|--list List the running rwmain processes"
+    echo "       -p|--print-portmap List the running rwmain processes"
+    exit 1
+}
+
+DOCLOUD=/usr/rift/scripts/cloud/docloud
+KILLALL=false
+SETUP=false
+PORTMAP=false
+LIST=false
+
+##
+# Parse options
+##
+while [[ $# > 0 ]]
+do
+key="$1"
+shift
+case $key in
+    -k|--killall)
+    KILLALL=true
+    ;;
+    -s|--setup)
+    SETUP=true
+    ;;
+    -l|--list)
+    LIST=true
+    ;;
+    -p|--print-portmap)
+    PORTMAP=true
+    ;;
+    *)
+    print_usage
+    ;;
+esac
+done
+
+if $KILLALL; then
+    $DOCLOUD "killall -9 rwmain"
+elif $SETUP; then
+    $DOCLOUD "killall -9 rwmain"
+    if [[ $RIFT_SHELL != 1 ]]; then
+        $DOCLOUD rmmod rte-kni
+        $DOCLOUD insmod $RIFT_INSTALL/usr/lib/modules/3.12.9-301.fc20.x86_64/extra/dpdk/kmod/rte_kni
+        $DOCLOUD modprobe uio
+        $DOCLOUD insmod $RIFT_INSTALL/usr/lib/modules/3.12.9-301.fc20.x86_64/extra/dpdk/kmod/igb_uio
+        $DOCLOUD insmod $RIFT_INSTALL/usr/lib/modules/3.12.9-301.fc20.x86_64/extra/vtunes/pax/pax-x32_64-3.12.9-301.fc20.x86_64smp
+        $DOCLOUD insmod $RIFT_INSTALL/usr/lib/modules/3.12.9-301.fc20.x86_64/extra/vtunes/vtsspp/vtsspp-x32_64-3.12.9-301.fc20.x86_64smp
+        $DOCLOUD insmod $RIFT_INSTALL/usr/lib/modules/3.12.9-301.fc20.x86_64/extra/vtunes/sep3_15-x32_64-3.12.9-301.fc20.x86_64smp
+    else
+        echo "Not running under RIFT shell, skipping the dpdk installation step"
+    fi
+
+elif $LIST; then
+    $DOCLOUD "ps -ef | grep rwmain"
+elif $PORTMAP; then
+    $DOCLOUD "hostname"
+fi

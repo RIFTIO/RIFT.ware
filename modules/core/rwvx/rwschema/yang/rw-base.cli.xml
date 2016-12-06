@@ -1,0 +1,10 @@
+<cli>
+  <plugin-list>
+     <plugin name="rwcli_plugin" typelib="rwcli_plugin/1.0"/>
+  </plugin-list>
+
+  <modifications>
+     <addPrintHook path="vcs info" hook="rwcli_plugin:print_tasklet_info"/>
+     <addPrintHook path="vcs instance" hook="rwcli_plugin:print_vcs_instance"/>
+  </modifications>
+</cli>

@@ -1,0 +1,59 @@
+#!/bin/bash
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Austin Cormier
+# Creation Date: 2014/05/22
+#
+# Do a recursive checkout of superproject and all initialized submodules.
+#
+# Usage: git-xcheckout [<checkout_arg>...]
+#
+# Args:
+#  <checkout_args>:    Any argument or list of arguments that can be passed
+#                      into git checkout at the superproject level.
+#                      No <checkout_args> will prevent checkout from running at the top-level.
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$DIR/git-common-functions.sh"
+
+checkout_args="$@"
+if [ "$checkout_args" == "" ]; then
+  log "INFO: No xcheckout args provided.  Exiting."
+  exit 0
+fi
+
+submodules="$(get_initialized_submodules)"
+
+check_submodules_clean $submodules || exit 1
+git check-superclean || exit 1
+
+## Do the checkout at the supermodule if the branch/revision was specified.
+## but to do this, everything should be sparkly clean.
+log "INFO: Fetching all remotes."
+git fetch --all || exit 1
+
+git checkout $checkout_args
+if [ $? -ne 0 ]; then
+  log "ERROR: Failed to checkout $checkout_args"
+  exit 1
+fi
+
+git xupdate
+if [ $? -ne 0 ]; then
+  log "CRITICAL: Failed to update submodules."
+  exit 1
+fi
+

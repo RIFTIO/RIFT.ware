@@ -1,0 +1,73 @@
+package foo;
+
+message UnspecifiedType
+{
+	required string baseObjectType = 1;
+	required bytes object = 2;
+}
+
+message ipv4_addressType
+{
+	required string ipv4_address = 1;
+}
+
+message ipv6_addressType
+{
+	required string ipv6_address = 1;
+}
+
+message _AU_ip_addressType
+{
+	required int32 type = 1;
+	optional ipv4_addressType f0 = 2;
+	optional ipv6_addressType f1 = 3;
+}
+
+message ipsecsaType
+{
+	required uint64 my_objid = 1;
+	optional _AU_ip_addressType local_ipaddr = 2;
+	optional _AU_ip_addressType remote_ipaddr = 3;
+	optional uint32 ike_cookie = 4;
+	enum ipsec_mode
+	{
+		ipsec_mode_transport_mode = 1;
+		ipsec_mode_tunnel_mode = 2;
+	}
+	optional ipsec_mode mode = 5;
+	enum ipsec_cipher
+	{
+		ipsec_cipher_3des_cipher = 1;
+		ipsec_cipher_aes256_cipher = 2;
+	}
+	optional ipsec_cipher cipher = 6;
+	enum ipsec_hmac
+	{
+		ipsec_hmac_aesxcbc_hmac = 1;
+		ipsec_hmac_md5_hmac = 2;
+		ipsec_hmac_sha1_hmac = 3;
+	}
+	optional ipsec_hmac hmac = 7;
+}
+
+message ikesaType
+{
+	optional _AU_ip_addressType local_ipaddr = 1;
+	optional _AU_ip_addressType remote_ipaddr = 2;
+	optional uint32 ike_cookie = 3;
+	enum ikesa_state
+	{
+		ikesa_state_active = 1;
+		ikesa_state_inactive = 2;
+	}
+	optional ikesa_state state = 4;
+}
+
+message ipsec_session_stateType
+{
+	optional uint64 callid = 1;
+	optional uint64 policy_objid = 2;
+	optional ikesaType ikesa = 3;
+	repeated ipsecsaType ipsecsa = 4;
+}
+

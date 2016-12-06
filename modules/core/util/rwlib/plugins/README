@@ -1,0 +1,13 @@
+The following plugins provide examples of multi-language plugins using the 
+Libpeas and GObject framework.
+
+. basic_plugin: Illustrates a very basic plugin with one interface call
+. basic_functor: Illustrates the callback mechanism
+. feature_plugin: Shows examples of many different datatypes
+. example_gi: Illustrates gobject-introspection annotations
+. vala_gi: Illustrates how a GBoxed type from gobject-introspection
+           can be passed across vala interface.
+. lua_coroutine: Illustrates lua coroutines
+. test_nonglobal_loader: Illiustrates per thread peas engine for Lua
+. rwtypes: Contains various types used by RIFT.ware
+. rwpython_util: Contains interface for calling python utilities from C

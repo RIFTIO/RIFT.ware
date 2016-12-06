@@ -1,0 +1,82 @@
+#!/bin/bash -e
+
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+## Check for unpushed commits in remote tracking branches
+## if argument -p is given: does not exit with a failure
+
+## read input, display help if necessary
+if [[ "$@" == *--help* ]]; then
+    cat<<EOF
+ Check for unpushed commits in tracking branches
+
+ This command checks for unpushed commits in tracking branches. 
+ This is part of a series of checks used to determine whether it is 
+ safe to remove a submodule.
+
+ Usage:
+    git check-unpushed [-p]
+
+    -p: do not raise an error
+EOF
+    exit 0;
+fi
+
+while getopts ":p" opt; do
+    case $opt in
+	p)
+	    p=1
+	    #echo "-p was triggered!" >&2
+	    ;;
+	\?)
+	    # ignore this
+	    #echo "Invalid option: -$OPTARG" >&2
+	    ;;
+  esac
+done
+
+## from the git mailinglist:
+function git
+{
+    LC_MESSAGES=C command git "$@"
+} 
+export git
+
+## cycle all branches
+tmp=`git branch --no-color -vv 2> /dev/null`
+while read line; do
+    ##echo "$line"
+    branch=`expr "$line" : '\** *\([^ ]*\)'`
+    ##echo "$branch"
+    remote=`expr "$line" : '.*\[\(.*\)\]'` || continue
+    ##echo "$remote"
+    ## if we're ahead: branch will show it after ":" 
+    status=`expr "$remote" : '.*: ahead \(.*\)'` || continue
+    ##echo "$status"
+    unpushed="$unpushed    Branch \"$branch\" is ahead $status commit(s).
+"
+done <<< "$tmp"
+
+if [ "$unpushed" ]; then
+    if [[ $p -ne 1 ]]; then
+	echo >&2 -n "Error in $PWD:
+$unpushed"
+	exit 1
+    fi
+    echo -n " In $PWD:
+$unpushed"
+fi

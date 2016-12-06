@@ -1,0 +1,10 @@
+# List dependencies on packages.
+# Requires: list of packages that must be installed when building this submodule
+# Syntax:
+# ( <listname> = <item>* ; )*
+# - newlines are just whitespace
+# - comments run from '#' to end of line
+
+Requires =
+    fc20:protobuf-rw-compiler-2.6.1     # provides protoc
+;

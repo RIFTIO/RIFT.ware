@@ -1,0 +1,136 @@
+#!/usr/bin/perl
+
+# Create control files for a debian package repo, making some simplifying assumptions about the repo.
+#
+# Takes two arguments:
+# - the root of a debian repo
+# - distribution name, e.g. xenial-riftware.
+# Generates Packages and InRelease files.
+#
+# Makes several assumptions about the existing directory structure:
+# - pool contains a directory named for the distribution, with one directory per component, e.g. pool/xenial-riftware/rw pool/xenial-riftware/devops
+# - all debians for a component are already in pools/$distribution/$component.
+# - no source packages; all packages are for amd64.
+#
+# To use to create a new repo:
+# 1) Pick a directory for the root of the repo.
+# 2) Pick a distribution name, and a list of components.  Note that a repo can contain several
+#    distributions (e.g. xenial, xenial-backport, xenial-security, etc) and that control files
+#    created by this script apply to just one distribution.  The
+#    components are a subdivision of a distribution.
+# 3) Set up a web browser to serve the repo root.
+# 4) For each deb to be served out, pick the component it will belong to and copy it to pool/$distribution/$component.
+# 5) Make sure you have a gpg key (see gpg manpage).  If updating the repo is to be automated, make sure
+#    it doesn't have a passphrase.
+# 6) Run this script; first argument is the repo root directory; second argument is the distribution name.
+# 7) Put the key into the file $distribution-public-key in the root of the repo:
+#           gpg -a --export > $distribution-public-key
+# 8) Create the file $distribution-sources.list containing one line:
+#           deb $URL $distribution $component ...
+#    e.g.
+#           deb http://repos.riftio.com/private/builds/ubuntu xenial-riftware ext devops
+#
+# To set up a new client
+# 1) Add your key to the client: e.g. on the client run "curl http:/repos.riftio.com/ubuntu/$distribution-public-key | sudo apt-key --add -"
+# 2) Add the appropriate lines to /etc/apt/sources.list or files to /etc/apt.sources.list.d on clients and
+#    run "curl -o /etc/apt/sources.list.d/$distribution-sources.list http:/repos.riftio.com/ubuntu/$distribution-sources.list"
+#
+# To modify debs in an existing repo:
+# 1) update the debs in pool/$distribution/$component.
+# 2) run this script.
+# 3) run "apt-get update" on clients
+
+use strict;
+use warnings;
+
+use v5.10;
+
+use Cwd qw(getcwd);
+use File::Basename qw(dirname);
+use File::Path qw(make_path);
+use Digest::SHA qw(sha256_hex);
+use Digest::MD5 qw(md5_hex);
+
+my $root = shift or die "Must specify debian root directory\n";
+my $distribution = shift or die "Must specify distribution, e.g. xenial-riftware";
+
+#######################################
+# Components are subdirectories of pool.  Currently just assume that all components on this
+# repo are in this distribution; this means we can't have multiple distributions in one
+# repo.
+-d "$root/pool" or die "Cannot find subdirectory pool\n";
+-d "$root/pool/$distribution" or die "Cannot find subdirectory pool/$distribution\n";
+
+chomp(my @components = `cd $root/pool/$distribution; ls`);
+
+say "Components are: @components";
+
+#######################################
+# Create component index files that list details of each .deb in the component
+my @indexFiles;
+
+for my $component (@components) {
+
+    my $indexFileBase = "$component/binary-amd64/Packages";
+    my $indexFile = "$root/dists/$distribution/$indexFileBase";
+
+    # Make sure the directory exists
+    my $IndexFileDir = dirname($indexFile);
+    -d $IndexFileDir or make_path($IndexFileDir) or die "Cannot create $IndexFileDir, $!\n";
+
+    push @indexFiles, $indexFileBase;
+
+    # Use standard tool to create Packages file
+    my @cmd = ( 'apt-ftparchive', 'packages', "pool/$distribution/$component" );
+    my $cwd = getcwd();
+    chdir($root);
+    open my $packagesStream, '-|',@cmd or die "Cannot run \"@cmd\", $!\n";
+    open my $packagesFile, '>', $indexFile or die "Cannot open $indexFile for writing, $!\n";
+
+    while(<$packagesStream>) { print $packagesFile $_ }
+    
+    close $packagesFile;
+    close $packagesStream;
+}
+
+#######################################
+# Create Release file that has general distribution details and lists all index files.
+
+my $releaseFile = "$root/dists/$distribution/Release";
+my $inReleaseFile = "$root/dists/$distribution/InRelease";
+
+unlink($inReleaseFile) if -f $inReleaseFile;
+open my $release, ">", $releaseFile or die "Cannot open $releaseFile for writing, $!\n";
+
+say $release "Suite: xenial";
+say $release "Architectures: amd64";
+say $release "Components: @components";
+print $release "Date: ",`date -R -u`;
+say $release "SHA256:";
+
+for my $indexFile (@indexFiles) {
+    my $contents = slurp("$root/dists/$distribution/$indexFile");
+    my $size = length($contents);
+    my $sha256 = sha256_hex($contents);
+
+    say $release " $sha256 $size $indexFile";
+}
+
+close $release;
+
+#######################################
+# Sign the Release file
+
+system("gpg -a -s --clearsign -o $inReleaseFile $releaseFile");
+
+# Clean up the original unsigned Release file
+unlink $releaseFile;
+
+###############################################################################
+# slurp in entire file into string
+sub slurp {
+    my $filename = shift;
+    open my $h, $filename or die "Cannot open $filename, $!\n";
+    local $/ = undef;
+    return <$h>;
+}

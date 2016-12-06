@@ -1,0 +1,3 @@
+#!/bin/bash
+
+GRUB_CMDLINE_LINUX="${GRUB_CMDLINE_LINUX} console=ttyS0,115200n8"

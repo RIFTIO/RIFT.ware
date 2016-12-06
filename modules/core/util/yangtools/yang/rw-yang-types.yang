@@ -1,0 +1,284 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file rw-yang-types.yang
+ * @author Tom Seidenberg
+ * @date 2014/04/01
+ * @brief RiftWare yang type overrides
+ *
+ * These typedefs exist to allow RiftWare to specify special extensions
+ * to the types.
+ */
+
+module rw-yang-types
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-yang-types";
+  prefix "rwt";
+
+  import ietf-inet-types {
+    prefix "inet";
+    revision-date 2013-07-15;
+  }
+
+  import ietf-yang-types {
+    prefix "ietf-yang-types";
+    revision-date 2013-07-15;
+  }
+
+  description
+   "This module contains redefinitions of the ietf-yang-types and
+   ietf-inet-types modules, which allows customized extensions to be
+   defined for these types when used in RiftWare applications.";
+
+  revision 2014-04-01 {
+    description
+      "Initial revision.";
+    reference
+      "RIFT yang types that redefine the IETF types.";
+  }
+
+
+  /* ietf-inet-types */
+
+  typedef ip-version {
+    type inet:ip-version;
+  }
+
+  typedef dscp {
+    type inet:dscp;
+  }
+
+  typedef ipv6-flow-label {
+    type inet:ipv6-flow-label;
+  }
+
+  typedef port-number {
+    type inet:port-number;
+  }
+
+  typedef as-number {
+    type inet:as-number;
+  }
+
+  typedef ip-address {
+    type inet:ip-address;
+  }
+
+  typedef ipv4-address {
+    type inet:ipv4-address;
+  }
+
+  typedef ipv6-address {
+    type inet:ipv6-address;
+  }
+
+  typedef ip-address-no-zone {
+    type inet:ip-address-no-zone;
+  }
+
+  typedef ipv4-address-no-zone {
+    type inet:ipv4-address-no-zone;
+  }
+
+  typedef ipv6-address-no-zone {
+    type inet:ipv6-address-no-zone;
+  }
+
+  typedef ip-prefix {
+    type inet:ip-prefix;
+  }
+
+  typedef ip-prefix-non-canonical {
+    type union {
+      type rwt:ipv4-prefix-non-canonical;
+      type rwt:ipv6-prefix-non-canonical;
+    }
+    description
+      "The ip-prefix type represents an IP prefix and is IP
+      version neutral.  The format of the textual representations
+      implies the IP version.";
+  }
+
+  typedef ipv4-prefix {
+    type inet:ipv4-prefix;
+  }
+
+  typedef ipv4-prefix-non-canonical {
+    type string {
+      pattern
+         '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}'
+       +  '([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+       + '/(([0-9])|([1-2][0-9])|(3[0-2]))';
+    }
+    description
+     "The ipv4-prefix type represents an IPv4 address prefix.
+      The prefix length is given by the number following the
+      slash character and must be less than or equal to 32.
+
+      A prefix length value of n corresponds to an IP address
+      mask that has n contiguous 1-bits from the most
+      significant bit (MSB) and all other bits set to 0.";
+  }
+
+  typedef ipv6-prefix {
+    type inet:ipv6-prefix;
+  }
+
+  typedef ipv6-prefix-non-canonical {
+    type string {
+      pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
+            + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
+            + '(((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}'
+            + '(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])))'
+            + '(/(([0-9])|([0-9]{2})|(1[0-1][0-9])|(12[0-8])))';
+      pattern '(([^:]+:){6}(([^:]+:[^:]+)|(.*\..*)))|'
+            + '((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?)'
+            + '(/.+)';
+    }
+    description
+     "The ipv6-prefix type represents an IPv6 address prefix.
+      The prefix length is given by the number following the
+      slash character and must be less than or equal to 128.
+
+      A prefix length value of n corresponds to an IP address
+      mask that has n contiguous 1-bits from the most
+      significant bit (MSB) and all other bits set to 0.
+
+      The IPv6 address should have all bits that do not belong
+      to the prefix set to zero.";
+  }
+
+
+  typedef domain-name {
+    type inet:domain-name;
+  }
+
+  typedef host {
+    type inet:host;
+  }
+
+  typedef uri {
+    type inet:uri;
+  }
+
+
+  /* ietf-yang-types */
+
+  typedef counter32 {
+    type ietf-yang-types:counter32;
+  }
+
+  typedef zero-based-counter32 {
+    type ietf-yang-types:zero-based-counter32;
+  }
+
+  typedef counter64 {
+    type ietf-yang-types:counter64;
+  }
+
+  typedef zero-based-counter64 {
+    type ietf-yang-types:zero-based-counter64;
+  }
+
+  typedef gauge32 {
+    type ietf-yang-types:gauge32;
+  }
+
+  typedef gauge64 {
+    type ietf-yang-types:gauge64;
+  }
+
+  typedef object-identifier {
+    type ietf-yang-types:object-identifier;
+  }
+
+  typedef object-identifier-128 {
+    type ietf-yang-types:object-identifier-128;
+  }
+
+  typedef yang-identifier {
+    type ietf-yang-types:yang-identifier;
+  }
+
+  typedef date-and-time {
+    type ietf-yang-types:date-and-time;
+  }
+
+  typedef timeticks {
+    type ietf-yang-types:timeticks;
+  }
+
+  typedef timestamp {
+    type ietf-yang-types:timestamp;
+  }
+
+  typedef phys-address {
+    type ietf-yang-types:phys-address;
+  }
+
+  typedef mac-address {
+    type ietf-yang-types:mac-address;
+  }
+
+  typedef xpath1.0 {
+    type ietf-yang-types:xpath1.0;
+  }
+
+  typedef hex-string {
+    type ietf-yang-types:hex-string;
+  }
+
+  typedef uuid {
+    type ietf-yang-types:uuid;
+  }
+
+  typedef dotted-quad {
+    type ietf-yang-types:dotted-quad;
+  }
+
+  typedef call-id {
+    type string {
+      pattern '[0-9]{1,20}:[0-9]{1,20}';
+    }
+  }
+
+  typedef base64-binary {
+    type string {
+      pattern '[0-9a-zA-Z+/]{4,}[=]{0,2}';
+    }
+  }
+  typedef hex-binary {
+    type string {
+      pattern '[0-9A-Fa-f]{2}([0-9A-Fa-f]{2})*';
+    }
+
+  }
+
+  typedef rw-ip-protocol{
+      type enumeration {
+          enum icmp { value 1; }
+          enum tcp  { value 6; }
+          enum udp  { value 17; }
+          enum gre  { value 47; }
+      }
+  }
+}

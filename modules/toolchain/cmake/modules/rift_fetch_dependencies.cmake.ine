@@ -1,0 +1,130 @@
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Anil Gunturu
+# Creation Date: 8/29/2013
+# 
+
+# cmake script for generating the gnome rpms
+cmake_minimum_required(VERSION 2.8)
+
+set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
+include(rift_build_utils)
+
+rift_find_checkedout_submodules(
+  PROJECT_TOP_DIR       ${PROJECT_TOP_DIR} 
+  OUT_SUBMODULES        submodules
+  )
+
+message("submodules = ${submodules}")
+
+##
+# If the BUILDCACHE_DIR is provided, use the artifacts
+# at the location specified. This is usually done for debugging.
+##
+set(BUILDCACHE_DIR $ENV{BUILDCACHE_DIR})
+if(NOT BUILDCACHE_DIR)
+  set(BUILDCACHE_DIR @RIFT_CACHE_BASE_DIR@)
+endif()
+message("BUILD_CACHE_DIR=${BUILDCACHE_DIR}")
+
+# resolve the dependencies for the checkedout submodules
+foreach(submodule ${submodules})
+  message("Resolving dependencies for submodule: ${submodule}")
+  rift_find_submodule_deps(
+    PROJECT_TOP_DIR     @PROJECT_TOP_DIR@ 
+    SUBMODULE           ${submodule} 
+    OUT_DEPS            _deps
+    )
+  foreach(_dep ${_deps})
+    if(NOT EXISTS @CMAKE_CURRENT_SOURCE_DIR@/${_dep}/CMakeLists.txt)
+      # there is a dependency on this submodule, but is not checked out  
+      rift_fetch_submodule_cache(
+        PROJECT_TOP_DIR         @PROJECT_TOP_DIR@
+        BUILD_CACHE_DIR         ${BUILDCACHE_DIR}
+        BUILD_CACHE_TYPE        @BUILD_CACHE_TYPE@
+        SUBMODULE               ${_dep}
+        INSTALL_PREFIX          @CMAKE_INSTALL_PREFIX@
+        OUT_FOUND               _found
+      )
+      if(NOT _found)
+	# not found cache, checkout the submodule
+        rift_checkout_submodule(
+          PROJECT_TOP_DIR       @PROJECT_TOP_DIR@ 
+          SUBMODULE             ${_dep}
+          )
+      endif()
+    endif()
+  endforeach(_dep)
+
+endforeach(submodule)
+
+# Find all installed dependencies files
+file(GLOB dependencies "@CMAKE_INSTALL_PREFIX@/dependencies/*/dependencies")
+
+# Find all dependencies and build-dependencies for checked-out submodules
+rift_find_checkedout_submodules(
+  PROJECT_TOP_DIR       ${PROJECT_TOP_DIR} 
+  OUT_SUBMODULES        submodules
+  )
+
+foreach(s ${submodules})
+  file(GLOB depends ${PROJECT_TOP_DIR}/${s}/dependencies)
+  list(APPEND dependencies ${depends})
+  file(GLOB depends ${PROJECT_TOP_DIR}/${s}/build-dependencies)
+  list(APPEND dependencies ${depends})
+endforeach(s)
+
+# Get the distro name, e.g. fc20
+set(platform $ENV{RIFT_PLATFORM})
+
+execute_process(
+  COMMAND ${PROJECT_TOP_DIR}/bin/parse-dependencies --enable ${platform} --list Requires ${dependencies}
+  OUTPUT_VARIABLE packages
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE status
+)
+if (status)
+  message(FATAL_ERROR "Command failed: ${PROJECT_TOP_DIR}/bin/parse-dependencies --enable ${platform} --list Requires ${dependencies}")
+endif(status)
+
+if(EXISTS @CMAKE_INSTALL_PREFIX@/usr/share/gir-1.0/Gio-2.0.gir)
+  execute_process(
+    COMMAND
+    sed -i -e s,name=\"[a-zA-Z0-9./_-]*\\.install,name=\"@CMAKE_INSTALL_PREFIX@,g @CMAKE_INSTALL_PREFIX@/usr/share/gir-1.0/Gio-2.0.gir
+    RESULT_VARIABLE result
+    )
+  if(result)
+    message("Error: ${result}")
+    message(FATAL_ERROR "Failed to update the prefix in file @CMAKE_INSTALL_PREFIX@/usr/share/gir-1.0/Gio-2.0.gir")
+  endif(result)
+endif()
+
+file(GLOB_RECURSE files @CMAKE_INSTALL_PREFIX@/*.pc)
+file(GLOB_RECURSE la_files @CMAKE_INSTALL_PREFIX@/*.la)
+list(APPEND files ${la_files})
+
+foreach(f ${files})
+  message("adjusting prefix on ${f}")
+  execute_process(
+    COMMAND
+    sed -i -e s,/[a-zA-Z0-9./_-]*\\.install[a-zA-Z0-9./_-]*/usr,@CMAKE_INSTALL_PREFIX@/usr,g ${f}
+    RESULT_VARIABLE result
+    )
+  if(result)
+    message("Error: ${result}")
+    message(FATAL_ERROR "Failed to update the prefix in pkg-config file ${f}")
+  endif(result)
+endforeach(f)

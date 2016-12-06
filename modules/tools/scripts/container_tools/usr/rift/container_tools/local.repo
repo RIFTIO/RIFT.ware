@@ -1,0 +1,10 @@
+#
+# RIFT.ware
+#
+[LOCAL]
+name=LOCAL
+baseurl=file:/tmp/yum
+enabled=1
+metadata_expire=1m
+gpgcheck=0
+skip_if_unavailable=False

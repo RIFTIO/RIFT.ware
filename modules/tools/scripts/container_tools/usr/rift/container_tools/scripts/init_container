@@ -1,0 +1,7 @@
+#!/bin/bash
+
+
+yum install rift-container-tools
+/usr/rift/container_tools/mkcontainer --modes ui
+yum install -y riftware-launchpad
+systemctl start rwlp

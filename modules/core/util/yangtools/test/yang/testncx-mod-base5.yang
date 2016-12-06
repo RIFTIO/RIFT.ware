@@ -1,0 +1,44 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file testncx-mod-base5.yang
+ * @author Tom Seidenberg
+ * @date 2014/03/25
+ * @brief yangncx test file for modules
+ */
+
+module testncx-mod-base5
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testncx-mod-base5";
+  prefix "tnmb5";
+
+  import testncx-mod-base4 { prefix "tnmb4-b5"; }
+
+  description "Module testing for yangncx.";
+  revision 2014-03-25 { description "Initial version"; }
+
+  typedef b5t1 {
+    type tnmb4-b5:b4t1;
+    description "A typedef of b4t1 from base4, in base5";
+  }
+}
+

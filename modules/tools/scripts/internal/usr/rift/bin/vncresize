@@ -1,0 +1,15 @@
+#!/bin/sh
+
+XX=$1
+YY=$2
+
+if [ "x$XX" = "x" -o "x$YY" = "y" ] ; then
+   echo Usage vncresize X Y
+   exit 1
+fi
+
+NAME="${XX}x${YY}"
+
+( xrandr --newmode $NAME 60 $XX 0 0 0 $YY 0 0 0 
+xrandr --addmode VNC-0 $NAME
+xrandr -s $NAME ) 2>&1 > /dev/null

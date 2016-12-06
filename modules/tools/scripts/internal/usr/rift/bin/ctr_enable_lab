@@ -1,0 +1,69 @@
+#!/bin/bash
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+#
+# 5 July 2016 -- Jeremy Mordkoff -- Genesis -- goal is to take a generic container and update it to run in our lab
+
+
+if [ "$1" = "-lxc" ]; then
+    CONTAINER_TYPE=lxc
+    shift
+fi
+if [ -z "$CONTAINER_TYPE" ]; then
+    CONTAINER_TYPE=docker
+fi
+export CONTAINER_TYPE
+
+if [ $# -ne 1 ]; then
+	echo "args are [-lxc] container_name"
+    echo "e.g. $0 build1"
+    exit 1
+fi
+
+
+HERE=$(dirname $0)
+source $HERE/ctr_functions
+
+CONTAINER=$1
+
+if ! container-exists $CONTAINER; then
+    echo "CONTAINER $CONTAINER not found"
+    exit 1
+fi
+check-net
+
+
+# this will fail on Ubuntu becuase python is not installed!
+if container-exec python -mplatform | grep -qi fedora; then
+    CONTAINER_OS=fedora
+else
+    CONTAINER_OS=ubuntu
+fi
+
+if [ $CONTAINER_OS = "ubuntu" ]; then
+    container-exec apt-get update
+    container-exec apt-get -y install curl git inetutils-ping host vim python3 iproute2
+else
+    $HERE/ctr_enable_repos $CONTAINER
+    container-exec yum -y install python3 git
+fi
+
+$HERE/ctr_push_git_creds $CONTAINER root
+
+container-exec git clone git:rift /root/rift
+container-exec git -C /root/rift checkout lpg_rpms
+container-exec /root/rift/rift-shell -- /root/rift/scripts/cloud/enable_lab
+container-exec rm -f /root/.ssh/id_git
+

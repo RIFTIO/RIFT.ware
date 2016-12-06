@@ -1,0 +1,221 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+
+
+/**
+ * @file testncx-mod-top1.yang
+ * @author Tom Seidenberg
+ * @date 2014/03/25
+ * @brief yangncx test file for modules
+ */
+
+module testncx-mod-top1
+{
+  namespace "http://riftio.com/ns/core/util/yangtools/tests/testncx-mod-top1";
+  prefix "tnmt1";
+
+  import testncx-mod-base1 { prefix "tnmb1-t1"; }  // Give it a different prefix
+  import testncx-mod-base2 { prefix "tnmb2-t1"; }  // Give it a different prefix
+
+  description "Module testing for yangncx.";
+  revision 2014-03-25 { description "Initial version"; }
+
+  /////////////////////////////////////////////////////////////////////////////
+  typedef t1t1 {
+    type int16;
+    description "A typedef from top1";
+  }
+
+  typedef t1t2 {
+    type tnmb1-t1:b1t1;
+    description "A typedef of b1t1 from base1, in top1";
+  }
+
+  typedef t1t3 {
+    type tnmb1-t1:b1t2;
+    description "A typedef of b1t2 from base1, in top1";
+  }
+
+  typedef t1t4 {
+    type tnmb2-t1:b2t1;
+    description "A typedef of b2t1 from base2, in top1";
+  }
+
+  typedef t1t5 {
+    type tnmb2-t1:b2t2;
+    description "A typedef of b2t2 from base2, in top1";
+  }
+
+  typedef t1t6 {
+    type tnmb2-t1:b2t3;
+    description "A typedef of b2t3 from base2, in top1";
+  }
+
+  typedef t1t7 {
+    type tnmb2-t1:b2t4;
+    description "A typedef of b2t4 from base2, in top1";
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  grouping t1g1 {
+    leaf t1g1-t1t1 {
+      description "A type t1t1 from group t1g1 in base2";
+      type t1t1;
+    }
+
+    leaf t1g1-t1t2 {
+      description "A type t1t2 from group t1g1 in base2";
+      type t1t2;
+    }
+
+    leaf t1g1-t1t3 {
+      description "A type t1t3 from group t1g1 in base2";
+      type t1t3;
+    }
+
+    leaf t1g1-t1t4 {
+      description "A type t1t4 from group t1g1 in base2";
+      type t1t4;
+    }
+
+    leaf t1g1-t1t5 {
+      description "A type t1t5 from group t1g1 in base2";
+      type t1t5;
+    }
+
+    leaf t1g1-t1t6 {
+      description "A type t1t6 from group t1g1 in base2";
+      type t1t6;
+    }
+
+    leaf t1g1-t1t7 {
+      description "A type t1t7 from group t1g1 in base2";
+      type t1t7;
+    }
+
+    leaf t1g1-b1t1 {
+      description "A type b1t1 from group t1g1 in base2";
+      type tnmb1-t1:b1t1;
+    }
+
+    leaf t1g1-b1t2 {
+      description "A type b1t2 from group t1g1 in base2";
+      type tnmb1-t1:b1t2;
+    }
+
+    leaf t1g1-b2t1 {
+      description "A type b2t1 from group t1g1 in base2";
+      type tnmb2-t1:b2t1;
+    }
+
+    leaf t1g1-b2t2 {
+      description "A type b2t2 from group t1g1 in base2";
+      type tnmb2-t1:b2t2;
+    }
+
+    leaf t1g1-b2t3 {
+      description "A type b2t3 from group t1g1 in base2";
+      type tnmb2-t1:b2t3;
+    }
+
+    leaf t1g1-b2t4 {
+      description "A type b2t4 from group t1g1 in base2";
+      type tnmb2-t1:b2t4;
+    }
+
+    uses tnmb2-t1:b2g1;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  container t1c1 {
+    leaf t1c1-t1t1 {
+      description "A type t1t1 from container t1c1 in base2";
+      type t1t1;
+    }
+
+    leaf t1c1-t1t2 {
+      description "A type t1t2 from container t1c1 in base2";
+      type t1t2;
+    }
+
+    leaf t1c1-t1t3 {
+      description "A type t1t3 from container t1c1 in base2";
+      type t1t3;
+    }
+
+    leaf t1c1-t1t4 {
+      description "A type t1t4 from container t1c1 in base2";
+      type t1t4;
+    }
+
+    leaf t1c1-t1t5 {
+      description "A type t1t5 from container t1c1 in base2";
+      type t1t5;
+    }
+
+    leaf t1c1-t1t6 {
+      description "A type t1t6 from container t1c1 in base2";
+      type t1t6;
+    }
+
+    leaf t1c1-t1t7 {
+      description "A type t1t7 from container t1c1 in base2";
+      type t1t7;
+    }
+
+    leaf t1c1-b1t1 {
+      description "A type b1t1 from container t1c1 in base2";
+      type tnmb1-t1:b1t1;
+    }
+
+    leaf t1c1-b1t2 {
+      description "A type b1t2 from container t1c1 in base2";
+      type tnmb1-t1:b1t2;
+    }
+
+    leaf t1c1-b2t1 {
+      description "A type b2t1 from container t1c1 in base2";
+      type tnmb2-t1:b2t1;
+    }
+
+    leaf t1c1-b2t2 {
+      description "A type b2t2 from container t1c1 in base2";
+      type tnmb2-t1:b2t2;
+    }
+
+    leaf t1c1-b2t3 {
+      description "A type b2t3 from container t1c1 in base2";
+      type tnmb2-t1:b2t3;
+    }
+
+    leaf t1c1-b2t4 {
+      description "A type b2t4 from container t1c1 in base2";
+      type tnmb2-t1:b2t4;
+    }
+
+    uses tnmb2-t1:b2g1;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  container t1c2 {
+    uses t1g1;
+  }
+}
+

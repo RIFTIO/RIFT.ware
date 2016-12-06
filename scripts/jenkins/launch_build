@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# script to trick the build into thinking its running under jenkins
+
+
+if [ -z "$RIFT_ROOT" ]; then
+    RIFT_ROOT=$(dirname $(dirname $(realpath $0)))
+fi
+export BUILD_NUMBER=1
+export JOB_NAME=${1:-spot_debug}
+export WORKSPACE=$RIFT_ROOT
+export RIFT_ROOT
+
+exec $RIFT_ROOT/scripts/jenkins/run_steps_and_archive.sh

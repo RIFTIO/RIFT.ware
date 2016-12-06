@@ -1,0 +1,262 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+// Configuration references
+
+module rw-dtsperfmgr
+{
+  namespace "http://riftio.com/ns/riftware-1.0/rw-dtsperfmgr";
+  prefix "rw-dtsperfmgr";
+
+  import rw-base {
+    prefix "rw-base";
+  }
+
+  import rw-vcs {
+    prefix "rwvcs";
+  }
+
+  import rw-manifest {
+    prefix "rwmanifest";
+  }
+
+  import rw-dtsperf {
+    prefix "rw-dtsperf";
+  }
+
+  import rw-pb-ext {
+    prefix "rwpb";
+  }
+
+  import rw-cli-ext {
+    prefix "rwcli";
+  }
+
+  description "DTS perfmgr yang";
+  revision 2015-07-15 {
+    description "Initial version"; 
+  }
+
+  typedef perf-test-type {
+    type enumeration {
+      enum test-basic;
+      enum test-latency;
+    }
+  }
+
+  typedef perf-test-state {
+    type enumeration {
+      enum test-initializing;
+      enum test-running;
+      enum test-failed;
+      enum test-finished;
+      enum test-stopped;
+    }
+  }
+
+  typedef perf-tasklet-type {
+    type enumeration {
+      enum c-tasklet;
+      enum py-tasklet;
+    }
+  }
+
+  container perfmgr-config {
+    description "Configure DTS Performance Manager";
+    rwpb:msg-new "PerfmgrConfig";
+    rwcli:new-mode "perfmgr-config";
+    list monitor-vm {
+      description "List of VM components to include in performance tests";
+      key "instance-name";
+      leaf instance-name {
+        description "Rift VM instance name";
+        type string;
+      }
+    }
+  }
+
+  rpc start-perf-test {
+    input {
+      rwpb:msg-new "StartPerfTestInput";
+      leaf test-type {
+        description "Type of performance test";
+        type perf-test-type;
+      }
+      leaf publishers {
+        description "Number of publishers included in test";
+        type uint32;
+      }
+      leaf subscribers {
+        description "Number of extra subscribers included in the test";
+        type uint32;
+      }
+      leaf parallel-xact-limit {
+        description "limit on number of parallel transactions allowed";
+        type uint32;
+      }
+      leaf xact-operation {
+        description "operation type for transaction to perform";
+        type rw-dtsperf:xact-oper;
+      }
+      leaf tasklet-type {
+        description "Perf tasklet flavor to be used with the Perfmgr.";
+        type perf-tasklet-type;
+      }
+      leaf xact-max-with-outstanding {
+         type uint32;
+         description "max num of xacts";
+      }
+      container payload {
+        leaf length {
+          type uint32;
+          description "Length of payload in each reponse";
+        }
+        leaf pattern {
+          type string;
+          rwpb:field-string-max "32";
+          description "Pattern to use to fill payload";
+        }
+      }
+    }
+    output {
+      rwpb:msg-new "StartPerfTestOutput";
+      leaf test-id {
+        description "Instance identifier to given to the test";
+        mandatory true;
+        type uint32;
+      }
+    }
+  }
+
+  rpc stop-perf-test {
+    input {
+      rwpb:msg-new "StopPerfTestInput";
+      leaf test-id {
+        description "Instance identifier of a running test";
+        mandatory true;
+        type uint32;
+      }
+    }
+    output {
+      rwpb:msg-new "StopPerfTestOutput";
+      leaf status {
+        description "Result of the stop-perf-test RPC request";
+        mandatory true;
+        type uint32;
+      }
+    }
+  }
+
+  container perf-test {
+    description "DTS Performance test results";
+    config false;
+    rwpb:msg-new "PerfTest";
+    list test {
+      description "List of test result instances";
+      key "test-id";
+      leaf test-id {
+        description "Instance identifier of test";
+        type uint32;
+      }
+
+      leaf test-type {
+        description "Type of performance test";
+        type perf-test-type;
+      }
+
+      leaf test-state {
+        description "State of this test";
+        type perf-test-state;
+      }
+
+      leaf publishers {
+        description "Number of publishers included in the test";
+        type uint32;
+      }
+
+      leaf subscribers {
+        description "Number of extra subscribers included in the test";
+        type uint32;
+      }
+
+      leaf parallel-xact-limit {
+        description "limit on number of parallel transactions allowed";
+        type uint32;
+      }
+
+      leaf xact-operation {
+        description "Operation type for transaction to perform";
+        type rw-dtsperf:xact-oper;
+      }
+
+      leaf tasklet-type {
+        description "Perf tasklet flavor to be used with the Perfmgr.";
+        type perf-tasklet-type;
+      }
+
+      leaf xact-max-with-outstanding {
+         type uint32;
+         description "max num of xacts";
+      }
+      container payload {
+        leaf length {
+          description "Length of transaction payload";
+          type uint32;
+        }
+        leaf pattern {
+          description "Pattern used to fill payload";
+          type string;
+        }
+      }
+
+      list performance-metric {
+        key "name";
+        leaf name {
+          description "Name of metric provided by performance test";
+          type string;
+        }
+        leaf value {
+          description "Measured value of metric";
+          type decimal64 {
+            fraction-digits 6;
+          }
+        }
+      }
+
+      container tasklet-info {
+        list publisher {
+          key "instance-name";
+          leaf instance-name {
+            description "Instance name of a publisher component";
+            type string;
+          }
+        }
+
+        list subscriber {
+          key "instance-name";
+          leaf instance-name {
+            description "Instance name of a subscriber component";
+            type string;
+          }
+        }
+      }
+    }
+  }
+}

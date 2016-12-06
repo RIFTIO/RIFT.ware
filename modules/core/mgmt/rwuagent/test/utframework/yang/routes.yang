@@ -1,0 +1,132 @@
+
+/*
+ * 
+ *   Copyright 2016 RIFT.IO Inc
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *
+ */
+
+module routes {
+
+  namespace "http://riftio.com/ns/core/mgmt/rwuagent/test/routes";
+  prefix routes;
+
+  import ietf-inet-types { prefix inet; }
+  import ut-types { prefix tps; }
+  import rw-pb-ext { prefix rwpb; }
+
+  description "System Routes configuration ";
+
+  revision "2015-10-31" {
+    description "Initial revision";
+  }
+
+  container routes {
+    rwpb:msg-new "Routes";
+    container inet {
+      list route {
+        key "name prefix-length";
+        leaf name {
+          type inet:ipv4-address;
+        }
+        leaf prefix-length {
+          type tps:prefixLengthIPv4;
+        }
+        leaf description {
+          type string;
+        }
+        leaf enabled {
+          type boolean;
+          default true;
+        }
+        leaf rtype {
+          type enumeration {
+            enum "next-hop";
+            enum "reject";
+            enum "discard";
+            enum "prohibit";
+          }
+          default next-hop;
+        }
+        list next-hop {
+          key name;
+          unique metric;
+          max-elements 16;
+          leaf name {
+            type inet:ipv4-address;
+            description "must not be a multicast address";
+          }
+          leaf metric {
+            type int32;
+            default 0;
+          }
+        }
+      }
+    }
+    container inet6 {
+      list route {
+        key "name prefix-length";
+        leaf name {
+          type inet:ipv6-address;
+        }
+        leaf prefix-length {
+          type tps:prefixLengthIPv6;
+        }
+        leaf description {
+          type string;
+        }
+        leaf enabled {
+          type boolean;
+          default true;
+        }
+        leaf rotype {
+          type enumeration {
+            enum "next-hop";
+            enum "reject";
+          }
+          default "next-hop";
+        }
+        list next-hop {
+          key name;
+          unique metric;
+          max-elements 16;
+          leaf name {
+            type inet:ipv6-address;
+            description "must not be a multicast address";
+          }
+          leaf metric {
+            type int32;
+            default 1024;
+          }
+          leaf interface {
+            type tps:interfaceName;
+          }
+          leaf unit {
+            type tps:interfaceLogicalUnit;
+          }
+        }
+      }
+    }
+
+    // For testing some large values for leaf
+    leaf binaryblob {
+      type binary;
+    }
+
+    leaf bigstring {
+      type string;
+    }
+  }
+}
