@@ -29,6 +29,7 @@ RIFT.ware 4.3 is the last release of Fedora 20 support. RIFT.io strongly recomme
 
 
 ## Known Issues
+* RIFT-15309  When Launchpad is installed on a bare VM with multiple interfaces, you cannot connect to the REST server on port 8008 if there is no eth0 or or if eth0 is not the management interface. Workaround: Use port 8888.
 * RIFT-11010  If you delete a network service and immediately go to the Launchpad Catalog page, the Catalog still shows the network service in use with a "(1)" appended to the descriptor name. The Catalog does not automatically check if the number of network service records (NSR) using that network service descriptor (NSD) has changed. Therefore, it continues to show (1) and prevents the deletion until you navigate away from the page and come back or refresh the page.
 * RIFT-11095  An exported image name does not include the NFV object type as a prefix, such as vnfd_ or nsd_.
 * RIFT-11300  If an element is removed from a valid descriptor, the onboarding operation succeeds when it should error. The failure occurs during network service instantiation.
