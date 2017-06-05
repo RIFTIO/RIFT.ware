@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwlog.c
  * @author Anil Gunturu (anil.gunturu@riftio.com)
@@ -173,7 +154,10 @@ static void rwlog_destination_setup(rwlog_ctx_t *ctx)
        * permission to change file ownership */
       if(r == 0 && file_stats.st_uid != real_uid  && real_uid != uid && euid == 0) {
         //fprintf(stderr,"File uid: %d differs from real uid; process uid: %d process euid: %d real uid: %lu; changing file ownership \n",file_stats.st_uid,uid,euid, real_uid);
-        fchown(tls_key->rwlog_file_fd,real_uid,-1);
+        int r = fchown(tls_key->rwlog_file_fd,real_uid,-1);
+        if (r < 0) {
+          RWLOG_DEBUG_PRINT ("Failed to chown %s to uid=%d\n", rwlog_filename, real_uid);
+        }
       }
     }
   }
@@ -222,7 +206,14 @@ void rwlog_init_bootstrap_filters(char *shm_file_name)
     RW_CRASH_MESSAGE("Error Open %s for  SHM:%s\n", strerror(errno), rwlog_shm);
     return;
   }
-  ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+
+  int r = ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  if (r < 0) { 
+    RWLOG_FILTER_DEBUG_PRINT ("Error ftruncate %s SHM:%s\n", strerror(errno), rwlog_shm);
+    RW_CRASH_MESSAGE ("Error ftruncate %s SHM:%s\n", strerror(errno), rwlog_shm);
+    return;
+  }
+  
   rwlogd_shm_ctrl =
       (rwlogd_shm_ctrl_t *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd, 0);
   if (MAP_FAILED == rwlogd_shm_ctrl)
@@ -539,8 +530,10 @@ void rwlog_update_appname(rwlog_ctx_t *ctx, const char *taskname)
  */
 rw_status_t rwlog_close(rwlog_ctx_t *ctx,bool remove_logfile)
 {
-   rwlog_ctx_unref(ctx);
-   return RW_STATUS_SUCCESS;
+  if (ctx) {
+    rwlog_ctx_unref(ctx);
+  }
+  return RW_STATUS_SUCCESS;
 }
 rw_status_t rwlog_close_internal(rwlog_ctx_t *ctx,bool remove_logfile)
 {

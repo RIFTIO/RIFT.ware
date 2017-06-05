@@ -1,24 +1,11 @@
 #!/usr/bin/env python
 
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT
 
 
 import os
 import unittest
+import socket
 
 import xmlrunner
 import gi
@@ -56,11 +43,17 @@ class RwSysTest(unittest.TestCase):
             os.environ['RIFT_INSTANCE_UID'] = old_uid
 
     def test_port_in_avoid_list(self):
-        # 110 is not used
-        # 111 is used
-        # 52 was not used on ganga
-        self.assertFalse(rwlib.port_in_avoid_list(110, 1))
-        self.assertTrue(rwlib.port_in_avoid_list(110, 2))
+        #Open a socket, bind it to IPADDR_ANY(use ephemeral port, listen, get sock info,
+        #and then test the port in avoid list using the port allocated for the socket.
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except socket.error as msg:
+            s = None
+        if (s is not None):
+            s.listen(1)
+            (host, port) = s.getsockname()
+            self.assertTrue(rwlib.port_in_avoid_list(port-1, 2))
+            s.close()
 
     def test_setenv(self):
         os.environ['RW_VAR_RIFT'] = '/tmp'

@@ -1,19 +1,5 @@
 
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT
 
 import _pytest.mark
 import _pytest.runner
@@ -51,6 +37,10 @@ def pytest_addoption(parser):
     # --cloud-host <addr>
     #   Host address of cloud provider
     parser.addoption("--cloud-host", action="store", default="127.0.0.1")
+
+    # --metadata-host <addr>
+    #   Host address of openstack metadata service
+    parser.addoption("--metadata-host", action="store", default="169.254.169.254")
 
     # --repeat <times>
     #   Number of times to repeat the entire test
@@ -143,6 +133,58 @@ def pytest_addoption(parser):
     #   System is running using xml agent
     parser.addoption("--use-xml-mode", action="store_true")
 
+    # --static-ip
+    #   To run static-ip related tests
+    parser.addoption("--static-ip", action="store_true")
+
+    # --ipv6
+    #   Will configure ip-profile with version 'IPv6', also assigns ipv6 type addresses during static-ip systemtest
+    parser.addoption("--ipv6", action="store_true")
+
+    # --vnf-dependencies
+    #   To run vnf-dependencies related tests
+    parser.addoption("--vnf-dependencies", action="store_true")
+
+    # --metadata-vdud
+    #   To run metadata-vdud ping pong vnf test
+    parser.addoption("--metadata-vdud", action="store_true")
+
+    # --metadata-vdud-cfgfile
+    #   To run metadata-vdud test which does additional check to verify whether config files copied to VNF VMs
+    parser.addoption("--metadata-vdud-cfgfile", action="store_true")
+
+    # --multidisk
+    #   To run multidisk related tests
+    parser.addoption("--multidisk", action="store_true")
+
+    # --l2-port-chaining
+    #   To run l2-port-chaining related tests
+    parser.addoption("--l2-port-chaining", action="store_true")
+
+    # --port-security
+    #   To run port-security related tests
+    parser.addoption("--port-security", action="store_true")
+
+    # --update-vnfd-instantiate
+    #   To instantiate a NS after updating VNFDs
+    parser.addoption("--update-vnfd-instantiate", action="store_true")
+
+    # --vnf-onboard-delete
+    #   To onboard and delete m VNFs randomly for n iterations
+    #   m: number of VNFs to be used; n: number of add, delete iterations
+    parser.addoption("--vnf-onboard-delete", action="store",
+                     help="it accepts two pramaeters in form of <add_delete_iterations_count>,<no_of_VNFs_to_be_used>")
+
+    # --upload-images-multiple-accounts
+    #   To upload packages carrying embedded images to multiple VIM accounts
+    parser.addoption("--upload-images-multiple-accounts", action="store_true")
+
+    # --multiple-ns-instantiate
+    #   To onboard 3 or 4 VNFs and then randomly instantiates and deletes them with memory checks. 
+    #   NS instantiation happens for n iterations or for a duration of m hours whichever hits first (params passed as n,m)
+    parser.addoption("--multiple-ns-instantiate", action="store",
+                     help="it accepts two pramaeters in form of <no_of_ns_instantiation>,<duration_of_ns_instantiations>")
+
 @pytest.fixture(autouse=True)
 def skip_disabled_features(request, logger):
     """Fixture to skip any tests that rely on a disabled feature
@@ -170,6 +212,51 @@ def skip_disabled_features(request, logger):
 def xml_mode(request):
     """Fixture that returns --use-xml-mode option value"""
     return request.config.getoption("--use-xml-mode")
+
+@pytest.fixture(scope='session', autouse=True)
+def ipv6(request):
+    """Fixture that returns --ipv6 option value"""
+    return request.config.getoption("--ipv6")
+
+@pytest.fixture(scope='session', autouse=True)
+def static_ip(request):
+    """Fixture that returns --static-ip option value"""
+    return request.config.getoption("--static-ip")
+
+@pytest.fixture(scope='session', autouse=True)
+def vnf_dependencies(request):
+    """Fixture that returns --vnf-dependencies option value"""
+    return request.config.getoption("--vnf-dependencies")
+
+@pytest.fixture(scope='session', autouse=True)
+def metadata_vdud(request):
+    """Fixture that returns --metadata-vdud option value"""
+    return request.config.getoption("--metadata-vdud")
+
+@pytest.fixture(scope='session', autouse=True)
+def multidisk(request):
+    """Fixture that returns --multidisk option value"""
+    return request.config.getoption("--multidisk")
+
+@pytest.fixture(scope='session', autouse=True)
+def l2_port_chaining(request):
+    """Fixture that returns --l2-port-chaining option value"""
+    return request.config.getoption("--l2-port-chaining")
+
+@pytest.fixture(scope='session', autouse=True)
+def port_security(request):
+    """Fixture that returns --port-security option value"""
+    return request.config.getoption("--port-security")
+
+@pytest.fixture(scope='session', autouse=True)
+def metadata_host(request):
+    """Fixture that returns --metadata-host option value"""
+    return request.config.getoption("--metadata-host")
+
+@pytest.fixture(scope='session', autouse=True)
+def vnf_onboard_delete(request):
+    """Fixture that returns --vnf-onboard-delete option value"""
+    return request.config.getoption("--vnf-onboard-delete")
 
 @pytest.fixture(scope='session', autouse=True)
 def cloud_host(request):
@@ -528,6 +615,39 @@ def pytest_pyfunc_call(pyfuncitem):
         for funcarg in pyfuncitem.funcargs:
             if funcarg.startswith('splat_'):
                 pyfuncitem.funcargs[funcarg]()
+
+def pytest_runtestloop(session):
+    """pytest hook
+    Loop thrpugh each test item part of the session and invoke each of them sequentially
+
+    Arguments:
+        session - current pytest session
+    """
+    if (session.testsfailed and
+            not session.config.option.continue_on_collection_errors):
+        raise session.Interrupted(
+            "%d errors during collection" % session.testsfailed)
+
+    if session.config.option.collectonly:
+        return True
+    
+    # Collect the details of test items specific to NS instantionation and NS termination.
+    instantiate_nsr_index, terminate_nsr_index = [0]*2
+    for index, item in enumerate(session.items):
+        if 'test_terminate_nsr' in item.name:
+            terminate_nsr_item, terminate_nsr_index = item, index
+        if 'test_wait_for_nsr_started' in item.name:
+            instantiate_nsr_index = index
+
+    for i, item in enumerate(session.items):
+        nextitem = session.items[i+1] if i+1 < len(session.items) else None
+        item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+        if session.shouldstop:
+            # Call test_terminate_nsr before exiting pytest session
+            if instantiate_nsr_index < i < terminate_nsr_index:
+                terminate_nsr_item.config.hook.pytest_runtest_protocol(item=terminate_nsr_item, nextitem=None)
+            raise session.Interrupted(session.shouldstop)
+    return True
 
 def pytest_runtest_makereport(item, call):
     """pytest hook

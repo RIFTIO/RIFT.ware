@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rwlib_gtest.cc
@@ -35,6 +16,7 @@
  */
 #include <string.h>
 #include <limits.h>
+#include <sys/socket.h>
 #include <cstdlib>
 
 #include "rwlib.h"
@@ -53,6 +35,8 @@
 #define FEATURE_PLUGIN_EXTENSION_NAME "feature_plugin-"
 #define STANDARD_PLUGIN_EXTENSION_NAME "standard_plugin-"
 
+
+#pragma GCC disgnostic ignored "-Wdeprecated-declarations"
 
 /**
  * Location of the plugin files used for this test program
@@ -918,12 +902,36 @@ TEST(RIFTSys, UniquePort) {
     setenv("RIFT_INSTANCE_UID", old_uid, 1);
 }
 
+
 TEST(RIFTSys, AvoidPort) {
-  ASSERT_EQ(rw_port_in_avoid_list(110, 1), false);
-  ASSERT_EQ(rw_port_in_avoid_list(110, 2), true);
-  ASSERT_EQ(rw_port_in_avoid_list(110, 5), true);
-  ASSERT_EQ(rw_port_in_avoid_list(111, 1), true);
-  ASSERT_EQ(rw_port_in_avoid_list(111, 0), false);
+  int fd;
+  struct sockaddr_in bindaddr;
+  int retval;
+  socklen_t len = sizeof(struct sockaddr_in);
+  unsigned short testport;
+  
+  fd = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GT(fd, 0);
+  bindaddr.sin_family = AF_INET;
+  bindaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  bindaddr.sin_port = 0;
+  memset(bindaddr.sin_zero, '\0', sizeof(bindaddr.sin_zero));  
+  retval = bind(fd, (struct sockaddr *) &bindaddr, sizeof(bindaddr));
+  EXPECT_TRUE(retval == 0);
+  retval = listen(fd, 5);
+  EXPECT_TRUE(retval == 0);
+  
+  retval = getsockname(fd,  (struct sockaddr *) &bindaddr, &len);
+  EXPECT_TRUE(retval == 0);
+  EXPECT_TRUE(bindaddr.sin_port > 0);
+
+  testport  = ntohs(bindaddr.sin_port);
+    
+  EXPECT_TRUE(rw_port_in_avoid_list((testport -1), 2) == true);
+  EXPECT_TRUE(rw_port_in_avoid_list((testport -1), 5) == true);
+  EXPECT_TRUE(rw_port_in_avoid_list(testport, 1) ==  true);
+  
+  close(fd);
 }
 
 /*

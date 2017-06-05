@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file pb_merge_test.cpp
  * @author Sujithra Periasamy
@@ -3221,7 +3202,7 @@ TEST(RWProtobuf, BinaryKeys)
   RWPB_F_MSG_INIT(Testy2pTop2_data_Bkll, msg1.bkll[0]);
 
   msg1.bkll[0]->k.len = strlen("BinaryKey1")+1;
-  strcpy((char*)msg1.bkll[0]->k.data, "BinaryKey1");
+  strcpy((char*)msg1.bkll[0]->_placeholder_k.data, "BinaryKey1");
   msg1.bkll[0]->has_k = 1;
   msg1.bkll[0]->has_myl = true;
   msg1.bkll[0]->myl = 15;
@@ -3233,7 +3214,7 @@ TEST(RWProtobuf, BinaryKeys)
   RWPB_F_MSG_INIT(Testy2pTop2_data_Bkll, msg2.bkll[0]);
 
   msg2.bkll[0]->k.len = strlen("BinaryKey2")+1;
-  strcpy((char*)msg2.bkll[0]->k.data, "BinaryKey2");
+  strcpy((char*)msg2.bkll[0]->_placeholder_k.data, "BinaryKey2");
   msg2.bkll[0]->has_k = 1;
   msg2.bkll[0]->has_myl = true;
   msg2.bkll[0]->myl = 20;
@@ -3254,8 +3235,8 @@ TEST(RWProtobuf, BinaryKeys)
   EXPECT_EQ(out->n_bkll, 2);
   ASSERT_TRUE(out->bkll);
   ASSERT_TRUE(out->bkll[0]);
-  EXPECT_EQ(out->bkll[0]->k.len, 11);
-  EXPECT_STREQ((char*)out->bkll[0]->k.data, "BinaryKey1");
+  EXPECT_EQ(out->bkll[0]->_placeholder_k.len, 11);
+  EXPECT_STREQ((char*)out->bkll[0]->_placeholder_k.data, "BinaryKey1");
   EXPECT_EQ(out->bkll[0]->myl, 15);
   EXPECT_STREQ(out->bkll[0]->myls, "hello");
 
@@ -3265,7 +3246,7 @@ TEST(RWProtobuf, BinaryKeys)
   EXPECT_EQ(out->bkll[1]->myl, 20);
   EXPECT_STREQ(out->bkll[1]->myls, "world");
 
-  strcpy((char*)msg2.bkll[0]->k.data, "BinaryKey1");
+  strcpy((char*)msg2.bkll[0]->_placeholder_k.data, "BinaryKey1");
   msg2.bkll[0]->has_myl = false;
 
   len1 = protobuf_c_message_get_packed_size(NULL, &msg1.base);
@@ -3282,8 +3263,8 @@ TEST(RWProtobuf, BinaryKeys)
   EXPECT_EQ(out->n_bkll, 1);
   ASSERT_TRUE(out->bkll);
   ASSERT_TRUE(out->bkll[0]);
-  EXPECT_EQ(out->bkll[0]->k.len, 11);
-  EXPECT_STREQ((char*)out->bkll[0]->k.data, "BinaryKey1");
+  EXPECT_EQ(out->bkll[0]->_placeholder_k.len, 11);
+  EXPECT_STREQ((char*)out->bkll[0]->_placeholder_k.data, "BinaryKey1");
   EXPECT_EQ(out->bkll[0]->myl, 15);
   EXPECT_STREQ(out->bkll[0]->myls, "world");
 }

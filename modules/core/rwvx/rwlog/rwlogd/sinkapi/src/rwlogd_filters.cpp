@@ -461,6 +461,31 @@ rw_status_t remove_exact_match_filter_uint64_new(filter_attribute **filter_info,
   return status;
 }
 
+rw_status_t remove_all_attribute_cat_filter(filter_attribute **filter_info,
+                                            char *category_str)
+{
+  rw_status_t status = RW_STATUS_FAILURE;
+
+  size_t cat_len = strlen(category_str);
+  filter_attribute *current_filter=NULL, *tmp = NULL;
+  HASH_ITER(hh, *filter_info, current_filter, tmp) {
+    // Check if the key ends with category str
+    size_t start_pos = strlen(current_filter->attribute_value_string);
+    if (start_pos <= cat_len) {
+      continue;
+    }
+    start_pos -= cat_len;
+    if (strncmp(current_filter->attribute_value_string + start_pos,
+                category_str, cat_len) == 0) {
+      HASH_DEL(*filter_info,current_filter);  /* delete; filter_info advances to next */
+      free(current_filter);
+    }
+  }
+
+  return status;
+}
+
+
 /*****************************************************************************
  * add_exact_match_deny_filter_string
  * Insert the filter in the global data structure 

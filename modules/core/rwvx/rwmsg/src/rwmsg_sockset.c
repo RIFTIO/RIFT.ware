@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwmsg_sockset.c
  * @author Grant Taylor <grant.taylor@riftio.com>
@@ -110,7 +91,8 @@ void rwmsg_sockset_close(rwmsg_sockset_t *ss) {
   // flush any queues
 
   if (ss->ageout_timer) {
-    rwsched_dispatch_release(ss->ep->taskletinfo, ss->ageout_timer);
+    rwsched_dispatch_source_cancel(ss->ep->taskletinfo, ss->ageout_timer);
+    rwsched_dispatch_source_release(ss->ep->taskletinfo, ss->ageout_timer);
     ss->ageout_timer = NULL;
     rwmsg_sockset_release(ss);
   }
@@ -717,7 +699,8 @@ void rwmsg_ageout_timer_f(void *ctx) {
   RW_ASSERT_TYPE(ss, rwmsg_sockset_t);
 
   if (ss->ageout_timer) {
-    rwsched_dispatch_release(ss->ep->taskletinfo, ss->ageout_timer);
+    rwsched_dispatch_source_cancel(ss->ep->taskletinfo, ss->ageout_timer);
+    rwsched_dispatch_source_release(ss->ep->taskletinfo, ss->ageout_timer);
     ss->ageout_timer = NULL;
   }
 
@@ -784,7 +767,8 @@ static void rwmsg_nn_connection_indicationn_cb(void *handle, int conns) {
 
     if (sk->sk>=0) {
       if (ss->ageout_timer) {
-	rwsched_dispatch_release(ss->ep->taskletinfo, ss->ageout_timer);
+        rwsched_dispatch_source_cancel(ss->ep->taskletinfo, ss->ageout_timer);
+	rwsched_dispatch_source_release(ss->ep->taskletinfo, ss->ageout_timer);
 	ss->ageout_timer = NULL;
 	rwmsg_sockset_release(ss);
       }

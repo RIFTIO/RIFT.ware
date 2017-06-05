@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -81,7 +67,7 @@ __BEGIN_DECLS
               name, cbms); \
       free(name); \
       len = snprintf((out_str + len), 1024 - len, args_va);  \
-      RWTRACE_CRIT((trace_inst), trace_category, "%s", out_str); \
+      RWTRACE_WARN((trace_inst), trace_category, "%s", out_str); \
     } \
   } \
 } /* Terminates { from RWVCS_LATENCY_CHK_PRE */
@@ -182,6 +168,8 @@ typedef struct rwvcs_mgmt_info_s {
      || (t_rwvcs)->mgmt_info.state == RWVCS_TYPES_VM_STATE_MGMTSTANDBY)
 
 
+
+
 struct rwvcs_instance_s {
   CFRuntimeBase _base;
   struct rwvx_instance_s *rwvx;
@@ -212,6 +200,15 @@ struct rwvcs_instance_s {
   bool heartbeatmon_enabled;
   int restart_inprogress;
 
+  /*Serf-event members*/
+  uint32_t                            serf_event_timeout;
+  /*An entry is added to the below list whenever a vm is lost due to a serf-event
+    and the entry is deleted whenever it becomes active. If before it becomes
+    active, the above serf_event_timeout happens, the system is taken down
+    if heartbeat is enabled*/
+  rw_sklist_t                         lost_vm_list; 
+    
+  
   // If LD_PRELOAD is set (in order to do malloc accounting) then it will
   // be stored here and unset from the environment.  Later execs of rwmain
   // will reintroduce the variable.  This is done so that native processes
@@ -231,6 +228,20 @@ struct rwvcs_instance_s {
 
 RW_TYPE_DECL(rwvcs_instance);
 RW_CF_TYPE_EXTERN(rwvcs_instance_ptr_t)
+
+
+
+
+
+struct rwvcs_lost_vm_info_s{
+  char                        *member_name;
+  rwsched_CFRunLoopTimerRef   timer;
+  rw_sklist_element_t         element;
+  struct rwvcs_instance_s     *rwvcs;
+};
+
+RW_TYPE_DECL(rwvcs_lost_vm_info);
+RW_CF_TYPE_EXTERN(rwvcs_lost_vm_info_ptr_t)
 
 /*
  * Allocate a rwvcs instance.

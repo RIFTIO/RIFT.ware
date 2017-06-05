@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
 """
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 
 @file prepare.py
 @author Paul Laidler (Paul.Laidler@riftio.com)
@@ -365,15 +351,34 @@ if __name__ == '__main__':
                         ).format(
                             rift_install=os.environ['RIFT_INSTALL']
                         )
-                        platform = subprocess.check_output(platform_cmd, shell=True)
+                        platform = subprocess.check_output(platform_cmd, shell=True).decode('ascii').strip()
 
-                        create_cmd = '{docker_host_cmd} /usr/rift/bin/rbc container create {platform}-ui {container_name}'.format(
+                        container_image = '{platform}-ui'.format(platform=platform)
+                        if platform == 'ub16':
+                            container_image = 'ub16:master-fixed'
+                        elif platform == 'fc20':
+                            container_image = 'fc20:master-fixed'
+
+                        create_cmd = '{docker_host_cmd} /usr/rift/bin/rbc container create {container_image} {container_name}'.format(
                             docker_host_cmd=docker_host_cmd,
-                            platform=platform.decode('ascii').rstrip(),
+                            container_image=container_image,
                             container_name=container_name,
                         )
 
-                        result = subprocess.check_output(create_cmd, shell=True)
+                        container_created=False
+                        attempts=3
+                        for attempt in range(0,attempts):
+                            try:
+                                result = subprocess.check_output(create_cmd, shell=True)
+                                container_created=True
+                                break
+                            except Exception as e:
+                                logger.error("Exception encountered while creating container", exc_info=True)
+                            time.sleep(5)
+                        if not container_created:
+                            raise ValidationError("Failed to create container")
+
+
                         vm_id += 1
                         match = re.search('Lease of (\S*) obtained', result.decode('ascii'))
                         if not match:
@@ -440,7 +445,7 @@ if __name__ == '__main__':
                         subprocess.check_call(restart_cmd, shell=True)
 
                     prepare_cmd = (
-                        '{container_cmd} sudo {rift_install}/container_tools/mkvmimg --container --modes ext --modes ui --modes systest --modes build'
+                        '{container_cmd} sudo {rift_install}/container_tools/mkvmimg --container --modes ext --modes ui --modes systemtest --modes build'
                     ).format(
                         container_cmd=container_cmd,
                         rift_install=os.environ['RIFT_INSTALL'],
@@ -674,7 +679,7 @@ if __name__ == '__main__':
 
     userdata_run.append((
             '{rift_install}/rift-shell -e -r -- '
-            'container_tools/mkvmimg --container --modes ext --modes ui --modes systest --modes build'
+            'container_tools/mkvmimg --container --modes ext --modes ui --modes systemtest --modes build'
         ).format(
             rift_install=os.environ['RIFT_INSTALL']
         )

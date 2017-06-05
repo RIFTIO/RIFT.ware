@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwuagent_nb_req_confd_cdb.cpp
  *
@@ -310,7 +291,6 @@ void NbReqConfdConfig::process_confd_subscription()
     case CDB_SUB_ABORT:
       RWMEMLOG (memlog_buf_, RWMEMLOG_MEM2, "CDB_SUB_ABORT");
       RW_MA_NBREQ_LOG (this, ClientDebug, __FUNCTION__ , "Abort callback from confd");
-      abort_from_confd_ = true;
       cdb_sync_subscription_socket (sub_fd_, CDB_DONE_PRIORITY);
       break;
 
@@ -530,12 +510,8 @@ StartStatus NbReqConfdConfig::respond(
     return respond (sbreq);
   }
 
-  if (abort_from_confd_) {
-    abort_from_confd_ = false;
-  } else {
-    cdb_sub_abort_trans (sub_fd_, CONFD_ERRCODE_RESOURCE_DENIED, 0, 0,
+  cdb_sub_abort_trans (sub_fd_, CONFD_ERRCODE_RESOURCE_DENIED, 0, 0,
                         "%s", err_str.c_str());
-  }
 
   RW_MA_NBREQ_LOG (this, ClientError, __FUNCTION__ ,
                    " Aborting confd transaction");

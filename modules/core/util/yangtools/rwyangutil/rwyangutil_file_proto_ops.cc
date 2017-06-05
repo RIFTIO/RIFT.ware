@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rw_file_proto_ops.cc
  * @author Arun Muralidharan
@@ -166,7 +147,7 @@ std::string FileProtoOps::form_rift_var_root_path_impl(std::vector<std::string> 
 {
   auto rift_var_root = getenv("RIFT_VAR_ROOT");
   if (rift_var_root)    { return std::string(rift_var_root); }
-  if (is_rooted_path()) { return get_rift_install(); }
+  if (is_rooted_path()) { return get_rift_var_root(); }
 
   std::string test_name;
   const char* err_msg = nullptr;
@@ -188,9 +169,7 @@ std::string FileProtoOps::form_rift_var_root_path_impl(std::vector<std::string> 
   }
 
   if (!test_name.length()) {
-    err_msg = "Test name not provided";
-    std::cerr << err_msg << std::endl;;
-    throw err_msg;
+    return get_rift_var_root();
   }
   
   auto path_to_ws = get_rift_install() + "/var/rift/";

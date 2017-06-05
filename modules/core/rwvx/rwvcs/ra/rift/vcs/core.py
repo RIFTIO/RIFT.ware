@@ -1,20 +1,6 @@
 """
 #
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 #
 # @file core.py
 # @author Joshua Downer (joshua.downer@riftio.com)
@@ -656,6 +642,7 @@ class SystemInfo(object):
             persist_dir_name="persist.riftware",
             test_name=None,
             rift_var_root=None,
+            no_heartbeat=False,
             ):
         """Creates a SystemInfo object.
 
@@ -682,6 +669,7 @@ class SystemInfo(object):
             persist_dir_name   - The configuration persistence directory name.
             test_name          - TestCase name
             rift_var_root      - prefix to be used for RIFT ROOT path
+            no_heartbeat       - Disable heartbeat for debugging
 
         """
         assert agent_mode in ["CONFD", "RWXML", "AUTOMODE"]
@@ -704,6 +692,7 @@ class SystemInfo(object):
         self.persist_dir_name = persist_dir_name
         self.test_name = test_name
         self.rift_var_root = rift_var_root
+        self.no_heartbeat = no_heartbeat 
 
         def add_to_subcomponents(components):
             for component in components:

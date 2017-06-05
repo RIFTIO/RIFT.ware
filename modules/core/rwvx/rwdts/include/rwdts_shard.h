@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /*!
  * @file rwdts_shard.h
  * @brief RW.DTS sharding
@@ -203,12 +184,12 @@ __BEGIN_DECLS
 void rwdts_shard_handle_unref(rwdts_shard_t *s, const char *file, int line);
 rwdts_shard_t *rwdts_shard_handle_ref(rwdts_shard_t *s, const char *file, int line);
 rwdts_shard_handle_t *
-rwdts_shard_init_keyspec(rw_keyspec_path_t *, int , rwdts_shard_t **,
-                             rwdts_shard_flavor,
-                             union rwdts_shard_flavor_params_u *,
-                             enum rwdts_shard_keyfunc_e ,
-                             union rwdts_shard_keyfunc_params_u *,
-                             enum rwdts_shard_anycast_policy_e );
+rwdts_shard_init_keyspec(rwdts_api_t *apih, rw_keyspec_path_t *, int , rwdts_shard_t **,
+                         rwdts_shard_flavor,
+                         union rwdts_shard_flavor_params_u *,
+                         enum rwdts_shard_keyfunc_e ,
+                         union rwdts_shard_keyfunc_params_u *,
+                         enum rwdts_shard_anycast_policy_e );
 rwdts_shard_t *
 rwdts_shard_match_keyspec(rwdts_shard_handle_t *rootshard,
                           rw_keyspec_path_t *keyspec,
@@ -225,13 +206,13 @@ rw_status_t
 rwdts_shard_delete_chunk(rwdts_shard_handle_t *shard, union rwdts_shard_flavor_params_u *params);
 
 rw_status_t
-rwdts_rts_shard_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *chunk, 
+rwdts_shard_rts_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *chunk, 
                                rwdts_chunk_rtr_info_t *rtr_info, bool publisher,
                                rwdts_chunk_id_t *chunk_id, uint32_t *membid, char *msgpath);
 
 rw_status_t
-rwdts_rts_shard_update_element(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
-                   bool publisher, rwdts_chunk_id_t chunk_id, uint32_t membid, char *msgpath);
+rwdts_shard_rts_update_element(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
+                               bool publisher, rwdts_chunk_id_t chunk_id, uint32_t membid, char *msgpath);
 
 bool
 rwdts_rtr_shard_chunk_iter_next(rwdts_shard_chunk_iter_t *iter,
@@ -256,16 +237,16 @@ rw_status_t rwdts_shard_deref(rwdts_shard_t *shard);
 
 rw_status_t
 rwdts_member_api_shard_key_init(const rw_keyspec_path_t*        keyspec,
-                              rwdts_api_t*                      apih,
-                              const ProtobufCMessageDescriptor* desc,
-                              uint32_t                          flags,
-                              int                               idx,
-                              rwdts_shard_flavor              flavor,
-                              union rwdts_shard_flavor_params_u *flavor_params,
-                              enum rwdts_shard_keyfunc_e         hashfunc,
-                              union rwdts_shard_keyfunc_params_u *keyfunc_params,
-                              enum rwdts_shard_anycast_policy_e   anypolicy,
-                              rwdts_member_event_cb_t             *cb);
+                                rwdts_api_t*                      apih,
+                                const ProtobufCMessageDescriptor* desc,
+                                uint32_t                          flags,
+                                int                               idx,
+                                rwdts_shard_flavor              flavor,
+                                union rwdts_shard_flavor_params_u *flavor_params,
+                                enum rwdts_shard_keyfunc_e         hashfunc,
+                                union rwdts_shard_keyfunc_params_u *keyfunc_params,
+                                enum rwdts_shard_anycast_policy_e   anypolicy,
+                                rwdts_member_event_cb_t             *cb);
 
 bool
 rwdts_shard_range_key_compare(const rw_keyspec_entry_t *pe,
@@ -298,19 +279,21 @@ rwdts_shard_chunk_match(rwdts_shard_handle_t *shard_handle,
 rw_status_t
 rwdts_shard_rtr_delete_element(rwdts_shard_t *shard, char *member, bool pub);
 rw_status_t
-rwdts_shard_member_delete_element(rwdts_shard_t *shard, char *member, bool pub);
+rwdts_shard_member_delete_element(rwdts_shard_t *shard,
+                                  bool publisher, rwdts_chunk_id_t chunk_id,
+                                  char *msgpath);
 
 rw_status_t
-rwdts_member_shard_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *chunk,
-                     rwdts_chunk_member_info_t *mbr_info, bool publisher,
-                     rwdts_chunk_id_t *chunk_id, char *msgpath);
+rwdts_shard_member_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *chunk,
+                                  rwdts_chunk_member_info_t *mbr_info, bool publisher,
+                                  rwdts_chunk_id_t *chunk_id, char *msgpath);
 
 rw_status_t
-rwdts_rts_shard_promote_element(rwdts_shard_t *shard, rwdts_chunk_id_t chunk_id, 
+rwdts_shard_rts_promote_element(rwdts_shard_t *shard, rwdts_chunk_id_t chunk_id, 
                                 uint32_t membid, char *msgpath);
-
 rw_status_t
-rwdts_member_shard_promote_to_publisher(rwdts_shard_handle_t *shard, char* member);
+rwdts_shard_promote_to_publisher(rwdts_member_reg_handle_t regh);
+
 __END_DECLS
 
 #endif  /*__RWDTS_SHARD_H */

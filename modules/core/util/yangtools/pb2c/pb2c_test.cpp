@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -732,7 +718,7 @@ void service_test(void) {
   ASSERT(0==memcmp(flatmess.byt_req.data, "byt_req_def", 11));
   flatmess.has_byt_opt = TRUE;
   flatmess.byt_opt.len = 7;
-  strcat((char*)flatmess.byt_opt.data, "optval");
+  strcat((char*)flatmess._placeholder_byt_opt.data, "optval"); // Use placeholder due to aggressive compiler checking
   flatmess.byt_rep[0].len = 5;
   strcat((char*)flatmess.byt_rep[0].data, "val0");
   flatmess.byt_rep[1].len = 6;

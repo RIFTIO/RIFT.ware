@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwmsg_util.c
  * @author RIFT.io <info@riftio.com>
@@ -57,6 +38,8 @@ static void rwdts_xact_add_dbg(RWDtsXact *xact) {
   xact->dbg = RW_MALLOC0(sizeof(*xact->dbg));
   rwdts_debug__init(xact->dbg);
 }
+
+
 void rwdts_xact_dbg_tracert_start(RWDtsXact *xact, rwdts_trace_filter_t *filt) {
   if (!xact->dbg) {
     rwdts_xact_add_dbg(xact);
@@ -73,6 +56,8 @@ static void rwdts_xactres_add_dbg(RWDtsXactResult *xact) {
   xact->dbg = RW_MALLOC0(sizeof(*xact->dbg));
   rwdts_debug__init(xact->dbg);
 }
+
+
 void rwdts_xactres_dbg_tracert_start(RWDtsXactResult *xact) {
   if (!xact->dbg) {
     rwdts_xactres_add_dbg(xact);
@@ -217,13 +202,15 @@ void rwdts_dbg_tracert_dump(RWDtsTraceroute *tr,
       case RWDTS_TRACEROUTE_WHAT_MEMBER_MATCH:
 
         fprintf (stderr,  " member match in '%s'\n"
-                "                    query key '%s'\n"
-                "                    member key '%s'\n"
-                "                    reg id '%u'\n",
-                ent->dstpath,
-                ent->srcpath,
-                ent->matchpath,
-                ent->reg_id);
+                 "                    query key '%s'\n"
+                 "                    member key '%s'\n"
+                 "                    reg id '%u'\n"
+                 "                    registration: %s\n",
+                 ent->dstpath,
+                 ent->srcpath,
+                 ent->matchpath,
+                 ent->reg_id,
+                 ((ent->reg_flags & RWDTS_FLAG_PUBLISHER)?"Publisher":"Subscriber"));
         if (ent->event != RWDTS_EVT_QUERY) {
           for (j=0; j<ent->n_queryid; j++) {
             fprintf (stderr,  "                    [%d]: queryIdx %u/%03u\n",
@@ -348,8 +335,33 @@ void rwdts_dbg_tracert_dump(RWDtsTraceroute *tr,
           fprintf (stderr,  "\n");
         }
         break;
+      case RWDTS_TRACEROUTE_WHAT_RTR_BLOCK_STATE:
+        if (ent->block) {
+          fprintf (stderr,  " router block id %u new-state: %s old-state:%s num-matches:%d\n",
+                   ent->block->block->blockidx, ent->dstpath, ent->srcpath, ent->num_match_members);
+        }
+        break;
     }
   }
+}
+
+void rwdts_dbg_tracert_remove_all_ent(RWDtsTraceroute *tr)
+{
+  int i;
+  if (!tr) {
+    return;
+  }
+  if (!tr->n_ent){
+    return;
+  }
+
+  for (i =0; i < tr->n_ent; i++){
+    protobuf_c_message_free_unpacked(NULL, &tr->ent[i]->base);
+    tr->ent[i] = NULL;
+  }
+  tr->n_ent = 0;
+  RW_FREE(tr->ent);
+  tr->ent = NULL;
 }
 
 int rwdts_dbg_tracert_add_ent(RWDtsTraceroute *tr, RWDtsTracerouteEnt *in) {
@@ -529,7 +541,8 @@ char*  rwdts_print_ent_type(RWDtsTracerouteEntType type)
 
     case RWDTS_TRACEROUTE_WHAT_QUEUED:
       return ("Traceroute Queued");
-
+    case RWDTS_TRACEROUTE_WHAT_RTR_BLOCK_STATE:
+      return ("Traceroute Rtr-Block-State");
     default:
       return ("Unknown");
   }
@@ -678,7 +691,9 @@ rwdts_journal_find_inflt_query(rwdts_journal_entry_t *journal_entry, unsigned lo
 static __inline__ void rwdts_journal_inflt_q_elem_init(rwdts_xact_query_t *xquery)
 {
   rwdts_xact_query_ref(xquery, __PRETTY_FUNCTION__, __LINE__);
-  xquery->inflt_links = RW_MALLOC0_TYPE(sizeof(rwdts_xact_query_journal_t), rwdts_xact_query_journal_t);
+  xquery->inflt_links = DTS_APIH_MALLOC0_TYPE(xquery->xact->apih,
+                                              RW_DTS_DTS_MEMORY_TYPE_QUERY_JOURNAL,
+                                              sizeof(rwdts_xact_query_journal_t), rwdts_xact_query_journal_t);
   RW_ASSERT_TYPE(xquery->inflt_links, rwdts_xact_query_journal_t);
 }
 
@@ -689,7 +704,8 @@ static __inline__ void rwdts_journal_inflt_q_elem_deinit(rwdts_xact_query_t *xqu
   rwdts_xact_query_unref(xquery, __PRETTY_FUNCTION__, __LINE__);
 
   RW_ASSERT_TYPE(inflt_links, rwdts_xact_query_journal_t);
-  RW_FREE_TYPE(inflt_links, rwdts_xact_query_journal_t);
+  DTS_APIH_FREE_TYPE(xquery->xact->apih, RW_DTS_DTS_MEMORY_TYPE_QUERY_JOURNAL,
+                     inflt_links, rwdts_xact_query_journal_t);
 }
 
 static __inline__ void rwdts_journal_inflt_q_deq_all(rwdts_journal_entry_t *journal_entry)
@@ -867,7 +883,10 @@ static __inline__ rwdts_journal_q_element_t
 *rwdts_journal_done_q_elem_init(rwdts_xact_query_t *xquery,
                                rwdts_member_xact_evt_t evt)
 {
-  rwdts_journal_q_element_t *done_q_elem = RW_MALLOC0_TYPE(sizeof(*done_q_elem), rwdts_journal_q_element_t);
+  rwdts_journal_q_element_t *done_q_elem = DTS_APIH_MALLOC0_TYPE(xquery->xact->apih,
+                                                                 RW_DTS_DTS_MEMORY_TYPE_JOURNAL_ELEMENT,
+                                                                 sizeof(*done_q_elem),
+                                                                 rwdts_journal_q_element_t);
   done_q_elem->xquery = xquery;
   done_q_elem->evt = evt;
   done_q_elem->router_idx = xquery->xact->id.router_idx;
@@ -877,21 +896,25 @@ static __inline__ rwdts_journal_q_element_t
   return done_q_elem;
 }
 
-static __inline__ void rwdts_journal_done_q_elem_deinit(rwdts_journal_q_element_t *done_q_elem)
+static __inline__ void rwdts_journal_done_q_elem_deinit(rwdts_api_t *apih,
+                                                        rwdts_journal_q_element_t *done_q_elem)
 {
   RW_ASSERT_TYPE(done_q_elem, rwdts_journal_q_element_t);;
   rwdts_xact_query_unref(done_q_elem->xquery, __PRETTY_FUNCTION__, __LINE__);
-  RW_FREE_TYPE(done_q_elem, rwdts_journal_q_element_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_JOURNAL_ELEMENT,
+                     done_q_elem, rwdts_journal_q_element_t);
 }
 
-static __inline__ void rwdts_journal_done_q_deq_all(rwdts_journal_entry_t *journal_entry)
+static __inline__ void rwdts_journal_done_q_deq_all(rwdts_api_t *apih,
+                                                    rwdts_journal_entry_t *journal_entry)
 {
   rwdts_journal_q_element_t *done_q_elem = journal_entry->done_q;
   while (done_q_elem) {
     journal_entry->done_q = done_q_elem->next;
     journal_entry->done_q_len--;
 
-    rwdts_journal_done_q_elem_deinit(done_q_elem);
+    rwdts_journal_done_q_elem_deinit(apih, 
+                                     done_q_elem);
     done_q_elem = journal_entry->done_q;
     RW_ASSERT(journal_entry->done_q_len > -1);
   }
@@ -959,7 +982,8 @@ static __inline__ int rwdts_journal_tracking_count(rwdts_journal_entry_t *journa
   return (rwdts_journal_num_inflt_query(journal_entry) + journal_entry->done_q_len);
 }
 
-static __inline__ void rwdts_journal_in_use_restrict(rwdts_journal_entry_t *journal_entry)
+static __inline__ void rwdts_journal_in_use_restrict(rwdts_api_t *apih,
+                                                     rwdts_journal_entry_t *journal_entry)
 {
   if (rwdts_journal_tracking_count(journal_entry) >= RWDTS_JOURNAL_IN_USE_QLEN) {
     if (rwdts_journal_num_inflt_query(journal_entry)) {
@@ -967,7 +991,7 @@ static __inline__ void rwdts_journal_in_use_restrict(rwdts_journal_entry_t *jour
     }
     else {
       rwdts_journal_q_element_t *done_q_elem = rwdts_journal_done_q_deq(journal_entry);
-      rwdts_journal_done_q_elem_deinit(done_q_elem);
+      rwdts_journal_done_q_elem_deinit(apih, done_q_elem);
     }
   }
 }
@@ -987,7 +1011,9 @@ rw_status_t rwdts_journal_update(rwdts_member_registration_t *reg,
     rwdts_journal_entry_t *journal_entry = rwdts_journal_find_entry(journal, 
                                                                     RWDTS_JOURNAL_QRY_ID_PTR(query));
     if (!journal_entry) {
-      journal_entry = RW_MALLOC0_TYPE(sizeof(*journal_entry), rwdts_journal_entry_t);;
+      journal_entry = DTS_APIH_MALLOC0_TYPE(reg->apih,
+                                            RW_DTS_DTS_MEMORY_TYPE_JOURNAL_ENTRY,
+                                            sizeof(*journal_entry), rwdts_journal_entry_t);;
       journal_entry->least_done_serial = ~(0UL);
       protobuf_c_message_memcpy(&journal_entry->id.base, &(RWDTS_JOURNAL_QRY_ID_PTR(query)->base));
       RWDTS_ADD_PBKEY_TO_HASH(hh_journal_entry, journal->journal_entries, (&journal_entry->id), has_member_id, journal_entry);
@@ -998,7 +1024,7 @@ rw_status_t rwdts_journal_update(rwdts_member_registration_t *reg,
       case RWDTS_MEMB_XACT_EVT_PREPARE:
         switch (journal->journal_mode) {
           case RWDTS_JOURNAL_IN_USE: 
-            rwdts_journal_in_use_restrict(journal_entry);
+            rwdts_journal_in_use_restrict(reg->apih, journal_entry);
             /* Fall through */
           case RWDTS_JOURNAL_LIVE: 
             rwdts_journal_add_inflt_query(journal_entry, xquery);
@@ -1012,7 +1038,7 @@ rw_status_t rwdts_journal_update(rwdts_member_registration_t *reg,
       case RWDTS_MEMB_XACT_EVT_END:
         switch (journal->journal_mode) {
           case RWDTS_JOURNAL_IN_USE: 
-            rwdts_journal_in_use_restrict(journal_entry);
+            rwdts_journal_in_use_restrict(reg->apih, journal_entry);
           case RWDTS_JOURNAL_LIVE: 
             {
               rwdts_journal_q_element_t *done_q_elem = rwdts_journal_done_q_elem_init(xquery, evt);
@@ -1036,7 +1062,8 @@ rw_status_t rwdts_journal_update(rwdts_member_registration_t *reg,
   return RW_STATUS_SUCCESS;
 }
 
-static __inline__ rw_status_t rwdts_journal_cleanup(rwdts_journal_t *journal)
+static __inline__ rw_status_t rwdts_journal_cleanup(rwdts_api_t *apih,
+                                                    rwdts_journal_t *journal)
 {
   if (journal) {
     rwdts_journal_entry_t *journal_entry, *nxt_journal_entry;
@@ -1044,8 +1071,9 @@ static __inline__ rw_status_t rwdts_journal_cleanup(rwdts_journal_t *journal)
       HASH_DELETE(hh_journal_entry, journal->journal_entries, journal_entry);
       RW_ASSERT_TYPE(journal_entry, rwdts_journal_entry_t);
       rwdts_journal_rmv_all_inflt_query(journal_entry);
-      rwdts_journal_done_q_deq_all(journal_entry);
-      RW_FREE_TYPE(journal_entry, rwdts_journal_entry_t);
+      rwdts_journal_done_q_deq_all(apih, journal_entry);
+      DTS_APIH_FREE_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_JOURNAL_ENTRY,
+                         journal_entry, rwdts_journal_entry_t);
     }
   }
   return RW_STATUS_SUCCESS;
@@ -1056,12 +1084,13 @@ rw_status_t rwdts_journal_set_mode(rwdts_member_registration_t *reg,
 {
   rwdts_journal_t *journal = reg->journal;
   if (!reg->journal) {
-    journal = RW_MALLOC0_TYPE(sizeof(*journal), rwdts_journal_t);
+    journal = DTS_APIH_MALLOC0_TYPE(reg->apih, RW_DTS_DTS_MEMORY_TYPE_JOURNAL,
+                                    sizeof(*journal), rwdts_journal_t);
     reg->journal = journal;
   }
   
   if (journal_mode != RWDTS_JOURNAL_LIVE) {
-    rwdts_journal_cleanup(journal);
+    rwdts_journal_cleanup(reg->apih, journal);
   }
   journal->journal_mode = journal_mode;
   return RW_STATUS_SUCCESS;
@@ -1279,7 +1308,8 @@ rw_status_t rwdts_journal_destroy(rwdts_member_registration_t *reg)
 {
   rwdts_journal_t *journal = reg->journal;
   reg->journal = NULL;
-  rwdts_journal_cleanup(journal);
-  RW_FREE_TYPE(journal, rwdts_journal_t);
+  rwdts_journal_cleanup(reg->apih, journal);
+  DTS_APIH_FREE_TYPE(reg->apih, RW_DTS_DTS_MEMORY_TYPE_JOURNAL,
+                     journal, rwdts_journal_t);
   return RW_STATUS_SUCCESS;
 }

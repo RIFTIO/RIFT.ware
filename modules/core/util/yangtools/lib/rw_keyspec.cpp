@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rw_keyspec.cpp
@@ -4304,12 +4285,35 @@ static int rw_keyspec_path_get_common_prefix_index(
     auto path_entry2 = ks2.get_path_entry(index);
     RW_ASSERT(path_entry2);
 
+    switch (get_path_entry_type(instance, path_entry1)) {
+      case PE_CONTAINER:
+      case PE_LISTY_WITH_ALL_KEYS:
+        break;
+      case PE_LISTY_WITH_ALL_WC:
+      case PE_LISTY_WITH_WC_AND_KEYS:
+        goto ret;
+      default:
+        RW_ASSERT_NOT_REACHED();  
+    }
+
+    switch (get_path_entry_type(instance, path_entry2)){
+      case PE_CONTAINER:
+      case PE_LISTY_WITH_ALL_KEYS:
+        break;
+      case PE_LISTY_WITH_ALL_WC:
+      case PE_LISTY_WITH_WC_AND_KEYS:
+        goto ret;
+      default:
+        RW_ASSERT_NOT_REACHED();  
+    }
+    
     if (!protobuf_c_message_is_equal_deep(
-           instance->pbc_instance, &path_entry1->base, &path_entry2->base)) {
+            instance->pbc_instance, &path_entry1->base, &path_entry2->base)) {
       break;
     }
   }
 
+ret:  
   index -= 1;
   return index;
 }

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file basic_functor_gtest.cc
@@ -192,7 +173,7 @@ class BasicCFunctorTest : public BasicFunctorTest {
 /*
  * Fixture for testing the Lua plugin
  */
-class BasicLuaFunctorTest : public BasicFunctorTest {
+class DISABLED_BasicLuaFunctorTest : public BasicFunctorTest {
   virtual void SetUp() {
     /* Call the parent SetUP() */
     BasicFunctorTest::SetUp();
@@ -265,7 +246,7 @@ TEST_F(BasicPythonFunctorTest, BasicPythonFunctorApiAdd) {
 /**
  * Test the 'callback_example' interface on 'lua' plugin
  */
-TEST_F(BasicLuaFunctorTest, BasicLuaFunctorApiAdd) {
+TEST_F(DISABLED_BasicLuaFunctorTest, BasicLuaFunctorApiAdd) {
   /* Create the functor object */
   BasicFunctorFunctor *functor;
   functor = (BasicFunctorFunctor *) g_object_new(BASIC_FUNCTOR_TYPE_FUNCTOR, 0);

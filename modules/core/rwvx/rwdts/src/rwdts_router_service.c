@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_router_service.c
  * @author RIFT.io <info@riftio.com>
@@ -180,12 +161,15 @@ static void rwdts_router_msg_execute(RWDtsQueryRouter_Service *mysrv,
   if (xact) {
 
     rwdts_router_xact_update(xact, rwreq, (RWDtsXact*)input);
-    RWDTS_ROUTER_LOG_XACT_EVENT(dts, xact, RwDtsRouterLog_notif_DtsrouterXactDebug,
+    RWDTS_ROUTER_LOG_XACT_EVENT(dts, xact, DtsrouterXactDebug,
                                 "_router_msg_execute --- __xact_update");
     rwdts_router_xact_run(xact);
 
   } else {
-    if (input->n_subx) {
+    /*Check to see if the xact id is a stale one*/
+    rwdts_router_stale_xact_t *sxact = rwdts_router_find_stale_xact(dts, &input->id);
+
+    if (input->n_subx && !sxact) {
       rwdts_router_xact_create(dts, rwreq, (RWDtsXact*)input);
     } else {
       RWDtsXactResult result;
@@ -193,7 +177,10 @@ static void rwdts_router_msg_execute(RWDtsQueryRouter_Service *mysrv,
       protobuf_c_message_memcpy(&result.id.base , &input->id.base);
       result.has_status = TRUE;
       RWDTS_ROUTER_LOG_EVENT(dts, DtsrouterDebug, "RWDtsRouter got empty execute message for unknown xact, summarily returning committed");
-      result.status = RWDTS_XACT_COMMITTED;
+      if (input->n_subx)
+        result.status = RWDTS_XACT_COMMITTED;
+      else
+        result.status = RWDTS_XACT_INVALID;
       clo(&result, rwreq);
     }
   }
@@ -286,7 +273,7 @@ static void rwdts_router_msg_end(RWDtsQueryRouter_Service *mysrv,
         rwdts_router_xact_move_to_precomm(xact);
       } else {
         if (!xact->rwmsg_tab[0].rwmsg_req) {
-          RWDTS_ROUTER_LOG_XACT_EVENT(dts, xact, RwDtsRouterLog_notif_DtsrouterXactDebug,
+          RWDTS_ROUTER_LOG_XACT_EVENT(dts, xact, DtsrouterXactDebug,
                                       "NO Pending Req for rwdts_router_xact_run");
           router_xact_run = FALSE;
         }
@@ -294,7 +281,7 @@ static void rwdts_router_msg_end(RWDtsQueryRouter_Service *mysrv,
     }
 
     rsp.status = RWDTS_QUERY_STATUS_ACK;
-    RWDTS_ROUTER_LOG_XACT_EVENT(dts, xact, RwDtsRouterLog_notif_DtsrouterXactDebug,
+    RWDTS_ROUTER_LOG_XACT_EVENT(dts, xact, DtsrouterXactDebug,
                                 "RWDtsRouter Rcvd End from the client");
   } else {
     rsp.status = RWDTS_QUERY_STATUS_NACK;
@@ -381,7 +368,7 @@ static void rwdts_router_msg_abort(RWDtsQueryRouter_Service *mysrv,
   if (xact) {
     xact->abrt = true;
     rsp.status = RWDTS_QUERY_STATUS_ACK;
-    RWDTS_ROUTER_LOG_XACT_EVENT(dts, xact, RwDtsRouterLog_notif_DtsrouterXactDebug,
+    RWDTS_ROUTER_LOG_XACT_EVENT(dts, xact, DtsrouterXactDebug,
                                 "RWDtsRouter Rcvd Abort from the client");
     rwdts_router_xact_run(xact);
   } else {
@@ -560,8 +547,8 @@ static void rwdts_router_service_deinit_f(void *ud)
   if (dts->stat_timer) {
     rwsched_dispatch_source_cancel(dts->rwtaskletinfo->rwsched_tasklet_info,
                                    dts->stat_timer);
-    rwsched_dispatch_release(dts->rwtaskletinfo->rwsched_tasklet_info,
-                             dts->stat_timer);
+    rwsched_dispatch_source_release(dts->rwtaskletinfo->rwsched_tasklet_info,
+                                    dts->stat_timer);
     dts->stat_timer = NULL;
   }
 
@@ -651,7 +638,7 @@ static void rwdts_router_service_deinit_f(void *ud)
   }
 
   if (!dts->rwq_ismain) {
-    rwsched_dispatch_release(dts->rwtaskletinfo->rwsched_tasklet_info, dts->rwq);
+    rwsched_dispatch_queue_release(dts->rwtaskletinfo->rwsched_tasklet_info, dts->rwq);
   }
 
   if (dts->rwmemlog)  {
@@ -733,7 +720,7 @@ rwdts_router_member_registration_init(rwdts_router_t *                  dts,
 
   reg->rtr_reg_id = dts->rtr_reg_id++;
 #ifdef RWDTS_SHARDING
-  reg->shard = rwdts_shard_init_keyspec(keyspec,-1, &dts->rootshard,
+  reg->shard = rwdts_shard_init_keyspec(dts->apih, keyspec,-1, &dts->rootshard,
                                         RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
                                         RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   RW_ASSERT(reg->shard);
@@ -748,13 +735,13 @@ rwdts_router_member_registration_init(rwdts_router_t *                  dts,
   if (flags & RWDTS_FLAG_PUBLISHER) {
     HASH_ADD_KEYPTR(hh_reg, memb->registrations, reg->ks_binpath, reg->ks_binpath_len, reg);
 #ifdef RWDTS_SHARDING
-    rwdts_rts_shard_create_element(reg->shard, chunk, &rtr_info, true, &reg->chunk_id, &reg->membid,rtr_info.member->msgpath);
+    rwdts_shard_rts_create_element(reg->shard, chunk, &rtr_info, true, &reg->chunk_id, &reg->membid,rtr_info.member->msgpath);
 #endif
     
   } else {
     HASH_ADD_KEYPTR(hh_reg, memb->sub_registrations, reg->ks_binpath, reg->ks_binpath_len, reg);
 #ifdef RWDTS_SHARDING
-    rwdts_rts_shard_create_element(reg->shard, chunk, &rtr_info, false, &reg->chunk_id, &reg->membid, rtr_info.member->msgpath);
+    rwdts_shard_rts_create_element(reg->shard, chunk, &rtr_info, false, &reg->chunk_id, &reg->membid, rtr_info.member->msgpath);
 #endif
 
   }

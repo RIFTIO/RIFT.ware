@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -69,9 +55,19 @@ vcs_manifest_rwmsg *rwtasklet_get_manifest_rwmsg(vcs_manifest *rwmanifest)
 int rwtasklet_info_is_collapse_vm(rwtasklet_info_t *tasklet_info)
 {
   vcs_manifest *rwmanifest;
-
+  if (!tasklet_info->rwvcs)
+    return 0;
+  
   rwmanifest = rwtasklet_info_get_manifest(tasklet_info);
-  RW_ASSERT(rwmanifest);
+
+  if (!rwmanifest)
+    return 0;
+  if (!rwmanifest->init_phase)
+    return 0;
+  if (!rwmanifest->init_phase->settings)
+    return 0;
+  if (!rwmanifest->init_phase->settings->rwvcs)
+    return 0;
 
   return rwmanifest->init_phase->settings->rwvcs->collapse_each_rwvm;
 }
@@ -80,18 +76,35 @@ int rwtasklet_info_is_collapse_process(rwtasklet_info_t *tasklet_info)
 {
   vcs_manifest *rwmanifest;
 
+  if (!tasklet_info->rwvcs)
+    return 0;
+  
   rwmanifest = rwtasklet_info_get_manifest(tasklet_info);
-  RW_ASSERT(rwmanifest);
-
+  if (!rwmanifest)
+    return 0;
+  if (!rwmanifest->init_phase)
+    return 0;
+  if (!rwmanifest->init_phase->settings)
+    return 0;
+  if (!rwmanifest->init_phase->settings->rwvcs)
+    return 0;
   return rwmanifest->init_phase->settings->rwvcs->collapse_each_rwprocess;
 }
 
 int rwtasklet_info_is_collapse_thread(rwtasklet_info_t *tasklet_info)
 {
   vcs_manifest *rwmanifest;
-
+  if (!tasklet_info->rwvcs)
+    return 0;
   rwmanifest = rwtasklet_info_get_manifest(tasklet_info);
-  RW_ASSERT(rwmanifest);
+  if (!rwmanifest)
+    return 0;
+  if (!rwmanifest->init_phase)
+    return 0;
+  if (!rwmanifest->init_phase->settings)
+    return 0;
+  if (!rwmanifest->init_phase->settings->rwvcs)
+    return 0;
 
   /* TODO: change this to collapse_each_rwthread */
   return rwmanifest->init_phase->settings->rwvcs->collapse_each_rwprocess;

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwlog_mgmt.c
  * @date 11/09/2014
@@ -619,8 +600,8 @@ rwlog_get_tasklet_instance_id(rwlogd_instance_ptr_t instance,char *tasklet_name)
   rw_status_t status = RW_STATUS_SUCCESS;
   char ** neighbors;
 
-  asprintf(&instance_name, "%s-%d", instance->rwtasklet_info->identity.rwtasklet_name, instance->rwtasklet_info->identity.rwtasklet_instance_id);
-  if (!instance_name){
+  int r = asprintf(&instance_name, "%s-%d", instance->rwtasklet_info->identity.rwtasklet_name, instance->rwtasklet_info->identity.rwtasklet_instance_id);
+  if (r < 0) {
     return 0;
   }
   status = rwvcs_rwzk_lookup_component(instance->rwtasklet_info->rwvcs,
@@ -716,6 +697,82 @@ rwlog_mgmt_config_console(rwlogd_instance_ptr_t instance,
   return status;
 }
 
+static rw_status_t rwlog_mgmt_check_sink_filter_for_delete(
+                        rwlogd_instance_ptr_t instance,
+                        char* sink_name,
+                        RWPB_T_MSG(RwlogMgmt_data_Logging_Sink_Filter) *filter)
+{
+  /**
+   * Filter can be in the following form
+   * no filter category <category> severity <severity>     or
+   * no filter category <category> attribute <field> <value>    or
+   * no filter category <category>
+   */
+  rw_status_t rw_status = RW_STATUS_FAILURE;
+
+  // Go through individual categories
+  int i;
+  for (i = 0; i < filter->n_category; i++) {
+    ProtobufCFieldReference cat_fref = PROTOBUF_C_FIELD_REF_INIT_VALUE;
+    protobuf_c_field_ref_goto_whole_message(&cat_fref,
+        (ProtobufCMessage*)filter->category[i]);
+    if (protobuf_c_field_ref_is_field_deleted(&cat_fref)) {
+      // reset the severity and delete all the attributes associated with it
+      rw_status = rwlogd_sink_filter_remove_all_attribute(instance,
+                      filter->category[i]->name, sink_name);
+      if (rw_status != RW_STATUS_SUCCESS) {
+        break;
+      }
+
+      rw_status = rwlogd_sink_severity(instance, sink_name, 
+                      filter->category[i]->name, RW_LOG_LOG_SEVERITY_ERROR, 
+                      RW_LOG_ON_OFF_TYPE_ON);
+      if (rw_status != RW_STATUS_SUCCESS) {
+        break;
+      }
+      continue;
+    }
+
+    ProtobufCFieldReference sev_fref = PROTOBUF_C_FIELD_REF_INIT_VALUE;
+    protobuf_c_field_ref_goto_proto_name(&sev_fref,
+        (ProtobufCMessage*)filter->category[i],
+        "severity");
+    if (protobuf_c_field_ref_is_field_deleted(&sev_fref)) {
+      // Severity is deleted. set it to default
+      rw_status = rwlogd_sink_severity(instance, sink_name, 
+                    filter->category[i]->name, RW_LOG_LOG_SEVERITY_ERROR, 
+                    RW_LOG_ON_OFF_TYPE_ON);
+      return rw_status;
+    }
+
+    int attr_i;
+    for(attr_i = 0; attr_i < filter->category[i]->n_attribute; attr_i++) {
+      ProtobufCFieldReference attr_fref = PROTOBUF_C_FIELD_REF_INIT_VALUE;
+      protobuf_c_field_ref_goto_whole_message(&attr_fref,
+          (ProtobufCMessage*)filter->category[i]->attribute[attr_i]);
+      if (protobuf_c_field_ref_is_field_deleted(&attr_fref)) {
+        rw_status = rwlogd_sink_filter_operation(FILTER_DEL, instance,
+                      filter->category[i]->name,
+                      sink_name,
+                      filter->category[i]->attribute[attr_i]->name,
+                      filter->category[i]->attribute[attr_i]->value, 0);
+        return rw_status;
+      }
+
+    }
+
+    ProtobufCFieldReference packet_fref = PROTOBUF_C_FIELD_REF_INIT_VALUE;
+    protobuf_c_field_ref_goto_proto_name(&sev_fref,
+        (ProtobufCMessage*)filter->category[i],
+        "packet");
+    if (protobuf_c_field_ref_is_field_deleted(&packet_fref)) {
+      // Not handled. Packet filtering works?
+      return rw_status;
+    }
+  }
+  return rw_status;
+}
+
 static rw_status_t
 rwlog_mgmt_delete_sink(rwlogd_instance_ptr_t instance, size_t n_sink, 
                       RWPB_T_MSG(RwlogMgmt_data_Logging_Sink) **Sink)
@@ -727,13 +784,26 @@ rwlog_mgmt_delete_sink(rwlogd_instance_ptr_t instance, size_t n_sink,
     ProtobufCFieldReference fref = PROTOBUF_C_FIELD_REF_INIT_VALUE;
     protobuf_c_field_ref_goto_whole_message(&fref,(ProtobufCMessage*)Sink[index]);
     if (protobuf_c_field_ref_is_field_deleted(&fref)){
-        rw_status = rwlogd_sink_delete(instance,Sink[index]->name);
+      rw_status = rwlogd_sink_delete(instance,Sink[index]->name);
+      break;
     }
-    if (rw_status != RW_STATUS_SUCCESS ) {
-        return rw_status;
-      }
+    
+    /* Check if filter container is deleted */
+    ProtobufCFieldReference filter_fref = PROTOBUF_C_FIELD_REF_INIT_VALUE;
+    protobuf_c_field_ref_goto_proto_name(&filter_fref,
+                                         (ProtobufCMessage*)Sink[index],
+                                         "filter");
+    if (protobuf_c_field_ref_is_field_present(&filter_fref)) {
+      /* Check if any 'filter' child is deleted */
+      rw_status = rwlog_mgmt_check_sink_filter_for_delete(instance, 
+                                          Sink[index]->name,
+                                          Sink[index]->filter);
+      break;
     }
-    return RW_STATUS_SUCCESS;
+
+  }
+
+  return rw_status;
 }
 
 
@@ -820,7 +890,8 @@ rwlog_mgmt_handle_colony_request_dts (const rwdts_xact_info_t* xact_info,
       break;
     case  RWDTS_QUERY_DELETE:
       if (Config->n_sink) {
-        rw_status_t rs = rwlog_mgmt_delete_sink(instance, Config->n_sink, Config->sink);
+        rw_status_t rs = rwlog_mgmt_delete_sink(instance, Config->n_sink, 
+                                                Config->sink);
         if (rs != RW_STATUS_SUCCESS) {
           return RWDTS_ACTION_NOT_OK;
         }
@@ -1263,7 +1334,8 @@ static rwdts_member_rsp_code_t rwlog_mgmt_handle_log_query_debug(const rwdts_xac
       }
       RWPB_F_MSG_INIT(RwlogMgmt_output_ShowLogs_SeverityOutput,log->severity_output[cat]);
       severity = rwlogd_sink_get_severity(instance, cat);
-      asprintf(&log->severity_output[cat]->severity_info, "%s:%s", cat_list[cat],seve[severity]);
+      int r = asprintf(&log->severity_output[cat]->severity_info, "%s:%s", cat_list[cat],seve[severity]);
+      RW_ASSERT(r > 0);
       RW_ASSERT(log->severity_output[cat]->severity_info);
       if (!log->severity_output[cat]->severity_info) {
         return RWDTS_ACTION_NOT_OK;
@@ -1488,10 +1560,11 @@ void rwlogd_add_node_to_list(rwlogd_instance_ptr_t instance, int peer_rwlogd_ins
     rwlogd_peer_node_entry_t *peer_node_entry;
     peer_node_entry = (rwlogd_peer_node_entry_t *)RW_MALLOC0(sizeof(rwlogd_peer_node_entry_t));
     char *node_name = NULL;
-    asprintf(&node_name,
-             "/R/%s/%d",
-             RWLOGD_PROC,
-             peer_rwlogd_instance);
+    int r = asprintf(&node_name,
+                     "/R/%s/%d",
+                     RWLOGD_PROC,
+                     peer_rwlogd_instance);
+    RW_ASSERT(r > 0);
     peer_node_entry->rwtasklet_name = node_name;
     peer_node_entry->rwtasklet_instance_id = peer_rwlogd_instance;
     peer_node_entry->current_size = 0;
@@ -1733,8 +1806,9 @@ rwlog_dynamic_schema_registration(rwlogd_instance_ptr_t instance)
 static void rwlog_dts_registration_continue(rwlogd_instance_ptr_t instance) {
   int i;
 
-  asprintf(&instance->instance_name, "%s-%d", instance->rwtasklet_info->identity.rwtasklet_name, 
-           instance->rwtasklet_info->identity.rwtasklet_instance_id);
+  int r = asprintf(&instance->instance_name, "%s-%d", instance->rwtasklet_info->identity.rwtasklet_name, 
+                   instance->rwtasklet_info->identity.rwtasklet_instance_id);
+  RW_ASSERT(r > 0);
   rwlog_dynamic_schema_registration(instance);
 
 

@@ -1,27 +1,17 @@
 #! /bin/bash
 
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-# 
+# RIFT_IO_STANDARD_COPYRIGHT_HEADER(BEGIN)
+# RIFT_IO_STANDARD_COPYRIGHT_HEADER(END)
 
 # This script is used for installing openstack
 # using packstack.
 # This script should be run as root.
 
+<<<<<<< HEAD
+#set -e
+=======
 set -e
+>>>>>>> b060c70f34fffc47b524499c516bdc55fcf3ab3b
 
 function print_usage() {
   echo "Usage: $0 [-h HOST_IP] [-i FLOATING_IP] [-p PRIVATE_IP ] [-f FLAT_INTERFACE] [-c COMPUTE_NODES] [-v VLAN_RANGE] [-d DNS_SERVER_LIST ]"
@@ -41,7 +31,11 @@ function print_usage() {
 FLAT_INTERFACE=eth1
 MYSQL_USER=mysql
 VLAN_RANGE=1:10
+<<<<<<< HEAD
+DNS_SERVERS="10.66.0.3"
+=======
 DNS_SERVERS=""
+>>>>>>> b060c70f34fffc47b524499c516bdc55fcf3ab3b
 
 ##
 # Parse options
@@ -98,9 +92,14 @@ if [[ ! `whoami` = "root" ]]; then
   exit 1
 fi
 
+<<<<<<< HEAD
+# work around packstack bug as $HOME is not set when run from /etc/rc.local
+export HOME=/root
+=======
 
 echo "You are `whoami`"
 
+>>>>>>> b060c70f34fffc47b524499c516bdc55fcf3ab3b
 cd /root
 
 if [ ! -f answers.cfg ]; then
@@ -114,6 +113,17 @@ if [ ! -f answers.cfg ]; then
       fi
 
       #yum install -y openstack-packstack
+<<<<<<< HEAD
+      echo "generating answers.cfg"
+      packstack --gen-answer-file=answers.cfg
+
+      #sed -i "/^nova_config.*$/a\    \"DEFAULT/pci_passthrough_whitelist\": value \=\> \"[{\\\\\"vendor_id\\\\\":\\\\\"8086\\\\\",\\\\\"product_id\\\\\":\\\\\"10fb\\\\\"}]\"\;" /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_compute.pp
+      #sed -i "/^nova_config.*$/a\    \"DEFAULT/pci_alias\": value \=\> \"{\\\\\"vendor_id\\\\\":\\\\\"8086\\\\\", \\\\\"product_id\\\\\":\\\\\"10fb\\\\\", \\\\\"name\\\\\":\\\\\"PCI_10G_ALIAS\\\\\"}\"\;" /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_common_pw.pp
+      #sed -i 's/^.*RetryFilter.*$/\        value \=\> \"AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,AvailabilityZoneFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,CoreFilter,PciPassthroughFilter,NUMATopologyFilter\"\;/g' /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_sched.pp
+      #sed -i "/^nova_config.*$/a\    \"osapi_v3/enabled\": value \=\> true\;" /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_compute.pp
+      #sed -i "s/^.*force_dhcp_release.*$/\    \$overrides['force_dhcp_release'] = true/" /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_network.pp
+      #sed -i "s/^.*10.0.0.0.*$/\  \$fixed_range               = '$PRIVATE_IP\\/24'/" /usr/lib/python2.7/site-packages/packstack/puppet/templates/provision_demo.pp
+=======
       packstack --gen-answer-file=/root/answers.cfg
 
       sed -i "/^nova_config.*$/a\    \"DEFAULT/pci_passthrough_whitelist\": value \=\> \"[{\\\\\"vendor_id\\\\\":\\\\\"8086\\\\\",\\\\\"product_id\\\\\":\\\\\"10fb\\\\\"}]\"\;" /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_compute.pp
@@ -122,6 +132,7 @@ if [ ! -f answers.cfg ]; then
       #sed -i "/^nova_config.*$/a\    \"osapi_v3/enabled\": value \=\> true\;" /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_compute.pp
       #sed -i "s/^.*force_dhcp_release.*$/\    \$overrides['force_dhcp_release'] = true/" /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_network.pp
       sed -i "s/^.*10.0.0.0.*$/\  \$fixed_range               = '$PRIVATE_IP\\/24'/" /usr/lib/python2.7/site-packages/packstack/puppet/templates/provision_demo.pp
+>>>>>>> b060c70f34fffc47b524499c516bdc55fcf3ab3b
       #sed -i "/^.*neutron_admin_auth_url.*$/a\  vif_plugging_is_fatal => false," /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_neutron.pp
       #sed -i "/^.*neutron_admin_auth_url.*$/a\  vif_plugging_timeout => \"30\"," /usr/lib/python2.7/site-packages/packstack/puppet/templates/nova_neutron.pp
       #sed -i "/^.*securitygroup\/enable_security_group.*$/a\    \'securitygroup\/firewall_driver\':       value \=\> \"neutron.agent.firewall.NoopFirewallDriver\"\;" /usr/share/openstack-puppet/modules/neutron/manifests/plugins/ml2.pp
@@ -184,6 +195,10 @@ fi
 # we do this here to save us from adding a bunch of arguments to this script
 # cobbler writes out this file if customizations to answers.cfg are necessary
 if [ -f /root/rift-openstack-customize.cfg ]; then
+<<<<<<< HEAD
+	echo "applying rift-openstack-customize"
+=======
+>>>>>>> b060c70f34fffc47b524499c516bdc55fcf3ab3b
 	. /root/rift-openstack-customize.cfg
 fi
 
@@ -212,7 +227,19 @@ if [ -n "$DNS_SERVERS" ]; then
     neutron subnet-update private_subnet --dns-nameservers $DNS_SERVERS
 fi
 
+<<<<<<< HEAD
+# create pluto user and give proper permissions ???
+
+# setup DNS_SERVERS for demo project ???
+source /root/keystonerc_demo
+
+if [ -n "$DNS_SERVERS" ]; then
+    neutron subnet-update private_subnet --dns-nameservers $DNS_SERVERS
+fi
+
+=======
 # setup DNS_SERVERS for demo project ???
 
 # create pluto user and give proper permissions ???
+>>>>>>> b060c70f34fffc47b524499c516bdc55fcf3ab3b
 

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwmsg_query.c
  * @author RIFT.io <info@riftio.com>
@@ -137,11 +118,11 @@ void rwdts_client_dump_xact_info(rwdts_xact_t *xact ,
                                  const char *reason)
 {
   int i;
-  char tmp_log_xact_id_str[128] = "";
+
   char *ignore = NULL;
   DTS_PRINT ("***********Xact Dump ***********\n Reason: %s\n", reason);
   DTS_PRINT ("Client Name : %s \n", (xact->apih)?xact->apih->client_path:"NA");
-  DTS_PRINT ("xact[%s] : state %s \n", (char*)rwdts_xact_id_str(&(xact)->id, tmp_log_xact_id_str, sizeof(tmp_log_xact_id_str)), "NA");
+  DTS_PRINT ("xact[%s] : state %s \n", (char*)(xact)->xact_id_str, "NA");
   DTS_PRINT("\nCounts \n");
   PRINT_XACT_INFO_ELEM(blocks_ct, ignore);
   PRINT_XACT_INFO_ELEM(rsp_ct, ignore);
@@ -264,7 +245,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
     xact->apih->stats.client_query_bounced++;
     if (!(xact->apih->stats.client_query_bounced % 10)) {
       RWDTS_API_LOG_XACT_EVENT(xact->apih,
-                               xact, RwDtsApiLog_notif_QueryBounced,
+                               xact, QueryBounced,
                                "rwdts_xact_query_cb, no rsp_in, bounce", 0);
     }
     RWMEMLOG(&xact->rwml_buffer,
@@ -272,7 +253,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
 	     "Got execute msg BNC");
   } else {
     RWDTS_API_LOG_XACT_EVENT(xact->apih,
-                             xact, RwDtsApiLog_notif_XactRspRcvd,
+                             xact, XactRspRcvd,
                              RWLOG_ATTR_SPRINTF("%s rwdts_xact_query_cb rsp_in status=%d has_more=%d more=%d n_result=%d", apih->client_path, rsp_in->status, rsp_in->has_more, rsp_in->more, (int)rsp_in->n_result));
 
     rwmsg_request_memlog_hdr (&xact->rwml_buffer, 
@@ -365,7 +346,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
       for (j = 0; j < b_result->n_result; j++) {
         RWDtsQueryResult *q_result = b_result->result[j];
         RW_ASSERT(q_result);
-        rwdts_xact_result_t *res = RW_MALLOC0_TYPE(sizeof(rwdts_xact_result_t), rwdts_xact_result_t);
+        rwdts_xact_result_t *res = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_XACT_RESULT,sizeof(rwdts_xact_result_t), rwdts_xact_result_t);
         res->result = q_result;
         res->blockidx = b_result->blockidx;
 
@@ -383,7 +364,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
     }
     if (rsp) {
       // Insert the result to the transaction so that it can be cleaned up when the transaction is cleaned up
-      rwdts_xact_result_track_t* track_result = RW_MALLOC0_TYPE(sizeof(rwdts_xact_result_track_t), rwdts_xact_result_track_t);
+      rwdts_xact_result_track_t* track_result = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_XACT_RESULT_TRACK,sizeof(rwdts_xact_result_track_t), rwdts_xact_result_track_t);
       track_result->result = rsp;
       RW_DL_PUSH(&(xact->track.results), track_result, res_elem);
     }
@@ -393,17 +374,16 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
   {
     if (!(xact->flags & RWDTS_XACT_FLAG_IMM_BOUNCE)) {
 
-      char xact_str[64] = "";
       RWTRACE_INFO(apih->rwtrace_instance,
                    RWTRACE_CATEGORY_RWTASKLET,
                    "[%s]: received xact query msg bounce code=%d client=%s",
-                   (char*)rwdts_xact_id_str(&xact->id, xact_str, sizeof(xact_str)),
+                   (char*)xact->xact_id_str,
                    (int)rwmsg_request_get_response_bounce(rwreq),
                    xact->apih->client_path);
 
       RWDTS_API_LOG_XACT_EVENT(xact->apih,
                                xact,
-                               RwDtsApiLog_notif_QueryBounced,
+                               QueryBounced,
                                "Query request bounced",
                                (int)rwmsg_request_get_response_bounce(rwreq));
 
@@ -427,7 +407,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
   if (xact->bounced) {
     // FIXME stat or something
     RWDTS_API_LOG_XACT_EVENT(xact->apih,
-                             xact, RwDtsApiLog_notif_QueryBounced,
+                             xact, QueryBounced,
                              "rwdts_xact_query_cb GOT A BOUNCE", 0);
     xact_status->status = RWDTS_XACT_FAILURE;
     xact_status->xact_done = TRUE;
@@ -454,7 +434,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
   }
 
   RWDTS_API_LOG_XACT_EVENT(xact->apih,
-                           xact, RwDtsApiLog_notif_XactRspRcvd,
+                           xact, XactRspRcvd,
                            RWLOG_ATTR_SPRINTF("Client (%s) rwdts_xact_querycb xact_status status=%d xact_done=%d xact_responses_done=%d res_ct=%d", 
                                               apih->client_path, xact_status->status, xact_status->xact_done, xact_responses_done, res_ct));
 
@@ -474,7 +454,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
           }
         }
         if (xact_status->xact_done || block_in_result || block_responses_done[i]) {
-          RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_ClientCallbackTriggered,
+          RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, ClientCallbackTriggered,
                                    "Block client callback triggered",
                                    rwdts_get_app_addr_res(xact->apih, xact->blocks[i]->cb.cb),
                                    rsp_in ?rsp_in->n_result:0);
@@ -492,7 +472,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
           }
         }
         else {
-          RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_ClientCallbackSkipped,
+          RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, ClientCallbackSkipped,
                                    RWLOG_ATTR_SPRINTF("rwdts_query_cb: skipping %d block callback, xact_done=%d block_in_result=%d block_responses_done=%d",
                                                        i, xact_status->xact_done, block_in_result, block_responses_done[i]));
         }
@@ -508,7 +488,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
       xact_status->block = NULL;
       xact_status->responses_done = xact_responses_done;
 
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_ClientCallbackTriggered,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, ClientCallbackTriggered,
                                "Xact Client callback triggered",
                                rwdts_get_app_addr_res(xact->apih, xact->cb->cb),
                                (rsp_in)?rsp_in->n_result:0);
@@ -525,7 +505,7 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
       }
     }
   } else {
-    RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_ClientCallbackSkipped,
+    RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, ClientCallbackSkipped,
                              RWLOG_ATTR_SPRINTF("rwdts_query_cb: skipping xact callback, rsp_in=%p res_ct=%d xact_responses_done=%d xact_done=%d",
                                                 rsp_in, res_ct, xact_responses_done, xact_status->xact_done));
   }
@@ -545,7 +525,6 @@ static void rwdts_xact_query_cb(RWDtsXactResult* rsp_in,
   }
 
   if (xact_status->xact_done) {
-//    if (xact_status->status == RWDTS_XACT_FAILURE) return;
     rwdts_xact_unref(xact, __PRETTY_FUNCTION__, __LINE__);
   }
   rwdts_xact_unref(xact, __PRETTY_FUNCTION__, __LINE__);
@@ -624,8 +603,8 @@ rwdts_xact_init_query(rwdts_api_t*                  apih,
   RWDtsQuery *query = rwdts_xact_init_empty_query(reg);
   query->key = key;
   query->action = action;
-  asprintf(&query->source, "%s", apih->client_path);
-
+  int r = asprintf(&query->source, "%s", apih->client_path);
+  RW_ASSERT(r > 0);
   RW_ASSERT(action != RWDTS_QUERY_INVALID);
   if (action == RWDTS_QUERY_CREATE ||
       action == RWDTS_QUERY_UPDATE) {
@@ -745,7 +724,6 @@ rwdts_xact_init_query_from_pb(rwdts_api_t*                 apih,
     RW_ASSERT(keyspec);
     RW_ASSERT(msg);
     RW_ASSERT(msg->descriptor);
-    //    RW_ASSERT(!rw_keyspec_path_has_wildcards(keyspec));
   }
 
   if (msg) {
@@ -762,6 +740,9 @@ rwdts_xact_init_query_from_pb(rwdts_api_t*                 apih,
                                 dbg,
                                 query_flags,
                                 reg);
+
+  //payload will be freed by the protobuf created in the query which points to the payload...
+  
   return query;
 }
 
@@ -854,19 +835,22 @@ rw_status_t rwdts_xact_abort(rwdts_xact_t *xact,
   return RW_STATUS_SUCCESS;
 }
 
-rwdts_xact_status_t *rwdts_xact_status_new() {
-  rwdts_xact_status_t *xs = RW_MALLOC0_TYPE(sizeof(rwdts_xact_status_t), rwdts_xact_status_t);
+rwdts_xact_status_t *rwdts_xact_status_new(rwdts_api_t *apih) {
+  rwdts_xact_status_t *xs = DTS_APIH_MALLOC0_TYPE(apih,
+                                                  RW_DTS_DTS_MEMORY_TYPE_XACT_STATUS,
+                                                  sizeof(rwdts_xact_status_t), rwdts_xact_status_t);
   xs->ref_cnt = 1;
   return xs;
 }
-void rwdts_xact_status_deinit(rwdts_xact_status_t *s) {
-  RW_FREE_TYPE(s, rwdts_xact_status_t);
+void rwdts_xact_status_deinit(rwdts_api_t *apih, rwdts_xact_status_t *s) {
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_XACT_STATUS,
+                     s, rwdts_xact_status_t);
 }
 
 rwdts_xact_status_t *rwdts_xact_block_get_status_gi(rwdts_xact_block_t *blk) {
   RW_ASSERT(blk);
 
-  rwdts_xact_status_t *xs = rwdts_xact_status_new();
+  rwdts_xact_status_t *xs = rwdts_xact_status_new(blk->xact->apih);
   rwdts_xact_block_get_status(blk, xs);
   return xs;
 }
@@ -874,7 +858,7 @@ rwdts_xact_status_t *rwdts_xact_block_get_status_gi(rwdts_xact_block_t *blk) {
 rwdts_xact_status_t *rwdts_xact_get_status_gi(rwdts_xact_t *xact) {
   RW_ASSERT(xact);
 
-  rwdts_xact_status_t *xs = rwdts_xact_status_new();
+  rwdts_xact_status_t *xs = rwdts_xact_status_new(xact->apih);
   rwdts_xact_get_status(xact, xs);
   return xs;
 }
@@ -1178,6 +1162,8 @@ rwdts_xact_block_add_query_int(rwdts_xact_block_t*          block,
   }
 
   if (!(flags & RWDTS_XACT_FLAG_KEYLESS)) {
+    //AKKI tbd put in a check to reject any queries with wildcards along the path. wildcards allowed
+    //only for the last level.
     if ((action != RWDTS_QUERY_READ) && (action != RWDTS_QUERY_DELETE)) {
       char *tmp_str = NULL;
       if (rw_keyspec_path_has_wildcards(key)) {
@@ -1212,7 +1198,13 @@ rwdts_xact_block_add_query_int(rwdts_xact_block_t*          block,
                                                     dbg,
                                                     flags,
                                                     reg);
-
+  RW_ASSERT(query);
+  //Assert if the key has wildcards when the flags/action in the query indicate that
+  //wildcards are not allowed..
+  RW_ASSERT(rwdts_query_allow_wildcards(query) ||
+            !rw_keyspec_path_has_wildcards((rw_keyspec_path_t*)key));
+            
+  
   if (!query->key->keystr) {
     if (xpath) {
       query->key->keystr = strdup(xpath);
@@ -1324,9 +1316,6 @@ rwdts_advise_query_proto_int(rwdts_api_t*                  apih,
     return rw_status;
   }
 
-  if (action == RWDTS_QUERY_CREATE || action == RWDTS_QUERY_UPDATE) {
-    RW_ASSERT(!rw_keyspec_path_has_wildcards((rw_keyspec_path_t*)keyspec));
-  }
   if (out_xact) *out_xact = xact;
 
   return RW_STATUS_SUCCESS;
@@ -1510,7 +1499,7 @@ rwdts_xact_get_result_pb_int_alloc(rwdts_xact_t*                     xact,
                                            NULL,
                                            NULL,
                                            &ks_str);
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_NullMsgRcvd, 
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, NullMsgRcvd, 
                                RWLOG_ATTR_SPRINTF("Got null message for keyspec %s, i[%d], n_result[%d], paybuf_len[%d], paybuf_data[%p], type[%u]",
                                                   ks_str, i, (int)res->result->n_result, (int)res->result->result[i]->result->paybuf.len,
                                                   res->result->result[i]->result->paybuf.data, res->result->result[i]->redn_resp_id));
@@ -2023,7 +2012,7 @@ rwdts_xact_block_query_error_int(rwdts_xact_t* xact,
       if (!corrid || (rep->ent[i]->corrid == corrid)) {
         RWDtsErrorEntry *ent = rep->ent[i];
         RW_ASSERT(ent);
-        res = rwdts_query_error_new();
+        res = rwdts_query_error_new(xact->apih);
         if (res) {
           res->apih = xact->apih;
           res->error =
@@ -2343,7 +2332,7 @@ static void rwdts_apply_trace(RWDtsXact *rpc_xact, rwdts_xact_t *xact, rwdts_api
           if (schema) {
             size_t index = 0;
             if (RW_KEYSPEC_PATH_IS_MATCH_DETAIL(NULL, ks, filt->path, &index, NULL, NULL)) {
-              RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, BEGIN_XACT_QUERY,"Beginning DTS transaction (TRACING)", query->queryidx, ks_str ? ks_str : "");
+              RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, BeginXactQuery,"Beginning DTS transaction (TRACING)", query->queryidx, ks_str ? ks_str : "");
               traceme = TRUE;
               break;
             }
@@ -2362,9 +2351,9 @@ static void rwdts_apply_trace(RWDtsXact *rpc_xact, rwdts_xact_t *xact, rwdts_api
             rwdts_xact_dbg_tracert_start(rpc_xact, &filt);
           }
         }
-        RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, BEGIN_XACT_QUERY, "Beginning DTS transaction (not tracing)", query->queryidx, ks_str ? ks_str : "");
+        RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, BeginXactQuery, "Beginning DTS transaction (not tracing)", query->queryidx, ks_str ? ks_str : "");
       } else {
-        RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, BEGIN_XACT_QUERY, "Beginning DTS transaction", query->queryidx, ks_str ? ks_str : "");
+        RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, BeginXactQuery, "Beginning DTS transaction", query->queryidx, ks_str ? ks_str : "");
       }
       free(ks_str);
     }
@@ -2376,7 +2365,6 @@ static void rwdts_apply_trace(RWDtsXact *rpc_xact, rwdts_xact_t *xact, rwdts_api
 
   if (rpc_xact->dbg && rpc_xact->dbg->tr) {
     RWDtsTracerouteEnt ent;
-    char xact_id_str[128];
     rwdts_traceroute_ent__init(&ent);
     ent.func = (char*)__PRETTY_FUNCTION__;
     ent.line = __LINE__;
@@ -2394,7 +2382,7 @@ static void rwdts_apply_trace(RWDtsXact *rpc_xact, rwdts_xact_t *xact, rwdts_api
     if (rpc_xact->dbg->tr->break_start) {
       G_BREAKPOINT();
     }
-    RWDTS_TRACE_EVENT_REQ(xact->apih->rwlog_instance, RwDtsApiLog_notif_TraceReq,rwdts_xact_id_str(&xact->id,xact_id_str,128),ent);
+    RWDTS_TRACE_EVENT_REQ(xact->apih->rwlog_instance, TraceReq,xact->xact_id_str,ent);
   }
 
 }
@@ -2419,9 +2407,14 @@ rwdts_xact_block_execute(rwdts_xact_block_t* block,
   /*
    * If member had done a block execute(append)
    * from prepare callback , then we take additonal ref
-   * to hold on to this xact until this is over
+   * to hold on to this xact until this is over. There is only one outstanding
+   * request maintained in the router for every member irrespective of the number
+   * of blocks appended.
+   * Since there is only one response for an xact which comes with xact-ended,
+   * take the ref-cnt only once..for every request sent, a reference is taken
+   * in the send
    */
-  if (xact->mbr_state == RWDTS_MEMB_XACT_ST_PREPARE) {
+  if ((xact->mbr_state == RWDTS_MEMB_XACT_ST_PREPARE) && (xact->req_out == 0)) {
     rwdts_xact_ref(xact, __PRETTY_FUNCTION__, __LINE__);
   }
 
@@ -2569,10 +2562,6 @@ rwdts_advise_append_query_proto(rwdts_xact_t*                xact,
   rw_status_t rs;
 
   RW_ASSERT(action != RWDTS_QUERY_INVALID);
-  if (action == RWDTS_QUERY_CREATE || action == RWDTS_QUERY_UPDATE) {
-    RW_ASSERT(!rw_keyspec_path_has_wildcards((rw_keyspec_path_t*)keyspec));
-  }
-
   rwdts_xact_block_t* block = rwdts_xact_block_create(xact);
 
   rs = rwdts_xact_block_add_query_int(block,

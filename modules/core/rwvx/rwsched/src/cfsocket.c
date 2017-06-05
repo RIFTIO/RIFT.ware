@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -87,7 +73,6 @@ rwsched_tasklet_CFSocketCreateWithNative(rwsched_tasklet_t *sched_tasklet,
   rwsched_CFSocketRef rwsched_object;
   CFSocketCallBack native_callout;
   CFSocketContext native_context;
-  unsigned int i;
 
   // Validate input paraemters
   RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
@@ -98,27 +83,18 @@ rwsched_tasklet_CFSocketCreateWithNative(rwsched_tasklet_t *sched_tasklet,
   rwsched_object = RW_CF_TYPE_MALLOC0(sizeof(*rwsched_object), rwsched_CFSocketRef);
   RW_CF_TYPE_VALIDATE(rwsched_object, rwsched_CFSocketRef);
 
-  // Look for an unused entry in cfsocket_array (start the indexes at 1 for now)
-  //RW_GOBJECT_TYPE_VALIDATE(sched_tasklet->cfsocket_array, GArray);
-  for (i = 1 ; i < sched_tasklet->cfsocket_array->len ; i++) {
-    if (g_array_index(sched_tasklet->cfsocket_array, rwsched_CFSocketRef, i) == NULL) {
-      g_array_index(sched_tasklet->cfsocket_array, rwsched_CFSocketRef, i) = rwsched_object;
-      break;
-    }
-  }
-  if (i >= sched_tasklet->cfsocket_array->len) {
-    // Insert a new element at the end of the array
-    g_array_append_val(sched_tasklet->cfsocket_array, rwsched_object);
-  }
-
+  g_array_append_val(sched_tasklet->cfsocket_array, rwsched_object);
+  
   // Mark the rwsched_object as in use
   RW_CF_TYPE_VALIDATE(rwsched_object, rwsched_CFSocketRef);
-  rwsched_object->index = i;
-
+  
   // Fill in the callback context structure
   rwsched_instance_ref(instance);
   rwsched_object->callback_context.instance = instance;
   rwsched_tasklet_ref(sched_tasklet);
+  ck_pr_inc_32(&sched_tasklet->counters.cf_sockets);
+
+  
   rwsched_object->callback_context.tasklet_info = sched_tasklet;
   rwsched_object->callback_context.cfsource = NULL;
   rwsched_object->callback_context.cf_callout = callout;
@@ -138,9 +114,6 @@ rwsched_tasklet_CFSocketCreateWithNative(rwsched_tasklet_t *sched_tasklet,
   RW_ASSERT(rwsched_object->cf_object);
 
   // Return the rwsched container type
-
-  ck_pr_inc_32(&sched_tasklet->counters.sockets);
-
   return rwsched_object;
 }
 
@@ -155,77 +128,15 @@ rwsched_tasklet_CFSocketRelease(rwsched_tasklet_t *sched_tasklet,
 
   RW_CF_TYPE_VALIDATE(s, rwsched_CFSocketRef);
 
-#if 1
-  int i; for (i = 1 ; i < sched_tasklet->cfsocket_array->len ; i++) {
-    if (g_array_index(sched_tasklet->cfsocket_array, rwsched_CFSocketRef, i) == s) {
-      //g_array_remove_index (sched_tasklet->cfsocket_array, i);
-      g_array_index(sched_tasklet->cfsocket_array, rwsched_CFSocketRef, i) = NULL;
-      break;
-    }
-  }
-#endif
-
   rwsched_tasklet_CFSocketInvalidate(sched_tasklet, s);
 
   CFRelease(s->cf_object);
   RW_CF_TYPE_FREE(s, rwsched_CFSocketRef);
 
-  ck_pr_dec_32(&sched_tasklet->counters.sockets);
-
+  ck_pr_dec_32(&sched_tasklet->counters.cf_sockets);
   rwsched_tasklet_unref(sched_tasklet);
   rwsched_instance_unref(instance);
 
-}
-
-CF_EXPORT rwsched_CFRunLoopSourceRef
-rwsched_tasklet_CFSocketCreateRunLoopSource(rwsched_tasklet_t *sched_tasklet,
-				    CFAllocatorRef allocator,
-				    rwsched_CFSocketRef s,
-				    CFIndex order)
-{
-  UNUSED(sched_tasklet);
-  rwsched_CFRunLoopSourceRef rwsched_object;
-
-  // Validate input paraemters
-  RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
-  rwsched_instance_ptr_t instance = sched_tasklet->instance;
-  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
-
-  // Allocate a rwsched container type and track it
-  rwsched_object = RW_CF_TYPE_MALLOC0(sizeof(*rwsched_object), rwsched_CFRunLoopSourceRef);
-
-  // Update the callback context structure
-  s->callback_context.cfsource = rwsched_object;
-
-  // Create a CFSocketRunloopSource
-  rwsched_object->cf_object = CFSocketCreateRunLoopSource(allocator, s->cf_object, order);
-  RW_ASSERT(rwsched_object->cf_object);
-
-  ck_pr_inc_32(&sched_tasklet->counters.socket_sources);
-
-  rwsched_tasklet_ref(sched_tasklet);
-  rwsched_instance_ref(instance);
-
-  // Return the rwsched container type
-  return rwsched_object;
-}
-
-CF_EXPORT void
-rwsched_tasklet_CFSocketReleaseRunLoopSource(rwsched_tasklet_t *sched_tasklet,
-                                     rwsched_CFRunLoopSourceRef rl)
-{
-  // Validate input paraemters
-  RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
-  rwsched_instance_ptr_t instance = sched_tasklet->instance;
-  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
-
-  CFRelease(rl->cf_object);
-  RW_CF_TYPE_FREE(rl, rwsched_CFRunLoopSourceRef);
-
-  ck_pr_dec_32(&sched_tasklet->counters.socket_sources);
-
-  rwsched_tasklet_unref(sched_tasklet);
-  rwsched_instance_unref(instance);
 }
 
 
@@ -250,9 +161,15 @@ rwsched_tasklet_CFSocketInvalidate(rwsched_tasklet_t *sched_tasklet,
 {
   // Validate input paraemters
   RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
-  rwsched_instance_ptr_t instance = sched_tasklet->instance;
-  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
   RW_CF_TYPE_VALIDATE(s, rwsched_CFSocketRef);
+  int i;
+
+  for (i = 1 ; i < sched_tasklet->cfsocket_array->len ; i++) {
+    if (g_array_index(sched_tasklet->cfsocket_array, rwsched_CFSocketRef, i) == s) {
+      g_array_remove_index_fast(sched_tasklet->cfsocket_array, i);
+      break;
+    }
+  }
 
   // Call the native CFSocket function
   CFSocketInvalidate(s->cf_object);

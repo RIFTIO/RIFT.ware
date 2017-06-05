@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rw_xml.cpp
@@ -501,10 +482,15 @@ XMLNode* XMLNode::find_list_by_key(YangNode *list_ynode,
 
   const ProtobufCMessageDescriptor *p_desc = message->descriptor;
   char* path_v = reinterpret_cast<char  *>(message); // ATTN: wtf?
-  XMLNode *candidate = find(list_ynode->get_name(), list_ynode->get_ns());
+  XMLNode *candidate;
 
   bool found = false;
 
+  if (!list_ynode->has_keys()){
+    return nullptr;
+  }
+  
+  candidate  = find(list_ynode->get_name(), list_ynode->get_ns());
   while ((candidate != nullptr) && !found) {
     found = true;
 
@@ -631,41 +617,46 @@ rw_yang_netconf_op_status_t XMLNode::find_list_by_key(
 
       // ATTN: Should have key iteration function on the node
       bool found_match = true;
-      for (YangKeyIter yki=list_ynode->key_begin();
-           yki != list_ynode->key_end();
-           yki++) {
-
-        RW_ASSERT (nullptr != yki->get_key_node());
-
-        // ATTN: This calculation is loop invariant, per key!
-        XMLNode* val_node_to_merge = lookup_node->find(
-          yki->get_key_node()->get_name(),
-          yki->get_key_node()->get_ns());
-
-        if (nullptr == val_node_to_merge) {
-          // the input node should have all key nodes present.
-          // The input is invalid
-          std::stringstream log_strm;
-          log_strm << " Key Node " << yki->get_key_node()->get_name() << ":" << yki->get_key_node()->get_ns()<< "Not present in DOM Node" << this ;
-          RW_XML_NODE_ERROR (this, log_strm);
-          return RW_YANG_NETCONF_OP_STATUS_INVALID_VALUE;
-        }
-
-        XMLNode *val_node_in_dom = my_child_node->find(
-          yki->get_key_node()->get_name(),
-          yki->get_key_node()->get_ns());
-
-        if (!val_node_in_dom) {
-          // request DOM might not have the key always
-          found_match = false;
-          break;
-        }
-
-        if (val_node_in_dom->get_text_value() !=
-            val_node_to_merge->get_text_value()) {
-          // value of atleast this key does not match
-          found_match = false;
-          break;
+      
+      if (!list_ynode->has_keys()) {
+        found_match = false;
+      } else {
+        for (YangKeyIter yki=list_ynode->key_begin();
+             yki != list_ynode->key_end();
+             yki++) {
+          
+          RW_ASSERT (nullptr != yki->get_key_node());
+          
+          // ATTN: This calculation is loop invariant, per key!
+          XMLNode* val_node_to_merge = lookup_node->find(
+              yki->get_key_node()->get_name(),
+              yki->get_key_node()->get_ns());
+          
+          if (nullptr == val_node_to_merge) {
+            // the input node should have all key nodes present.
+            // The input is invalid
+            std::stringstream log_strm;
+            log_strm << " Key Node " << yki->get_key_node()->get_name() << ":" << yki->get_key_node()->get_ns()<< "Not present in DOM Node" << this ;
+            RW_XML_NODE_ERROR (this, log_strm);
+            return RW_YANG_NETCONF_OP_STATUS_INVALID_VALUE;
+          }
+          
+          XMLNode *val_node_in_dom = my_child_node->find(
+              yki->get_key_node()->get_name(),
+              yki->get_key_node()->get_ns());
+          
+          if (!val_node_in_dom) {
+            // request DOM might not have the key always
+            found_match = false;
+            break;
+          }
+          
+          if (val_node_in_dom->get_text_value() !=
+              val_node_to_merge->get_text_value()) {
+            // value of atleast this key does not match
+            found_match = false;
+            break;
+          }
         }
       }
       if (found_match) {
@@ -713,38 +704,41 @@ rw_yang_netconf_op_status_t XMLNode::find_list_by_key_pb_msg(
         (my_child_node->get_name_space() == list_ynode->get_ns())) {
 
       bool found_match = true;
-
-
-      for (YangKeyIter yki=list_ynode->key_begin();
-           yki != list_ynode->key_end();
-           yki++) {
-        char value_str [RW_PB_MAX_STR_SIZE];
-        size_t value_str_len = RW_PB_MAX_STR_SIZE;
-        YangNode *k_node = yki->get_key_node();
-        RW_ASSERT (nullptr != k_node);
-        std::string mangled = YangModel::mangle_to_c_identifier(k_node->get_name());
-        // ATTN: This calculation is loop invariant, per key!
-
-        // ATTN: changes required when PB supports namespaces correctly
-
-        // ATTN: This is stupid - lookup_value is repeatedly being converted into a string!
-        if (RW_STATUS_SUCCESS != rw_pb_get_field_value_str (k_node,
-                                                            value_str, &value_str_len,
-                                                            (ProtobufCMessage*)lookup_value,
-                                                            mangled.c_str())) {
-          return RW_YANG_NETCONF_OP_STATUS_INVALID_VALUE;
-        }
-
-        XMLNode *val_node_in_dom = my_child_node->find(k_node->get_name(), k_node->get_ns());
-
-        if (!val_node_in_dom) {
-          return RW_YANG_NETCONF_OP_STATUS_FAILED;
-        }
-
-        if (strcmp(val_node_in_dom->get_text_value().c_str(),value_str)) {
-          // value of atleast this key does not match
-          found_match = false;
-          break;
+      
+      if (!list_ynode->has_keys()) {
+        found_match = false;
+      } else {
+        for (YangKeyIter yki=list_ynode->key_begin();
+             yki != list_ynode->key_end();
+             yki++) {
+          char value_str [RW_PB_MAX_STR_SIZE];
+          size_t value_str_len = RW_PB_MAX_STR_SIZE;
+          YangNode *k_node = yki->get_key_node();
+          RW_ASSERT (nullptr != k_node);
+          std::string mangled = YangModel::mangle_to_c_identifier(k_node->get_name());
+          // ATTN: This calculation is loop invariant, per key!
+          
+          // ATTN: changes required when PB supports namespaces correctly
+          
+          // ATTN: This is stupid - lookup_value is repeatedly being converted into a string!
+          if (RW_STATUS_SUCCESS != rw_pb_get_field_value_str (k_node,
+                                                              value_str, &value_str_len,
+                                                              (ProtobufCMessage*)lookup_value,
+                                                              mangled.c_str())) {
+            return RW_YANG_NETCONF_OP_STATUS_INVALID_VALUE;
+          }
+          
+          XMLNode *val_node_in_dom = my_child_node->find(k_node->get_name(), k_node->get_ns());
+          
+          if (!val_node_in_dom) {
+            return RW_YANG_NETCONF_OP_STATUS_FAILED;
+          }
+          
+          if (strcmp(val_node_in_dom->get_text_value().c_str(),value_str)) {
+            // value of atleast this key does not match
+            found_match = false;
+            break;
+          }
         }
       }
       if (found_match) {

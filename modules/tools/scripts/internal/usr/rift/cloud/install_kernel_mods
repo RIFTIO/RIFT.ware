@@ -36,11 +36,11 @@ k=`uname -r`
 
 export PATH=$PATH:/sbin:/usr/sbin
 
-mods=".install/usr/lib/modules/$k/extra/dpdk/kmod/igb_uio.ko
-.install/usr/lib/modules/$k/extra/dpdk/kmod/rte_kni.ko
-.install/usr/lib/modules/$k/extra/vtunes/pax/pax-x32_64-${k}smp.ko
-.install/usr/lib/modules/$k/extra/vtunes/vtsspp/vtsspp-x32_64-${k}smp.ko
-.install/usr/lib/modules/$k/extra/vtunes/sep3_15-x32_64-${k}smp.ko"
+mods="./usr/lib/modules/$k/extra/dpdk/kmod/igb_uio.ko
+./usr/lib/modules/$k/extra/dpdk/kmod/rte_kni.ko
+./usr/lib/modules/$k/extra/vtunes/pax/pax-x32_64-${k}smp.ko
+./usr/lib/modules/$k/extra/vtunes/vtsspp/vtsspp-x32_64-${k}smp.ko
+./usr/lib/modules/$k/extra/vtunes/sep3_15-x32_64-${k}smp.ko"
 
 # igb_uio requires uio and is not needed when running raw sockets
 # rte_kini is always needed

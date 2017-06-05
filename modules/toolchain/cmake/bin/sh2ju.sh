@@ -35,6 +35,10 @@ errfile=/tmp/evErr.$$.log
 
 juSetOutputDir(){
   out_dir=$1
+  if [ -z "$out_dir" ]; then
+    echo "ERROR: juSetOutputDir: required arg 'out_dir' not supplied" >&2
+    return
+  fi
   if [ ! -d "$out_dir" ]; then
     mkdir -p $out_dir || exit
   fi
@@ -94,29 +98,14 @@ EOF
   end=`date +%s.%N`
   echo "+++ exit code: $evErr"        >> $outf
 
-  # RIFT-2842: Strip invalid XML characters from output
-  # http://stackoverflow.com/questions/7772430/how-to-remove-invalid-characters-from-an-xml-file-using-sed-or-perl
-  #  Assuming UTF-8 XML documents:
-  #
-  #  perl -CSDA -pe'
-  #     s/[^\x9\xA\xD\x20-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]+//g;
-  #     ' file.xml > file_fixed.xml
-  #     If you want to encode the bad bytes instead,
-  #
-  #     perl -CSDA -pe'
-  #        s/([^\x9\xA\xD\x20-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}])/
-  #              "&#".ord($1).";"
-  #                 /xeg;
-  #                 ' file.xml > file_fixed.xml
-  #                 You can call it a few different ways:
-  #
-  #                 perl -CSDA     -pe'...' file.xml > file_fixed.xml
-  #                 perl -CSDA -i~ -pe'...' file.xml     # Inplace with backup
-  #                 perl -CSDA -i  -pe'...' file.xml     # Inplace without backup
   kill $tailpid
   wait $tailpid 2>/dev/null
+  # filter out invalid utf-8 (replaced incomplete perl implementation)
+  mv $outf $outf.bad.utf8
+  iconv -c -t UTF-8 < $outf.bad.utf8 > $outf
+  rm -f $outf.bad.utf8
   perl -CSDA -i -pe's/[^\x9\xA\xD\x20-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]+//g;' $outf
-
+  
   # set the appropriate error, based in the exit code and the regex
   [ $((evErr+0)) -ne 0 ] && err=1 || err=0
   out=`cat $outf | sed -e 's/^\([^+]\)/| \1/g'`

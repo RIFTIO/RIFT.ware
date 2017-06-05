@@ -1,18 +1,4 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 
 # file mano_common.sh
 # author Karun Ganesharatnam (karun.ganesharatnam@riftio.com)
@@ -35,7 +21,47 @@ LOG_FILE=""
 SCRIPT_BOOT_OPENSTACK="${SYSTEM_TEST_UTIL_DIR}/test_openstack_wrapper.py"
 SCRIPT_TEST=""
 REBOOT_SCRIPT_TEST=""
-LONG_OPTS="ha-mode:,cloud-host:,test-name:,valgrind:,cloud-type:,dts-trace:,filter:,mark:,wait,repeat:,repeat-system:,wait-system:,repeat-keyword:,repeat-mark:,fail-on-error,sysinfo,ssl,tenant:,tenants:,use-existing,mvv,user:,use-xml-mode,remote,restconf,netconf,expanded"
+LONG_OPTS="\
+ha-mode:,\
+cloud-host:,\
+test-name:,\
+valgrind:,\
+cloud-type:,\
+dts-trace:,\
+filter:,\
+mark:,\
+wait,\
+repeat:,\
+repeat-system:,\
+wait-system:,\
+repeat-keyword:,\
+repeat-mark:,\
+fail-on-error,\
+sysinfo,\
+ssl,\
+tenant:,\
+tenants:,\
+use-existing,\
+mvv,\
+user:,\
+use-xml-mode,\
+remote,\
+restconf,\
+netconf,\
+expanded,\
+static-ip,\
+vnf-dependencies,\
+metadata-vdud,\
+multidisk,\
+metadata-vdud-cfgfile,\
+l2-port-chaining,\
+port-security,\
+update-vnfd-instantiate,\
+vnf-onboard-delete:,\
+multiple-ns-instantiate:,\
+ipv6,\
+upload-images-multiple-accounts\
+"
 SHORT_OPTS=",h:,,c:,d:,k:,m:,w,r:,,,,,,,,,,,,,,,,"
 
 cmdargs="${@}"
@@ -43,6 +69,7 @@ cloud_type='lxc'
 test_name=""
 valgrind_args=""
 cloud_host="127.0.0.1"
+metadata_host="169.254.169.254"
 repeat=1
 filter=""
 mark=""
@@ -56,6 +83,16 @@ no_cntr_mgr=true
 remote=false
 restconf=false
 netconf=false
+static_ip=false
+multidisk=false
+ipv6=false
+upload_images_multiple_accounts=false
+vnf_dependencies=false
+metadata_vdud=false
+metadata_vdud_cfgfile=false
+l2_port_chaining=false
+update_vnfd_instantiate=false
+port_security=false
 sysinfo=false
 ssl=false
 use_xml_mode=false
@@ -145,7 +182,20 @@ function construct_test_args()
     append_args test_args netconf ${netconf}
     append_args test_args repeat ${repeat}
     append_args test_args cloud-host ${cloud_host}
+    append_args test_args metadata-host ${metadata_host}
     append_args test_args tenants ${tenants}
+    append_args test_args ipv6 ${ipv6}
+    append_args test_args upload-images-multiple-accounts ${upload_images_multiple_accounts}
+    append_args test_args static-ip ${static_ip}
+    append_args test_args multidisk ${multidisk}
+    append_args test_args vnf-dependencies ${vnf_dependencies}
+    append_args test_args metadata-vdud ${metadata_vdud}
+    append_args test_args metadata-vdud-cfgfile ${metadata_vdud_cfgfile}
+    append_args test_args l2-port-chaining ${l2_port_chaining}
+    append_args test_args port-security ${port_security}
+    append_args test_args update-vnfd-instantiate ${update_vnfd_instantiate}
+    append_args test_args vnf-onboard-delete ${vnf_onboard_delete}
+    append_args test_args multiple-ns-instantiate ${multiple_ns_instantiate}
 
     append_args test_args junitprefix $JUNIT_PREFIX
     append_args test_args junitxml $JUNITXML_FILE
@@ -281,6 +331,8 @@ function parse_args()
         case "$1" in
         -h|--cloud-host) cloud_host="$2"
           shift;;
+        --metadata-host) metadata_host="$2"
+          shift;;
         --ha-mode) ha_mode="$2"
           shift;;
         --expanded) collapsed_mode=false
@@ -321,6 +373,30 @@ function parse_args()
           ;;
         --restconf) restconf=true
           ;;
+        --ipv6) ipv6=true
+          ;;
+        --upload-images-multiple-accounts) upload_images_multiple_accounts=true
+          ;;
+        --static-ip) static_ip=true
+          ;;
+        --multidisk) multidisk=true
+          ;;
+        --vnf-dependencies) vnf_dependencies=true
+          ;;
+        --metadata-vdud) metadata_vdud=true
+          ;;
+        --metadata-vdud-cfgfile) metadata_vdud_cfgfile=true
+          ;;
+        --l2-port-chaining) l2_port_chaining=true
+          ;;
+        --port-security) port_security=true
+          ;;
+        --update-vnfd-instantiate) update_vnfd_instantiate=true
+          ;;
+        --vnf-onboard-delete) vnf_onboard_delete="$2"
+          shift;;
+        --multiple-ns-instantiate) multiple_ns_instantiate="$2"
+          shift;;
         --sysinfo) sysinfo=true
           ;;
         --tenant) tenant+=("$2")

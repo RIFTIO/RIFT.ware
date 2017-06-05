@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 
 /**
@@ -35,6 +16,7 @@
 #include <limits.h>
 #include <cstdlib>
 #include <iostream> 
+#include <chrono>
 #include "rwdts.h"
 #include "rwut.h"
 #include "rwlib.h"
@@ -147,13 +129,13 @@ rwlogd_instance_ptr_t rwlogd_gtest_allocate_sysid_instance(int instance_id, bool
                     RWLOG_FILE,
                     rwlog_get_systemId());
 
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
  
   r = asprintf (&filter_shm_name,
                       "%s-%d",
                       RWLOG_FILTER_SHM_PATH,
                       rwlog_get_systemId());
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
 
   retval = rwlogd_gtest_allocate_instance_internal(instance_id,dts_required, rwlog_filename,filter_shm_name);
   free(rwlog_filename);
@@ -174,14 +156,14 @@ rwlogd_instance_ptr_t rwlogd_gtest_allocate_instance(int instance_id, bool dts_r
                     rwlog_get_systemId(),
                     getpid(),syscall(SYS_gettid));
 
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
  
   r = asprintf (&filter_shm_name,
                       "%s-%d-%d-%lu",
                       RWLOG_FILTER_SHM_PATH,
                       rwlog_get_systemId(),
                       getpid(),syscall(SYS_gettid));
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
 
   retval = rwlogd_gtest_allocate_instance_internal(instance_id,dts_required, rwlog_filename,filter_shm_name);
   free(rwlog_filename);
@@ -201,14 +183,14 @@ static rwlog_ctx_t *rwlog_gtest_source_init(const char *taskname)
                     rwlog_get_systemId(),
                     getpid(),syscall(SYS_gettid));
 
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
 
   r = asprintf (&filter_shm_name,
                       "%s-%d-%d-%lu",
                       RWLOG_FILTER_SHM_PATH,
                       rwlog_get_systemId(),
                       getpid(),syscall(SYS_gettid));
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
 
   ctx = rwlog_init_internal(taskname,rwlog_filename,filter_shm_name,NULL);
 
@@ -231,14 +213,14 @@ static rwlog_ctx_t *rwlog_gtest_source_init_with_vnf(const char *taskname,uuid_t
                     rwlog_get_systemId(),
                     getpid(),syscall(SYS_gettid));
 
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
 
   r = asprintf (&filter_shm_name,
                       "%s-%d-%d-%lu",
                       RWLOG_FILTER_SHM_PATH,
                       rwlog_get_systemId(),
                       getpid(),syscall(SYS_gettid));
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
 
   ctx = rwlog_init_internal(taskname,rwlog_filename,filter_shm_name,vnf_id);
   RW_ASSERT(ctx);
@@ -261,8 +243,8 @@ void rwlogd_gtest_free_instance(rwlogd_instance_ptr_t inst)
   rwtasklet_info_ptr_t rwtasklet_info = inst->rwtasklet_info;
   rwsched_dispatch_source_cancel(rwtasklet_info->rwsched_tasklet_info,
                                  inst->rwlogd_info->connection_queue_timer);
-  rwsched_dispatch_release(rwtasklet_info->rwsched_tasklet_info,
-                          inst->rwlogd_info->connection_queue_timer);
+  rwsched_dispatch_source_release(rwtasklet_info->rwsched_tasklet_info,
+                                  inst->rwlogd_info->connection_queue_timer);
   inst->rwlogd_info->connection_queue_timer = NULL;
 
 
@@ -396,19 +378,21 @@ static void log_packet(rwlog_ctx_t *ctxt, char *fname, int loop_count,uint32_t p
     return;
   }
   fstat(fd, &file_stats);
-  read(fd, buf, file_stats.st_size -1);
-  rw_pkt_info_t pkt_info;
-  memset(&pkt_info, 0 , sizeof(rw_pkt_info_t));
-  pkt_info.packet_direction = packet_direction;
-  pkt_info.packet_type = packet_type;
-  pkt_info.packet_data.data = (uint8_t *)buf;
-  pkt_info.packet_data.len = file_stats.st_size -1;
-
-
-  for (int i = 0; i <loop_count ; i++)
-  { 
-    RWLOG_EVENT(ctxt, RwLogtest_notif_FastpathPacketTrace, (&pkt_info));
-  } 
+  ssize_t size = read(fd, buf, file_stats.st_size -1);
+  if (size > 0) {
+    rw_pkt_info_t pkt_info;
+    memset(&pkt_info, 0 , sizeof(rw_pkt_info_t));
+    pkt_info.packet_direction = packet_direction;
+    pkt_info.packet_type = packet_type;
+    pkt_info.packet_data.data = (uint8_t *)buf;
+    pkt_info.packet_data.len = file_stats.st_size -1;
+    
+    
+    for (int i = 0; i <loop_count ; i++)
+    { 
+      RWLOG_EVENT(ctxt, RwLogtest_notif_FastpathPacketTrace, (&pkt_info));
+    } 
+  }
   free(file_path);
   return;
 }
@@ -1922,7 +1906,8 @@ TEST(RwLogdGroup5, DISABLED_CliShowCallIdTimeUserFile)
 
   TEST_DESCRIPTION("5.2: Verify show-logs callid timetaken user file");
   char *rwlog_filename;
-  asprintf (&rwlog_filename, "%s-%d", RWLOG_FILE, rwlog_get_systemId());
+  int r = asprintf (&rwlog_filename, "%s-%d", RWLOG_FILE, rwlog_get_systemId());
+  RW_ASSERT(r > 0);
   int fd_r = open("/tmp/user-file", O_RDONLY, 0);
   if (fd_r<0)
   {
@@ -1944,7 +1929,10 @@ TEST(RwLogdGroup5, DISABLED_CliShowCallIdTimeUserFile)
     {
       break;
     }
-    write(fd_w,&i,4);
+    size = write(fd_w,&i,4);
+    if (size < 0) {
+      return;
+    }
   }
 
   unsetenv("__RWLOG_CLI_SINK_GTEST_PRINT_LOG__");
@@ -3719,11 +3707,11 @@ TEST(RwLogdGroup9, FileSinkAdd)
   rwlogd_instance_ptr_t inst = rwlogd_gtest_allocate_instance(1, false);
   rwlog_ctx_t *ctxt = rwlog_gtest_source_init("google-test1.6");
 
-  asprintf (&filename,
-            "FileSink-%d-%d-%lu",
-            rwlog_get_systemId(),
-            getpid(),syscall(SYS_gettid));
-
+  int r = asprintf (&filename,
+                    "FileSink-%d-%d-%lu",
+                    rwlog_get_systemId(),
+                    getpid(),syscall(SYS_gettid));
+  RW_ASSERT(r > 0);
   status = start_rwlogd_file_sink(inst, "FileSink", filename,0);
   EXPECT_TRUE(status == RW_STATUS_SUCCESS);
 
@@ -3737,7 +3725,8 @@ TEST(RwLogdGroup9, FileSinkAdd)
 
   rwsched_dispatch_main_until(inst->rwtasklet_info->rwsched_tasklet_info, 0.2, NULL);
 
-  asprintf (&log_filename,"/tmp/%s",filename);
+  r = asprintf (&log_filename,"/tmp/%s",filename);
+  RW_ASSERT(r > 0);
   FILE *stream = fopen(log_filename, "r");
   EXPECT_TRUE((stream != NULL));
   char *lineptr = NULL;
@@ -4439,7 +4428,7 @@ TEST(RwLogdGroup11, DupEvtSuppress)
                       RWLOG_FILTER_SHM_PATH,
                       rwlog_get_systemId(),
                       getpid(),syscall(SYS_gettid));
-  RW_ASSERT(r);
+  RW_ASSERT(r > 0);
   rwlog_shm_set_dup_events(filter_shm_name, FALSE);
   free(filter_shm_name);
 
@@ -4663,10 +4652,10 @@ TEST(RwLogdGroup12, PcapSinkAdd)
   rwlogd_instance_ptr_t inst = rwlogd_gtest_allocate_instance(1, false);
   rwlog_ctx_t *ctxt = rwlog_gtest_source_init("google-test12.x");
 
-  asprintf (&filename,
-            "/tmp/FileSink-%d-%lu",
-            getpid(),syscall(SYS_gettid));
-
+  int r = asprintf (&filename,
+                    "/tmp/FileSink-%d-%lu",
+                    getpid(),syscall(SYS_gettid));
+  RW_ASSERT(r > 0);
   status = start_rwlogd_pcap_sink(inst, "PcapSink", filename,0);
   EXPECT_TRUE(status == RW_STATUS_SUCCESS);
 
@@ -4682,9 +4671,10 @@ TEST(RwLogdGroup12, PcapSinkAdd)
 
   rwsched_dispatch_main_until(inst->rwtasklet_info->rwsched_tasklet_info, 0.2, NULL);
   free(filename);
-  asprintf (&filename,
-            "/tmp/FileSink-%d-%lu-%d.pcap",
-            getpid(),syscall(SYS_gettid), rwlog_get_systemId());
+  r = asprintf (&filename,
+                "/tmp/FileSink-%d-%lu-%d.pcap",
+                getpid(),syscall(SYS_gettid), rwlog_get_systemId());
+  RW_ASSERT(r > 0);
   EXPECT_EQ(rwlog_pcap_read(filename), 2);
   status = stop_rwlogd_pcap_sink(inst,"PcapSink","Pcapsink-test1");
   EXPECT_TRUE(status == RW_STATUS_SUCCESS);
@@ -5079,7 +5069,7 @@ TEST(RwLogdGroup13, DynSchemaTest)
   rwlog_ctx_t *ctxt = rwlog_gtest_source_init("google-test1.13");
   TEST_DESCRIPTION("Dynamic schema test");
 
-  EXPECT_TRUE(inst->rwlogd_info->num_categories == 2);
+  EXPECT_EQ (inst->rwlogd_info->num_categories, 2);
 
   RWPB_T_MSG(RwlogMgmt_input_ShowLogs) *log_input = 
       (RWPB_T_MSG(RwlogMgmt_input_ShowLogs) *) RW_MALLOC0(sizeof(RWPB_T_MSG(RwlogMgmt_input_ShowLogs)));
@@ -5092,11 +5082,25 @@ TEST(RwLogdGroup13, DynSchemaTest)
   RWLOG_EVENT(ctxt, RwLogtest_notif_FastpathEventLogTestError, user_string);
   RWLOG_EVENT(ctxt, RwdynschemaLogtest_notif_DynschemaLogError, user_string);
 
-  rwsched_dispatch_main_until(inst->rwtasklet_info->rwsched_tasklet_info, 0.2, NULL);
+  auto checked_yield_q = [&](int seconds) {
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  status = rwlog_mgmt_fetch_logs (inst, log_input, log_output);
-  EXPECT_LOG_TRUE(status == RW_STATUS_SUCCESS);
-  EXPECT_EQ(log_output->n_logs,1);
+    rwsched_dispatch_main_until(
+        inst->rwtasklet_info->rwsched_tasklet_info, 
+        seconds, 
+        nullptr);
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    EXPECT_GE (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), seconds * 1000);
+  };
+
+  checked_yield_q(2/*seconds*/);
+
+  status = rwlog_mgmt_fetch_logs(inst, log_input, log_output);
+  EXPECT_LOG_TRUE (status == RW_STATUS_SUCCESS);
+
+  EXPECT_EQ (log_output->n_logs, 1);
+
   if (verbose) {
     for (uint32_t i = 0; i < log_output->n_logs; i++) {
      printf("%s\n", log_output->logs[i]->msg);
@@ -5113,29 +5117,32 @@ TEST(RwLogdGroup13, DynSchemaTest)
   rwlogd_handle_dynamic_schema_update(inst,
                                       1,
                                       &module);
-  rwsched_dispatch_main_until(inst->rwtasklet_info->rwsched_tasklet_info, 1.0, NULL);
 
-  EXPECT_TRUE(inst->rwlogd_info->num_categories == 3);
+  checked_yield_q(3 /*seconds*/);
+
+  ASSERT_EQ (inst->rwlogd_info->num_categories, 3);
 
   category_str_t *category_list = rwlogd_get_category_list(inst);
-  EXPECT_TRUE(strcmp(category_list[2],"rwdynschema-logtest") == 0);
+  EXPECT_STREQ (category_list[2], "rwdynschema-logtest");
 
   RWLOG_EVENT(ctxt, RwLogtest_notif_FastpathEventLogTestError, user_string);
   RWLOG_EVENT(ctxt, RwdynschemaLogtest_notif_DynschemaLogError, user_string);
 
-  rwsched_dispatch_main_until(inst->rwtasklet_info->rwsched_tasklet_info, 0.2, NULL);
+  checked_yield_q(3 /*seconds*/);
 
   status = rwlog_mgmt_fetch_logs (inst, log_input, log_output);
-  EXPECT_LOG_TRUE(status == RW_STATUS_SUCCESS);
-  EXPECT_EQ(log_output->n_logs,3);
+  EXPECT_LOG_TRUE (status == RW_STATUS_SUCCESS);
+  EXPECT_EQ (log_output->n_logs, 3);
+
   if (verbose) {
     for (uint32_t i = 0; i < log_output->n_logs; i++) {
      printf("%s\n", log_output->logs[i]->msg);
     }
   }
 
-  status = rwlog_close_internal(ctxt,TRUE);
+  status = rwlog_close_internal(ctxt, TRUE);
   EXPECT_LOG_TRUE(status == RW_STATUS_SUCCESS);
+
   protobuf_free(log_output);
   protobuf_free(log_input);
   rwlogd_gtest_free_instance(inst);

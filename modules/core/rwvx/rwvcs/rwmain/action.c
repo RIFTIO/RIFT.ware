@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -485,16 +471,22 @@ static int rwmain_check_and_set_instance_name (
     char **instance_name,
     uint32_t *instance_id)
 {
+  rw_component_info cinfo;
+  rw_component_info *component_info = NULL;
+
   RW_ASSERT(instance_name && instance_id);
+  *instance_name = NULL;
+  *instance_id = 0;
+  
   if ((*instance_name) && (*instance_id)) {
     goto done;
   }
   if (chk_instance_name) {
-    rw_component_info cinfo;
     rw_status_t status = rwvcs_rwzk_lookup_component(
         rwmain->rwvx->rwvcs,
         chk_instance_name,
         &cinfo);
+    component_info = &cinfo;
     if (status != RW_STATUS_SUCCESS) {
       goto done;
     }
@@ -508,8 +500,10 @@ static int rwmain_check_and_set_instance_name (
           && (chinfo.state == RW_BASE_STATE_TYPE_TO_RECOVER)) {
         (*instance_name) = strdup(chinfo.instance_name);
         (*instance_id) = chinfo.instance_id;
+        protobuf_free_stack(chinfo);
         goto done;
       }
+      protobuf_free_stack(chinfo);
     }
     int indx;
     for (indx=0; !(*instance_name) && (indx < cinfo.n_rwcomponent_children); indx++) {
@@ -517,16 +511,19 @@ static int rwmain_check_and_set_instance_name (
         continue;
       }
       if (((*instance_id) = rwmain_check_and_set_instance_name(rwmain,
-                                             orig_parent_id,
-                                             cinfo.rwcomponent_children[indx],
-                                             action,
-                                             instance_name,
-                                             instance_id))) {
+                                                               orig_parent_id,
+                                                               cinfo.rwcomponent_children[indx],
+                                                               action,
+                                                               instance_name,
+                                                               instance_id))) {
         goto done;
       }
     }
   }
 done:
+  if (component_info){
+    protobuf_free_stack(*component_info);
+  }
   return (*instance_id);
 }
 
@@ -538,7 +535,9 @@ rw_status_t rwmain_action_run(
   rw_status_t status = RW_STATUS_FAILURE;
   vcs_manifest_component *m_component;
   char component_name[1024];
-
+  char *instance_name = NULL;
+  uint32_t instance_id = 0;
+    
   if (action->annex) {
     // Lookup the name of the component to annex
     status = rwvcs_manifest_component_lookup(rwmain->rwvx->rwvcs, action->annex->component_name, &m_component);
@@ -570,8 +569,6 @@ rw_status_t rwmain_action_run(
     if (status == RW_STATUS_NOTFOUND)
       return status;
 
-    char *instance_name = NULL;
-    uint32_t instance_id = 0;
     rwmain_check_and_set_instance_name (rwmain, parent_id, parent_id, action, &instance_name, &instance_id);
 
     if (!instance_name) {
@@ -606,6 +603,13 @@ rw_status_t rwmain_action_run(
       case RWVCS_TYPES_COMPONENT_TYPE_RWVM:
         RWVCS_LATENCY_CHK_PRE(rwmain->rwvx->rwsched);
         status = rwvm_start(rwmain, parent_id, m_component->rwvm, action, instance_name, instance_id);
+        RWTRACE_CRITINFO(rwmain->rwvx->rwtrace,
+                         RWTRACE_CATEGORY_RWVCS,
+                         "vm-start %s %s:%s in collection start status %d",
+                         instance_name,
+                         instance_name,
+                         rwmain->rwvx->rwvcs->rwmanifest_xmlfile,
+                         status);
         RWVCS_LATENCY_CHK_POST(rwmain->rwvx->rwtrace, RWTRACE_CATEGORY_RWVCS,
                                rwvm_start, "rwvm_start:%s", component_name);
         break;
@@ -673,10 +677,6 @@ rw_status_t rwmain_action_run(
         RW_BASE_ADMIN_COMMAND_MAX_VALUE);
       RW_ASSERT(rs == RW_STATUS_SUCCESS);
     }
-
-    if (instance_name)
-      free(instance_name);
-
   } else if (action->sleep) {
     rwmain_trace_info(
         rwmain,
@@ -686,10 +686,10 @@ rw_status_t rwmain_action_run(
     status = RW_STATUS_SUCCESS;
   }
 
-  if (status != RW_STATUS_SUCCESS)
-    RW_CRASH();
-
 done:
+  if (instance_name){
+    free(instance_name);
+  }
   return status;
 }
 
@@ -917,6 +917,7 @@ static rw_status_t rwcollection_start(
       status = rwvcs_rwzk_update_parent(rwvcs, instance_name, NULL);
       RW_ASSERT(status == RW_STATUS_SUCCESS);
     }
+    protobuf_free_stack(info);
   }
 
   // Update state in rwzk
@@ -938,8 +939,6 @@ done:
         "Failed to start collection %s, %d",
         m_action->start->component_name,
         status);
-    if (instance_name)
-      free(instance_name);
   }
 
   if (component)
@@ -1058,13 +1057,13 @@ static rw_status_t rwvm_start(
   int r;
   rw_status_t status;
   uint8_t uid;
-  rw_component_info * rwvm;
+  rw_component_info * rwvm = NULL;
   char vm_ip_address[256];
   rwvcs_instance_ptr_t rwvcs;
-
+  rw_component_info vm;
   char * riftinstall;
-  char * rwmain_path;
-  char * instance_arg;
+  char * rwmain_path = NULL;
+  char * instance_arg = NULL;
 
   rwvcs = rwmain->rwvx->rwvcs;
 
@@ -1102,7 +1101,6 @@ static rw_status_t rwvm_start(
       rwmain->parent_id = strdup(parent_id);
       if (!rwmain->parent_id) {
         RW_ASSERT(0);
-        goto done;
       }
     }
 
@@ -1133,9 +1131,11 @@ static rw_status_t rwvm_start(
         status = rwvcs_rwzk_lookup_component(rwvcs, current_instance, &info);
         RW_ASSERT(status == RW_STATUS_SUCCESS);
 
-        if (!info.rwcomponent_parent)
+        if (!info.rwcomponent_parent){
+          protobuf_free_stack(info);
           break;
-
+        }
+        
         if (!strncmp(instance_name, info.rwcomponent_parent, strlen(instance_name))) {
           status = rwvcs_rwzk_update_parent(rwvcs, current_instance, NULL);
           RW_ASSERT(status == RW_STATUS_SUCCESS);
@@ -1164,13 +1164,11 @@ static rw_status_t rwvm_start(
       RWTRACE_CATEGORY_RWVCS,
       "starting rwvm instance name = \"%s\"",
       instance_name);
-  rw_component_info vm;
-  bool alloced = true;
+
   status = rwvcs_rwzk_lookup_component(rwvcs, instance_name, &vm);
   if ((status == RW_STATUS_SUCCESS)
       && (vm.state == RW_BASE_STATE_TYPE_TO_RECOVER)) {
     rwvm = &vm;
-    alloced = false;
   }
   else {
     // Create an rwvm structure
@@ -1180,6 +1178,7 @@ static rw_status_t rwvm_start(
         m_action->start->component_name,
         instance_id,
         instance_name);
+    rwvm->state = RW_BASE_STATE_TYPE_STARTING;
   }
   RW_ASSERT(rwvm);
 
@@ -1201,9 +1200,6 @@ static rw_status_t rwvm_start(
   // Initialize the component info
   rwvm->vm_info->vm_ip_address = strdup(vm_ip_address);
   rwvm->has_state = true;
-  if (alloced) { 
-    rwvm->state = RW_BASE_STATE_TYPE_STARTING;
-  }
   rwvm->has_config_ready = m_action->start->has_config_ready;
   rwvm->config_ready = m_action->start->config_ready;
   rwvm->has_recovery_action = m_action->start->has_recovery_action;
@@ -1398,29 +1394,30 @@ static rw_status_t rwvm_start(
     r = asprintf(&ssh_wrapper, "%s/usr/bin/rwssh_wrapper", install_dir ? install_dir : "");
     RW_ASSERT(r != -1);
 
-    r = asprintf(&rift_shell, "%s/../rift-shell", install_dir ? install_dir : "");
+    r = asprintf(&rift_shell, "%s/../../../../../rift-shell", install_dir ? install_dir : "");
     RW_ASSERT(r != -1);
 
 
     // Sync the manifest file on the remote side.  Using rsync ensures that we don't actually
     // do anything if the files are the same (shared filesystem).
-    r = asprintf(&rsync_cmd, "/usr/bin/rsync %s %s:%s",
+    r = asprintf(&rsync_cmd, "/usr/bin/rsync -avz -e \"ssh -v -o StrictHostKeyChecking=no\" %s %s:%s",
         rwvcs->rwmanifest_xmlfile,
         vm_ip_address,
         rwvcs->rwmanifest_xmlfile);
     RW_ASSERT(r != -1);
     r = system(rsync_cmd);
-
+    RWTRACE_CRITINFO(rwvcs->rwvx->rwtrace,
+                     RWTRACE_CATEGORY_RWVCS,
+                     "/usr/bin/rsync -avz -e \"ssh -v -o StrictHostKeyChecking=no\" %s %s:%s retcode:%d",
+                     rwvcs->rwmanifest_xmlfile,
+                     vm_ip_address,
+                     rwvcs->rwmanifest_xmlfile,
+                     r);
     if (r != 0) {
-      RWTRACE_ERROR(
-          rwvcs->rwvx->rwtrace,
-          RWTRACE_CATEGORY_RWVCS,
-          "rsync %s %s:%s failed (%d)",
-          rwvcs->rwmanifest_xmlfile,
-          vm_ip_address,
-          rwvcs->rwmanifest_xmlfile,
-          r);
+      status = RW_STATUS_FAILURE;
+      goto done;
     }
+    
     //FIXME - Ignore for now
     //RW_ASSERT(r == 0); // In case of localhost, I'm sseing this failure.
 
@@ -1487,20 +1484,31 @@ static rw_status_t rwvm_start(
       const char * argv[] = {
         "ssh", "-n", vm_ip_address, "-o", "StrictHostKeyChecking=no",
         //"/usr/bin/screen", "-d", "-m", "-c", rwmain_screenrc,
-        ssh_wrapper, uid_str, real_uid_str, ld_preload ? ld_preload : "",
+        ssh_wrapper, uid_str, real_uid_str, "",
         rift_shell,
-          "--use-existing",
-          "--",
+        "--use-existing",
+        "--",
         rwmain_path,
-          "--manifest", rwvcs->rwmanifest_xmlfile,
-          "--name", m_action->start->component_name,
-          "--instance", instance_arg,
-          "--type", "rwvm",
-          "--parent", parent_id,
-          "--ip_address", vm_ip_address,
+        "--manifest", rwvcs->rwmanifest_xmlfile,
+        "--name", m_action->start->component_name,
+        "--instance", instance_arg,
+        "--type", "rwvm",
+        "--parent", parent_id,
+        "--ip_address", vm_ip_address,
         NULL
       };
-
+      RWTRACE_CRITINFO(rwvcs->rwvx->rwtrace,
+                       RWTRACE_CATEGORY_RWVCS,
+                       "rwvm start %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
+                       "ssh", "-v -n",
+                       vm_ip_address, "-o", "StrictHostKeyChecking=no",
+                       ssh_wrapper, uid_str, real_uid_str,
+                       "--use-existing", "--", rwmain_path,
+                       "--manifest", rwvcs->rwmanifest_xmlfile, "--name",
+                       m_action->start->component_name, "--instance", instance_arg,
+                       "--type", "rwvm", "--parent",
+                       parent_id,"--ip_address", vm_ip_address);
+      
       status = launch_process(
         rwmain,
         instance_name,
@@ -1548,20 +1556,18 @@ static rw_status_t rwvm_start(
     free(rwmain_screenrc);
   }
 
-  free(rwmain_path);
-  free(instance_arg);
-  if (alloced) {
-    free(rwvm);
+  protobuf_free_stack(vm);
+  if ((rwvm != &vm) && (rwvm)){
+    protobuf_c_message_free_unpacked(NULL, &rwvm->base);
   }
-
-  status = RW_STATUS_SUCCESS;
-
 done:
-  if (status != RW_STATUS_SUCCESS) {
-    if (instance_name)
-      free(instance_name);
+  if (rwmain_path){
+    free(rwmain_path);
   }
-
+  if (instance_arg){
+    free(instance_arg);
+  }
+  
   // The operation was successful
   return status;
 }
@@ -1576,7 +1582,7 @@ static rw_status_t rwproc_start(
 {
   int r;
   rw_status_t status;
-  rw_component_info * rwproc;
+  rw_component_info * rwproc = NULL;
   int argc = 16;
   char * riftinstall;
   int argi = 0;
@@ -1586,6 +1592,7 @@ static rw_status_t rwproc_start(
   char * python_path = NULL;
   char * instance_arg = NULL;
   char * vm_instance_arg = NULL;
+  rw_component_info proc;
 
   rwvcs = rwmain->rwvx->rwvcs;
   RW_CF_TYPE_VALIDATE(rwvcs, rwvcs_instance_ptr_t);
@@ -1595,13 +1602,10 @@ static rw_status_t rwproc_start(
       "starting rwproc instance name = \"%s\"",
       instance_name);
 
-  rw_component_info proc;
-  bool alloced = true;
   status = rwvcs_rwzk_lookup_component(rwvcs, instance_name, &proc);
   if ((status == RW_STATUS_SUCCESS) 
       && (proc.state == RW_BASE_STATE_TYPE_TO_RECOVER)) {
     rwproc = &proc;
-    alloced = false;
   }
   else {
     rwproc = rwvcs_rwproc_alloc(
@@ -1695,8 +1699,10 @@ static rw_status_t rwproc_start(
 
   // This needs to run first to make sure the mq is created prior to the
   // child writing to it.
-  status = rwproc_heartbeat_subscribe(rwmain, instance_name);
-  RW_ASSERT(status == RW_STATUS_SUCCESS);
+  if (!rwmain->no_heartbeat) {
+    status = rwproc_heartbeat_subscribe(rwmain, instance_name);
+    RW_ASSERT(status == RW_STATUS_SUCCESS);
+  }
 
   char *rift_vm = getenv("RIFT_VAR_VM");
   char rift_var_vm[255];
@@ -1832,11 +1838,10 @@ static rw_status_t rwproc_start(
   }
 
   free(argv);
-  if (alloced) {
-    free(rwproc);
-  }
-  else {
-    protobuf_c_message_free_unpacked_usebody(NULL, &proc.base);
+  
+  protobuf_free_stack(proc);
+  if ((rwproc != &proc) && rwproc){
+    protobuf_c_message_free_unpacked(NULL, &rwproc->base);
   }
 
 
@@ -1855,10 +1860,6 @@ static rw_status_t rwproc_start(
   if (instance_arg)
     free(instance_arg);
 
-  if (status != RW_STATUS_SUCCESS) {
-    if (instance_name)
-      free(instance_name);
-  }
   return status;
 }
 
@@ -1871,7 +1872,7 @@ static rw_status_t rwproc_native_start(
     uint32_t instance_id)
 {
   rw_status_t status;
-  rw_component_info * rwproc;
+  rw_component_info * rwproc = NULL;
   rwvcs_instance_ptr_t rwvcs;
 
   char * saveptr = NULL;
@@ -1887,7 +1888,8 @@ static rw_status_t rwproc_native_start(
   int vcs_ns = 0;
   struct stream_paths stream_paths;
   native_proc_term_mode_t term_mode = NATIVE_PROC_TERM_MODE_NONE;
-
+  rw_component_info proc;
+    
   rwvcs = rwmain->rwvx->rwvcs;
 
   if (m_proc->environment) {
@@ -2027,13 +2029,10 @@ static rw_status_t rwproc_native_start(
     start_terminal_io_tasklet(rwmain, parent_id);
   }
 
-  rw_component_info proc;
-  bool alloced = true;
   status = rwvcs_rwzk_lookup_component(rwvcs, instance_name, &proc);
   if ((status == RW_STATUS_SUCCESS) 
       && (proc.state == RW_BASE_STATE_TYPE_TO_RECOVER)) {
     rwproc = &proc;
-    alloced = false;
     if (rwproc->has_mode_active && !rwproc->mode_active) {
       rwproc->has_state = true;
       rwproc->state = RW_BASE_STATE_TYPE_RUNNING;
@@ -2182,7 +2181,10 @@ static rw_status_t rwproc_native_start(
 recovery_done:
   status = rwvcs_rwzk_node_update(rwvcs, rwproc);
   RW_ASSERT(status == RW_STATUS_SUCCESS);
-
+  protobuf_free_stack(proc);
+  if ((rwproc != &proc) && (rwproc)){
+    protobuf_c_message_free_unpacked(NULL, &rwproc->base);
+  }
 done:
   if (grp) {
     RW_FREE(grp);
@@ -2209,15 +2211,6 @@ done:
   if (argv_copy)
     free(argv_copy);
 
-  if (status != RW_STATUS_SUCCESS) {
-    if (instance_name)
-      free(instance_name);
-  }
-
-  if (rwproc && alloced) {
-    free(rwproc);
-  }
-
   return status;
 }
 
@@ -2232,17 +2225,16 @@ static rw_status_t rwtasklet_start(
   rw_status_t status;
   rw_component_info * component = NULL;
   struct rwmain_tasklet * rt = NULL;
+  rw_component_info tasklet;
+
 
   RWLOG_EVENT(rwmain->rwvx->rwlog, RwVcs_notif_VtaskletStart, instance_name, instance_id);
 
-  rw_component_info tasklet;
-  bool alloced = true;
   RWVCS_LATENCY_CHK_PRE(rwmain->rwvx->rwsched);
   status = rwvcs_rwzk_lookup_component(rwmain->rwvx->rwvcs, instance_name, &tasklet);
   if ((status == RW_STATUS_SUCCESS) 
       && (tasklet.state == RW_BASE_STATE_TYPE_TO_RECOVER)) {
     component = &tasklet;
-    alloced = false;
   }
   else {
     component = rwvcs_rwtasklet_alloc(
@@ -2337,14 +2329,10 @@ done:
   if (status != RW_STATUS_SUCCESS) {
     if (rt)
       rwmain_tasklet_free(rt);
-    if (instance_name)
-      free(instance_name);
   }
-  if (alloced) {
-    free(component);
-  }
-  else {
-    protobuf_c_message_free_unpacked_usebody(NULL, &tasklet.base);
+  protobuf_free_stack(tasklet);
+  if ((component != &tasklet) && (component)){
+    protobuf_c_message_free_unpacked(NULL, &component->base);
   }
 
 
@@ -2398,12 +2386,38 @@ stop_runloop(rwsched_CFRunLoopTimerRef timer, void *ctx)
   rwsched_instance_CFRunLoopStop(rwsched);
 }
 
+
+
+static void on_serf_event_lost_timeout(rwsched_CFRunLoopTimerRef timer, void * ctx)
+{
+  rwvcs_instance_ptr_t rwvcs;
+  rwvcs_lost_vm_info_t *lvm = (rwvcs_lost_vm_info_t *)ctx;
+  rw_status_t status;
+  
+  rwvcs = lvm->rwvcs;
+  status = RW_SKLIST_REMOVE_BY_KEY(&rwvcs->lost_vm_list, &lvm->member_name, &lvm);
+  RW_ASSERT(status == RW_STATUS_SUCCESS);
+  RWTRACE_CRIT(
+      rwvcs->rwvx->rwtrace,
+      RWTRACE_CATEGORY_RWVCS, "Member VM %s has been lost for %d seconds, so shuting down",
+      lvm->member_name, rwvcs->serf_event_timeout);
+  if (status == RW_STATUS_SUCCESS){
+    RW_FREE(lvm->member_name);
+    RW_FREE(lvm);
+    if (rwvcs->heartbeatmon_enabled){
+      exit(-1);
+    }  
+  }
+}
+
+
+
 static void on_serf_event(void * ctx, const char * event, const struct serf_member * member)
 {
   rw_status_t status;
   rwvcs_instance_ptr_t rwvcs;
   rw_component_info info;
-
+  rwvcs_lost_vm_info_t *lvm;
 
   rwvcs = (rwvcs_instance_ptr_t)ctx;
 
@@ -2424,12 +2438,71 @@ static void on_serf_event(void * ctx, const char * event, const struct serf_memb
     RWTRACE_CRIT(
         rwvcs->rwvx->rwtrace,
         RWTRACE_CATEGORY_RWVCS,
-        "Serf event %s on member %s - marking the RWVM as LOST",
+        "Serf event %s on member %s member-status %s - marking the RWVM as LOST",
         event,
-        member->name);
-    if (rwvcs->heartbeatmon_enabled) {
-      exit(-1);
+        member->name, member->status);
+    status = RW_SKLIST_LOOKUP_BY_KEY(&rwvcs->lost_vm_list, &member->name, &lvm);
+    /*Start the 5 second time to check if we need to take the system down since
+      VM is lost*/    
+    if (!lvm){
+      rwsched_CFRunLoopTimerContext cf_context = { 0, NULL, NULL, NULL, NULL };
+
+      lvm = (rwvcs_lost_vm_info_t *)RW_MALLOC0(sizeof(rwvcs_lost_vm_info_t));
+      lvm->rwvcs = rwvcs;
+      lvm->member_name = RW_STRDUP(member->name);
+      
+      cf_context.info = lvm;
+      RWTRACE_CRIT(
+          rwvcs->rwvx->rwtrace,
+          RWTRACE_CATEGORY_RWVCS,
+          "Serf event %s on member %s member-status %s, Starting %d timeout",
+          event,
+          member->name, member->status,
+          rwvcs->serf_event_timeout);
+      lvm->timer =
+          rwsched_tasklet_CFRunLoopTimerCreate(rwvcs->rwvx->rwsched_tasklet ,
+                                               kCFAllocatorDefault,
+                                               CFAbsoluteTimeGetCurrent() + rwvcs->serf_event_timeout,
+                                               0,
+                                               0,
+                                               0,
+                                               on_serf_event_lost_timeout,
+                                               &cf_context);
+      rwsched_tasklet_CFRunLoopAddTimer(rwvcs->rwvx->rwsched_tasklet ,
+                                        rwsched_tasklet_CFRunLoopGetCurrent(rwvcs->rwvx->rwsched_tasklet),
+                                        lvm->timer,
+                                        rwvcs->rwvx->rwsched->main_cfrunloop_mode);
+      
+      status = RW_SKLIST_INSERT(&(rwvcs->lost_vm_list), lvm);
+      RW_ASSERT(status == RW_STATUS_SUCCESS);
     }
+  }else{
+    /*The vm is back to being active again*/
+    RWTRACE_CRIT(
+        rwvcs->rwvx->rwtrace,
+        RWTRACE_CATEGORY_RWVCS,
+        "Serf event %s on member %s member-status %s - marking the RWVM as ACTIVE",
+        event,
+        member->name, member->status);
+    status = RW_SKLIST_LOOKUP_BY_KEY(&rwvcs->lost_vm_list, &member->name, &lvm);
+    if (lvm){
+      /*Stop the timer if it was started*/
+      if (lvm->timer){
+        rwsched_tasklet_CFRunLoopTimerRelease(rwvcs->rwvx->rwsched_tasklet,
+                                              lvm->timer);
+        lvm->timer = NULL;
+      }
+      status = RW_SKLIST_REMOVE_BY_KEY(&rwvcs->lost_vm_list, &lvm->member_name, &lvm);
+      RW_FREE(lvm->member_name);
+      RW_FREE(lvm);
+    }else{
+      RWTRACE_CRIT(
+        rwvcs->rwvx->rwtrace,
+        RWTRACE_CATEGORY_RWVCS, "Member VM %s IS ACTIVE, shutdown-timer fired/did not detect lost-state",
+                   member->name);
+    }
+    
+    status = rwvcs_rwzk_update_state(rwvcs, member->name, RW_BASE_STATE_TYPE_RUNNING);
   }
 
   protobuf_free_stack(info);
@@ -2445,16 +2518,18 @@ rwmain_rwvm_init(
     const char * parent_id)
 {
   rw_status_t status;
-  rw_component_info * rwvm;
+  rw_component_info * rwvm = NULL;
   vcs_manifest_event * m_event;
   rwvcs_instance_ptr_t rwvcs;
-
+  rw_component_info vm;
+  
   rwvcs = rwmain->rwvx->rwvcs;
 
-  rw_component_info vm;
+
   status = rwvcs_rwzk_lookup_component(rwvcs, instance_name, &vm);
   if ((status == RW_STATUS_SUCCESS) 
       && (vm.state == RW_BASE_STATE_TYPE_TO_RECOVER)) {
+    rwvm = &vm;
     status = rwvcs_rwzk_node_update(rwvcs, &vm);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
   }
@@ -2467,18 +2542,19 @@ rwmain_rwvm_init(
         component_name,
         instance_id,
         instance_name);
-    RW_ASSERT(rwvm);
-    free(rwvm);
   }
-
+  RW_ASSERT(rwvm);
+  
   if (IS_MGMT_VM(rwvcs)) {
     rw_component_info rw_vm;
     status = rwvcs_rwzk_lookup_component(rwvcs, instance_name, &rw_vm);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
+
     rw_vm.vm_info->has_vm_state = true;
     rw_vm.vm_info->vm_state = MGMT_VM_STATE(rwvcs);
     status = rwvcs_rwzk_node_update(rwvcs, &rw_vm);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
+    protobuf_free_stack(rw_vm);
   }
 
   status = reaper_start(rwvcs, instance_name);
@@ -2569,6 +2645,20 @@ rwmain_rwvm_init(
   status = rwvcs_rwzk_update_state(rwvcs, instance_name, RW_BASE_STATE_TYPE_RUNNING);
   RW_ASSERT(status == RW_STATUS_SUCCESS);
 
+  /*Set the default serf-event-lost-vm timeout to 5*/
+  rwvcs->serf_event_timeout = 5;
+  RW_SKLIST_PARAMS_DECL(
+      lost_vm,
+      struct rwvcs_lost_vm_info_s,
+      member_name,
+      rw_sklist_comp_charptr,
+      element);
+  RW_SKLIST_INIT(&(rwvcs->lost_vm_list), &lost_vm);
+
+  protobuf_free_stack(vm);
+  if ((rwvm != &vm) && (rwvm)){
+    protobuf_c_message_free_unpacked(NULL, &rwvm->base);    
+  }
   return RW_STATUS_SUCCESS;
 }
 
@@ -2600,19 +2690,17 @@ rwmain_rwproc_init(
     const char * parent_id)
 {
   rw_status_t status;
-  rw_component_info * rwproc;
+  rw_component_info *rwproc = NULL;
   rwvcs_instance_ptr_t rwvcs;
-
-  rwvcs = rwmain->rwvx->rwvcs;
-
   rw_component_info proc;
-  bool alloced = true;
+  
+  rwvcs = rwmain->rwvx->rwvcs;
+  
   RWVCS_LATENCY_CHK_PRE(rwmain->rwvx->rwsched);
   status = rwvcs_rwzk_lookup_component(rwvcs, instance_name, &proc);
   if ((status == RW_STATUS_SUCCESS) 
       && (proc.state == RW_BASE_STATE_TYPE_TO_RECOVER)) {
     rwproc = &proc;
-    alloced = false;
     status = rwvcs_rwzk_node_update(rwvcs, rwproc);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
   }
@@ -2681,8 +2769,10 @@ rwmain_rwproc_init(
             && (child.state == RW_BASE_STATE_TYPE_TO_RECOVER)) {
           int r = asprintf(&action.start->instance_id, "%u", (unsigned int)child.instance_id);
           RW_ASSERT(r != -1);
+          protobuf_free_stack(child);
           break;
         }
+        protobuf_free_stack(child);
       }
       num_children--;
     }
@@ -2709,8 +2799,10 @@ rwmain_rwproc_init(
     protobuf_c_message_free_unpacked_usebody(NULL, &action.base);
   }
 
-  status = rwproc_heartbeat_publish(rwmain, instance_name);
-  RW_ASSERT(status == RW_STATUS_SUCCESS);
+  if (!rwmain->no_heartbeat) {
+    status = rwproc_heartbeat_publish(rwmain, instance_name);
+    RW_ASSERT(status == RW_STATUS_SUCCESS);
+  }
 
   RWVCS_LATENCY_CHK_PRE(rwmain->rwvx->rwsched);                           
   status = rwvcs_rwzk_update_state(rwvcs, instance_name, RW_BASE_STATE_TYPE_RUNNING);
@@ -2718,13 +2810,11 @@ rwmain_rwproc_init(
   RWVCS_LATENCY_CHK_POST(rwmain->rwvx->rwtrace, RWTRACE_CATEGORY_RWVCS,
                          rwvcs_rwzk_update_state, "rwvcs_rwzk_update_state:%s", instance_name);
 
-  if (alloced) {
-    free(rwproc);
+  protobuf_free_stack(proc);
+  if ((rwproc != &proc) && (rwproc)){
+    protobuf_c_message_free_unpacked(NULL, &rwproc->base);
   }
-  else {
-    protobuf_c_message_free_unpacked_usebody(NULL, &proc.base);
-  }
-
+  
   return RW_STATUS_SUCCESS;
 }
 
@@ -2974,6 +3064,10 @@ static rw_status_t launch_process(
   r = pipe(pipe_fds);
   if (r) {
     int err = errno;
+    RWTRACE_ERROR(
+        rwmain->rwvx->rwtrace,
+        RWTRACE_CATEGORY_RWVCS,
+        "pipe: %s", strerror(err));
     rwmain_trace_error(rwmain, "pipe: %s", strerror(err));
     return RW_STATUS_FAILURE;
   }
@@ -2981,6 +3075,10 @@ static rw_status_t launch_process(
   lpid = fork();
   if (lpid < 0) {
     int err = errno;
+     RWTRACE_ERROR(
+         rwmain->rwvx->rwtrace,
+         RWTRACE_CATEGORY_RWVCS,
+         "fork gone wrong(%s): %s", path, strerror(err));
     fprintf(stderr, "fork gone wrong(%s): %s", path, strerror(err));
     rwmain_trace_error(rwmain, "fork: %s", strerror(err));
     return RW_STATUS_FAILURE;
@@ -3096,7 +3194,6 @@ static rw_status_t launch_process(
       execvp(path, argv);
     else
       execvpe(path, argv, env);
-
     fprintf(stderr, "execv failed: cwd = %s, exe = %s, error = %s", get_current_dir_name(), path, strerror(errno));
     rwmain_trace_error(
         rwmain,
@@ -3330,21 +3427,31 @@ rw_status_t start_terminal_io_tasklet(
     rwmain_trace_error(rwmain, "Failed to launch TermIO tasklet");
   }
 
+  if (instance_name){
+    free(instance_name);
+  }
   return ret;
 }
 
 
-static rw_status_t start_multivm_rwmain(
-    struct rwmain_gi *rwmain,
-    const char *collection_comp_name,
-    const char *vm_name,
-    const char *vm_ip_addr)
+/*Timer handler to start a new vm. This is a periodic timer until it is successfull*/
+static void start_multivm_rwmain_f(rwsched_CFRunLoopTimerRef timer, void *ctx)
 {
+  struct rwmain_multivm *multivm = ( struct rwmain_multivm *)ctx;
   rw_status_t status;
   char *instance_name = NULL;
   uint32_t instance_id;
   rwvcs_instance_ptr_t rwvcs;
+  struct rwmain_gi *rwmain = multivm->rwmain;
+  const char *collection_comp_name = multivm->collection_name;
+  const char *vm_name = multivm->vm_name;
+  const char *vm_ip_addr = multivm->vm_ip_addr;
 
+  multivm->retry_attempts++;
+  if (multivm->retry_attempts == RWMAIN_MULTIVM_MAX_RETRY_ATTEMPTS){
+    status = RW_STATUS_SUCCESS;
+    goto ret;
+  }
   RW_ASSERT(rwmain);
   rwvcs = rwmain->rwvx->rwvcs;
   RW_ASSERT(rwvcs);
@@ -3373,7 +3480,8 @@ static rw_status_t start_multivm_rwmain(
   status = rwvcs_rwzk_lookup_component(rwvcs, rwmain->parent_id, &self);
   RW_ASSERT(status == RW_STATUS_SUCCESS);
   for (size_t num_components=0; num_components<self.n_rwcomponent_children; ++num_components) {
-    status = rwvcs_rwzk_lookup_component(rwvcs, self.rwcomponent_children[num_components], &component);
+    status = rwvcs_rwzk_lookup_component(rwvcs, self.rwcomponent_children[num_components],
+                                         &component);
     //printf("%s <-> %s\n", collection_comp_name, component.component_name);
     if (component.component_type == RWVCS_TYPES_COMPONENT_TYPE_RWCOLLECTION) {
       if (!strcmp(component.component_name, collection_comp_name)) {
@@ -3382,6 +3490,7 @@ static rw_status_t start_multivm_rwmain(
         break;
       }
     }
+    protobuf_free_stack(component);
   }
   if (!found_collection) {
     // Cookup a manifest-component info for COLLECTION to start
@@ -3416,27 +3525,8 @@ static rw_status_t start_multivm_rwmain(
     vcs_manifest_event *event_p[] = {&event};
     event_list.event = event_p;
 
-#if 0
-    // If the ret_collection allready has event-name='onentry' and
-    // 'action.start', then append one more 'action.start'
-    if (m_component->rwcollection->event_list) {
-      vcs_manifest_event_list *mm_event_list = m_component->rwcollection->event_list;
-      vcs_manifest_event *mm_event;
-      status = rwvcs_manifest_event_lookup("onentry", mm_event_list, &mm_event);
-      if (status == RW_STATUS_SUCCESS) {
-        vcs_manifest_action **mm_action = mm_event->action;
-        mm_action = realloc(mm_action, sizeof(vcs_manifest_action **)*(mm_event->n_action+1));
-        mm_action[mm_event->n_action] = &action;
-        mm_event->n_action ++;
-      } else {
-        RW_ASSERT(status == RW_STATUS_SUCCESS);
-      }
-    } else
-#endif
-    {
-      m_component->rwcollection->event_list = &event_list;
-    }
-
+    m_component->rwcollection->event_list = &event_list;
+    
     // Cookup an m_action
     vcs_manifest_action  m_action;
     vcs_manifest_action_start m_start;
@@ -3493,39 +3583,76 @@ static rw_status_t start_multivm_rwmain(
     RW_ASSERT(status == RW_STATUS_SUCCESS);
 
     /* Start the additional VM on vm_ip_addr */
-    status = rwvm_start(
-        rwmain,
-        collection_name,
-        ret_vm->rwvm,
-        &m_action,
-        instance_name,
-        instance_id);
+    status = rwvm_start(rwmain,
+                        collection_name,
+                        ret_vm->rwvm,
+                        &m_action,
+                        instance_name,
+                        instance_id);
   }
-  return status;
+
+  protobuf_free_stack(self);
+ret:
+  if (status == RW_STATUS_SUCCESS){
+    //STOP THE TIMER..
+    rwsched_tasklet_CFRunLoopTimerRelease(rwmain->rwvx->rwsched_tasklet,
+                                          multivm->retry_timer);
+    multivm->retry_timer = NULL;
+    multivm->retry_attempts = 0;
+  }else{
+    //leave the timer running
+    
+  }
+  return;
 }
 
-typedef struct {
-  struct rwmain_gi *rwmain;
-  char *collection_name;
-  char *vm_name;
-  char *vm_ip_addr;
-} start_multivm_rwmain_s;
 
-static void start_multivm_rwmain_f(void *ctx)
+
+
+static
+rw_status_t
+rwmain_start_member_vm(struct rwmain_gi *rwmain, char *key,
+                       char *collection_name, char *vm_name,
+                       char *vm_ip_addr,
+                       uint32_t start_id, struct rwmain_multivm *multivm)
 {
   rw_status_t status;
-  start_multivm_rwmain_s *ud = (start_multivm_rwmain_s*)ctx;
-  status =  start_multivm_rwmain(
-      ud->rwmain,
-      ud->collection_name,
-      ud->vm_name,
-      ud->vm_ip_addr);
-  RW_ASSERT(status == RW_STATUS_SUCCESS);
-  free(ud->collection_name);
-  free(ud->vm_name);
-  free(ud->vm_ip_addr);
-  free(ud);
+  rwsched_CFRunLoopTimerContext cf_context = { 0, NULL, NULL, NULL, NULL };
+  double timer_interval = 5.0;
+  
+  if (!multivm){
+    multivm = RW_MALLOC0(sizeof(*multivm));
+    strncpy(multivm->key, key, sizeof(multivm->key)-1);
+    multivm->rwmain = rwmain;
+    multivm->collection_name = strdup(collection_name);
+    multivm->vm_name = strdup(vm_name);
+    multivm->vm_ip_addr = strdup(vm_ip_addr);
+    
+    status = RW_SKLIST_INSERT(&(rwmain->multivms), multivm);
+    RW_ASSERT(status == RW_STATUS_SUCCESS);
+  }
+  multivm->start_id = start_id;
+
+  if (multivm->retry_timer){
+    rwsched_tasklet_CFRunLoopTimerRelease(rwmain->rwvx->rwsched_tasklet,
+                                          multivm->retry_timer);
+    multivm->retry_timer = NULL;
+    multivm->retry_attempts = 0;
+  }
+  
+  cf_context.info = multivm;
+  multivm->retry_timer = rwsched_tasklet_CFRunLoopTimerCreate(rwmain->rwvx->rwsched_tasklet,
+                                                              kCFAllocatorDefault,
+                                                              CFAbsoluteTimeGetCurrent()+timer_interval, 
+                                                              timer_interval, 0,0,
+                                                              start_multivm_rwmain_f, &cf_context);
+  rwsched_tasklet_CFRunLoopAddTimer(rwmain->rwvx->rwsched_tasklet,
+                                    rwsched_tasklet_CFRunLoopGetCurrent(rwmain->rwvx->rwsched_tasklet),
+                                    multivm->retry_timer,
+                                    rwmain->rwvx->rwsched->main_cfrunloop_mode);
+  return RW_STATUS_SUCCESS;
 }
+
 
 static void watcher_multivm_rwmain(void* ud)
 {
@@ -3537,7 +3664,8 @@ static void watcher_multivm_rwmain(void* ud)
   char *collection_name = NULL;
   char *vm_name = NULL;
   char *vm_ip_addr = NULL;
-
+  uint32_t start_id;
+  
   char ** children = NULL;
   char *rwzk_get_data = NULL;
 
@@ -3554,6 +3682,7 @@ static void watcher_multivm_rwmain(void* ud)
 
       struct rwmain_multivm *rt = NULL;
       char key[sizeof(rt->key)];
+      
       strncpy(key, rwzk_get_data, sizeof(key)-1);
 
       char *p = rwzk_get_data;
@@ -3572,26 +3701,21 @@ static void watcher_multivm_rwmain(void* ud)
       vm_ip_addr = p;
       p = strchr(vm_ip_addr, ':');
       if (p) p[0] = '\0';
+      p++;
 
+      start_id = strtoul(p, NULL, 10);
+      
       status = RW_SKLIST_LOOKUP_BY_KEY(&(rwmain->multivms), key, &rt);
       if (status != RW_STATUS_SUCCESS) {
-        struct rwmain_multivm *multivm = RW_MALLOC0(sizeof(*multivm));
-        strncpy(multivm->key, key, sizeof(multivm->key)-1);
-        status = RW_SKLIST_INSERT(&(rwmain->multivms), multivm);
-        RW_ASSERT(status == RW_STATUS_SUCCESS);
-
-        start_multivm_rwmain_s *ud = malloc(sizeof(*ud));
-        RW_ASSERT(ud);
-        ud->rwmain = rwmain;
-        ud->collection_name = strdup(collection_name);
-        ud->vm_name = strdup(vm_name);
-        ud->vm_ip_addr = strdup(vm_ip_addr);
-
-        rwsched_dispatch_async_f(
-            rwmain->rwvx->rwsched_tasklet,
-            rwsched_dispatch_get_main_queue(rwmain->rwvx->rwsched),
-            ud,
-            start_multivm_rwmain_f);
+        rwmain_start_member_vm(rwmain, key, collection_name, vm_name, vm_ip_addr,
+                               start_id, NULL);
+      }else{
+        /*Already know about this vm. check if this is a newer instance of the same*/
+        if (rt->start_id != start_id){
+          //vm has crashed or service has restarted and has come back
+            rwmain_start_member_vm(rwmain, key, collection_name, vm_name, vm_ip_addr,
+                                   start_id, rt);
+        }
       }
       idx++;
     }
@@ -3637,6 +3761,7 @@ rwmain_inform_current_children(rwvcs_instance_ptr_t rwvcs,
     status = rwvcs_rwzk_lookup_component(rwvcs, cinfo->rwcomponent_children[indx], &chinfo);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
     rwmain_inform_current_children (rwvcs, block, &chinfo, vm_state);
+    protobuf_free_stack(chinfo);
   }
 }
 
@@ -3882,7 +4007,8 @@ handle_common_transition_tasks(struct rwmain_gi *rwmain,
 
       while (restart_list) {
         rw_component_info cinfo;
-        status = rwvcs_rwzk_lookup_component(rwmain->rwvx->rwvcs, restart_list->instance_name, &cinfo);
+        status = rwvcs_rwzk_lookup_component(rwmain->rwvx->rwvcs, restart_list->instance_name,
+                                             &cinfo);
         RW_ASSERT (status == RW_STATUS_SUCCESS);
 
         // FIXME: This code is repeated, both here and in heartbeat.c
@@ -3901,6 +4027,7 @@ handle_common_transition_tasks(struct rwmain_gi *rwmain,
 
           free(dts_router_path);
         }
+        protobuf_free_stack(cinfo);
         restart_list = restart_list->next_restart_instance;
       }
     }
@@ -3955,75 +4082,71 @@ static void rwmain_notify_transition_async_f(void* ud)
 
   rwvcs_instance_ptr_t rwvcs = rwmain->rwvx->rwvcs;
   rw_status_t status = RW_STATUS_SUCCESS;
-
+  rw_component_info *component_info = NULL;
   rw_component_info cinfo;
   status = rwvcs_rwzk_lookup_component(rwvcs, rwvcs->instance_name, &cinfo);
 
   if (status != RW_STATUS_SUCCESS) {
-    fprintf (stderr, "Failed to get data from zookeeper..trying again\n");
     goto restart_task;
-    return;
   }
 
+  component_info = &cinfo;
+  
   switch (state_info->fsm_state) {
   case STARTING:
-  {
-    //Update the FSM state
-    state_info->fsm_state = HANDLE_COMMON_TASKS;
-  }
-  /******* FALLTHROUGH *********/
-  case HANDLE_COMMON_TASKS:
-  {
-    rw_component_info tmp_pinfo;
-    status = rwvcs_rwzk_lookup_component(rwvcs, cinfo.rwcomponent_parent, &tmp_pinfo);
-    RW_ASSERT(status == RW_STATUS_SUCCESS);
-
-    // Perform common transition tasks, which includes:
-    // 1. Notifying redis about state change.
-    // 2. Iterating over the restart list to find the
-    // Master router and to delete all its registrations.
-    status = handle_common_transition_tasks(rwmain, rwvcs, state, &tmp_pinfo);
-
-    if (status != RW_STATUS_SUCCESS) {
-      protobuf_free_stack(cinfo);
-      fprintf(stderr, "Retrying transition tasks\n");
-      goto restart_task;
-      return;
+    {
+      //Update the FSM state
+      state_info->fsm_state = HANDLE_COMMON_TASKS;
     }
-    // update the FSM state
-    state_info->fsm_state = WAIT_FOR_OTHERS;
-  }
-  /******* FALLTHROUGH *********/
-  case WAIT_FOR_OTHERS:
-  {
-    rw_component_info tmp_pinfo;
-    status = rwvcs_rwzk_lookup_component(rwvcs, cinfo.rwcomponent_parent, &tmp_pinfo);
-    RW_ASSERT(status == RW_STATUS_SUCCESS);
+    /******* FALLTHROUGH *********/
+    case HANDLE_COMMON_TASKS:
+      {
+        rw_component_info tmp_pinfo;
+        status = rwvcs_rwzk_lookup_component(rwvcs, cinfo.rwcomponent_parent, &tmp_pinfo);
+        RW_ASSERT(status == RW_STATUS_SUCCESS);
+        
+        // Perform common transition tasks, which includes:
+        // 1. Notifying redis about state change.
+        // 2. Iterating over the restart list to find the
+        // Master router and to delete all its registrations.
+        status = handle_common_transition_tasks(rwmain, rwvcs, state, &tmp_pinfo);
 
-    // Wait for all other standby VM's to finish, else will result
-    // in incorrect behaviour if the Master VM goes on to delete the
-    // Zookeeper entries from here on.
-    // Kind of a barrier impl.
-    if (state == RWVCS_TYPES_VM_STATE_MGMTACTIVE) {
-      status = wait_for_all_others_to_complete(rwmain, rwvcs, &tmp_pinfo);
-      if (status != RW_STATUS_SUCCESS) {
-        protobuf_free_stack(cinfo);
-        fprintf (stderr, "Waiting for all VM to finish their transition tasks...\n");
-        goto restart_task;
-        return;
+        
+        protobuf_free_stack(tmp_pinfo);
+        if (status != RW_STATUS_SUCCESS) {
+          goto restart_task;
+        }
+        // update the FSM state
+        state_info->fsm_state = WAIT_FOR_OTHERS;
       }
-    }
-    break;
-  }
-
-  default:
-    RW_ASSERT (0);
-
+      /******* FALLTHROUGH *********/
+    case WAIT_FOR_OTHERS:
+      {
+        rw_component_info tmp_pinfo;
+        status = rwvcs_rwzk_lookup_component(rwvcs, cinfo.rwcomponent_parent, &tmp_pinfo);
+        RW_ASSERT(status == RW_STATUS_SUCCESS);
+        
+        // Wait for all other standby VM's to finish, else will result
+        // in incorrect behaviour if the Master VM goes on to delete the
+        // Zookeeper entries from here on.
+        // Kind of a barrier impl.
+        if (state == RWVCS_TYPES_VM_STATE_MGMTACTIVE) {
+          status = wait_for_all_others_to_complete(rwmain, rwvcs, &tmp_pinfo);
+        }
+        protobuf_free_stack(tmp_pinfo);
+        if (status != RW_STATUS_SUCCESS) {
+          goto restart_task;
+        }
+        break;
+      }
+      
+    default:
+      RW_ASSERT (0);
+      
   };
 
-  rw_component_info pinfo;
-
   if (state == RWVCS_TYPES_VM_STATE_MGMTACTIVE) {
+    rw_component_info pinfo;
 
     status = rwvcs_rwzk_lookup_component(rwvcs, cinfo.rwcomponent_parent, &pinfo);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
@@ -4103,22 +4226,26 @@ static void rwmain_notify_transition_async_f(void* ud)
       RW_FREE(uagent->instance_name);
       RW_FREE_TYPE(uagent, rwmain_restart_instance_t);
     }
-  }
 
-  protobuf_free_stack(cinfo);
+    protobuf_free_stack(pinfo);
+  }
+  if (component_info)
+    protobuf_free_stack(cinfo);
+  
   free(state_info);
 
   return;
-  RW_ASSERT (0);
 
 restart_task:
-   rwsched_dispatch_after_f(
-        rwmain->rwvx->rwsched_tasklet,
-        dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 2),
-        rwsched_dispatch_get_main_queue(rwmain->rwvx->rwsched),
-        state_info,
-        rwmain_notify_transition_async_f
-       );
+  if (component_info)
+    protobuf_free_stack(cinfo);
+  
+  rwsched_dispatch_after_f(rwmain->rwvx->rwsched_tasklet,
+                           dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 2),
+                           rwsched_dispatch_get_main_queue(rwmain->rwvx->rwsched),
+                           state_info,
+                           rwmain_notify_transition_async_f);
+  
   return;
 }
 

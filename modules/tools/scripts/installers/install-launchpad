@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-#   Copyright 2016 RIFT.IO Inc
+#   Copyright 2016-2017 RIFT.io Inc
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 #
 # Author(s): Jeremy Mordkoff, Lezz Giles
 # Creation Date: 08/29/2016
+# 3-Mar-2017 -- JLM -- removed remaining cruft related to FC20 support
 # 
 # This script tries to follow https://google.github.io/styleguide/shell.xml
 #
@@ -44,25 +45,34 @@ fi
 
 eval set -- $params
 
-while true; do
-    case "$1" in
-	-h|--help)
+usage() 
+{
+
 	    echo
 	    echo "NAME:"
 	    echo "  $0"
 	    echo
 	    echo "SYNOPSIS:"
 	    echo "  $0 -h|--help"
-	    echo "  $0 [<LAUNCHPAD_REPOSITORY> [<LAUNCHPAD_VERSION>]]"
+	    echo "  $0 [--rift] [<LAUNCHPAD_REPOSITORY> [<LAUNCHPAD_VERSION>]]"
 	    echo
 	    echo "DESCRIPTION:"
 	    echo "  Prepare current system to run launchpad as a service."
 	    echo "  LAUNCHPAD_REPOSITORY (optional): name of the RIFT.ware repository."
 	    echo "  LAUNCHPAD_VERSION (optional): version of the platform packages to be installed."
+        echo "  --rift causes the installer to use the RIFT mirrors where available"
 	    echo
-	    exit 0;;
+
+
+}
+
+use_rift_mirrors=false
+while true; do
+    case "$1" in
+	-h|--help) usage; exit 0;;
+    --rift) use_rift_mirrors=true;;
 	--) shift; break;;
-	*) echo "Not implemented: $1" >&2; exit 1;;
+	*) echo "Not implemented: $1" >&2; usage; exit 1;;
     esac
 done
 
@@ -71,206 +81,46 @@ done
 
 if grep -qi "Ubuntu 16.04" /etc/issue; then
     readonly PLATFORM=ub16
-elif grep -qi "Fedora release 20" /etc/issue; then
-    readonly PLATFORM=fc20
 else
-    echo "This installer only runs on Ubuntu 16.04 or Fedora release 20." >&2
+    echo "This installer only runs on Ubuntu 16.04." >&2
     exit 1
 fi
 
-# Temporary check until we properly support fc20.  Allow installation of
-# an explicit build number from an explicit repo, but disallow installing from
-# defaults.
-if [[ $PLATFORM == fc20 && $# -ne 2 ]]; then
-    echo "You cannot currently use this script to install launchpad on Fedora Core 20."
-    echo "This functionality is coming soon."
+# Check the wordsize
+arch=`arch`
+if [[ $arch != x86_64 ]]; then
+    echo "You can only install RIFT.ware on a 64-bit platform, but this platform is not 64-bit"
     exit 1
 fi
-
-# Turn this on after handling options, so the output doesn't get cluttered.
-set -x             # Print commands before executing them
 
 ###############################################################################
 # Set up repo and version
 
-if [[ $PLATFORM == ub16 ]]; then
-    readonly PLATFORM_REPOSITORY=${1:-release}
-    readonly PLATFORM_VERSION=${2:-4.3.3.0.51336}
-elif [[ $PLATFORM == fc20 ]]; then
-    readonly PLATFORM_REPOSITORY=${1:-release}
-    readonly PLATFORM_VERSION=${2:-4.3.3.0.NOT.YET}
-else
-    echo "Internal error: unknown platform $PLATFORM"
-    exit 1
-fi
+readonly PLATFORM_REPOSITORY=${1:-release}
+readonly PLATFORM_VERSION=${2:-4.3.3.1.52691}
 
-###############################################################################
-# Main block
+cat <<EOF
 
-if [[ $PLATFORM == ub16 ]]; then
-    # enable the right repos
-    curl http://repos.riftio.com/public/xenial-riftware-public-key | sudo apt-key add -
-    sudo curl -o /etc/apt/sources.list.d/${PLATFORM_REPOSITORY}.list \
-	 http://buildtracker.riftio.com/repo_file/ub16/${PLATFORM_REPOSITORY}/ 
-    sudo apt-get update
-        
-    # install the RIFT platform code:
-    sudo apt-get install -y \
-	 rw.tools-container-tools=${PLATFORM_VERSION} \
-	 rw.tools-scripts=${PLATFORM_VERSION} \
-	 \
-	 rw.toolchain-rwbase=${PLATFORM_VERSION} \
-	 rw.toolchain-rwtoolchain=${PLATFORM_VERSION} \
-	 rw.core.mgmt-mgmt=${PLATFORM_VERSION} \
-	 rw.core.util-util=${PLATFORM_VERSION} \
-	 rw.core.rwvx-rwvx=${PLATFORM_VERSION} \
-	 rw.core.rwvx-rwdts=${PLATFORM_VERSION} \
-	 rw.automation.core-RWAUTO=${PLATFORM_VERSION} \
-	 \
-	 rw.core.mano-rwcal_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwconfig_agent_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwlaunchpad_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-mano_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-common-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwsdn_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-mano-types_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-cloudsim-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rw_conman_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcalproxytasklet-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwlaunchpad-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-openmano-vimconnector-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-propcloud1-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-lpmocklet_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwmon-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcloud_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-openstack-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rw.core.mano_foss=${PLATFORM_VERSION} \
-	 rw.core.mano-rwmon_yang_ylib-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcm-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-mock-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwmano_examples-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-cloudsimproxy-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-models-1.0=${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-aws-1.0=${PLATFORM_VERSION} \
-	 \
-	 rw.ui-skyquake=${PLATFORM_VERSION} \
-     \
-     rw.ext.util-rw.ext.util_foss=${PLATFORM_VERSION} \
+================================================================================================
+Installing RIFT.ware Launchpad version $PLATFORM_VERSION from repository $PLATFORM_REPOSITORY
+================================================================================================
 
-    
-    sudo chmod 777 /usr/rift /usr/rift/usr/share
-    
-elif [[ $PLATFORM == fc20 ]]; then
-    
-    # enable the right repos
-    sudo curl -o /etc/yum.repos.d/${PLATFORM_REPOSITORY}.repo \
-	 http://buildtracker.riftio.com/repo_file/fc20/${PLATFORM_REPOSITORY}/
-    
-    temp=$(mktemp -d /tmp/rw.XXX)
-    pushd $temp
-    
-    yumdownloader \
-	 rw.tools-container-tools-${PLATFORM_VERSION} \
-	 rw.tools-scripts-${PLATFORM_VERSION} \
-	 \
-	 rw.toolchain-rwbase-${PLATFORM_VERSION} \
-	 rw.toolchain-rwtoolchain-${PLATFORM_VERSION} \
-	 rw.core.mgmt-mgmt-${PLATFORM_VERSION} \
-	 rw.core.util-util-${PLATFORM_VERSION} \
-	 rw.core.rwvx-rwvx-${PLATFORM_VERSION} \
-	 rw.core.rwvx-rwdts-${PLATFORM_VERSION} \
-	 rw.automation.core-RWAUTO-${PLATFORM_VERSION} \
-	 \
-	 rw.core.mano-rwcal_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwconfig_agent_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwlaunchpad_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-mano_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-common-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwsdn_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-mano-types_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-cloudsim-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rw_conman_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcalproxytasklet-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwlaunchpad-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-openmano-vimconnector-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-propcloud1-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-lpmocklet_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwmon-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcloud_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-openstack-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rw.core.mano_foss-${PLATFORM_VERSION} \
-	 rw.core.mano-rwmon_yang_ylib-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcm-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-mock-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwmano_examples-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-cloudsimproxy-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-models-1.0-${PLATFORM_VERSION} \
-	 rw.core.mano-rwcal-aws-1.0-${PLATFORM_VERSION} \
-	 rw.ui-skyquake-${PLATFORM_VERSION} \
-     \
-     rw.ext.util-rw.ext.util_foss-${PLATFORM_VERSION} \
-
-
-    # Install one at a time so that pre-installed packages will not cause a failure
-    for pkg in *rpm; do
-	# Check to see if the package is already installed; do not try to install
-	# it again if it does, since this causes rpm -i to return failure.
-	if rpm -q $(rpm -q -p $pkg) >/dev/null; then
-	    echo "WARNING: package already installed: $pkg"
-	else
-	    sudo rpm -i --replacefiles --nodeps $pkg
-	fi
-    done
-    
-    popd
-    rm -rf $temp
-    
-    # this file gets in the way of the one generated by the build
-    sudo rm -f /usr/rift/usr/lib/libmano_yang_gen.so
-
-    sudo chmod 777 /usr/rift /usr/rift/usr/share
-
-else
-    echo "Internal error: unknown platform $PLATFORM" >&2
-    exit 1
-fi
-
-# Install all required packages; this includes the RIFT platform code and tools
-# and install of the packages required to run launchpad.
-sudo /usr/rift/container_tools/mkcontainer --modes ui --modes ext --repo ${PLATFORM_REPOSITORY} --rw-version ${PLATFORM_VERSION}
-
-# install the launchpad systemd service
-# these files should work on both ub16 and fc20
-
-cat <<EOF | sudo tee /etc/systemd/system/launchpad.service
-[Unit]
-Description=RIFT.ware Launchpad
-After=network-online.target
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/bin/sh -c 'nohup sudo -b -H /usr/rift/rift-shell -r -i /usr/rift -a /usr/rift/.artifacts -- ./demos/launchpad.py'
-ExecStop=/bin/sh -c 'killall rwmain'
-
-[Install]
-WantedBy=default.target
 EOF
 
-sudo chmod 664 /etc/systemd/system/launchpad.service
-
-if ! sudo systemctl daemon-reload; then
-    echo "WARNING: Not able to reload daemons: this must be run in a privileged container: sudo systemctl daemon-reload ; sudo systemctl enable launchpad.service"
-else
-    # enable launchpad at boot - should always succeed in a privileged container
-    sudo systemctl enable launchpad.service
+# enable the right repos
+curl http://repos.riftio.com/public/xenial-riftware-public-key | sudo apt-key add -
+sudo curl -o /etc/apt/sources.list.d/RIFT.list http://buildtracker.riftio.com/repo_file/ub16/${PLATFORM_REPOSITORY}/ 
+sudo apt-get update
+        
+# and install the RIFT container tools
+sudo apt-get remove -y rw.tools-container-tools rw.tools-scripts
+sudo apt-get install -y rw.tools-container-tools=${PLATFORM_VERSION} rw.tools-scripts=${PLATFORM_VERSION}
+    
+# Install all required packages; this includes the RIFT platform code and tools
+# and install of the packages required to run launchpad.
+flags=""
+if $use_rift_mirrors; then
+    flags="$flags --rift"
 fi
+sudo /usr/rift/container_tools/mkcontainer $flags --modes launchpad --repo ${PLATFORM_REPOSITORY} --rw-version ${PLATFORM_VERSION}
 
-# start launchpad?
-#sudo systemctl start launchpad.service
-
-echo
-echo "RIFT.ware Launchpad is now installed. Run 'sudo systemctl start launchpad.service' to start the service."
-echo

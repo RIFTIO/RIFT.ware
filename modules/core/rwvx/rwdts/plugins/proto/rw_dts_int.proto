@@ -75,6 +75,7 @@ enum RWDtsEventRsp {
   RWDTS_EVTRSP_ACK   = 3;
   RWDTS_EVTRSP_NACK  = 4;
   RWDTS_EVTRSP_INTERNAL = 5;
+  RWDTS_EVTRSP_CANCELLED =6;
 }
 
 enum RWDtsShardMapping {
@@ -115,6 +116,7 @@ enum RWDtsTracerouteEntType {
   RWDTS_TRACEROUTE_WHAT_PREP_TO = 8;
   RWDTS_TRACEROUTE_WHAT_END_FLAG = 9;
   RWDTS_TRACEROUTE_WHAT_QUEUED = 10;
+  RWDTS_TRACEROUTE_WHAT_RTR_BLOCK_STATE=11;
 }
 
 enum RWDtsMemberCodePoints {
@@ -128,36 +130,42 @@ enum RWDtsMemberCodePoints {
 }
 
 message RWDtsTracerouteEnt {
-  required uint64 tv_sec = 3;
-  required uint32 tv_usec = 4;
-  optional string func = 12;
-  required uint32 line = 13;
-  required RWDtsTracerouteEntType what = 8;
-  optional string dstpath = 1;
-  optional string srcpath = 2;
-  optional uint32 reg_id = 17;
+  required uint64 tv_sec = 1;
+  required uint32 tv_usec = 2;
+  optional string func = 3;
+  required uint32 line = 4;
+  required RWDtsTracerouteEntType what = 5;
+  optional string dstpath = 6;
+  optional string srcpath = 7;
 
   // REQ
-  repeated uint64 queryid = 7 [ (rw_fopts) = { inline:true inline_max:8 } ];
-  required uint64 elapsed_us = 5;
-  required RWDtsTracerouteEntState state = 6;
-  required RWDtsXactEvt event = 14;
+  repeated uint64 queryid = 8 [ (rw_fopts) = { inline:true inline_max:8 } ];
+  required uint64 elapsed_us = 9;
+  required RWDtsTracerouteEntState state = 10;
+  required RWDtsXactEvt event = 11;
 
   // ROUTE
   // srcpath is from query; dstpath is from registration
-  optional string matchdesc = 15;
-  optional string matchpath = 16;
+  optional string matchdesc = 12;
+  optional string matchpath = 13;
 
   // MEMBER MATCH
   // srcpath is query; matchpath is registration; dstpath is member path
-  repeated uint32 evt = 18 [ (rw_fopts) = { inline:true inline_max:255 } ];
+  optional uint32 reg_id = 14;
+  optional uint32 reg_flags = 15;
+  
+  repeated uint32 evt = 16 [ (rw_fopts) = { inline:true inline_max:255 } ];
 
   // ADDBLOCK
-  optional RWDtsXactBlock block = 9;
+  optional RWDtsXactBlock block = 17;
+
+  //RTR-BLOCK STATE
+  // dstpath is the new state, srcpath is the old state, uses block for id, 
+  optional uint32 num_match_members = 18;
 
   // RESULTS
-  required RWDtsEventRsp res_code = 10;
-  required uint32 res_count = 11;
+  required RWDtsEventRsp res_code = 19;
+  required uint32 res_count = 20;
 }
 
 /* Error entry for any query or transaction failures */

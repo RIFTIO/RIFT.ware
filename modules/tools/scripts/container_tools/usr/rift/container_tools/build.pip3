@@ -6,3 +6,4 @@ xmlrunner
 deepdiff
 tornadostreamform
 asynctest
+requests_toolbelt

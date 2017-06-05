@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -28,7 +14,7 @@
 
 void
 rwsched_dispatch_sthread_initialize(rwsched_tasklet_ptr_t sched_tasklet,
-                              unsigned int count)
+                                    unsigned int count)
 {
   // Validate input paraemters
   RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
@@ -65,15 +51,42 @@ rwsched_dispatch_sthread_queue_create(rwsched_tasklet_ptr_t sched_tasklet,
     RW_ASSERT(queue->header.libdispatch_object._dq);
     queue->is_sthread = true;
 
-    ck_pr_inc_32(&sched_tasklet->counters.sthread_queues);
+    ck_pr_inc_32(&sched_tasklet->counters.ld_sthreads);
 
-    rwsched_tasklet_ref(sched_tasklet);
-
+    queue->header.sched_tasklet = rwsched_tasklet_ref(sched_tasklet);
+    
     return queue;
   }
   // Not yet implemented
   RW_CRASH();
   return NULL;
+}
+
+
+
+void
+rwsched_dispatch_sthread_queue_release(rwsched_tasklet_ptr_t sched_tasklet,
+                                       rwsched_dispatch_queue_t queue)
+{
+  RW_ASSERT(sched_tasklet != NULL);
+  RW_ASSERT(queue != NULL);
+  RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
+  rwsched_instance_ptr_t instance = sched_tasklet->instance;
+  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
+  RW_ASSERT_TYPE(queue, rwsched_dispatch_queue_t);
+  
+  RW_ASSERT(queue->header.sched_tasklet == sched_tasklet);
+
+  if (instance->use_libdispatch_only) {
+    ck_pr_dec_32(&sched_tasklet->counters.ld_sthreads);
+    rwsched_dispatch_release(queue->header.sched_tasklet,
+                             (rwsched_dispatch_object_t)queue);
+    rwsched_tasklet_unref(queue->header.sched_tasklet);
+    RW_MAGIC_FREE(queue);
+    return;
+  }
+  RW_ASSERT(0);//not implemented
+  return;
 }
 
 int

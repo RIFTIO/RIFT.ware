@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file iter_test.cpp
@@ -82,7 +63,7 @@ rw_tree_walker_status_t find_child_iter(const HayStack *haystack,
   RW_ASSERT_NOT_REACHED();
 }
 
-  
+
 template <class FoundAction, class NotFoundAction>
 rw_tree_walker_status_t find_child_iter (RwPbcmTreeIterator *parent,
                                          RwSchemaTreeIterator *key_spec,
@@ -112,13 +93,13 @@ rw_tree_walker_status_t find_child_iter (RwPbcmTreeIterator *parent,
 
   // Check if we are at a listy point.
   rw_keyspec_entry_t* path;
-  
+
   rs = key_spec->get_value(path);
 
   if (!rw_keyspec_entry_is_listy (path)) {
     return found (parent, key_spec, all_leafs, all_keys);
   }
-  
+
 
   bool found_entry = false;
 
@@ -126,20 +107,20 @@ rw_tree_walker_status_t find_child_iter (RwPbcmTreeIterator *parent,
   // esp if all keys are not specified.
 
   // ATTN: if all keys are specified, maybe this find can be short circuited
-  
+
   for (;rs == RW_STATUS_SUCCESS; rs = child.move_to_next_list_entry()) {
     RwSchemaTreeIterator keys = *key_spec;
-    
+
     bool matches = true;
     rw_status_t ks_st = keys.move_to_first_child();
     for (; RW_STATUS_SUCCESS == ks_st; ks_st = keys.move_to_next_sibling()) {
-      
+
       rw_status_t kv_st = keys.get_value (&value);
 
       if (RW_STATUS_SUCCESS != kv_st) {
         return RW_TREE_WALKER_FAILURE;
       }
-      
+
       if (RW_YLIB_DATA_TYPE_KS_PATH == value.type) {
         // going deeper to the next node, not yet
         continue;
@@ -164,8 +145,8 @@ rw_tree_walker_status_t find_child_iter (RwPbcmTreeIterator *parent,
 
     if (matches) {
       // cannot return yet - could be more matches?
-      
-      // Do not call the not_found method 
+
+      // Do not call the not_found method
       found_entry = true;
 
       // Stop if we encounter errors
@@ -198,7 +179,7 @@ class Logger {
     UNUSED (all_leafs);
 
     return RW_TREE_WALKER_SUCCESS;
-  }    
+  }
 };
 
 template <class HayStack, class Needle>
@@ -207,11 +188,11 @@ class Collector
  public:
   std::list <HayStack *> matches_;
   Logger<HayStack, Needle> logger_;
-  
+
  public:
   Collector (Logger<HayStack, Needle> logger):
       logger_ (logger) {};
-  
+
   rw_tree_walker_status_t operator() (HayStack *haystack,
                                       Needle *needle,
                                       bool all_leafs,
@@ -221,7 +202,7 @@ class Collector
     rw_status_t rs = next.move_to_first_child();
     rw_tree_walker_status_t rw = RW_TREE_WALKER_SUCCESS;
     bool non_leaf_children = false;
-    
+
     for (;RW_STATUS_SUCCESS == rs; rs = next.move_to_next_sibling()) {
       if (next.is_leafy()) {
         // This level is handled earlier
@@ -232,25 +213,25 @@ class Collector
       if (rw != RW_TREE_WALKER_SUCCESS) {
         return rw;
       }
-      
+
       return rw;
     }
     if (!non_leaf_children) {
       matches_.push_back (haystack);
     }
-    
+
     return rw;
   }
- 
+
 };
 
-  
+
 template <class Haystack,class Needle, class Collector, class Logger>
 rw_tree_walker_status_t Find (Haystack *haystack, Needle *needle,
                               Collector& collector,
                               Logger& logger)
 {
-  
+
   return find_child_iter (haystack, needle, false, false, collector, logger);
 }
 
@@ -282,7 +263,7 @@ void rw_test_build_dom_from_file (const char *filename,
         (const rw_yang_pb_schema_t*)RWPB_G_SCHEMA_YPBCSD(FlatConversion));
 
   }
-  
+
   std::ifstream fp;
 
   std::string file_name = get_rift_root() +
@@ -291,7 +272,7 @@ void rw_test_build_dom_from_file (const char *filename,
 
   dom = std::move (mgr->create_document_from_file
                    (file_name.c_str(), false/*validate*/));
-  
+
 }
 
 rw_status_t rw_test_build_pb_flat_from_file (const char *filename,
@@ -314,7 +295,7 @@ rw_status_t rw_test_build_pb_flat_from_file (const char *filename,
         (const rw_yang_pb_schema_t*)RWPB_G_SCHEMA_YPBCSD(FlatConversion));
 
   }
-  
+
   *msg = nullptr;
   std::ifstream fp;
 
@@ -369,15 +350,17 @@ rw_status_t rw_test_build_pb_bumpy_from_file (const char *filename,
       std::fseek(fp, 0, SEEK_END);
       contents.resize(std::ftell(fp));
       std::rewind(fp);
-      std::fread(&contents[0], 1, contents.size(), fp);
+      size_t n;
+      n = std::fread(&contents[0], 1, contents.size(), fp);
+      EXPECT_EQ ( contents.size(),  n );
       std::fclose(fp);
-      
+
       // The file has spaces and \n, which do not work well with string based
       // conversions
       RE::regex e(">\\s+<");
       contents = RE::regex_replace (contents, e, std::string("><"));
 
-      
+
       RE::replace_all(contents, "conversion", "bconversion");
       std::string error_out;
       XMLDocument::uptr_t dom(mgr->create_document_from_string
@@ -386,9 +369,9 @@ rw_status_t rw_test_build_pb_bumpy_from_file (const char *filename,
           dom->get_root_node()->get_first_element()->to_pbcm(msg);
       if (RW_YANG_NETCONF_OP_STATUS_OK == ncrs) {
         return RW_STATUS_SUCCESS;
-      }            
+      }
     }
-  } 
+  }
   return RW_STATUS_FAILURE;
 }
 
@@ -418,7 +401,7 @@ build_keypath (confd_hkeypath_t *path)
 TEST(ConfdHkeyIteration, BasicTests)
 {
   confd_hkeypath_t path;
-  
+
   build_keypath(&path);
   RwHKeyPathIterator iter(&path);
 
@@ -433,7 +416,7 @@ TEST(ConfdHkeyIteration, BasicTests)
   // level now at depth 2
   ASSERT_EQ (RW_STATUS_SUCCESS, level.move_to_first_child());
   ASSERT_EQ (RW_STATUS_FAILURE, iter.move_to_next_sibling());
-  
+
   // level now at depth 1
   ASSERT_EQ (RW_STATUS_SUCCESS, level.move_to_parent());
   // @root
@@ -471,7 +454,14 @@ rw_status_t rw_test_load_confd_schema (const char *harness_name)
 
   ConfdUnittestHarness::sockaddr_t sa;
   harness->make_confd_sockaddr(&sa);
-  confd_load_schemas ((struct sockaddr *)&sa, sizeof(sa));
+
+  if (!harness->wait_till_phase2(&sa)) {
+    return RW_STATUS_FAILURE;
+  }
+
+  if (CONFD_OK != confd_load_schemas((struct sockaddr *)&sa, sizeof(sa))) {
+    return RW_STATUS_FAILURE;
+  }
 
   return RW_STATUS_SUCCESS;
 }
@@ -487,11 +477,11 @@ static rw_status_t rw_test_build_confd_array(const char *harness_name,
   YangModule* ydom_top = model->load_module("base-conversion");
   RW_ASSERT(ydom_top);
   ydom_top = 0;
-  
+
   ydom_top = model->load_module("flat-conversion");
   RW_ASSERT(ydom_top);
   //  YangNode *container_1 = ydom_top->get_first_node();
-  
+
   ConfdUnittestHarness::uptr_t harness
       = ConfdUnittestHarness::create_harness_autostart(harness_name, model);
 
@@ -504,47 +494,51 @@ static rw_status_t rw_test_build_confd_array(const char *harness_name,
   bool ret = model->app_data_get_token (YANGMODEL_ANNOTATION_KEY,YANGMODEL_ANNOTATION_CONFD_NS ,
                                         &model->adt_confd_ns_);
   RW_ASSERT(ret);
-  
+
   ret =  model->app_data_get_token (YANGMODEL_ANNOTATION_KEY, YANGMODEL_ANNOTATION_CONFD_NAME,
                                     &model->adt_confd_name_);
   RW_ASSERT(ret);
-  
-  confd_load_schemas ((struct sockaddr *)&sa, sizeof(sa));
-  
+
+  auto in_phase2 = harness->wait_till_phase2(&sa);
+  RW_ASSERT(in_phase2);
+
+  auto confd_status = confd_load_schemas ((struct sockaddr *)&sa, sizeof(sa));
+  RW_ASSERT(CONFD_OK == confd_status);
+
   namespace_map_t ns_map;
   struct confd_nsinfo *listp;
-    
+
   uint32_t ns_count = confd_get_nslist(&listp);
-  
+
   RW_ASSERT (ns_count); // for now
-  
+
   for (uint32_t i = 0; i < ns_count; i++) {
     ns_map[listp[i].uri] = listp[i].hash;
   }
-  
+
   rw_confd_annotate_ynodes (model, ns_map, confd_str2hash,
                             YANGMODEL_ANNOTATION_CONFD_NS,
                             YANGMODEL_ANNOTATION_CONFD_NAME );
-  
+
   // Create a DOM
   std::string file_name = get_rift_root() +
       std::string("/modules/core/util/yangtools/test/confd.xml");
 
   XMLDocument::uptr_t dom(mgr->create_document_from_file
                           (file_name.c_str(), false/*validate*/));
-  
+
   XMLNode* root_node = dom->get_root_node();
-  
+
   root_node = root_node->get_first_child();
   // associated confd structures
   struct confd_cs_node *cs_node = confd_find_cs_root(flat_conversion__ns);
-  
+
   // Test confd to yang node mapping
   YangNode *yn = root_node->get_yang_node();
   rw_confd_search_child_tags (yn,
                               cs_node->children->ns,
                               cs_node->children->tag);
-  
+
   ConfdTLVBuilder builder(cs_node, true);
   XMLTraverser traverser(&builder,root_node);
 
@@ -557,6 +551,7 @@ static rw_status_t rw_test_build_confd_array(const char *harness_name,
   return RW_STATUS_SUCCESS;
 
 }
+
 TEST(ConfdUtIteration, BasicTests)
 {
   TEST_DESCRIPTION("Basic tests for the confd iterator");
@@ -569,12 +564,12 @@ TEST(ConfdUtIteration, BasicTests)
   YangModule* ydom_top = model->load_module("base-conversion");
   EXPECT_TRUE(ydom_top);
   ydom_top = 0;
-  
+
   ydom_top = model->load_module("flat-conversion");
   EXPECT_TRUE(ydom_top);
 
   //  YangNode *container_1 = ydom_top->get_first_node();
-  
+
   ConfdUnittestHarness::uptr_t harness
       = ConfdUnittestHarness::create_harness_autostart("CondfUtIteration", model);
   ASSERT_TRUE(harness.get());
@@ -586,12 +581,14 @@ TEST(ConfdUtIteration, BasicTests)
   ConfdUnittestHarness::sockaddr_t sa;
   harness->make_confd_sockaddr(&sa);
 
+  ASSERT_TRUE(harness->wait_till_phase2(&sa));
+
   {
 
     bool ret = model->app_data_get_token (YANGMODEL_ANNOTATION_KEY,YANGMODEL_ANNOTATION_CONFD_NS ,
                                           &model->adt_confd_ns_);
     RW_ASSERT(ret);
-    
+
     ret =  model->app_data_get_token (YANGMODEL_ANNOTATION_KEY, YANGMODEL_ANNOTATION_CONFD_NAME,
                                       &model->adt_confd_name_);
     RW_ASSERT(ret);
@@ -600,15 +597,15 @@ TEST(ConfdUtIteration, BasicTests)
 
     namespace_map_t ns_map;
     struct confd_nsinfo *listp;
-    
+
     uint32_t ns_count = confd_get_nslist(&listp);
-    
+
     RW_ASSERT (ns_count); // for now
-    
+
     for (uint32_t i = 0; i < ns_count; i++) {
       ns_map[listp[i].uri] = listp[i].hash;
     }
-    
+
     rw_confd_annotate_ynodes (model, ns_map, confd_str2hash,
                               YANGMODEL_ANNOTATION_CONFD_NS,
                               YANGMODEL_ANNOTATION_CONFD_NAME );
@@ -625,7 +622,7 @@ TEST(ConfdUtIteration, BasicTests)
 
   XMLNode* root_node = dom->get_root_node();
   ASSERT_TRUE (root_node);
-  
+
   root_node = root_node->get_first_child();
   // associated confd structures
   struct confd_cs_node *cs_node = confd_find_cs_root(flat_conversion__ns);
@@ -638,10 +635,10 @@ TEST(ConfdUtIteration, BasicTests)
   ASSERT_TRUE ( rw_confd_search_child_tags (yn,
                                             cs_node->children->ns,
                                             cs_node->children->tag));
-  
+
   // This test depends on the schema to ensure success
   ASSERT_FALSE ( rw_confd_search_child_tags (yn,
-                                             cs_node->children->ns + 1, 
+                                             cs_node->children->ns + 1,
                                              cs_node->children->tag));
   // This test depends on the schema to ensure success
   ASSERT_FALSE ( rw_confd_search_child_tags (yn,
@@ -651,9 +648,9 @@ TEST(ConfdUtIteration, BasicTests)
   ASSERT_EQ ( rw_confd_search_child_tags (model->get_root_node(),
                                           cs_node->ns, cs_node->tag),
              yn);
-      
+
   // Translate the DOM to confd
-  
+
     ConfdTLVBuilder builder(cs_node, true);
     XMLTraverser traverser(&builder,root_node);
 
@@ -662,7 +659,7 @@ TEST(ConfdUtIteration, BasicTests)
     ASSERT_TRUE (builder.length());
 
     size_t length = builder.length();
-  
+
     confd_tag_value_t
         *array =  (confd_tag_value_t *) RW_MALLOC (sizeof (confd_tag_value_t) * length);
 
@@ -670,7 +667,7 @@ TEST(ConfdUtIteration, BasicTests)
 
 
     // Array is of the following form for the test
-  
+
     /*  1   C_XMLBEGIN  "container_1-1" */
     /*  2       C_BUF "leaf-1_1.1" */
     /*  3       C_XMLBEGIN "list-1.1_2" */
@@ -694,30 +691,30 @@ TEST(ConfdUtIteration, BasicTests)
     /* 21   C_LIST "enum_1-4" */
     /* 22   C_ENUM_VALUE "enum_1.5" */
     RwTLVAIterator root = RwTLVAIterator(array, length, cs_node);
-  
+
     EXPECT_EQ (root.move_to_next_sibling(),RW_STATUS_FAILURE);
     EXPECT_EQ (root.move_to_parent(), RW_STATUS_FAILURE);
 
     rw_ylib_data_t data;
     rw_confd_value_t *v = &data.rw_confd;
-  
+
     ASSERT_EQ (RW_STATUS_SUCCESS, root.get_value (&data));
     EXPECT_EQ(v->cs_node, cs_node);
     EXPECT_EQ(v->value, nullptr);
-             
+
     RwTLVAIterator cont = root;
     ASSERT_EQ (RW_STATUS_SUCCESS, cont.move_to_first_child());
     ASSERT_EQ (RW_STATUS_SUCCESS, cont.get_value (&data));
-  
+
     struct xml_tag tag;
     tag.ns = flat_conversion__ns;
     tag.tag = v->cs_node->tag;
-  
+
     EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));
     const struct confd_cs_node *p_schema = v->cs_node;
-  
+
     EXPECT_EQ(v->value, &array[0].v);
-  
+
     ASSERT_NE (root, cont);
     ASSERT_EQ (cont.position(), 0);
     RwTLVAIterator move_to_parent = cont;
@@ -728,10 +725,10 @@ TEST(ConfdUtIteration, BasicTests)
     ASSERT_EQ (leaf.move_to_first_child(), RW_STATUS_SUCCESS);
     ASSERT_EQ (RW_STATUS_SUCCESS, leaf.get_value (&data));
     tag.tag = v->cs_node->tag;
-  
+
     EXPECT_EQ(v->cs_node, confd_find_cs_node_child (p_schema, tag));
     EXPECT_EQ(v->value, &array[1].v);
-  
+
     move_to_parent = leaf;
     EXPECT_EQ (move_to_parent.move_to_parent(), RW_STATUS_SUCCESS);
     EXPECT_EQ (move_to_parent, cont);
@@ -740,54 +737,54 @@ TEST(ConfdUtIteration, BasicTests)
     RwTLVAIterator list = leaf;
     ASSERT_NE (list.move_to_next_sibling(), RW_STATUS_FAILURE);
     EXPECT_EQ (list.position(), 2);
-  
+
     ASSERT_EQ (RW_STATUS_SUCCESS, list.get_value (&data));
     tag.tag = v->cs_node->tag;
-  
+
     EXPECT_EQ(v->cs_node, confd_find_cs_node_child (p_schema, tag));
     EXPECT_EQ(v->value, &array[2].v);
-  
+
     leaf = list;
     EXPECT_EQ (leaf.move_to_first_child(),RW_STATUS_SUCCESS);
     ASSERT_EQ (RW_STATUS_SUCCESS, leaf.get_value (&data));
     EXPECT_EQ(v->value, &array[3].v);
-  
+
     EXPECT_EQ (leaf.move_to_next_sibling(), RW_STATUS_FAILURE);
 
     ASSERT_EQ (list.move_to_next_sibling(), RW_STATUS_SUCCESS);
     EXPECT_EQ (list.position(), 5);
-    EXPECT_EQ (list.move_to_next_sibling(), RW_STATUS_FAILURE);  
+    EXPECT_EQ (list.move_to_next_sibling(), RW_STATUS_FAILURE);
 
     // The container has more siblings. Lets start there now.
     list = cont;
     struct confd_list *ll = &array[10].v.val.list;
-  
+
     ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());
     ASSERT_EQ (RW_STATUS_SUCCESS, list.get_value (&data));
     tag.tag = v->cs_node->tag;
-    EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));  
+    EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));
     EXPECT_EQ(v->value, &ll->ptr[0]);
     EXPECT_STREQ ((char *) v->value->val.c_buf.ptr, "Leaf List First");
     EXPECT_EQ(0, list.list_index());
-            
+
     ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());
     ASSERT_EQ (RW_STATUS_SUCCESS, list.get_value (&data));
     tag.tag = v->cs_node->tag;
-    EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));  
+    EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));
     EXPECT_EQ(v->value, &ll->ptr[1]);
     EXPECT_EQ(1, list.list_index());
 
     ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());
     ASSERT_EQ (RW_STATUS_SUCCESS, list.get_value (&data));
     tag.tag = v->cs_node->tag;
-    EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));  
+    EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));
     EXPECT_EQ(v->value, &ll->ptr[2]);
     EXPECT_EQ(2, list.list_index());
 
     ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());
     ASSERT_EQ (RW_STATUS_SUCCESS, list.get_value (&data));
     tag.tag = v->cs_node->tag;
-    EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));  
+    EXPECT_EQ(v->cs_node, confd_find_cs_node_child (cs_node, tag));
     EXPECT_EQ(v->value, &ll->ptr[3]);
     EXPECT_EQ(3, list.list_index());
 
@@ -854,18 +851,18 @@ TEST(ConfdUtIteration, BasicTests)
     ASSERT_EQ (RW_STATUS_SUCCESS, list.get_value (&data));
     EXPECT_EQ(v->value, &array[19].v);
     EXPECT_EQ(v->value->type, C_XMLTAG);
-    ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());  
+    ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());
     ASSERT_EQ(0, list.list_index());
-  
-    ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());  
+
+    ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());
     ASSERT_EQ(1, list.list_index());
 
-    ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());  
+    ASSERT_EQ (RW_STATUS_SUCCESS, list.move_to_next_sibling());
     ASSERT_EQ(0, list.list_index());
 
-    ASSERT_EQ (RW_STATUS_FAILURE, list.move_to_next_sibling());  
+    ASSERT_EQ (RW_STATUS_FAILURE, list.move_to_next_sibling());
     YangData<RwTLVAIterator, YangNode> yd_root (root, yn);
-  
+
     EXPECT_EQ (yd_root.move_to_next_sibling(),RW_STATUS_FAILURE);
     EXPECT_EQ (yd_root.move_to_parent(), RW_STATUS_FAILURE);
     YangData<RwTLVAIterator, YangNode> yd_cont = yd_root;
@@ -885,7 +882,7 @@ TEST(ConfdUtIteration, BasicTests)
     EXPECT_EQ (yd_leaf.move_to_next_sibling(), RW_STATUS_FAILURE);
 
     ASSERT_EQ (yd_list.move_to_next_sibling(), RW_STATUS_SUCCESS);
-    EXPECT_EQ (yd_list.move_to_next_sibling(), RW_STATUS_FAILURE);  
+    EXPECT_EQ (yd_list.move_to_next_sibling(), RW_STATUS_FAILURE);
 
     for (size_t i = 0; i < length; i++) {
       confd_free_value(CONFD_GET_TAG_VALUE(&array[i]));
@@ -900,7 +897,7 @@ TEST (RwPbcmTreeIterator, BasicFunctionsBumpy)
       get_general_containers(5);
   UniquePtrProtobufCMessage<RWPB_T_MSG(RiftCliTest_data_GeneralContainer)>::uptr_t
       msg_uptr (proto);
-  // This creates a proto with the first child type 
+  // This creates a proto with the first child type
   RwPbcmTreeIterator root((ProtobufCMessage *)proto);
 
   RwPbcmTreeIterator level1 = root;
@@ -912,7 +909,7 @@ TEST (RwPbcmTreeIterator, BasicFunctionsBumpy)
   ASSERT_EQ (msg, (ProtobufCMessage *)proto);
   ASSERT_EQ (fld_id, 1);
   ASSERT_EQ (index, 0);
-  
+
 
   RwPbcmTreeIterator level2 = level1;
   ASSERT_EQ(level2.move_to_first_child(), RW_STATUS_SUCCESS);
@@ -930,7 +927,7 @@ TEST (RwPbcmTreeIterator, BasicFunctionsBumpy)
   RwPbcmTreeIterator level3 = container;
   ASSERT_EQ (level3.move_to_first_child(), RW_STATUS_SUCCESS);
   std::tie (msg, fld_id, index) = level3.shallowest();
-  
+
   EXPECT_EQ (fld_id, 2);
   EXPECT_EQ (index, 0);
 
@@ -982,7 +979,7 @@ TEST (RwPbcmTreeIterator, BasicFunctionsBumpy)
 
 TEST(RwXMLTreeIterator, BasicTests)
 {
-  
+
   XMLManager::uptr_t mgr(xml_manager_create_xerces());
   YangModel* model = mgr->get_yang_model();
   ASSERT_TRUE(model);
@@ -999,7 +996,7 @@ TEST(RwXMLTreeIterator, BasicTests)
                           (file_name.c_str(), false/*validate*/));
 
   ASSERT_TRUE(dom.get());
-  
+
   XMLNode* root_node = dom->get_root_node();
   ASSERT_TRUE(root_node);
   root_node = root_node->get_first_child();
@@ -1007,13 +1004,13 @@ TEST(RwXMLTreeIterator, BasicTests)
 
   RwXMLTreeIterator iter = RwXMLTreeIterator(root_node);
   RwXMLTreeIterator root = iter;
-  
+
   ASSERT_EQ(iter.move_to_first_child(), RW_STATUS_SUCCESS);
   ASSERT_EQ(iter.move_to_parent(), RW_STATUS_SUCCESS);
   ASSERT_EQ(iter, root);
 
   root_node = root_node->get_first_child();
-  
+
   YangData <RwXMLTreeIterator, YangNode> root_yd(RwXMLTreeIterator(root_node),
                                                  root_node->get_yang_node());
   ASSERT_EQ(root_yd.move_to_first_child(), RW_STATUS_SUCCESS);
@@ -1042,7 +1039,7 @@ TEST(RwSchemaTreeIterator, BasicTests)
 
   model->register_ypbc_schema(
       (const rw_yang_pb_schema_t*)RWPB_G_SCHEMA_YPBCSD(RiftCliTest));
-    
+
   // Build something with a list in it
   // and start using the global types..
   XMLDocument::uptr_t dom(mgr->create_document_from_pbcm((ProtobufCMessage *)proto, ncrs));
@@ -1060,7 +1057,7 @@ TEST(RwSchemaTreeIterator, BasicTests)
   ASSERT_EQ(ncrs,RW_YANG_NETCONF_OP_STATUS_OK);
 
   RwSchemaTreeIterator root = RwSchemaTreeIterator(key);
-  
+
   ASSERT_EQ (root.key(), key);
   //ASSERT_EQ (root.length(), 3);
 
@@ -1093,7 +1090,7 @@ TEST(RwSchemaTreeIterator, BasicTests)
 
 
   root = RwSchemaTreeIterator(gen);
-  
+
   ASSERT_EQ (root.key(), gen);
   //ASSERT_EQ (root.length(), 3);
 
@@ -1121,13 +1118,13 @@ class Printer {
  public:
   std::string os_;     // The value of a traversed tree till now
   uint8_t indent_ = 0;    // Intendation for the current line
-  
+
   rw_tree_walker_status_t handle_child (RwTreeIterator *iter) {
     indent_ += 2;
     std::string out;
     rw_status_t rs = get_string_value (iter, out);
     UNUSED (rs);
-    
+
     RW_ASSERT(RW_STATUS_SUCCESS == rs);
     os_ += std::string(indent_,' ');
     os_ += out;
@@ -1135,7 +1132,7 @@ class Printer {
 
     return RW_TREE_WALKER_SUCCESS;
   }
-                                        
+
   rw_status_t move_to_parent() {
     indent_ -= 2;
 
@@ -1152,15 +1149,15 @@ class SchemaFinder {
  public:
   const rw_yang_pb_schema_t* schema_ = nullptr;
   const rw_yang_pb_msgdesc_t *msg_ = nullptr;
-  
+
   SchemaFinder(const rw_yang_pb_schema_t* schema)
       : schema_ (schema) {}
-  
+
   rw_tree_walker_status_t handle_child (RwTreeIterator *iter) {
     const char* name = iter->get_yang_node_name();
     const char* ns = iter->get_yang_ns();
 
-    
+
     if (nullptr == msg_) {
       msg_ = rw_yang_pb_schema_get_top_level_message (schema_, ns, name);
     } else {
@@ -1186,13 +1183,13 @@ class SchemaFinder {
         }
       }
     }
-    
+
     if (msg_) {
       return RW_TREE_WALKER_SKIP_SIBLINGS;
     }
     return RW_TREE_WALKER_FAILURE;
   }
-  
+
   rw_status_t move_to_parent() {
     return RW_STATUS_SUCCESS;
   }
@@ -1205,11 +1202,11 @@ TEST(RwIterWalk, BasicFunc)
   confd_tag_value_t *array =  nullptr;
   size_t length;
   struct confd_cs_node *cs_node;
-  
+
   rw_status_t rs = rw_test_build_confd_array ("BasicFunc", &array, &length, &cs_node);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
-  
-      
+
+
   RwTLVAIterator root = RwTLVAIterator(array, length, cs_node);
   Printer<RwTLVAIterator> print;
   rs = walk_iterator_tree (&root, &print);
@@ -1226,14 +1223,14 @@ TEST(RwIterWalk, BasicFunc)
   rs = rw_test_build_pb_flat_from_file ("confd.xml", &bare_msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
   ASSERT_NE (nullptr, bare_msg);
-  
+
   msg_uptr_t msg = msg_uptr_t (bare_msg);
 
   RwPbcmTreeIterator pb_root(bare_msg);
   Printer<RwPbcmTreeIterator> print_pbcm;
   rs = walk_iterator_tree (&pb_root, &print_pbcm);
   std::cout << print_pbcm.os_;
-  
+
   rs = rw_test_build_pb_bumpy_from_file ("confd.xml", &bare_msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
   ASSERT_NE (nullptr, bare_msg);
@@ -1244,19 +1241,19 @@ TEST(RwIterWalk, BasicFunc)
   rs = walk_iterator_tree (&pb_root_b, &print_pbcm_b);
   std::cout << print_pbcm_b.os_;
 
-  
+
 }
 TEST(RwCopyIters, FlatPbFromDom)
 {
   XMLManager::uptr_t mgr(xml_manager_create_xerces());
-  
-  YangModel* model = mgr->get_yang_model();  
+
+  YangModel* model = mgr->get_yang_model();
   YangModule* ydom_top = model->load_module("base-conversion");
   RW_ASSERT(ydom_top);
   ydom_top = model->load_module("flat-conversion");
-  
+
   char file_name[1023];
-  sprintf (file_name, "%s%s", get_rift_root().c_str(),  
+  sprintf (file_name, "%s%s", get_rift_root().c_str(),
                 "/modules/core/util/yangtools/test/confd.xml");
 
   XMLDocument::uptr_t dom = std::move (mgr->create_document_from_file
@@ -1284,7 +1281,7 @@ TEST(RwCopyIters, FlatPbFromDom)
   rs = walk_iterator_tree (&copy_from_dom_iter, &to_xml);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
 }
-  
+
 
 TEST(RwCopyIters, FlatPb)
 {
@@ -1294,13 +1291,13 @@ TEST(RwCopyIters, FlatPb)
   rw_status_t rs = rw_test_build_pb_flat_from_file ("confd.xml", &bare_msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
   ASSERT_NE (nullptr, bare_msg);
-  
+
   msg_uptr_t msg = msg_uptr_t (bare_msg);
   RwPbcmTreeIterator pb_root(bare_msg);
 
   RWPB_M_MSG_DECL_INIT(FlatConversion_FirstLevel,copy_msg);
   RwPbcmTreeIterator copy_iter((ProtobufCMessage *)&copy_msg);
-  
+
   Copier<RwPbcmTreeIterator,RwPbcmTreeIterator> copy_pbcm(&copy_iter);
   rs = walk_iterator_tree (&pb_root, &copy_pbcm);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
@@ -1309,23 +1306,23 @@ TEST(RwCopyIters, FlatPb)
   confd_tag_value_t *array =  nullptr;
   size_t length;
   struct confd_cs_node *cs_node;
-  
+
   rs = rw_test_build_confd_array ("BasicFunc", &array, &length, &cs_node);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
-  
-      
+
+
   RwTLVAIterator root = RwTLVAIterator(array, length, cs_node);
   RWPB_M_MSG_DECL_INIT(FlatConversion_FirstLevel,copy_from_confd);
   RwPbcmTreeIterator copy_from_confd_iter((ProtobufCMessage *)&copy_from_confd);
-  
+
   Copier<RwTLVAIterator,RwPbcmTreeIterator> from_confd(&copy_from_confd_iter);
   rs = walk_iterator_tree (&root, &from_confd);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
   EXPECT_TRUE (protobuf_c_message_is_equal_deep(pinstance, (ProtobufCMessage *)&copy_msg, (ProtobufCMessage *)&copy_from_confd));
 
-  
 
-               
+
+
 }
 
 
@@ -1336,13 +1333,13 @@ TEST(RwCopyIters, BumpyPb)
   rw_status_t rs = rw_test_build_pb_bumpy_from_file ("confd.xml", &bare_msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
   ASSERT_NE (nullptr, bare_msg);
-  
+
   msg_uptr_t msg = msg_uptr_t (bare_msg);
   RwPbcmTreeIterator pb_root(bare_msg);
 
   RWPB_M_MSG_DECL_INIT(BumpyConversion_BumpyFirstLevel,copy_msg);
   RwPbcmTreeIterator copy_iter((ProtobufCMessage *)&copy_msg);
-  
+
   Copier<RwPbcmTreeIterator,RwPbcmTreeIterator> copy_pbcm(&copy_iter);
   rs = walk_iterator_tree (&pb_root, &copy_pbcm);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
@@ -1351,26 +1348,26 @@ TEST(RwCopyIters, BumpyPb)
   confd_tag_value_t *array =  nullptr;
   size_t length;
   struct confd_cs_node *cs_node;
-  
+
   rs = rw_test_build_confd_array ("BasicFunc", &array, &length, &cs_node);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
-  
-      
+
+
   RwTLVAIterator root = RwTLVAIterator(array, length, cs_node);
   RWPB_M_MSG_DECL_INIT(BumpyConversion_BumpyFirstLevel,copy_from_confd);
   RwPbcmTreeIterator copy_from_confd_iter((ProtobufCMessage *)&copy_from_confd);
-  
+
   Copier<RwTLVAIterator,RwPbcmTreeIterator> from_confd(&copy_from_confd_iter);
   rs = walk_iterator_tree (&root, &from_confd);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
   EXPECT_TRUE (protobuf_c_message_is_equal_deep(pinstance, (ProtobufCMessage *)&copy_msg, (ProtobufCMessage *)&copy_from_confd));
-               
+
 }
 
 TEST(ConfdHkeyToKeySpec, BasicTests)
 {
   confd_hkeypath_t path;
-  
+
   build_keypath(&path);
   RwHKeyPathIterator iter(&path);
   rw_test_load_confd_schema("hk2ks");
@@ -1379,16 +1376,16 @@ TEST(ConfdHkeyToKeySpec, BasicTests)
 
   SchemaFinder<RwHKeyPathIterator> schema_finder(schema);
   rw_status_t rs = walk_iterator_tree(&iter, &schema_finder);
-  
+
   ASSERT_EQ (rs, RW_STATUS_SUCCESS);
   ASSERT_TRUE (schema_finder.msg_);
   ASSERT_TRUE (schema_finder.msg_->schema_path_value);
   rw_keyspec_path_t* ks = nullptr;
-  
+
   rs = rw_keyspec_path_create_dup (schema_finder.msg_->schema_path_value, nullptr, &ks);
   ASSERT_EQ (rs, RW_STATUS_SUCCESS);
   RwSchemaTreeIterator root = RwSchemaTreeIterator(ks);
-  
+
   Copier<RwHKeyPathIterator,RwSchemaTreeIterator> from_confd(&root);
   rs = walk_iterator_tree (&iter, &from_confd);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
@@ -1417,12 +1414,12 @@ TEST (SearchPbWithKs, BasicTests)
   ASSERT_EQ (RW_STATUS_SUCCESS, rw_keyspec_path_create_dup
              ((rw_keyspec_path_t*) RWPB_G_PATHSPEC_VALUE(RiftCliTest_data_GeneralContainer_GList),
               nullptr, (rw_keyspec_path_t **)&ks));
-  
+
   RwSchemaTreeIterator needle = RwSchemaTreeIterator((rw_keyspec_path_t*) ks);
   needle.move_to_first_child();
 
   RwPbcmTreeIterator haystack((ProtobufCMessage *)proto);
-  
+
   Logger<RwPbcmTreeIterator, RwSchemaTreeIterator> tmp_log;
   Collector <RwPbcmTreeIterator, RwSchemaTreeIterator> collector(tmp_log);
 
@@ -1435,11 +1432,11 @@ TEST (SearchPbWithKs, BasicTests)
 
   needle = RwSchemaTreeIterator((rw_keyspec_path_t*) ks);
   needle.move_to_first_child();
-  
+
   rw = Find (&haystack, &needle, collector, tmp_log);
   ASSERT_EQ (RW_TREE_WALKER_SUCCESS, rw);
   ASSERT_EQ (collector.matches_.size(),6);
-  
+
 }
 
 
@@ -1450,12 +1447,12 @@ TEST(RwMergeIters, BumpyPb)
   rw_status_t rs = rw_test_build_pb_bumpy_from_file ("confd.xml", &bare_msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
   ASSERT_NE (nullptr, bare_msg);
-  
+
   msg_uptr_t msg = msg_uptr_t (bare_msg);
   RwPbcmTreeIterator pb_root(bare_msg);
 
   RWPB_M_MSG_DECL_INIT(BumpyConversion_BumpyFirstLevel,copy_msg);
-  
+
   RwPbcmTreeIterator merge_iter((ProtobufCMessage *)&copy_msg);
   Merge<RwPbcmTreeIterator,RwPbcmTreeIterator> merge_pbcm(&merge_iter);
   rs = walk_iterator_tree (&pb_root, &merge_pbcm);
@@ -1475,10 +1472,10 @@ TEST(RwMergeIters, BumpyPb)
   copy_msg.n_leaf_list_1_2 = 0;
   copy_msg.n_enum_1_4 = 0;
   ASSERT_TRUE (protobuf_c_message_is_equal_deep(pinstance, (ProtobufCMessage *)&copy_msg, bare_msg));
-  
+
   spec_msg->enum_1_5 = BASE_CONVERSION_CB_ENUM_FIRST;
   ASSERT_FALSE(protobuf_c_message_is_equal_deep(pinstance, (ProtobufCMessage *)&copy_msg, bare_msg));
-  
+
   // The iterators should be back where we started, merge again
   rs = walk_iterator_tree (&pb_root, &merge_pbcm);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
@@ -1493,7 +1490,7 @@ TEST(RwMergeIters, BumpyPb)
 
   EXPECT_EQ (spec_msg->n_two_keys, 2);
   EXPECT_EQ (copy_msg.n_two_keys, 3);
-  
+
 }
 
 TEST(RwFindItersWithTraverser, BumpyPbKs)
@@ -1507,21 +1504,21 @@ TEST(RwFindItersWithTraverser, BumpyPbKs)
   ASSERT_EQ (RW_STATUS_SUCCESS, rw_keyspec_path_create_dup
              ((rw_keyspec_path_t*) RWPB_G_PATHSPEC_VALUE(RiftCliTest_data_GeneralContainer_GList),
               nullptr, (rw_keyspec_path_t **)&ks));
-  
+
   RwSchemaTreeIterator needle = RwSchemaTreeIterator((rw_keyspec_path_t*) ks);
   RwPbcmTreeIterator find_data((ProtobufCMessage *)bare_msg);
-  
+
   Finder<RwPbcmTreeIterator,RwSchemaTreeIterator> finder(&needle);
   rs = walk_iterator_tree (&find_data, &finder);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
   EXPECT_EQ (0, finder.matches_.size());
-  
+
   RWPB_T_MSG(RiftCliTest_data_GeneralContainer) *proto =
       get_general_containers(5);
-  
+
   ASSERT_TRUE (proto);
   RwPbcmTreeIterator haystack((ProtobufCMessage *)proto);
-  
+
   rs = walk_iterator_tree (&haystack, &finder);
   EXPECT_EQ (RW_STATUS_SUCCESS, rs);
   EXPECT_EQ (0, finder.matches_.size());
@@ -1552,7 +1549,7 @@ TEST(RwCopyKstoMsg, BumpyPb)
               (rw_keyspec_path_t **)&ks));
   ks->dompath.path001.has_key00 = 1;
   ks->dompath.path001.key00.index = 20;
-  
+
   RwSchemaTreeIterator ks_iter = RwSchemaTreeIterator((rw_keyspec_path_t*) ks);
   RwPbcmTreeIterator pb((ProtobufCMessage *)&pb_msg);
 
@@ -1564,7 +1561,7 @@ TEST(RwCopyKstoMsg, BumpyPb)
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
   ASSERT_EQ (pb_msg.n_g_list, 1);
   EXPECT_EQ (pb_msg.g_list[0]->index, 20);
-  
+
 }
 
 
@@ -1576,7 +1573,7 @@ TEST (RwCopyKsPbcmToDom, BasicTests)
 
   gc.has_having_a_bool = 1;
   gc.having_a_bool = 1;
-  
+
   ASSERT_EQ (RW_STATUS_SUCCESS, rw_keyspec_path_create_dup
              ((rw_keyspec_path_t*) RWPB_G_PATHSPEC_VALUE(RiftCliTest_data_GeneralContainer_GList),
               nullptr,
@@ -1601,10 +1598,10 @@ TEST (RwCopyKsPbcmToDom, BasicTests)
   //should fail, as it already exists
   rs = dom.get_module_tree ("rift-cli-test", RW_PBCM_DOM_CREATE, msg);
   ASSERT_EQ (RW_STATUS_FAILURE, rs);
-  
+
   rs = dom.get_module_tree ("rift-cli-test", RW_PBCM_DOM_FIND_OR_CREATE, msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
-  
+
   RWPB_T_MSG(RiftCliTest_data)* spec_msg = (RWPB_T_MSG(RiftCliTest_data)*) msg;
   ASSERT_NE (spec_msg, nullptr);
   ASSERT_NE (spec_msg->general_container, nullptr);
@@ -1628,7 +1625,7 @@ TEST (RwCopyKsPbcmToDom, BasicTests)
 
   rs = dom.get_module_tree ("rift-cli-test", RW_PBCM_DOM_CREATE, msg);
   ASSERT_EQ (RW_STATUS_FAILURE, rs);
-  
+
   rs = dom.get_module_tree ("rift-cli-test", RW_PBCM_DOM_FIND_OR_CREATE, msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
   spec_msg = (RWPB_T_MSG(RiftCliTest_data)*) msg;
@@ -1642,10 +1639,10 @@ TEST (RwCopyKsPbcmToDom, BasicTests)
 
   rs = dom.get_module_tree ("rift-cli-test", RW_PBCM_DOM_CREATE, msg);
   ASSERT_EQ (RW_STATUS_FAILURE, rs);
-  
+
   rs = dom.get_module_tree ("rift-cli-test", RW_PBCM_DOM_FIND_OR_CREATE, msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
-  
+
   ASSERT_EQ (spec_msg->general_container->n_g_list, 2);
   EXPECT_EQ (spec_msg->general_container->g_list[0]->index, 20);
   EXPECT_EQ (spec_msg->general_container->g_list[0]->gcl_container->has_having_a_bool, 1);
@@ -1654,16 +1651,16 @@ TEST (RwCopyKsPbcmToDom, BasicTests)
   ProtobufCMessage *bare_msg;
   rs = rw_test_build_pb_flat_from_file ("confd.xml", &bare_msg);
   ASSERT_EQ (RW_STATUS_SUCCESS, rs);
-  
+
   RWPB_T_MSG (FlatConversion_data_Container1) *msg_tk =
       (RWPB_T_MSG (FlatConversion_data_Container1) *)bare_msg;
 
   RWPB_M_PATHSPEC_DECL_INIT(FlatConversion_data_Container1_TwoKeys,ks_tk);
   ks_tk.dompath.path001.has_key00 = 1;
   ks_tk.dompath.path001.has_key01 = 1;
-  
+
   for (uint32_t i = 0; i < msg_tk->n_two_keys; i++) {
-    
+
     ks_tk.dompath.path001.key00.prim_enum =
         msg_tk->two_keys[i].prim_enum;
     strcpy (ks_tk.dompath.path001.key01.sec_string,
@@ -1674,7 +1671,7 @@ TEST (RwCopyKsPbcmToDom, BasicTests)
     rs = walk_iterator_tree (&ks_pbcm_merge, &merge_dom);
 
     ASSERT_EQ (RW_STATUS_SUCCESS, rs);
-    
+
     rs = dom.get_module_tree ("flat-conversion", RW_PBCM_DOM_FIND, msg);
     ASSERT_EQ (RW_STATUS_SUCCESS, rs);
 

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /*!
  * @file rwsched.h
  * @author Tim Mortsolf (tim.mortsolf@riftio.com)
@@ -38,6 +19,7 @@
 __BEGIN_DECLS
 
 
+#define RWSCHED_GETTID() syscall(SYS_gettid)
 
 typedef struct rwsched_instance_s *rwsched_instance_ptr_t;
 typedef struct rwsched_tasklet_s *rwsched_tasklet_ptr_t;
@@ -46,6 +28,8 @@ typedef void *rwtrack_object_t;
 
 void rwsched_instance_free(rwsched_instance_t *instance);
 void rwsched_tasklet_free(rwsched_tasklet_t *info);
+void
+rwsched_tasklet_release_all_resource(rwsched_tasklet_t *sched_tasklet);
 
 /*!
  * Set or disable the latency reporting threshold for event callbacks.
@@ -84,6 +68,9 @@ typedef struct {
 struct rwsched_dispatch_struct_header_s {
   dispatch_object_t libdispatch_object;
   void *context;
+  gboolean is_source; /*Indication whether the object is a source or a queue*/
+  gint suspended; /*queue/source is suspended or resumed*/
+  rwsched_tasklet_t *sched_tasklet;/*Back pointer to the rwsched_tasklet*/
 };
 
 #define rwsched_dispatch_time_t dispatch_time_t

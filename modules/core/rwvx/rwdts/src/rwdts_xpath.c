@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_xpath.c
  * @author Philip Joseph <philip.joseph@riftio.com>
@@ -375,7 +356,8 @@ rwdts_xpath_pcb_free(rwdts_xpath_pcb_t *rwpcb)
     rwpcb->results = NULL;
   }
 
-  RW_FREE_TYPE(rwpcb, rwdts_xpath_pcb_t);
+  DTS_APIH_FREE_TYPE(rwpcb->apih, RW_DTS_DTS_MEMORY_TYPE_XPATH_PCB,
+                     rwpcb, rwdts_xpath_pcb_t);
   return rs;
 } /*rwdts_xpath_pcb_free */
 
@@ -394,7 +376,8 @@ rwdts_xpath_parse(const char* xpath,
   RW_ASSERT_TYPE(apih, rwdts_api_t);
 
   RW_ASSERT(NULL == *rwpcb);
-  rwdts_xpath_pcb_t* xpcb = RW_MALLOC0_TYPE(sizeof(rwdts_xpath_pcb_t), rwdts_xpath_pcb_t);
+  rwdts_xpath_pcb_t* xpcb = DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_XPATH_PCB,
+                                                  sizeof(rwdts_xpath_pcb_t), rwdts_xpath_pcb_t);
   RW_ASSERT(xpcb);
   xpcb->loc_path_id = -1;
 
@@ -409,7 +392,8 @@ rwdts_xpath_parse(const char* xpath,
   else {
     xpcb->lib_inst = (void *)rwdts_xpath_lib_init_ncx(schema);
     if (!xpcb->lib_inst) {
-      RW_FREE_TYPE(xpcb, rwdts_xpath_pcb_t);
+      DTS_APIH_FREE_TYPE(xpcb->apih, RW_DTS_DTS_MEMORY_TYPE_XPATH_PCB,
+                         xpcb, rwdts_xpath_pcb_t);
       xpcb = NULL;
       return RW_STATUS_FAILURE;
     }
@@ -581,7 +565,7 @@ rwdts_xpath_alloc_pbcm (int32_t id)
 
 // Update xact with the reduced results
 rw_status_t
-rwdts_xpath_query_result_update(rwdts_xpath_pcb_t *rwpcb)
+rwdts_xpath_query_result_update(rwdts_api_t *apih, rwdts_xpath_pcb_t *rwpcb)
 {
   rw_status_t rs = RW_STATUS_SUCCESS;
   RW_ASSERT_TYPE(rwpcb, rwdts_xpath_pcb_t);
@@ -740,7 +724,8 @@ rwdts_xpath_query_result_update(rwdts_xpath_pcb_t *rwpcb)
 
   if (RW_STATUS_SUCCESS == rs) {
     if (q_result->n_result) {
-      rwdts_xact_result_t *res = RW_MALLOC0_TYPE(sizeof(rwdts_xact_result_t), rwdts_xact_result_t);
+      rwdts_xact_result_t *res = DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_XACT_RESULT,
+                                                       sizeof(rwdts_xact_result_t), rwdts_xact_result_t);
       RW_ASSERT(res);
       q_result->block = (RWDtsXactBlkID*)protobuf_c_message_duplicate(NULL, &xact->blocks[0]->subx.block->base,
                                                                       xact->blocks[0]->subx.block->base.descriptor);
@@ -767,7 +752,8 @@ rwdts_xpath_query_result_update(rwdts_xpath_pcb_t *rwpcb)
       }
       RW_ASSERT(b_result->result);
       for(idx=0; idx<cnt; idx++) {
-        rwdts_xact_result_t *res = RW_MALLOC0_TYPE(sizeof(rwdts_xact_result_t), rwdts_xact_result_t);
+        rwdts_xact_result_t *res = DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_XACT_RESULT,
+                                                   sizeof(rwdts_xact_result_t), rwdts_xact_result_t);
         RW_ASSERT(res);
         res->blockidx = b_result->blockidx;
         if (q_result == NULL) {
@@ -795,7 +781,9 @@ rwdts_xpath_query_result_update(rwdts_xpath_pcb_t *rwpcb)
 
     if (rsp) {
       // Insert the result to the transaction so that it can be cleaned up when the transaction is cleaned up
-      rwdts_xact_result_track_t* track_result = RW_MALLOC0_TYPE(sizeof(rwdts_xact_result_track_t), rwdts_xact_result_track_t);
+      rwdts_xact_result_track_t* track_result = DTS_APIH_MALLOC0_TYPE(apih,
+                                                                RW_DTS_DTS_MEMORY_TYPE_XACT_RESULT,
+                                                                sizeof(rwdts_xact_result_track_t), rwdts_xact_result_track_t);
       track_result->result = rsp;
       RW_DL_PUSH(&(xact->track.results), track_result, res_elem);
     }
@@ -845,7 +833,7 @@ rwdts_xpath_query_xact_cb(rwdts_xact_t *xact,
     rs = rwdts_xpath_query_cont(rwpcb);
   }
   else {
-    rs = rwdts_xpath_query_result_update(rwpcb);
+    rs = rwdts_xpath_query_result_update(xact->apih, rwpcb);
 
     // Call the client cb
     if (rwpcb->xact_cb.cb) {

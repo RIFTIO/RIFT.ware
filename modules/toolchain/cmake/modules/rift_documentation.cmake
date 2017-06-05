@@ -1,21 +1,7 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Anil Gunturu
 # Creation Date: 8/29/2013
-# 
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
 
 # This file contains cmake macros for generating documentation
 
@@ -678,7 +664,8 @@ function(rift_lyx_to_pdf TARGET)
 
     add_custom_command(
       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${basename}_no_copyright.pdf
-      COMMAND lyx -e pdf ${CMAKE_CURRENT_SOURCE_DIR}/${lyx_file}
+      COMMAND mkdir -p .lyx
+      COMMAND lyx -e pdf -userdir .lyx ${CMAKE_CURRENT_SOURCE_DIR}/${lyx_file}
       COMMAND mv -f ${CMAKE_CURRENT_SOURCE_DIR}/${basename}.pdf
       ${basename}_no_copyright.pdf
       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${lyx_file}

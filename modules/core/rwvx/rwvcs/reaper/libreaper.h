@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -33,8 +19,8 @@
 
 __BEGIN_DECLS
 
-#define err(fmt, ...)   fprintf(stderr, "reaperd-%d ERROR[%s():%d]: " fmt, getpid(), __func__, __LINE__, ##__VA_ARGS__)
-#define info(fmt, ...)  syslog(LOG_USER | LOG_DEBUG, "reaperd-%d INFO[%s():%d]: " fmt, getpid(), __func__, __LINE__, ##__VA_ARGS__)
+#define err(fmt, ...)   fprintf(stderr, "reaperd-%d ERROR[%s():%d]: " fmt, (int)getpid(), __func__, __LINE__, ##__VA_ARGS__)
+#define info(fmt, ...)  syslog(LOG_USER | LOG_DEBUG, "reaperd-%d INFO[%s():%d]: " fmt, (int)getpid(), __func__, __LINE__, ##__VA_ARGS__)
 
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX 108
@@ -43,7 +29,7 @@ __BEGIN_DECLS
 struct client {
   SLIST_ENTRY(client) slist;
 
-  uint16_t * pids;
+  pid_t * pids;
   size_t max_pids;
 
   char ** paths;
@@ -96,7 +82,7 @@ int reaper_add_client(struct reaper * reaper, int socket);
  * @param pid     - pid to add
  * @return        - 0 on success.
  */
-int reaper_add_client_pid(struct reaper * reaper, struct client * client, uint16_t pid);
+int reaper_add_client_pid(struct reaper * reaper, struct client * client, pid_t pid);
 
 /**
  * Del a pid(process) from the specified client.
@@ -106,7 +92,7 @@ int reaper_add_client_pid(struct reaper * reaper, struct client * client, uint16
  * @param pid     - pid to del
  * @return        - 0 on success.
  */
-int reaper_del_client_pid(struct reaper * reaper, struct client * client, uint16_t pid);
+int reaper_del_client_pid(struct reaper * reaper, struct client * client, pid_t pid);
 
 /**
  * Add a new path to be unlinked to the specified client.

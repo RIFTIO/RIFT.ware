@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_member_data_api.c
  * @author Rajesh Velandy
@@ -39,6 +20,7 @@
 
 #define RWDTS_DATA_MEMBER_CONST_KEY (const uint8_t*)"Hmmm...."
 #define RWDTS_MAX_MINIKEY_LEN 128
+
 
 /*
  * The following macro forces the keyspec to category to that of the registration
@@ -126,14 +108,9 @@ static void
 rwdts_member_pub_del(rwdts_member_data_record_t *mbr_data,
                      rwdts_member_data_object_t* mobj);
 
-static
-rwdts_member_data_object_t*
-rwdts_member_data_store(rwdts_member_data_object_t** obj_list_p,
-                        rwdts_member_data_record_t *mbr_data,
-                        uint8_t *free_obj);
-
 static rw_status_t
-rwdts_member_data_record_deinit(rwdts_member_data_record_t *mbr_data);
+rwdts_member_data_record_deinit(rwdts_api_t *apih,
+                                rwdts_member_data_record_t *mbr_data);
 
 static inline void
 rwdts_expand_member_data_record(rwdts_member_data_record_t*   mbr_data,
@@ -153,12 +130,6 @@ rwdts_member_data_create_list_element(rwdts_xact_t*             xact,
                                       rw_keyspec_entry_t*       pe,
                                       const ProtobufCMessage*   msg);
 
-static void 
-rwdts_member_data_finalize(rwdts_member_data_record_t*    mbr_data,
-                           rwdts_member_data_object_t*    mobj,
-                           RWDtsQueryAction               query_action,
-                           RWPB_E(RwDts_AuditTrailAction) audit_action);
-
 rw_status_t
 rwdts_member_reg_handle_handle_create_update_element(rwdts_member_reg_handle_t  regh,
                                                      rw_keyspec_path_t*         keyspec,
@@ -170,544 +141,7 @@ rwdts_member_reg_handle_handle_create_update_element(rwdts_member_reg_handle_t  
 /*******************************************************************************
  *                      Static functions                                       *
  *******************************************************************************/
-
-static rwdts_kv_light_reply_status_t
-rwdts_member_data_cache_set_callback(rwdts_kv_light_set_status_t status,
-                                     int serial_num, void *userdata)
-{
-  //rwdts_kv_handle_t *handle = (rwdts_kv_handle_t *)userdata;
-
-  if (RWDTS_KV_LIGHT_SET_SUCCESS == status) {
-    /* DO Nothing */
-  }
-
-  return RWDTS_KV_LIGHT_REPLY_DONE;
-}
-
-static void 
-rwdts_member_data_finalize(rwdts_member_data_record_t*    mbr_data,
-                           rwdts_member_data_object_t*    mobj,
-                           RWDtsQueryAction               query_action,
-                           RWPB_E(RwDts_AuditTrailAction) audit_action)
-{
-  RW_ASSERT(mbr_data);
-  RW_ASSERT(mobj);
-
-  if ((mbr_data->reg->flags & RWDTS_FLAG_DATASTORE) != 0) {
-    if (mbr_data->xact != NULL) {
-      rwdts_kv_update_db_xact_precommit(mobj, query_action);
-    } else {
-      rwdts_kv_update_db_update(mobj, query_action);
-    }
-  }
-
-  /* Add an audit trail that this record is updated */
-  if (RWDTS_QUERY_DELETE != query_action) {
-    rwdts_member_data_object_add_audit_trail(mobj,
-                                             mbr_data->updated_by,
-                                             audit_action);
-  }
-
-  if ((mbr_data->reg->flags & RWDTS_FLAG_PUBLISHER) != 0) {
-    uint32_t flags = 0;
-    if (mbr_data->member_advise_cb.cb)  {
-      flags |= RWDTS_XACT_FLAG_EXECNOW;
-    }
-    rwdts_member_data_advice_query_action(mbr_data->xact,
-                                          (rwdts_member_reg_handle_t)mobj->reg,
-                                          mobj->keyspec,
-                                          mobj->msg,
-                                          query_action,
-                                          flags,
-                                          &mbr_data->member_advise_cb,
-                                          &mbr_data->rcvd_member_advise_cb,
-                                          true);
-
-    if (!mbr_data->xact && (mbr_data->reg->apih->rwtasklet_info && 
-        ((mbr_data->reg->apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB) ||
-        (mbr_data->reg->apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
-      if (mbr_data->reg->kv_handle) {
-        uint8_t *payload;
-        size_t  payload_len;
-        payload = protobuf_c_message_serialize(NULL, mobj->msg, &payload_len);
-        rw_status_t rs = rwdts_kv_handle_add_keyval(mbr_data->reg->kv_handle, 0, (char *)mobj->key, mobj->key_len,
-                                                   (char *)payload, (int)payload_len, rwdts_member_data_cache_set_callback, 
-                                                   (void *)mbr_data->reg->kv_handle);
-        RW_ASSERT(rs == RW_STATUS_SUCCESS);
-        if (rs != RW_STATUS_SUCCESS) {
-          /* Fail the VM and switchover to STANDBY */
-        }
-      }
-    }
-  }
-  return;
-}
-
-/*
- * Call back for member data advises
- */
-void
-rwdts_member_data_advise_cb(rwdts_xact_t*        xact,
-                            rwdts_xact_status_t* xact_status,
-                            void*                ud)
-{
-
-  RW_ASSERT_TYPE(xact, rwdts_xact_t);
-  rwdts_memer_data_adv_event_t* member_advise_cb;
-  rwdts_api_t *apih = xact->apih;
-  rwdts_member_registration_t *reg;
-
-  RW_ASSERT_TYPE(apih, rwdts_api_t);
-  RW_ASSERT(xact_status);
-
-  member_advise_cb =  (rwdts_memer_data_adv_event_t*)ud;
-  RW_ASSERT_TYPE (member_advise_cb, rwdts_memer_data_adv_event_t);
-  if (member_advise_cb == NULL) {
-    printf("%s:%d -- member_advise_cb() is NULL\n", __FILE__, __LINE__);
-    return;
-  }
-
-  // ATTN to make rwdts_pytest.py happy - Use reg directly once it is properly reference
-  // counted.
-  RW_SKLIST_LOOKUP_BY_KEY(&(apih->reg_list), &member_advise_cb->reg_id, (void *)&reg);
-  
-  if (reg) {
-    RW_ASSERT(reg == member_advise_cb->reg);
-    RW_ASSERT_TYPE(reg, rwdts_member_registration_t);
-  } else {
-    printf("%s:%d -- registration not found %u\n", __FILE__, __LINE__, member_advise_cb->reg_id);
-  }
-
-
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, DATA_MEMBER_API_CB, "Received callback for data member API triggered advise", xact_status->status);
-
-  RW_ASSERT_TYPE(xact->apih, rwdts_api_t);
-
-
-  switch (xact_status->status) {
-    case RWDTS_XACT_INIT:
-    case RWDTS_XACT_RUNNING:
-      break;
-    case RWDTS_XACT_ABORTED:
-      if (!member_advise_cb->solicit_triggered) {
-        xact->apih->stats.num_member_advise_aborted++;
-      }
-      RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, DATA_MEMBER_API_ERROR, "Received XACT-STATUS-ABORT in callback for data member API triggered advise");
-      break;
-    case RWDTS_XACT_FAILURE:
-      if (!member_advise_cb->solicit_triggered) {
-        xact->apih->stats.num_member_advise_failed++;
-      }
-      RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, DATA_MEMBER_API_ERROR, "Received XACT-STATUS-FAILURE in callback for data member API triggered advise");
-      break;
-    default:
-      if (!member_advise_cb->solicit_triggered) {
-        xact->apih->stats.num_member_advise_success++;
-      }
-      break;
-  }
-  if (reg && !member_advise_cb->block_event &&  xact_status->xact_done) {
-#if 0
-    //RIFT-11566 commit serial manage leaks if one out of order..
-    //masking this for now
-    rwdts_pub_serial_t serial;
-
-    serial.id.member_id = reg->serial.id.member_id;
-    serial.id.router_id = reg->serial.id.router_id;
-    serial.id.pub_id    = reg->serial.id.pub_id;
-
-    serial.serial = member_advise_cb->serial;
-
-    rwdts_add_entry_to_commit_serial_list(&reg->committed_serials,
-                                          &serial,
-                                          &reg->highest_commit_serial);
-#endif
-
-  }
-  if (member_advise_cb && member_advise_cb->event_cb.cb) {
-    RW_ASSERT(rwdts_member_data_advise_cb != member_advise_cb->event_cb.cb);
-    member_advise_cb->event_cb.cb(xact,
-                                  xact_status,
-                                  (void *)member_advise_cb->event_cb.ud);
-  } 
-
-  if (!member_advise_cb->solicit_triggered) {
-    apih->stats.num_member_advise_rsp++;
-  }
-  if (xact_status->xact_done && member_advise_cb) {
-    RW_FREE_TYPE (member_advise_cb, rwdts_memer_data_adv_event_t);
-  }
-
-  return;
-}
-
-rwdts_memer_data_adv_event_t*
-rwdts_memer_data_adv_init(const rwdts_event_cb_t*      advise_cb,
-                          rwdts_member_registration_t* reg,
-                          bool                         solicit_triggered,
-                          bool                         block_event)
-{
-  rwdts_memer_data_adv_event_t *member_advise_cb;
-  member_advise_cb = RW_MALLOC0_TYPE(sizeof(rwdts_memer_data_adv_event_t),
-                                     rwdts_memer_data_adv_event_t);
-  RW_ASSERT_TYPE (member_advise_cb, rwdts_memer_data_adv_event_t);
-  member_advise_cb->reg_id = reg->reg_id;
-  member_advise_cb->reg = reg;
-  
-  RW_ASSERT(advise_cb->cb != rwdts_member_data_advise_cb);
-
-  member_advise_cb->event_cb.cb = advise_cb->cb;
-  member_advise_cb->event_cb.ud = advise_cb->ud;
-  member_advise_cb->solicit_triggered = solicit_triggered;
-  member_advise_cb->block_event = block_event;
-  member_advise_cb->serial = reg->serial.serial+1; // ATTN - relook at this
-  return member_advise_cb;
-}
-
-
-static rwdts_member_data_object_t*
-rwdts_member_data_duplicate_obj(rwdts_member_data_object_t* mobj)
-{
-  rw_status_t rs;
-
-  rwdts_member_data_object_t *newobj = RW_MALLOC0_TYPE(sizeof(rwdts_member_data_object_t),
-                                                       rwdts_member_data_object_t);
-
-  RW_ASSERT_TYPE(newobj, rwdts_member_data_object_t);
-
-  newobj->msg =  protobuf_c_message_duplicate(NULL, mobj->msg, mobj->msg->descriptor);
-
-  rs = RW_KEYSPEC_PATH_CREATE_DUP(mobj->keyspec, NULL , &newobj->keyspec, NULL);
-  RW_ASSERT(rs == RW_STATUS_SUCCESS);
-  RW_ASSERT(newobj->msg);
-  RW_ASSERT(newobj->keyspec);
-
-
-  // Get the keys from keyspec
-  rs = RW_KEYSPEC_PATH_GET_BINPATH(newobj->keyspec, NULL , (const uint8_t **)&newobj->key, (size_t *)&newobj->key_len, NULL);
-  RW_ASSERT(rs == RW_STATUS_SUCCESS);
-
-  newobj->reg = mobj->reg;
-
-  return newobj;
-}
-
-/*******************************************************************************
- *                      public APIs                                            *
- *******************************************************************************/
-/*
- * Init a data member object
- */
-
-rwdts_member_data_object_t*
-rwdts_member_data_init(rwdts_member_registration_t*        reg,
-                       ProtobufCMessage*                   msg,
-                       rw_keyspec_path_t*                  keyspec,
-                       bool                                usemsg,
-                       bool                                useks)
-{
-  rw_status_t rs;
-  rwdts_api_t* apih = reg->apih;
-  RW_ASSERT_TYPE(apih, rwdts_api_t);
-
-  rwdts_member_data_object_t *mobj = RW_MALLOC0_TYPE(sizeof(rwdts_member_data_object_t),
-                                                     rwdts_member_data_object_t);
-
-  RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-  RW_ASSERT(keyspec);
-  if (!keyspec) {
-    return NULL;
-  }
-
-  if (usemsg) {
-    mobj->msg = msg;
-  } else {
-    mobj->msg =  protobuf_c_message_duplicate(NULL, msg, msg->descriptor);
-
-  }
-
-  if (useks) {
-    mobj->keyspec = keyspec;
-  } else {
-    rs = RW_KEYSPEC_PATH_CREATE_DUP(keyspec, NULL , &mobj->keyspec, NULL);
-    RW_ASSERT(rs == RW_STATUS_SUCCESS);
-  }
-  RW_ASSERT(mobj->msg);
-  RW_ASSERT(mobj->keyspec);
-
-  /* Force the category to match registration ks category */
-  RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mobj->keyspec, reg->keyspec);
-
-  if (protobuf_c_message_unknown_get_count(mobj->msg)) {
-    rwdts_report_unknown_fields(mobj->keyspec, apih, mobj->msg);
-    protobuf_c_message_delete_unknown_all(NULL, mobj->msg);
-  }
-  RW_ASSERT(!protobuf_c_message_unknown_get_count(mobj->msg))
-
-  // Get the keys from keyspec
-  rs = RW_KEYSPEC_PATH_GET_BINPATH(mobj->keyspec, NULL , (const uint8_t **)&mobj->key, (size_t *)&mobj->key_len, NULL);
-  RW_ASSERT(rs == RW_STATUS_SUCCESS);
-
-  mobj->reg = reg;
-  return mobj;
-}
-
-static rwdts_member_data_object_t*
-rwdts_member_data_init_frm_mbr_data(rwdts_member_data_record_t *mbr_data,
-                                    bool                        usemsg,
-                                    bool                        useks,
-                                    rwdts_member_data_action_t  action)
-{
-  rw_status_t rs;
-
-  RW_ASSERT_TYPE(mbr_data, rwdts_member_data_record_t);
-  RW_ASSERT(mbr_data->keyspec);
-  if (!mbr_data->keyspec) {
-    return NULL;
-  }
-  RW_ASSERT_TYPE(mbr_data->reg, rwdts_member_registration_t);
-  rwdts_api_t *apih = mbr_data->reg->apih;
-  RW_ASSERT_TYPE(apih, rwdts_api_t);
-
-  rwdts_member_data_object_t *mobj = RW_MALLOC0_TYPE(sizeof(rwdts_member_data_object_t),
-                                                     rwdts_member_data_object_t);
-
-  RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-
-  if (action != RWDTS_DELETE) {
-    RW_ASSERT(mbr_data->msg);
-    if (usemsg) {
-      mobj->msg = mbr_data->msg;
-      mbr_data->msg = NULL; // Ownership transfered
-    } else {
-      mobj->msg =  protobuf_c_message_duplicate(NULL, mbr_data->msg,mbr_data->msg->descriptor);
-    }
-    RW_ASSERT(mobj->msg);
-  }
-
-  if (useks) {
-    mobj->keyspec = mbr_data->keyspec;
-    mbr_data->keyspec = NULL; // Ownership transfered
-  } else {
-    rs = RW_KEYSPEC_PATH_CREATE_DUP(mbr_data->keyspec, NULL , &mobj->keyspec, NULL);
-    RW_ASSERT(rs == RW_STATUS_SUCCESS);
-  }
-
-  /* Force the category to match registration ks category */
-  RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mobj->keyspec, mbr_data->reg->keyspec);
-
-  // Get the keys from keyspec
-  rs = RW_KEYSPEC_PATH_GET_BINPATH(mobj->keyspec, NULL , (const uint8_t **)&mobj->key, (size_t *)&mobj->key_len, NULL);
-  RW_ASSERT(rs == RW_STATUS_SUCCESS);
-
-  mobj->reg = mbr_data->reg;
-
-  return mobj;
-}
-
-static rwdts_member_data_object_t*
-rwdts_member_dup_mobj(const rwdts_member_data_object_t *in_mobj)
-{
-  rw_status_t rs;
-  RW_ASSERT_TYPE((rwdts_member_data_object_t*)in_mobj, rwdts_member_data_object_t);
-  RW_ASSERT(in_mobj->keyspec);
-  RW_ASSERT(in_mobj->msg);
-
-  if (!in_mobj->keyspec) {
-    return NULL;
-  }
-  if (!in_mobj->msg) {
-    return NULL;
-  }
-  rwdts_member_registration_t *reg = in_mobj->reg;
-  RW_ASSERT_TYPE(reg, rwdts_member_registration_t);
-  rwdts_api_t *apih = reg->apih;
-  RW_ASSERT_TYPE(apih, rwdts_api_t);
-
-  rwdts_member_data_object_t *mobj = RW_MALLOC0_TYPE(sizeof(rwdts_member_data_object_t),
-                                                     rwdts_member_data_object_t);
-
-  RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-
-  if (in_mobj->msg) {
-    mobj->msg =  protobuf_c_message_duplicate(NULL, in_mobj->msg, in_mobj->msg->descriptor);
-    RW_ASSERT(mobj->msg);
-  }
-
-  rs = RW_KEYSPEC_PATH_CREATE_DUP(in_mobj->keyspec, NULL , &mobj->keyspec, NULL);
-  RW_ASSERT(rs == RW_STATUS_SUCCESS && mobj->keyspec != NULL);
-
-  /* Force the category to match registration ks category */
-  RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mobj->keyspec, reg->keyspec);
-
-  rs = RW_KEYSPEC_PATH_GET_BINPATH(mobj->keyspec, NULL , (const uint8_t **)&mobj->key, (size_t *)&mobj->key_len, NULL);
-
-  RW_ASSERT(rs == RW_STATUS_SUCCESS);
-
-  mobj->reg = in_mobj->reg;
-
-  return mobj;
-}
-
-/*
- * deinit a data member object
- */
-
-rw_status_t
-rwdts_member_data_deinit(rwdts_member_data_object_t *mobj)
-{
-  int i;
-
-  RW_ASSERT(mobj);
-
-  if (!mobj) {
-    return RW_STATUS_FAILURE;
-  }
-
-  if (mobj->msg) {
-    protobuf_c_message_free_unpacked(NULL, mobj->msg);
-    mobj->msg = NULL;
-  }
-
-  if (mobj->keyspec) {
-    RW_KEYSPEC_PATH_FREE(mobj->keyspec, NULL, NULL );
-  }
-
-
-  if (mobj->audit) {
-    RW_FREE_TYPE(mobj->audit, rwdts_member_data_object_audit_t);
-    mobj->audit = NULL;
-  }
-
-  /* Free all the audit entries */
-  if (mobj->n_audit_trail > 0) {
-    for (i = 0; i < mobj->n_audit_trail ; i++) {
-      protobuf_c_message_free_unpacked(NULL, &mobj->audit_trail[i]->base);
-      mobj->audit_trail[i] = NULL;
-    }
-    RW_FREE(mobj->audit_trail);
-    mobj->audit_trail = NULL;
-  } else {
-    RW_ASSERT(NULL == mobj->audit_trail);
-  }
-
-  RW_FREE_TYPE(mobj, rwdts_member_data_object_t);
-
-  return RW_STATUS_SUCCESS;
-}
-
-rw_status_t
-rwdts_member_data_object_add_audit_trail(rwdts_member_data_object_t*          mobj,
-                                         RwDts__YangEnum__AuditTrailEvent__E  updated_by,
-                                         RwDts__YangEnum__AuditTrailAction__E action)
-{
-  char   tmp_buf[64];
-  time_t current_time;
-
-  if (mobj->n_audit_trail >= RWDTS_MEMBER_OBJ_MAX_AUDIT_TRAIL) {
-    // ATTN -- may be this should add this as the last entry
-    return RW_STATUS_FAILURE;
-  }
-  mobj->audit_trail = (RWPB_T_MSG(RwDts_output_StartDts_AuditSummary_FailedReg_ObjDts_AuditTrail)**)
-                      realloc(mobj->audit_trail, (mobj->n_audit_trail+1)* sizeof(RWPB_T_MSG(RwDts_output_StartDts_AuditSummary_FailedReg_ObjDts_AuditTrail)*));
-  RW_ASSERT(mobj->audit_trail != NULL);
-
-  int idx = mobj->n_audit_trail;
-
-  mobj->n_audit_trail++;
-
-  //mobj->audit_trail[idx] =  (RwDts__YangOutput__RwDts__StartDts__AuditSummary__FailedReg__ObjDts__AuditTrail*)
-  //                          RW_MALLOC0(sizeof(RwDts__YangOutput__RwDts__StartDts__AuditSummary__FailedReg__ObjDts__AuditTrail));
-  RWPB_M_MSG_DECL_PTR_ALLOC(RwDts_output_StartDts_AuditSummary_FailedReg_ObjDts_AuditTrail, tmpobj);
-  mobj->audit_trail[idx] = tmpobj;
-  mobj->audit_trail[idx]->updated_by = updated_by;
-  mobj->audit_trail[idx]->has_updated_by = 1;
-  mobj->audit_trail[idx]->action     = action;
-  mobj->audit_trail[idx]->has_action = 1;
-  time(&current_time);
-  mobj->audit_trail[idx]->event_time = strdup(ctime_r(&current_time, tmp_buf));
-
-  return (RW_STATUS_SUCCESS);
-}
-
-rwdts_xact_t*
-rwdts_member_data_advice_query_action_xact(rwdts_xact_t*             xact,
-                                           rwdts_xact_block_t*       block,
-                                           rwdts_member_reg_handle_t regh,
-                                           rw_keyspec_path_t*        keyspec,
-                                           const ProtobufCMessage*   msg,
-                                           RWDtsQueryAction          action,
-                                           uint32_t                  flags,
-                                           bool                      inc_serial)
-{
-  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
-
-  rwdts_api_t *apih = reg->apih;
-  uint64_t corrid = 1000; /* Need to find out how to generate this */
-  RW_ASSERT(apih);
-  if (!apih) {
-    return NULL;
-  }
-  rw_keyspec_path_t *merged_keyspec = NULL;
-  rw_status_t rw_status;
-
-  RW_ASSERT(action != RWDTS_QUERY_INVALID);
-  RW_ASSERT_TYPE(xact, rwdts_xact_t);
-  RW_ASSERT(block);
-
-  apih->stats.num_advises++;
-  reg->stats.num_advises++;
-
-
-  if (keyspec) {
-    rw_status = RW_KEYSPEC_PATH_CREATE_DUP(keyspec, NULL , &merged_keyspec, NULL);
-  } else {
-    rw_status = RW_KEYSPEC_PATH_CREATE_DUP(reg->keyspec, NULL , &merged_keyspec, NULL);
-  }
-  if (rw_status != RW_STATUS_SUCCESS) {
-    RWDTS_XACT_ABORT(xact, rw_status, RWDTS_ERRSTR_KEY_DUP);
-    return NULL;
-  }
-  if (rw_keyspec_path_has_wildcards(merged_keyspec)) {
-    RWDTS_XACT_ABORT(xact, rw_status, RWDTS_ERRSTR_KEY_WILDCARDS);
-    RW_KEYSPEC_PATH_FREE(merged_keyspec, NULL, NULL);
-    return NULL;
-  }
-
-  RW_ASSERT(merged_keyspec);
-  {
-    char *tmp = NULL;
-
-    rw_keyspec_path_get_new_print_buffer(merged_keyspec, NULL ,
-                                rwdts_api_get_ypbc_schema(apih),
-                                &tmp);
-
-    RWDTS_API_LOG_EVENT(apih, KeyspecUpdatedPe, "Updated keyspec with path entry", tmp ? tmp : "");
-    free(tmp);
-  }
-
-  flags |= RWDTS_XACT_FLAG_ADVISE;
-  flags |= RWDTS_XACT_FLAG_NOTRAN;
-  // Increment the serial associated with this registration 
-  if (inc_serial) {
-    rwdts_member_reg_handle_inc_serial(reg);
-  }
-
-
-  rw_status_t rs = rwdts_xact_block_add_query_ks_reg(block,
-                              merged_keyspec,
-                              action,
-                              flags,
-                              corrid,
-                              msg,
-                              reg);
-  RW_ASSERT(rs == RW_STATUS_SUCCESS);
-  // Free the keyspec
-  RW_KEYSPEC_PATH_FREE(merged_keyspec, NULL , NULL);
-  return xact;
-}
-
-rwdts_xact_t*
+static rwdts_xact_t*
 rwdts_member_data_advice_query_action(rwdts_xact_t*             xact,
                                       rwdts_member_reg_handle_t regh,
                                       rw_keyspec_path_t*        keyspec,
@@ -818,6 +252,567 @@ rwdts_member_data_advice_query_action(rwdts_xact_t*             xact,
   return xact;
 }
 
+
+static rwdts_kv_light_reply_status_t
+rwdts_member_data_cache_set_callback(rwdts_kv_light_set_status_t status,
+                                     int serial_num, void *userdata)
+{
+  //rwdts_kv_handle_t *handle = (rwdts_kv_handle_t *)userdata;
+
+  if (RWDTS_KV_LIGHT_SET_SUCCESS == status) {
+    /* DO Nothing */
+  }
+
+  return RWDTS_KV_LIGHT_REPLY_DONE;
+}
+
+static void 
+rwdts_member_data_finalize(rwdts_member_data_record_t*    mbr_data,
+                           rwdts_member_data_object_t*    mobj,
+                           RWDtsQueryAction               query_action,
+                           RWPB_E(RwDts_AuditTrailAction) audit_action)
+{
+  RW_ASSERT(mbr_data);
+  RW_ASSERT(mobj);
+
+  if ((mbr_data->reg->flags & RWDTS_FLAG_DATASTORE) != 0) {
+    if (mbr_data->xact != NULL) {
+      rwdts_kv_update_db_xact_precommit(mobj, query_action);
+    } else {
+      rwdts_kv_update_db_update(mobj, query_action);
+    }
+  }
+
+  /* Add an audit trail that this record is updated */
+  if (RWDTS_QUERY_DELETE != query_action) {
+    rwdts_member_data_object_add_audit_trail(mobj,
+                                             mbr_data->updated_by,
+                                             audit_action);
+  }
+
+  if ((mbr_data->reg->flags & RWDTS_FLAG_PUBLISHER) != 0) {
+    uint32_t flags = 0;
+    rwdts_xact_t *xact = NULL;
+    
+    if (mbr_data->member_advise_cb.cb)  {
+      flags |= RWDTS_XACT_FLAG_EXECNOW;
+    }
+    xact = rwdts_member_data_advice_query_action(mbr_data->xact,
+                                                 (rwdts_member_reg_handle_t)mobj->reg,
+                                                 mobj->keyspec,
+                                                 mobj->msg,
+                                                 query_action,
+                                                 flags,
+                                                 &mbr_data->member_advise_cb,
+                                                 &mbr_data->rcvd_member_advise_cb,
+                                                 true);
+    RW_ASSERT(xact != NULL);
+    RW_ASSERT((!mbr_data->xact) || (mbr_data->xact == xact));
+
+    //ideally we should be calling rwdts_reg_kv_store_cache_obj instead of the below code. But not
+    //confident with the entire kvstore with respect to the handling of update with replace and plain
+    //update. Leaving it the way it is for now...AKKI TBD
+    if (!mbr_data->xact && (mbr_data->reg->apih->rwtasklet_info && 
+        ((mbr_data->reg->apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB) ||
+        (mbr_data->reg->apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
+      if (mbr_data->reg->kv_handle) {
+        uint8_t *payload;
+        size_t  payload_len;
+        payload = protobuf_c_message_serialize(NULL, mobj->msg, &payload_len);
+        rw_status_t rs = rwdts_kv_handle_add_keyval(mbr_data->reg->kv_handle, 0, (char *)mobj->key, mobj->key_len,
+                                                   (char *)payload, (int)payload_len, rwdts_member_data_cache_set_callback, 
+                                                   (void *)mbr_data->reg->kv_handle);
+        RW_ASSERT(rs == RW_STATUS_SUCCESS);
+        if (rs != RW_STATUS_SUCCESS) {
+          /* Fail the VM and switchover to STANDBY */
+        }
+
+        //free the payload
+        RW_FREE(payload);
+      }
+    }
+  }
+  return;
+}
+
+/*
+ * Call back for member data advises
+ */
+void
+rwdts_member_data_advise_cb(rwdts_xact_t*        xact,
+                            rwdts_xact_status_t* xact_status,
+                            void*                ud)
+{
+
+  RW_ASSERT_TYPE(xact, rwdts_xact_t);
+  rwdts_memer_data_adv_event_t* member_advise_cb;
+  rwdts_api_t *apih = xact->apih;
+  rwdts_member_registration_t *reg;
+
+  RW_ASSERT_TYPE(apih, rwdts_api_t);
+  RW_ASSERT(xact_status);
+
+  member_advise_cb =  (rwdts_memer_data_adv_event_t*)ud;
+  RW_ASSERT_TYPE (member_advise_cb, rwdts_memer_data_adv_event_t);
+  if (member_advise_cb == NULL) {
+    printf("%s:%d -- member_advise_cb() is NULL\n", __FILE__, __LINE__);
+    return;
+  }
+
+  // ATTN to make rwdts_pytest.py happy - Use reg directly once it is properly reference
+  // counted.
+  RW_SKLIST_LOOKUP_BY_KEY(&(apih->reg_list), &member_advise_cb->reg_id, (void *)&reg);
+  
+  if (reg) {
+    RW_ASSERT(reg == member_advise_cb->reg);
+    RW_ASSERT_TYPE(reg, rwdts_member_registration_t);
+  } else {
+    printf("%s:%d -- registration not found %u\n", __FILE__, __LINE__, member_advise_cb->reg_id);
+  }
+
+
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, DataMemberApiCb, "Received callback for data member API triggered advise", xact_status->status, member_advise_cb);
+
+  RW_ASSERT_TYPE(xact->apih, rwdts_api_t);
+
+
+  switch (xact_status->status) {
+    case RWDTS_XACT_INIT:
+    case RWDTS_XACT_RUNNING:
+      break;
+    case RWDTS_XACT_ABORTED:
+      if (!member_advise_cb->solicit_triggered) {
+        xact->apih->stats.num_member_advise_aborted++;
+      }
+      RWDTS_API_LOG_EVENT(apih, DataMemberApiError, "Received XACT-STATUS-ABORT in callback for data member API triggered advise");
+      break;
+    case RWDTS_XACT_FAILURE:
+      if (!member_advise_cb->solicit_triggered) {
+        xact->apih->stats.num_member_advise_failed++;
+      }
+      RWDTS_API_LOG_EVENT(apih, DataMemberApiError, "Received XACT-STATUS-FAILURE in callback for data member API triggered advise");
+      break;
+    default:
+      if (!member_advise_cb->solicit_triggered) {
+        xact->apih->stats.num_member_advise_success++;
+      }
+      break;
+  }
+  if (reg && !member_advise_cb->block_event &&  xact_status->xact_done) {
+#if 0
+    //RIFT-11566 commit serial manage leaks if one out of order..
+    //masking this for now
+    rwdts_pub_serial_t serial;
+
+    serial.id.member_id = reg->serial.id.member_id;
+    serial.id.router_id = reg->serial.id.router_id;
+    serial.id.pub_id    = reg->serial.id.pub_id;
+
+    serial.serial = member_advise_cb->serial;
+
+    rwdts_add_entry_to_commit_serial_list(reg->apih,
+                                          &reg->committed_serials,
+                                          &serial,
+                                          &reg->highest_commit_serial);
+#endif
+
+  }
+  if (member_advise_cb && member_advise_cb->event_cb.cb) {
+    RW_ASSERT(rwdts_member_data_advise_cb != member_advise_cb->event_cb.cb);
+    member_advise_cb->event_cb.cb(xact,
+                                  xact_status,
+                                  (void *)member_advise_cb->event_cb.ud);
+  } 
+
+  if (!member_advise_cb->solicit_triggered) {
+    apih->stats.num_member_advise_rsp++;
+  }
+  if (xact_status->xact_done && member_advise_cb) {
+    DTS_APIH_FREE_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_MEMBER_ADVISE_CB,
+                       member_advise_cb, rwdts_memer_data_adv_event_t);
+  }
+
+  return;
+}
+
+rwdts_memer_data_adv_event_t*
+rwdts_memer_data_adv_init(const rwdts_event_cb_t*      advise_cb,
+                          rwdts_member_registration_t* reg,
+                          bool                         solicit_triggered,
+                          bool                         block_event)
+{
+  rwdts_memer_data_adv_event_t *member_advise_cb;
+  member_advise_cb = DTS_APIH_MALLOC0_TYPE(reg->apih, RW_DTS_DTS_MEMORY_TYPE_MEMBER_ADVISE_CB,
+                                           sizeof(rwdts_memer_data_adv_event_t),
+                                           rwdts_memer_data_adv_event_t);
+  
+  RW_ASSERT_TYPE (member_advise_cb, rwdts_memer_data_adv_event_t);
+  member_advise_cb->reg_id = reg->reg_id;
+  member_advise_cb->reg = reg;
+  
+  RW_ASSERT(advise_cb->cb != rwdts_member_data_advise_cb);
+
+  member_advise_cb->event_cb.cb = advise_cb->cb;
+  member_advise_cb->event_cb.ud = advise_cb->ud;
+  member_advise_cb->solicit_triggered = solicit_triggered;
+  member_advise_cb->block_event = block_event;
+  member_advise_cb->serial = reg->serial.serial+1; // ATTN - relook at this
+  return member_advise_cb;
+}
+
+
+static rwdts_member_data_object_t*
+rwdts_member_data_duplicate_obj(rwdts_member_data_object_t* mobj)
+{
+  rw_status_t rs;
+  
+  rwdts_member_data_object_t *newobj = DTS_APIH_MALLOC0_TYPE(mobj->reg->apih,
+                                                             RW_DTS_DTS_MEMORY_TYPE_DATA_OBJECT,
+                                                             sizeof(rwdts_member_data_object_t),
+                                                             rwdts_member_data_object_t);
+  
+  RW_ASSERT_TYPE(newobj, rwdts_member_data_object_t);
+
+  newobj->msg =  protobuf_c_message_duplicate(NULL, mobj->msg, mobj->msg->descriptor);
+
+  rs = RW_KEYSPEC_PATH_CREATE_DUP(mobj->keyspec, NULL , &newobj->keyspec, NULL);
+  RW_ASSERT(rs == RW_STATUS_SUCCESS);
+  RW_ASSERT(newobj->msg);
+  RW_ASSERT(newobj->keyspec);
+
+
+  // Get the keys from keyspec
+  rs = RW_KEYSPEC_PATH_GET_BINPATH(newobj->keyspec, NULL , (const uint8_t **)&newobj->key, (size_t *)&newobj->key_len, NULL);
+  RW_ASSERT(rs == RW_STATUS_SUCCESS);
+
+  newobj->reg = mobj->reg;
+
+  return newobj;
+}
+
+/*******************************************************************************
+ *                      public APIs                                            *
+ *******************************************************************************/
+/*
+ * Init a data member object
+ */
+
+rwdts_member_data_object_t*
+rwdts_member_data_init(rwdts_member_registration_t*        reg,
+                       ProtobufCMessage*                   msg,
+                       rw_keyspec_path_t*                  keyspec,
+                       bool                                usemsg,
+                       bool                                useks)
+{
+  rw_status_t rs;
+  rwdts_api_t* apih = reg->apih;
+  RW_ASSERT_TYPE(apih, rwdts_api_t);
+
+  rwdts_member_data_object_t *mobj = DTS_APIH_MALLOC0_TYPE(reg->apih,
+                                                           RW_DTS_DTS_MEMORY_TYPE_DATA_OBJECT,
+                                                           sizeof(rwdts_member_data_object_t),
+                                                           rwdts_member_data_object_t);
+
+  RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
+  RW_ASSERT(keyspec);
+  if (!keyspec) {
+    return NULL;
+  }
+
+  if (usemsg) {
+    mobj->msg = msg;
+  } else {
+    mobj->msg =  protobuf_c_message_duplicate(NULL, msg, msg->descriptor);
+  }
+
+  if (useks) {
+    mobj->keyspec = keyspec;
+  } else {
+    rs = RW_KEYSPEC_PATH_CREATE_DUP(keyspec, NULL , &mobj->keyspec, NULL);
+    RW_ASSERT(rs == RW_STATUS_SUCCESS);
+  }
+  RW_ASSERT(mobj->msg);
+  RW_ASSERT(mobj->keyspec);
+
+  /* Force the category to match registration ks category */
+  RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mobj->keyspec, reg->keyspec);
+
+  if (protobuf_c_message_unknown_get_count(mobj->msg)) {
+    rwdts_report_unknown_fields(mobj->keyspec, apih, mobj->msg);
+    protobuf_c_message_delete_unknown_all(NULL, mobj->msg);
+  }
+  RW_ASSERT(!protobuf_c_message_unknown_get_count(mobj->msg))
+
+  // Get the keys from keyspec
+  rs = RW_KEYSPEC_PATH_GET_BINPATH(mobj->keyspec, NULL , (const uint8_t **)&mobj->key, (size_t *)&mobj->key_len, NULL);
+  RW_ASSERT(rs == RW_STATUS_SUCCESS);
+
+  mobj->reg = reg;
+  return mobj;
+}
+
+static rwdts_member_data_object_t*
+rwdts_member_data_init_frm_mbr_data(rwdts_member_data_record_t *mbr_data,
+                                    bool                        usemsg,
+                                    bool                        useks,
+                                    rwdts_member_data_action_t  action)
+{
+  rw_status_t rs;
+
+  RW_ASSERT_TYPE(mbr_data, rwdts_member_data_record_t);
+  RW_ASSERT(mbr_data->keyspec);
+  if (!mbr_data->keyspec) {
+    return NULL;
+  }
+  RW_ASSERT_TYPE(mbr_data->reg, rwdts_member_registration_t);
+  rwdts_api_t *apih = mbr_data->reg->apih;
+  RW_ASSERT_TYPE(apih, rwdts_api_t);
+
+  rwdts_member_data_object_t *mobj = DTS_APIH_MALLOC0_TYPE(apih,
+                                                           RW_DTS_DTS_MEMORY_TYPE_DATA_OBJECT,
+                                                           sizeof(rwdts_member_data_object_t),
+                                                           rwdts_member_data_object_t);
+
+  RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
+
+  if (action != RWDTS_DELETE) {
+    RW_ASSERT(mbr_data->msg);
+    if (usemsg) {
+      mobj->msg = mbr_data->msg;
+      mbr_data->msg = NULL; // Ownership transfered
+    } else {
+      mobj->msg =  protobuf_c_message_duplicate(NULL, mbr_data->msg,mbr_data->msg->descriptor);
+    }
+    RW_ASSERT(mobj->msg);
+  }
+
+  if (useks) {
+    mobj->keyspec = mbr_data->keyspec;
+    mbr_data->keyspec = NULL; // Ownership transfered
+  } else {
+    rs = RW_KEYSPEC_PATH_CREATE_DUP(mbr_data->keyspec, NULL , &mobj->keyspec, NULL);
+    RW_ASSERT(rs == RW_STATUS_SUCCESS);
+  }
+
+  /* Force the category to match registration ks category */
+  RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mobj->keyspec, mbr_data->reg->keyspec);
+
+  // Get the keys from keyspec
+  rs = RW_KEYSPEC_PATH_GET_BINPATH(mobj->keyspec, NULL , (const uint8_t **)&mobj->key, (size_t *)&mobj->key_len, NULL);
+  RW_ASSERT(rs == RW_STATUS_SUCCESS);
+
+  mobj->reg = mbr_data->reg;
+
+  return mobj;
+}
+
+static rwdts_member_data_object_t*
+rwdts_member_dup_mobj(const rwdts_member_data_object_t *in_mobj)
+{
+  rw_status_t rs;
+  RW_ASSERT_TYPE((rwdts_member_data_object_t*)in_mobj, rwdts_member_data_object_t);
+  RW_ASSERT(in_mobj->keyspec);
+  RW_ASSERT(in_mobj->msg);
+
+  if (!in_mobj->keyspec) {
+    return NULL;
+  }
+  if (!in_mobj->msg) {
+    return NULL;
+  }
+  rwdts_member_registration_t *reg = in_mobj->reg;
+  RW_ASSERT_TYPE(reg, rwdts_member_registration_t);
+  rwdts_api_t *apih = reg->apih;
+  RW_ASSERT_TYPE(apih, rwdts_api_t);
+
+  rwdts_member_data_object_t *mobj = DTS_APIH_MALLOC0_TYPE(apih,
+                                                           RW_DTS_DTS_MEMORY_TYPE_DATA_OBJECT,
+                                                           sizeof(rwdts_member_data_object_t),
+                                                           rwdts_member_data_object_t);
+  RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
+
+  if (in_mobj->msg) {
+    mobj->msg =  protobuf_c_message_duplicate(NULL, in_mobj->msg, in_mobj->msg->descriptor);
+    RW_ASSERT(mobj->msg);
+  }
+
+  rs = RW_KEYSPEC_PATH_CREATE_DUP(in_mobj->keyspec, NULL , &mobj->keyspec, NULL);
+  RW_ASSERT(rs == RW_STATUS_SUCCESS && mobj->keyspec != NULL);
+
+  /* Force the category to match registration ks category */
+  RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mobj->keyspec, reg->keyspec);
+
+  rs = RW_KEYSPEC_PATH_GET_BINPATH(mobj->keyspec, NULL , (const uint8_t **)&mobj->key, (size_t *)&mobj->key_len, NULL);
+
+  RW_ASSERT(rs == RW_STATUS_SUCCESS);
+
+  mobj->reg = in_mobj->reg;
+
+  return mobj;
+}
+
+/*
+ * deinit a data member object
+ */
+
+rw_status_t
+rwdts_member_data_deinit(rwdts_api_t*                 apih,
+                         rwdts_member_data_object_t *mobj)
+{
+  int i;
+
+  RW_ASSERT(mobj);
+
+  if (!mobj) {
+    return RW_STATUS_FAILURE;
+  }
+
+  if (mobj->msg) {
+    protobuf_c_message_free_unpacked(NULL, mobj->msg);
+    mobj->msg = NULL;
+  }
+
+  if (mobj->keyspec) {
+    RW_KEYSPEC_PATH_FREE(mobj->keyspec, NULL, NULL );
+  }
+
+
+  if (mobj->audit) {
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_MEMBER_DATA_AUDIT,
+                       mobj->audit, rwdts_member_data_object_audit_t);
+    mobj->audit = NULL;
+  }
+
+  /* Free all the audit entries */
+  if (mobj->n_audit_trail > 0) {
+    for (i = 0; i < mobj->n_audit_trail ; i++) {
+      protobuf_c_message_free_unpacked(NULL, &mobj->audit_trail[i]->base);
+      mobj->audit_trail[i] = NULL;
+    }
+    RW_FREE(mobj->audit_trail);
+    mobj->audit_trail = NULL;
+  } else {
+    RW_ASSERT(NULL == mobj->audit_trail);
+  }
+
+
+  DTS_APIH_FREE_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_DATA_OBJECT,
+                     mobj, rwdts_member_data_object_t);
+
+  return RW_STATUS_SUCCESS;
+}
+
+rw_status_t
+rwdts_member_data_object_add_audit_trail(rwdts_member_data_object_t*          mobj,
+                                         RwDts__YangEnum__AuditTrailEvent__E  updated_by,
+                                         RwDts__YangEnum__AuditTrailAction__E action)
+{
+  char   tmp_buf[64];
+  time_t current_time;
+
+  if (mobj->n_audit_trail >= RWDTS_MEMBER_OBJ_MAX_AUDIT_TRAIL) {
+    // ATTN -- may be this should add this as the last entry
+    return RW_STATUS_FAILURE;
+  }
+  mobj->audit_trail = (RWPB_T_MSG(RwDts_output_StartDts_AuditSummary_FailedReg_ObjDts_AuditTrail)**)
+                      realloc(mobj->audit_trail, (mobj->n_audit_trail+1)* sizeof(RWPB_T_MSG(RwDts_output_StartDts_AuditSummary_FailedReg_ObjDts_AuditTrail)*));
+  RW_ASSERT(mobj->audit_trail != NULL);
+
+  int idx = mobj->n_audit_trail;
+
+  mobj->n_audit_trail++;
+
+  RWPB_M_MSG_DECL_PTR_ALLOC(RwDts_output_StartDts_AuditSummary_FailedReg_ObjDts_AuditTrail, tmpobj);
+  mobj->audit_trail[idx] = tmpobj;
+  mobj->audit_trail[idx]->updated_by = updated_by;
+  mobj->audit_trail[idx]->has_updated_by = 1;
+  mobj->audit_trail[idx]->action     = action;
+  mobj->audit_trail[idx]->has_action = 1;
+  time(&current_time);
+  mobj->audit_trail[idx]->event_time = strdup(ctime_r(&current_time, tmp_buf));
+
+  return (RW_STATUS_SUCCESS);
+}
+
+rwdts_xact_t*
+rwdts_member_data_advice_query_action_xact(rwdts_xact_t*             xact,
+                                           rwdts_xact_block_t*       block,
+                                           rwdts_member_reg_handle_t regh,
+                                           rw_keyspec_path_t*        keyspec,
+                                           const ProtobufCMessage*   msg,
+                                           RWDtsQueryAction          action,
+                                           uint32_t                  flags,
+                                           bool                      inc_serial)
+{
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+
+  rwdts_api_t *apih = reg->apih;
+  uint64_t corrid = 1000; /* Need to find out how to generate this */
+  RW_ASSERT(apih);
+  if (!apih) {
+    return NULL;
+  }
+  rw_keyspec_path_t *merged_keyspec = NULL;
+  rw_status_t rw_status;
+
+  RW_ASSERT(action != RWDTS_QUERY_INVALID);
+  RW_ASSERT_TYPE(xact, rwdts_xact_t);
+  RW_ASSERT(block);
+
+  apih->stats.num_advises++;
+  reg->stats.num_advises++;
+
+
+  if (keyspec) {
+    rw_status = RW_KEYSPEC_PATH_CREATE_DUP(keyspec, NULL , &merged_keyspec, NULL);
+  } else {
+    rw_status = RW_KEYSPEC_PATH_CREATE_DUP(reg->keyspec, NULL , &merged_keyspec, NULL);
+  }
+  if (rw_status != RW_STATUS_SUCCESS) {
+    RWDTS_XACT_ABORT(xact, rw_status, RWDTS_ERRSTR_KEY_DUP);
+    return NULL;
+  }
+  if (rw_keyspec_path_has_wildcards(merged_keyspec)) {
+    RWDTS_XACT_ABORT(xact, rw_status, RWDTS_ERRSTR_KEY_WILDCARDS);
+    RW_KEYSPEC_PATH_FREE(merged_keyspec, NULL, NULL);
+    return NULL;
+  }
+
+  RW_ASSERT(merged_keyspec);
+  {
+    char *tmp = NULL;
+
+    rw_keyspec_path_get_new_print_buffer(merged_keyspec, NULL ,
+                                rwdts_api_get_ypbc_schema(apih),
+                                &tmp);
+
+    RWDTS_API_LOG_EVENT(apih, KeyspecUpdatedPe, "Updated keyspec with path entry", tmp ? tmp : "");
+    free(tmp);
+  }
+
+  flags |= RWDTS_XACT_FLAG_ADVISE;
+  flags |= RWDTS_XACT_FLAG_NOTRAN;
+  // Increment the serial associated with this registration 
+  if (inc_serial) {
+    rwdts_member_reg_handle_inc_serial(reg);
+  }
+
+
+  rw_status_t rs = rwdts_xact_block_add_query_ks_reg(block,
+                              merged_keyspec,
+                              action,
+                              flags,
+                              corrid,
+                              msg,
+                              reg);
+  RW_ASSERT(rs == RW_STATUS_SUCCESS);
+  // Free the keyspec
+  RW_KEYSPEC_PATH_FREE(merged_keyspec, NULL , NULL);
+  return xact;
+}
+
+
+
 /*
  * Functions to handle member_data_record used to invoke
  * the async dispatch call for the various data member APIs.
@@ -835,8 +830,18 @@ rwdts_member_data_record_init(rwdts_xact_t*                xact,
                               rwdts_event_cb_t*            member_advise_cb)
 {
   rwdts_member_data_record_t *mbr_data;
+  rwdts_api_t* apih;
 
-  mbr_data = RW_MALLOC0_TYPE(sizeof(rwdts_member_data_record_t), rwdts_member_data_record_t);
+  if (reg){
+    apih  = reg->apih;
+  }else{
+    apih = xact->apih;
+  }
+  RW_ASSERT(apih);
+  mbr_data = DTS_APIH_MALLOC0_TYPE(apih,
+                                   RW_DTS_DTS_MEMORY_TYPE_DATA_RECORD,
+                                   sizeof(rwdts_member_data_record_t),
+                                   rwdts_member_data_record_t);
 
   mbr_data->xact = xact;
   mbr_data->reg  = reg;
@@ -863,7 +868,8 @@ rwdts_member_data_record_init(rwdts_xact_t*                xact,
 
 /* deinit a data member record */
 static rw_status_t
-rwdts_member_data_record_deinit(rwdts_member_data_record_t *mbr_data)
+rwdts_member_data_record_deinit(rwdts_api_t *apih,
+                                rwdts_member_data_record_t *mbr_data)
 {
   RW_ASSERT_TYPE(mbr_data, rwdts_member_data_record_t);
 
@@ -895,7 +901,8 @@ rwdts_member_data_record_deinit(rwdts_member_data_record_t *mbr_data)
 
   }
 
-  RW_FREE_TYPE(mbr_data, rwdts_member_data_record_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_DATA_RECORD,
+                     mbr_data, rwdts_member_data_record_t);
 
   return RW_STATUS_SUCCESS;
 }
@@ -1068,7 +1075,7 @@ rwdts_member_data_create_list_element_f(rwdts_member_data_record_t *mbr_data)
   }
 
   if ((pe == NULL) && (mk == NULL)) {
-    rw_status = rwdts_member_data_record_deinit(mbr_data);
+    rw_status = rwdts_member_data_record_deinit(reg->apih, mbr_data);
     RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
     return RW_STATUS_FAILURE;
   }
@@ -1082,7 +1089,7 @@ rwdts_member_data_create_list_element_f(rwdts_member_data_record_t *mbr_data)
       RWDTS_MEMBER_SEND_ERROR(xact, reg->keyspec, NULL, NULL, NULL, rw_status,
                               RWDTS_ERRSTR_RSP_MERGE);
       RW_ASSERT(merged_keyspec == NULL);
-      rw_status = rwdts_member_data_record_deinit(mbr_data);
+      rw_status = rwdts_member_data_record_deinit(reg->apih, mbr_data);
       RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
       return RW_STATUS_SUCCESS;
     }
@@ -1199,7 +1206,7 @@ rwdts_member_data_update_list_element_f(rwdts_member_data_record_t *mbr_data)
   RW_ASSERT(msg);
 
   if ((pe == NULL) && (mk == NULL)) {
-    rw_status = rwdts_member_data_record_deinit(mbr_data);
+    rw_status = rwdts_member_data_record_deinit(reg->apih, mbr_data);
     RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
     return RW_STATUS_FAILURE;
   }
@@ -1212,7 +1219,7 @@ rwdts_member_data_update_list_element_f(rwdts_member_data_record_t *mbr_data)
       RW_ASSERT(merged_keyspec == NULL);
       RWDTS_MEMBER_SEND_ERROR(xact, NULL, NULL, NULL, NULL,
                               rw_status, RWDTS_ERRSTR_RSP_MERGE);
-      rw_status = rwdts_member_data_record_deinit(mbr_data);
+      rw_status = rwdts_member_data_record_deinit(reg->apih, mbr_data);
       RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
       return RW_STATUS_FAILURE;
     }
@@ -1299,7 +1306,7 @@ rwdts_member_data_delete_list_element_f(rwdts_member_data_record_t *mbr_data)
   // ATTN: per rajesh: invalid test: RW_ASSERT(msg);
 
   if ((pe == NULL) && (mk == NULL)) {
-    rw_status = rwdts_member_data_record_deinit(mbr_data);
+    rw_status = rwdts_member_data_record_deinit(reg->apih, mbr_data);
     RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
     return RW_STATUS_FAILURE;
   }
@@ -1311,7 +1318,7 @@ rwdts_member_data_delete_list_element_f(rwdts_member_data_record_t *mbr_data)
     if (merged_keyspec) {
       RW_KEYSPEC_PATH_FREE(merged_keyspec, NULL , NULL);
     }
-    rw_status = rwdts_member_data_record_deinit(mbr_data);
+    rw_status = rwdts_member_data_record_deinit(reg->apih, mbr_data);
     RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
     return RW_STATUS_FAILURE;
   }
@@ -1334,7 +1341,7 @@ rwdts_member_data_get_cursor(rwdts_xact_t* xact,
 
     xact->n_cursor++;
     xact->cursor = realloc(xact->cursor, sizeof(xact->cursor[0]) * xact->n_cursor);
-    xact->cursor[xact->n_cursor-1] = RW_MALLOC0_TYPE(sizeof(rwdts_member_cursor_impl_t), rwdts_member_cursor_impl_t);
+    xact->cursor[xact->n_cursor-1] = DTS_APIH_MALLOC0_TYPE(reg->apih, RW_DTS_DTS_MEMORY_TYPE_MEMBER_CURSOR, sizeof(rwdts_member_cursor_impl_t), rwdts_member_cursor_impl_t);
     xact->cursor[xact->n_cursor-1]->xact = xact;
     return ((rwdts_member_cursor_t *)xact->cursor[xact->n_cursor-1]);
   }
@@ -1342,7 +1349,8 @@ rwdts_member_data_get_cursor(rwdts_xact_t* xact,
   if (reg) {
     reg->n_cursor++;
     reg->cursor = realloc(reg->cursor, sizeof(reg->cursor[0]) * reg->n_cursor);
-    reg->cursor[reg->n_cursor-1] = RW_MALLOC0_TYPE(sizeof(rwdts_member_cursor_impl_t), rwdts_member_cursor_impl_t);
+    reg->cursor[reg->n_cursor-1] = DTS_APIH_MALLOC0_TYPE(reg->apih, RW_DTS_DTS_MEMORY_TYPE_MEMBER_CURSOR,
+                                                         sizeof(rwdts_member_cursor_impl_t), rwdts_member_cursor_impl_t);
     reg->cursor[reg->n_cursor-1]->reg = reg;
     return ((rwdts_member_cursor_t *)reg->cursor[reg->n_cursor-1]);
   }
@@ -1361,7 +1369,8 @@ rwdts_member_data_delete_cursors(rwdts_xact_t* xact,
   if (xact && xact->n_cursor) {
     for(count = 0; count < xact->n_cursor; count++) {
       RW_ASSERT_TYPE(xact->cursor[count], rwdts_member_cursor_impl_t);
-      RW_FREE_TYPE(xact->cursor[count], rwdts_member_cursor_impl_t);
+      DTS_APIH_FREE_TYPE(xact->apih,RW_DTS_DTS_MEMORY_TYPE_MEMBER_CURSOR,
+                         xact->cursor[count], rwdts_member_cursor_impl_t);
     }
     free(xact->cursor);
     xact->cursor = NULL;
@@ -1371,7 +1380,8 @@ rwdts_member_data_delete_cursors(rwdts_xact_t* xact,
   if (reg && reg->n_cursor) {
     for(count = 0; count < reg->n_cursor; count++) {
       RW_ASSERT_TYPE(reg->cursor[count], rwdts_member_cursor_impl_t);
-      RW_FREE_TYPE(reg->cursor[count], rwdts_member_cursor_impl_t);
+      DTS_APIH_FREE_TYPE(reg->apih, RW_DTS_DTS_MEMORY_TYPE_MEMBER_CURSOR,
+                          reg->cursor[count], rwdts_member_cursor_impl_t);
     }
     free(reg->cursor);
     reg->cursor = NULL;
@@ -1776,84 +1786,63 @@ rwdts_member_data_create_list_element_w_key(rwdts_xact_t*             xact,
 static rw_status_t
 rwdts_member_data_create_list_element_w_key_f(rwdts_member_data_record_t *mbr_data)
 {
-  rwdts_member_data_object_t*  mobj       = NULL;
+  rwdts_member_data_object_t*  xact_mobj       = NULL;
+  rwdts_member_data_object_t*  commited_mobj       = NULL;  
   rwdts_member_data_object_t*  new_mobj   = NULL;
   rwdts_member_data_object_t** obj_list_p = NULL;
   rwdts_api_t*                 apih       = NULL;
   const uint8_t*               key        = NULL;
   size_t                       key_len    = 0;
   rw_status_t                  rw_status;
-  uint8_t                      free_obj   = 0;
-
+  bool free_new = false;
+  char *error_str = NULL;
+  rwdts_shard_handle_t* shard             = NULL;
+  
   RW_ASSERT_TYPE(mbr_data, rwdts_member_data_record_t);
   RW_ASSERT(mbr_data->reg     != NULL);
   RW_ASSERT(mbr_data->msg     != NULL);
   RW_ASSERT(mbr_data->keyspec != NULL);
 
-  if (mbr_data->reg == NULL) {
-    return RW_STATUS_FAILURE;
+  if ((mbr_data->reg == NULL) ||
+      (mbr_data->msg == NULL) ||
+      (mbr_data->keyspec == NULL)){ 
+    error_str = "BAD member data";
+    rw_status =  RW_STATUS_FAILURE;
+    goto ret;
   }
-  if (mbr_data->msg == NULL) {
-    return RW_STATUS_FAILURE;
-  }
-  if (mbr_data->keyspec == NULL) {
-    return RW_STATUS_FAILURE;
-  }
+
   RW_ASSERT_TYPE(mbr_data->reg, rwdts_member_registration_t);
   if (rw_keyspec_path_has_wildcards(mbr_data->keyspec)) {
-    if (mbr_data->xact != NULL) {
-      RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
-                              NULL, rw_status, RWDTS_ERRSTR_KEY_WILDCARDS);
-      return RW_STATUS_FAILURE;
-    }
-    else {
-      RW_ASSERT_MESSAGE(0, RWDTS_ERRSTR_KEY_WILDCARDS);
-    }
+    error_str = RWDTS_ERRSTR_KEY_WILDCARDS;
+    rw_status = RW_STATUS_FAILURE;
+    goto ret;
   }
 
   apih = mbr_data->reg->apih;
   RW_ASSERT_TYPE(apih, rwdts_api_t);
+  shard = mbr_data->reg->shard;
 
-  if (mbr_data->xact != NULL) {
-    // Create the object in the context of a transaction
-    if (mbr_data->reg->flags & RWDTS_FLAG_PUBLISHER) { 
-      obj_list_p = &mbr_data->xact->pub_obj_list;
-    } else {
-      obj_list_p = &mbr_data->xact->sub_obj_list;
+  if (shard && shard->appdata) {
+    rw_status =  rwdts_shard_handle_appdata_create_element(shard, mbr_data->keyspec,
+                                                           mbr_data->msg);
+    if (rw_status == RW_STATUS_SUCCESS) {
+      new_mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_CREATE);
+      free_new = 1;
+    }else{
+      error_str = "shard update failed";
     }
-  } else {
-    // Create the object in the committed context of this member
-    obj_list_p = &mbr_data->reg->obj_list;
+    goto ret;
   }
-  RW_ASSERT(obj_list_p);
 
   /* Force the category to match registration ks category */
   RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mbr_data->keyspec, mbr_data->reg->keyspec);
-
+  
   rw_status = RW_KEYSPEC_PATH_GET_BINPATH(mbr_data->keyspec, NULL ,
                                           (const uint8_t **)&key,
                                           &key_len, NULL);
   if (rw_status != RW_STATUS_SUCCESS) {
-    if (mbr_data->xact) {
-      RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
-                              NULL, rw_status, RWDTS_ERRSTR_KEY_BINPATH);
-    }
-    else {
-      RW_ASSERT_MESSAGE(0, RWDTS_ERRSTR_KEY_BINPATH);
-    }
-    goto finish;
-  }
-
-  HASH_FIND(hh_data, (*obj_list_p), key, key_len, mobj);
-
-  if (mobj == NULL && mbr_data->xact != NULL) {
-   // Check committed data
-    HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, mobj);
-  }
-
-  if (mobj != NULL) {
-    /* May include a deleted item, in which case our create is also an update */
-    return (rwdts_member_data_update_list_element_w_key_f(mbr_data));
+    error_str = RWDTS_ERRSTR_KEY_BINPATH;
+    goto ret;
   }
 
   // Strip unknown in inbound Pb
@@ -1861,34 +1850,76 @@ rwdts_member_data_create_list_element_w_key_f(rwdts_member_data_record_t *mbr_da
     if (protobuf_c_message_unknown_get_count(mbr_data->msg)) {
       rwdts_report_unknown_fields(mbr_data->keyspec, apih, mbr_data->msg);
       protobuf_c_message_delete_unknown_all(NULL, mbr_data->msg);
-      RW_ASSERT(!protobuf_c_message_unknown_get_count(mbr_data->msg))
+      RW_ASSERT(!protobuf_c_message_unknown_get_count(mbr_data->msg));
+    }
+  }
+  
+  if (mbr_data->xact != NULL) {
+    // Create the object in the context of a transaction
+    if (mbr_data->reg->flags & RWDTS_FLAG_PUBLISHER) { 
+      obj_list_p = &mbr_data->xact->pub_obj_list;
+    } else {
+      obj_list_p = &mbr_data->xact->sub_obj_list;
+    }
+    RW_ASSERT(obj_list_p);
+    HASH_FIND(hh_data, (*obj_list_p), key, key_len, xact_mobj);
+    if (xact_mobj){
+      /* May include a deleted item, in which case our create is also an update */
+      return (rwdts_member_data_update_list_element_w_key_f(mbr_data));
+    }else{
+      HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, commited_mobj);
+      if (commited_mobj){
+        /*There is an mobj in the commited list so treat it as an update*/
+        /* May include a deleted item, in which case our create is also an update */
+        return (rwdts_member_data_update_list_element_w_key_f(mbr_data));
+      }
+    }
+    /*Create a new mobj in the xact*/
+    new_mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_CREATE);
+    RW_ASSERT(new_mobj);
+    RW_ASSERT(new_mobj->key);
+    RW_ASSERT(new_mobj->key_len > 0);
+    new_mobj->create_flag = 1;
+    apih->stats.num_xact_create_objects++;
+    mbr_data->reg->stats.num_xact_create_objects++;
+    HASH_ADD_KEYPTR(hh_data, (*obj_list_p), new_mobj->key, new_mobj->key_len, new_mobj);
+  } else {
+    // Create the object in the committed context of this member
+    HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, commited_mobj);
+    if (commited_mobj){
+      /* May include a deleted item, in which case our create is also an update */
+      return (rwdts_member_data_update_list_element_w_key_f(mbr_data));
+    }else{
+      /*Create a new mobj in the xact*/
+      new_mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_CREATE);
+      RW_ASSERT(new_mobj);
+      RW_ASSERT(new_mobj->key);
+      RW_ASSERT(new_mobj->key_len > 0);
+      HASH_ADD_KEYPTR(hh_data, mbr_data->reg->obj_list, new_mobj->key, new_mobj->key_len, new_mobj);
     }
   }
 
-  new_mobj = rwdts_member_data_store(obj_list_p, mbr_data, &free_obj);
-  if (!new_mobj) {
-    rw_status = RW_STATUS_FAILURE;
+ret:
+  /* Add audit trail, update data store, increment serial and send advise as necessary */
+  if (new_mobj){
+    rwdts_member_data_finalize(mbr_data,
+                               new_mobj,
+                               RWDTS_QUERY_CREATE,
+                               RW_DTS_AUDIT_TRAIL_ACTION_OBJ_CREATE);
+    if (free_new){
+      rw_status = rwdts_member_data_deinit(apih, new_mobj);
+      RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
+    }
+  }
+  if (rw_status != RW_STATUS_SUCCESS){
     if (mbr_data->xact) {
       RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec,
                               NULL, NULL, NULL,
-                              rw_status, "Did not get the new object in list");
+                              rw_status,"%s", error_str);
     }
-    goto finish;
   }
 
-  /* Add audit trail, update data store, increment serial and send advise as necessary */
-  rwdts_member_data_finalize(mbr_data,
-                             new_mobj,
-                             RWDTS_QUERY_CREATE,
-                             RW_DTS_AUDIT_TRAIL_ACTION_OBJ_CREATE);
-
-  if (free_obj) {
-    rw_status = rwdts_member_data_deinit(new_mobj);
-    RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
-  }
-
-finish:
-  rwdts_member_data_record_deinit(mbr_data);
+  rwdts_member_data_record_deinit(apih, mbr_data);
   return rw_status;
 }
 
@@ -1992,40 +2023,60 @@ rw_status_t
 rwdts_member_data_update_list_element_w_key_f(rwdts_member_data_record_t *mbr_data)
 {
   rwdts_member_data_object_t** obj_list_p = NULL;
-  rwdts_member_data_object_t*  mobj       = NULL;
-  rwdts_member_data_object_t*  c_mobj     = NULL;
+  rwdts_member_data_object_t*  update_mobj       = NULL;
+  rwdts_member_data_object_t*  xact_mobj       = NULL;
+  rwdts_member_data_object_t*  commited_mobj     = NULL;
   rwdts_api_t*  apih                      = NULL;
   rw_status_t   rw_status                 = RW_STATUS_SUCCESS;
   const uint8_t* key                      = NULL;
   size_t key_len                          = 0;
-
+  rwdts_shard_handle_t* shard             = NULL;
+  bool free_update = false;
+  char *error_str = NULL;
+  
   RW_ASSERT_TYPE(mbr_data, rwdts_member_data_record_t);
   RW_ASSERT_TYPE(mbr_data->reg, rwdts_member_registration_t);
   RW_ASSERT(mbr_data->keyspec);
   RW_ASSERT(mbr_data->msg);
 
-  if (!mbr_data->keyspec) {
-    return RW_STATUS_FAILURE;
+  if ((mbr_data->reg == NULL) ||
+      (mbr_data->msg == NULL) ||
+      (mbr_data->keyspec == NULL)){ 
+    error_str = "BAD member data";
+    rw_status =  RW_STATUS_FAILURE;
+    goto ret;
   }
-  if (!mbr_data->msg) {
-    return RW_STATUS_FAILURE;
-  }
-
-
   if (rw_keyspec_path_has_wildcards(mbr_data->keyspec)) {
-    if (mbr_data->xact) {
-      rw_status = RW_STATUS_FAILURE;
-      RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
-                              NULL, rw_status, RWDTS_ERRSTR_KEY_BINPATH);
-      return rw_status;
-    }
-    else {
-      RW_ASSERT_MESSAGE(0, RWDTS_ERRSTR_KEY_WILDCARDS);
-    }
+    error_str = RWDTS_ERRSTR_KEY_WILDCARDS;
+    rw_status = RW_STATUS_FAILURE;
+    goto ret;
   }
-
+  
   apih = mbr_data->reg->apih;
   RW_ASSERT_TYPE(apih, rwdts_api_t);
+  shard = mbr_data->reg->shard;
+  
+  if (shard && shard->appdata) {
+    rw_status = rwdts_shard_handle_appdata_update_element(shard, mbr_data->keyspec, mbr_data->msg);
+    if (rw_status == RW_STATUS_SUCCESS) {
+      update_mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_UPDATE);
+      free_update = true;
+    }else{
+      error_str = "shard update failed";
+    }
+    goto ret;
+  }
+
+  
+  /* Force the category to match registration ks category */
+  RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mbr_data->keyspec,
+                                         mbr_data->reg->keyspec);
+  rw_status = RW_KEYSPEC_PATH_GET_BINPATH(mbr_data->keyspec, NULL,
+                                          (const uint8_t **)&key, &key_len, NULL);
+  if (rw_status != RW_STATUS_SUCCESS) {
+    error_str = RWDTS_ERRSTR_KEY_BINPATH;
+    goto ret;
+  }
 
   if (mbr_data->xact != NULL) {
     // Create the object in the context of a transaction
@@ -2034,88 +2085,32 @@ rwdts_member_data_update_list_element_w_key_f(rwdts_member_data_record_t *mbr_da
     } else {
       obj_list_p = &mbr_data->xact->sub_obj_list;
     }
-  } else {
-    // Create the object in the committed context of this member
-    obj_list_p = &mbr_data->reg->obj_list;
-  }
-  RW_ASSERT(obj_list_p);
-
-  /* Force the category to match registration ks category */
-  RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mbr_data->keyspec,
-                                         mbr_data->reg->keyspec);
-
-  rw_status = RW_KEYSPEC_PATH_GET_BINPATH(mbr_data->keyspec, NULL,
-                                          (const uint8_t **)&key, &key_len, NULL);
-  if (rw_status != RW_STATUS_SUCCESS) {
-    if (mbr_data->xact) {
-      RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
-                              NULL, rw_status, RWDTS_ERRSTR_KEY_BINPATH);
-      return rw_status;
-    }
-    else {
-      RW_ASSERT_MESSAGE(0, RWDTS_ERRSTR_KEY_BINPATH);
-    }
-  }
-
-  rwdts_shard_handle_t* shard = mbr_data->reg->shard;
-
-  if (shard && shard->appdata) {
-    rw_status = rwdts_shard_handle_appdata_update_element(shard, mbr_data->keyspec, mbr_data->msg);
-    if (rw_status == RW_STATUS_SUCCESS) {
-      mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_UPDATE);
-
-      /* Add audit trail, update data store, increment serial and send advise as necessary */
-      rwdts_member_data_finalize(mbr_data,
-                                 mobj,
-                                 RWDTS_QUERY_UPDATE,
-                                 RW_DTS_AUDIT_TRAIL_ACTION_OBJ_UPDATE);
-      rw_status = rwdts_member_data_deinit(mobj);
-      RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
-    }
-
-    /* The following function consumes ebverything under mbr_data including  merged_keyspec */
-    rw_status_t rs  = rwdts_member_data_record_deinit(mbr_data);
-    RW_ASSERT(rs == RW_STATUS_SUCCESS);
-
-    return RW_STATUS_SUCCESS;
-  }
-
-  HASH_FIND(hh_data, (*obj_list_p), key, key_len, mobj);
-
-  if (mobj == NULL) {
-    if (mbr_data->xact != NULL) {
-      // Check committed data
-
-      HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, c_mobj);
-      if (c_mobj != NULL) {
-        /* Add an entry to xact data; it will be updated below */
-        mobj = rwdts_member_dup_mobj(c_mobj);
-        RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-        HASH_ADD_KEYPTR(hh_data, (*obj_list_p), mobj->key, mobj->key_len, mobj);
-      } else {
-        /* Call create with the incoming msg */
+    HASH_FIND(hh_data, (*obj_list_p), key, key_len, xact_mobj);
+    if (!xact_mobj){
+      /*Could not find the mobj in the xact so look it up in the commited and
+        duplicate it. If not found in committed then */
+      HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, commited_mobj);
+      if (commited_mobj){
+        xact_mobj = rwdts_member_dup_mobj(commited_mobj);
+        RW_ASSERT_TYPE(xact_mobj, rwdts_member_data_object_t);
+        HASH_ADD_KEYPTR(hh_data, (*obj_list_p), xact_mobj->key, xact_mobj->key_len, xact_mobj);
+      }else{
         return (rwdts_member_data_create_list_element_w_key_f(mbr_data));
       }
-    } else { // xact == NULL
-      /* There is no existing mobj in commit data, and no xact.
-         Adjust commit data to taste. */
-      RW_ASSERT(obj_list_p == &mbr_data->reg->obj_list);
-
+    }
+    update_mobj = xact_mobj;
+  }else{
+    /*Commited list update i.e not an xact*/
+    HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, commited_mobj);
+    if (!commited_mobj){
+      /*Could not find a mobj in commited list*/
       /* Ignore REPLACE flag, just create if there wasn't one, that's
          what the xact flavor does.  Unclear if this is kosher
          inasmuch as we had one path doing one thing and the other the
          opposite! */
       return (rwdts_member_data_create_list_element_w_key_f(mbr_data));
-
-      /* This former REPLACE-specific path appears to create an entry
-         that goes on below to get merged with itself.  Unclear if
-         that's advisable. */
-      if (0) {
-        mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_UPDATE);
-        RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-        HASH_ADD_KEYPTR(hh_data, (*obj_list_p), mobj->key, mobj->key_len, mobj);
-      }
     }
+    update_mobj = commited_mobj;
   }
 
   // Strip unknown in inbound Pb
@@ -2127,25 +2122,37 @@ rwdts_member_data_update_list_element_w_key_f(rwdts_member_data_record_t *mbr_da
     }
   }
 
-  // Lookup the data
-  HASH_FIND(hh_data, (*obj_list_p), key, key_len, mobj);
+  RW_ASSERT(update_mobj);
+  RW_ASSERT_TYPE(update_mobj, rwdts_member_data_object_t);
 
-  RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
+  rwdts_member_data_merge_store(mbr_data, update_mobj);
 
-  rwdts_member_data_merge_store(mbr_data, mobj);
-
+ret:
   /* Add audit trail, update data store, increment serial and send advise as necessary */
-  rwdts_member_data_finalize(mbr_data,
-                             mobj,
-                             RWDTS_QUERY_UPDATE,
-                             RW_DTS_AUDIT_TRAIL_ACTION_OBJ_UPDATE);
-
+  if (update_mobj){
+    rwdts_member_data_finalize(mbr_data,
+                               update_mobj,
+                               RWDTS_QUERY_UPDATE,
+                               RW_DTS_AUDIT_TRAIL_ACTION_OBJ_UPDATE);
+    
+    if (free_update){
+      rw_status = rwdts_member_data_deinit(apih, update_mobj);
+      RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
+    }
+  }
+  if (rw_status != RW_STATUS_SUCCESS){
+    if (mbr_data->xact) {
+      RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
+                              NULL, rw_status, "%s", error_str);
+    }
+  }
   /* The following function consumes ebverything under mbr_data including  merged_keyspec */
-  rw_status_t rs  = rwdts_member_data_record_deinit(mbr_data);
-  RW_ASSERT(rs == RW_STATUS_SUCCESS);
+  rwdts_member_data_record_deinit(apih, mbr_data);
+  
 
-  return RW_STATUS_SUCCESS;
+  return rw_status;
 }
+
 
 /*
  * Delete a list element with key
@@ -2189,14 +2196,19 @@ rwdts_member_data_delete_list_element_w_key_f(rwdts_member_data_record_t *mbr_da
 {
 
   rwdts_member_data_object_t** obj_list_p = NULL;
-  rwdts_member_data_object_t*  mobj       = NULL;
+  rwdts_member_data_object_t*  commited_mobj       = NULL;
+  rwdts_member_data_object_t*  xact_mobj       = NULL;
   rwdts_api_t*  apih                      = NULL;
   rw_status_t   rw_status                 = RW_STATUS_SUCCESS;
   const uint8_t* key                      = NULL;
   size_t key_len                          = 0;
+  rwdts_member_data_object_t*  update_mobj       = NULL;
   bool update_advice                      = false;
   rw_keyspec_path_t *derived_ks = NULL;
-
+  size_t depth_i;
+  size_t depth_o;
+  char *error_str = NULL;
+  
   RW_ASSERT_TYPE(mbr_data, rwdts_member_data_record_t);
   RW_ASSERT_TYPE(mbr_data->reg, rwdts_member_registration_t);
   RW_ASSERT(mbr_data->keyspec);
@@ -2206,7 +2218,9 @@ rwdts_member_data_delete_list_element_w_key_f(rwdts_member_data_record_t *mbr_da
 
   apih = mbr_data->reg->apih;
   RW_ASSERT_TYPE(apih, rwdts_api_t);
-
+  depth_i = rw_keyspec_path_get_depth(mbr_data->keyspec);
+  depth_o  = rw_keyspec_path_get_depth(mbr_data->reg->keyspec);
+  
   /* Force the category to match registration ks category */
   RW_KEYSPEC_FORCE_CATEGORY_TO_MATCH_REG(apih, mbr_data->keyspec, mbr_data->reg->keyspec);
 
@@ -2217,29 +2231,25 @@ rwdts_member_data_delete_list_element_w_key_f(rwdts_member_data_record_t *mbr_da
     } else {
       obj_list_p = &mbr_data->xact->sub_obj_list;
     }
-  } else {
-    // Create the object in the committed context of this member
-    obj_list_p = &mbr_data->reg->obj_list;
+    RW_ASSERT(obj_list_p);
+    if (obj_list_p == NULL) {
+      error_str = "There is no obj list in xact";
+      rw_status = RW_STATUS_FAILURE;
+      goto finish;
+    }
   }
-
-  RW_ASSERT(obj_list_p);
-  if (obj_list_p == NULL) {
-    goto finish;
-  }
-
-  size_t depth_i = rw_keyspec_path_get_depth(mbr_data->keyspec);
-  size_t depth_o = rw_keyspec_path_get_depth(mbr_data->reg->keyspec);
 
   rw_status= rw_keyspec_path_create_dup(mbr_data->keyspec, NULL, &derived_ks);
   RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
   if (rw_status != RW_STATUS_SUCCESS) {
+    rw_status = RW_STATUS_FAILURE;
+    error_str = "Cannot duplicate keyspec";
     goto finish;
   }
   RW_ASSERT(derived_ks);
 
-  /* The basic assumption accepted here is that there will not be wildcard in the
-   * middle of the query-keyspec */
 
+  //Update the derived keyspec and get the key and keylen
   if (depth_i > depth_o) {
     /* The duplicate of received keyspec is truncated at the registration point.
      * This is done to fetch the stored-object based on the received key. The
@@ -2249,311 +2259,268 @@ rwdts_member_data_delete_list_element_w_key_f(rwdts_member_data_record_t *mbr_da
     rw_status = rw_keyspec_path_trunc_suffix_n(derived_ks, NULL, depth_o);
     RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
     if (rw_status != RW_STATUS_SUCCESS) {
+      error_str = "Cannot truncate query keysepc to reg keyspec";
       goto finish;
     }
+  }
 
-    if (mbr_data->xact == NULL) {
-      rw_status = RW_KEYSPEC_PATH_GET_BINPATH(derived_ks, NULL , (const uint8_t **)&key, &key_len, NULL);
-      RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
-      RW_ASSERT(key);
-      mobj = NULL;
-      /* Fetch the stored-object based on truncated query-keyspec */
-      HASH_FIND(hh_data, (*obj_list_p), key, key_len, mobj);
-      if (mobj) {
-        RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-        /* Delete the proto field from the stored-object based on received
-         * (non-truncated) query keyspec */
+  //Get the key and keylen from the derived keyspec
+  rw_status = RW_KEYSPEC_PATH_GET_BINPATH(derived_ks, NULL , (const uint8_t **)&key, &key_len, NULL);
+  if (rw_status != RW_STATUS_SUCCESS) {
+    if (mbr_data->xact) {
+      RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
+                              NULL, RW_STATUS_FAILURE, RWDTS_ERRSTR_KEY_BINPATH);
+      rw_status = RW_STATUS_FAILURE;
+      error_str = "Cannot derive the key from keyspec";
+      goto finish;
+    }
+    else {
+      RW_ASSERT_MESSAGE(0, RWDTS_ERRSTR_KEY_WILDCARDS);
+    }
+  }
+  RW_ASSERT(key);
+  if (key == NULL) {
+    rw_status = RW_STATUS_FAILURE;
+    error_str = "Cannot derive the key from keyspec";
+    goto finish;
+  }    
+  
+  //Now that we have the key, find the mobjs in the xact and the committed list
+  if (depth_i > depth_o) {
+    if (!mbr_data->xact){
+      HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, commited_mobj);
+      if (commited_mobj){
+        RW_ASSERT_TYPE(commited_mobj, rwdts_member_data_object_t);
         rw_status = RW_KEYSPEC_PATH_DELETE_PROTO_FIELD(NULL,
-                                                       mobj->keyspec,
+                                                       commited_mobj->keyspec,
                                                        mbr_data->keyspec,
-                                                       mobj->msg,
+                                                       commited_mobj->msg,
                                                        NULL);
         if (rw_status != RW_STATUS_SUCCESS) {
-          char  *tmp_str = NULL;
-          rw_keyspec_path_get_new_print_buffer(mbr_data->keyspec, NULL ,
-                                               rwdts_api_get_ypbc_schema(apih),
-                                               &tmp_str);
-          RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, DeleteNonExistent, "Attempting to delete non existent data",
-                                         apih->client_path, mbr_data->reg->keystr, tmp_str);
-          if (tmp_str) {
-            free(tmp_str);
-          }
+          error_str =  "Attempting to delete non existent data";
           goto finish;
         }
         update_advice = true;
-      } else {
+        update_mobj = commited_mobj;
+      }else{
         RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
                                 NULL, rw_status,
                                 "Delete list element failed; no such object");
+        rw_status = RW_STATUS_FAILURE;
+        error_str =  "Delete list element failed; no such object";
         goto finish;
       }
-    } else {
-      rwdts_member_data_object_t *newobj = NULL;
-      /* If the query keyspec is deeper than the registered keyspec, it needs to
-         be truncated to find the object. Most of this code is temporary
-         and will be modified when protobuf delta is available */
-      if (rw_keyspec_path_has_wildcards(derived_ks)) {
-        RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
-                                NULL, RW_STATUS_FAILURE,
-                                RWDTS_ERRSTR_KEY_WILDCARDS);
-        goto finish;
+    }else{
+      /* Find the stored data-object from the non-committed list */
+      HASH_FIND(hh_data, (*obj_list_p), key, key_len, xact_mobj);
+      if (!xact_mobj){
+        HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, commited_mobj);
+        if (commited_mobj){
+          xact_mobj = rwdts_member_data_duplicate_obj(commited_mobj);
+          xact_mobj->replace_flag = 1;
+          xact_mobj->update_flag = 1;
+          HASH_ADD_KEYPTR(hh_data, (*obj_list_p), xact_mobj->key, xact_mobj->key_len, xact_mobj);
+          apih->stats.num_xact_update_objects++;
+          mbr_data->reg->stats.num_xact_update_objects++;
+        }else{
+          RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
+                                  NULL, rw_status,
+                                  "Delete list element failed; no such object");
+          rw_status = RW_STATUS_FAILURE;
+          error_str =  "Delete list element failed; no such object";
+          goto finish;
+        }
       }
-      rw_status = RW_KEYSPEC_PATH_GET_BINPATH(derived_ks, NULL , (const uint8_t **)&key, &key_len, NULL);
-      RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
-      RW_ASSERT(key);
-      mobj = NULL;
-
-      /* Find the stored data-object from the committed list */
-      HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, mobj);
-      if (mobj) {
-        RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-        newobj = rwdts_member_data_duplicate_obj(mobj);
+      if (xact_mobj->create_flag || xact_mobj->update_flag) {
         /* Delete the proto field from the stored-object based on received
          * (non-truncated) query keyspec */
         rw_status = RW_KEYSPEC_PATH_DELETE_PROTO_FIELD(NULL,
-                                                       mobj->keyspec,
+                                                       xact_mobj->keyspec,
                                                        mbr_data->keyspec,
-                                                       newobj->msg,
+                                                       xact_mobj->msg,
                                                        NULL);
         if (rw_status != RW_STATUS_SUCCESS) {
-          char  *tmp_str = NULL;
-          rw_keyspec_path_get_new_print_buffer(mbr_data->keyspec, NULL ,
-                                               rwdts_api_get_ypbc_schema(apih),
-                                               &tmp_str);
-          RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, DeleteNonExistent, "Attempting to delete non existent data",
-                                         apih->client_path, mbr_data->reg->keystr, tmp_str);
-          if (tmp_str) {
-            free(tmp_str);
-          }
+          error_str = "Attempting to delete non existent data";
           goto finish;
         }
-        newobj->replace_flag = 1;
-        newobj->update_flag = 1;
-        HASH_ADD_KEYPTR(hh_data, (*obj_list_p), newobj->key, newobj->key_len, newobj);
-        apih->stats.num_xact_update_objects++;
-        mbr_data->reg->stats.num_xact_update_objects++;
-      }
-
-      mobj = NULL;
-      /* Find the stored data-object from the non-committed list */
-      if (mbr_data->reg->flags & RWDTS_FLAG_PUBLISHER) {
-        HASH_FIND(hh_data, mbr_data->xact->pub_obj_list, key, key_len, mobj);
-      } else {
-        HASH_FIND(hh_data, mbr_data->xact->sub_obj_list, key, key_len, mobj);
-      }
-      if (mobj) {
-        RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-        /* Delete the proto field from the temporarily stored data based on the
-         * received (non-truncated) query keyspec */
-        if (mobj->create_flag || mobj->update_flag) {
-          rw_status = RW_KEYSPEC_PATH_DELETE_PROTO_FIELD(NULL,
-                                                         mobj->keyspec,
-                                                         mbr_data->keyspec,
-                                                         mobj->msg,
-                                                         NULL);
-          if (rw_status != RW_STATUS_SUCCESS) {
-            char  *tmp_str = NULL;
-            rw_keyspec_path_get_new_print_buffer(mbr_data->keyspec, NULL ,
-                                                 rwdts_api_get_ypbc_schema(apih),
-                                                 &tmp_str);
-            RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, DeleteNonExistent, "Attempting to delete non existent data",
-                                           apih->client_path, mbr_data->reg->keystr, tmp_str);
-            if (tmp_str) {
-              free(tmp_str);
-            }
-            goto finish;
-          }
-          update_advice = true;
-        }
-      } 
-
-      if (update_advice != true) { 
-        RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
-                                NULL, rw_status,
-                                "Delete list element failed; no such object");
-        goto finish;
+        update_advice = true;
+        update_mobj = xact_mobj;
       }
     }
-    goto send_update;
-  }
-
-  if (((depth_i == depth_o) && rw_keyspec_path_has_wildcards(mbr_data->keyspec)) ||
-      (depth_i < depth_o)) {
-      /* Remove the stored-data objects from commited and non-commited list in
-       * this scenario when the query keyspec depth matches the reg keyspec
-       * depth and the query keyspec is wildcarded. Also the same functionality
-       * is needed when the query keyspec depth is less than the reg keyspec
-       * depth */
-      if (mbr_data->xact == NULL) {
-        rwdts_member_data_object_t *mobj, *tmp;
-        HASH_ITER(hh_data, mbr_data->reg->obj_list, mobj, tmp) {
-          if (rw_keyspec_path_is_a_sub_keyspec(NULL, mbr_data->keyspec, mobj->keyspec)) {
-            HASH_DELETE(hh_data, mbr_data->reg->obj_list, mobj);
-            rwdts_member_pub_del(mbr_data, mobj);
-            rw_status = rwdts_member_data_deinit(mobj);
-            RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
-            if (rw_status != RW_STATUS_SUCCESS) {
-              goto finish;
-            }
-          }
-        }
-      } else {
-        rwdts_member_data_object_t *mobj, *tmp;
-        HASH_ITER(hh_data, mbr_data->reg->obj_list, mobj, tmp) {
-          if (rw_keyspec_path_is_a_sub_keyspec(NULL, mbr_data->keyspec, mobj->keyspec)) {
-            rwdts_member_data_object_t *newobj = NULL;
-            newobj = rwdts_member_data_duplicate_obj(mobj);
-            newobj->delete_mark = 1;
-            HASH_ADD_KEYPTR(hh_data, (*obj_list_p), newobj->key, newobj->key_len, newobj);
-            apih->stats.num_xact_delete_objects++;
-            mbr_data->reg->stats.num_xact_delete_objects++;
-          }
-        }
-        /* Remove any uncommited data matching the same key */
-        if (mbr_data->reg->flags & RWDTS_FLAG_PUBLISHER) {
-          HASH_ITER(hh_data, mbr_data->xact->pub_obj_list, mobj, tmp) {
-            if ((mobj->create_flag || mobj->update_flag) &&
-                rw_keyspec_path_is_a_sub_keyspec(NULL, mbr_data->keyspec, mobj->keyspec)) {
-              HASH_DELETE(hh_data, mbr_data->xact->pub_obj_list, mobj);
-              rw_status = rwdts_member_data_deinit(mobj);
-              RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
-              if (rw_status != RW_STATUS_SUCCESS) {
-                goto finish;
-              }
-            }
-          }
-        } else {
-          HASH_ITER(hh_data, mbr_data->xact->sub_obj_list, mobj, tmp) {
-            if ((mobj->create_flag || mobj->update_flag) &&
-                rw_keyspec_path_is_a_sub_keyspec(NULL, mbr_data->keyspec, mobj->keyspec)) {
-              HASH_DELETE(hh_data, mbr_data->xact->sub_obj_list, mobj);
-              rw_status = rwdts_member_data_deinit(mobj);
-              RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
-              if (rw_status != RW_STATUS_SUCCESS) {
-                goto finish;
-              }
-            }
+  }else if (((depth_i == depth_o) && rw_keyspec_path_has_wildcards(derived_ks)) ||
+            (depth_i < depth_o)) {
+    rwdts_member_data_object_t *tmp;
+    
+    /* Remove the stored-data objects from commited and non-commited list in
+     * this scenario when the query keyspec depth matches the reg keyspec
+     * depth and the query keyspec is wildcarded. Also the same functionality
+     * is needed when the query keyspec depth is less than the reg keyspec
+     * depth */
+    if (mbr_data->xact == NULL) {
+      HASH_ITER(hh_data, mbr_data->reg->obj_list, commited_mobj, tmp) {
+        if (rw_keyspec_path_is_a_sub_keyspec(NULL, mbr_data->keyspec, commited_mobj->keyspec)) {
+          HASH_DELETE(hh_data, mbr_data->reg->obj_list, commited_mobj);
+          rwdts_member_pub_del(mbr_data, commited_mobj);
+          rw_status = rwdts_member_data_deinit(apih, commited_mobj);
+          RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
+          if (rw_status != RW_STATUS_SUCCESS) {
+            error_str = "Attempting to delete non existent data";
+            goto finish;
           }
         }
       }
     } else {
-      /* This is a case where the depth_i and depth_o are same and the query
-       * keyspec is not wildcarded. In this case, the data is fred when there is
-       * an absolute key matching */
-      rw_status = RW_KEYSPEC_PATH_GET_BINPATH(mbr_data->keyspec, NULL,
-                                            (const uint8_t **)&key, &key_len, NULL);
-      if (rw_status != RW_STATUS_SUCCESS) {
-        if (mbr_data->xact) {
-          RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
-                                  NULL, RW_STATUS_FAILURE, RWDTS_ERRSTR_KEY_BINPATH);
-          goto finish;
-        }
-        else {
-          RW_ASSERT_MESSAGE(0, RWDTS_ERRSTR_KEY_WILDCARDS);
+      HASH_ITER(hh_data, mbr_data->reg->obj_list, commited_mobj, tmp) {
+        if (rw_keyspec_path_is_a_sub_keyspec(NULL, mbr_data->keyspec, commited_mobj->keyspec)) {
+          xact_mobj = rwdts_member_data_duplicate_obj(commited_mobj);
+          xact_mobj->delete_mark = 1;
+          HASH_ADD_KEYPTR(hh_data, (*obj_list_p), xact_mobj->key, xact_mobj->key_len, xact_mobj);
+          apih->stats.num_xact_delete_objects++;
+          mbr_data->reg->stats.num_xact_delete_objects++;
         }
       }
-      RW_ASSERT(key);
-      if (key == NULL) {
-        goto finish;
+      HASH_ITER(hh_data, (*obj_list_p), xact_mobj, tmp) {
+        if ((xact_mobj->create_flag || xact_mobj->update_flag) &&
+            rw_keyspec_path_is_a_sub_keyspec(NULL, mbr_data->keyspec, xact_mobj->keyspec)) {
+          HASH_DELETE(hh_data, mbr_data->xact->pub_obj_list, xact_mobj);
+          rw_status = rwdts_member_data_deinit(apih, xact_mobj);
+          RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
+          if (rw_status != RW_STATUS_SUCCESS) {
+            error_str = "Attempting to delete non existent data";
+            goto finish;
+          }
+        }
       }
-
-      if (!mbr_data->xact && mbr_data->reg->shard && mbr_data->reg->shard->appdata) {
+    }
+  }else{
+    /* This is a case where the depth_i and depth_o are same and the query
+     * keyspec is not wildcarded. In this case, the data is fred when there is
+     * an absolute key matching */
+    if (!mbr_data->xact){
+      if (mbr_data->reg->shard && mbr_data->reg->shard->appdata) {
         rw_status = rwdts_shard_handle_appdata_delete_element(mbr_data->reg->shard, mbr_data->keyspec, mbr_data->msg);
         if (rw_status == RW_STATUS_SUCCESS) {
-          mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_DELETE);
-          rwdts_member_pub_del(mbr_data, mobj);
-          rw_status = rwdts_member_data_deinit(mobj);
+          commited_mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_DELETE);
+          rwdts_member_pub_del(mbr_data, commited_mobj);
+          rw_status = rwdts_member_data_deinit(apih, commited_mobj);
           RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
           goto finish;
         }
       }
-      HASH_FIND(hh_data, (*obj_list_p), key, key_len, mobj);
-
-      if (mobj == NULL) {
-        if (mbr_data->xact != NULL) {
-          // Lookup in the committed list and create if it is not already there
-          HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, mobj);
-        }
-        if (mobj) {
-          // create a new mobj object in xact
-          mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_DELETE);
-          RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-          RW_ASSERT(mobj->keyspec);
-          HASH_ADD_KEYPTR(hh_data, (*obj_list_p), mobj->key, mobj->key_len, mobj);
-          HASH_FIND(hh_data, (*obj_list_p), key, key_len, mobj);
-        } else {
-          RWDTS_API_LOG_EVENT(apih, DataMemberApiError, "Delete list element failed - cannot find  object");
-          rw_status =  RW_STATUS_FAILURE;
-          if (mbr_data->xact != NULL) {
-            RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
-                                    NULL, rw_status,
-                                    "Delete list element failed");
-          }
-          goto finish;
+      HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, commited_mobj);
+      if (commited_mobj){
+        HASH_DELETE(hh_data, mbr_data->reg->obj_list, commited_mobj);
+        rwdts_member_pub_del(mbr_data, commited_mobj);
+        rw_status = rwdts_member_data_deinit(apih, commited_mobj);
+        RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
+      }else{
+        error_str  = "Delete list element failed - cannot find  object";
+        rw_status = RW_STATUS_FAILURE;
+        goto finish;
+      }
+    }else{
+      HASH_FIND(hh_data, (*obj_list_p), key, key_len, xact_mobj);
+      if (!xact_mobj){
+        HASH_FIND(hh_data, mbr_data->reg->obj_list, key, key_len, commited_mobj);
+        if (commited_mobj){
+          xact_mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_DELETE);
+          RW_ASSERT_TYPE(xact_mobj, rwdts_member_data_object_t);
+          RW_ASSERT(xact_mobj->keyspec);
+          HASH_ADD_KEYPTR(hh_data, (*obj_list_p), xact_mobj->key, xact_mobj->key_len, xact_mobj);
         }
       }
-      RW_ASSERT_TYPE(mobj, rwdts_member_data_object_t);
-      if (mbr_data->xact == NULL) {
-        // Delete this from the committed list
-        HASH_DELETE(hh_data, (*obj_list_p), mobj);
-        rwdts_member_pub_del(mbr_data, mobj);
-        rw_status = rwdts_member_data_deinit(mobj);
-        RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
-      } else {
-        mobj->delete_mark = 1;
+      if (xact_mobj){
+        xact_mobj->delete_mark = 1;
         apih->stats.num_xact_delete_objects++;
         mbr_data->reg->stats.num_xact_delete_objects++;
-        rwdts_member_pub_del(mbr_data, mobj);
+        rwdts_member_pub_del(mbr_data, xact_mobj);
+      }else{
+        RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
+                                NULL, rw_status,
+                                "Delete list element failed");
+        error_str  = "Delete list element failed - cannot find  object";
+        rw_status = RW_STATUS_FAILURE;
+        goto finish;
       }
     }
+  }
 
-send_update:
   if (update_advice) {
     if ((mbr_data->reg->flags & RWDTS_FLAG_PUBLISHER) != 0) {
       uint32_t flags = RWDTS_XACT_FLAG_REPLACE;
+      rwdts_xact_t *xact = NULL;
+
       if (mbr_data->member_advise_cb.cb)  {
         flags |= RWDTS_XACT_FLAG_EXECNOW;
       }
-      rwdts_member_data_advice_query_action(mbr_data->xact,
-                                            (rwdts_member_reg_handle_t)mobj->reg,
-                                            mobj->keyspec,
-                                            mobj->msg,
-                                            RWDTS_QUERY_UPDATE,
-                                            flags,
-                                            &mbr_data->member_advise_cb,
-                                            &mbr_data->rcvd_member_advise_cb,
-                                            true);
+      xact = rwdts_member_data_advice_query_action(mbr_data->xact,
+                                                   (rwdts_member_reg_handle_t)update_mobj->reg,
+                                                   update_mobj->keyspec,
+                                                   update_mobj->msg,
+                                                   RWDTS_QUERY_UPDATE,
+                                                   flags,
+                                                   &mbr_data->member_advise_cb,
+                                                   &mbr_data->rcvd_member_advise_cb,
+                                                   true);
+      RW_ASSERT(xact != NULL);
+      RW_ASSERT((!mbr_data->xact) || (mbr_data->xact == xact));
+          
     if (!mbr_data->xact && (mbr_data->reg->apih->rwtasklet_info &&
         ((mbr_data->reg->apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB) ||
         (mbr_data->reg->apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
         if (mbr_data->reg->kv_handle) {
           uint8_t *payload;
           size_t  payload_len;
-          payload = protobuf_c_message_serialize(NULL, mobj->msg, &payload_len);
-          rw_status_t rs = rwdts_kv_handle_add_keyval(mbr_data->reg->kv_handle, 0, (char *)mobj->key, mobj->key_len,
+          payload = protobuf_c_message_serialize(NULL, update_mobj->msg, &payload_len);
+          rw_status_t rs = rwdts_kv_handle_add_keyval(mbr_data->reg->kv_handle, 0, (char *)update_mobj->key, update_mobj->key_len,
                                                      (char *)payload, (int)payload_len, rwdts_member_data_cache_set_callback, 
                                                      (void *)mbr_data->reg->kv_handle);
           RW_ASSERT(rs == RW_STATUS_SUCCESS);
           if (rs != RW_STATUS_SUCCESS) {
             /* Fail the VM and switchover to STANDBY */
           }
+          RW_FREE(payload);
         }
       }
     }
     if ((mbr_data->reg->flags & RWDTS_FLAG_DATASTORE) != 0) {
       if (mbr_data->xact != NULL) {
-        rwdts_kv_update_db_xact_precommit(mobj, RWDTS_QUERY_UPDATE);
+        rwdts_kv_update_db_xact_precommit(update_mobj, RWDTS_QUERY_UPDATE);
       } else {
-        rwdts_kv_update_db_update(mobj, RWDTS_QUERY_UPDATE);
+        rwdts_kv_update_db_update(update_mobj, RWDTS_QUERY_UPDATE);
       }
     }
   }
 
 // Do not return without coming to finish -- there is cleanup here
-//
+  //
 finish:
+
+  if (rw_status != RW_STATUS_SUCCESS){
+    /*
+    if (send_error){
+      RWDTS_MEMBER_SEND_ERROR(mbr_data->xact, mbr_data->keyspec, NULL, NULL,
+                              NULL, rw_status, RWDTS_ERRSTR_KEY_BINPATH);
+    }
+    */
+    RW_ASSERT(error_str);
+    char  *tmp_str = NULL;
+    rw_keyspec_path_get_new_print_buffer(mbr_data->keyspec, NULL ,
+                                         rwdts_api_get_ypbc_schema(apih),
+                                         &tmp_str);
+    
+#if 0   /* FIX ME - following doesn't compile */
+    RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, DeleteNonExistent,
+                                   error_str,
+                                   apih->client_path, mbr_data->reg->keystr, tmp_str);
+#endif
+    if (tmp_str) {
+      free(tmp_str);
+    }
+  }
+  
   {
-    rw_status = rwdts_member_data_record_deinit(mbr_data);
+    rw_status = rwdts_member_data_record_deinit(apih, mbr_data);
     RW_ASSERT(rw_status == RW_STATUS_SUCCESS);
   }
 
@@ -2742,7 +2709,14 @@ rwdts_member_reg_handle_create_element(rwdts_member_reg_handle_t regh,
                                        const ProtobufCMessage*   msg,
                                        rwdts_xact_t*             xact)
 {
-    return (rwdts_member_data_create_list_element(xact, regh, pe, msg));
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+  
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
+  return (rwdts_member_data_create_list_element(xact, regh, pe, msg));
 }
 
 /*
@@ -2755,6 +2729,13 @@ rwdts_member_reg_handle_create_element_keyspec(rwdts_member_reg_handle_t regh,
                                                const ProtobufCMessage*   msg,
                                                rwdts_xact_t*             xact)
 {
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
   return rwdts_member_reg_handle_handle_create_update_element(regh, keyspec, msg,
                                                               xact, 0, RWDTS_CREATE);
 }
@@ -2767,8 +2748,12 @@ rwdts_member_reg_handle_create_element_xpath(rwdts_member_reg_handle_t regh,
 {
   rw_keyspec_path_t*      keyspec = NULL;
   rw_status_t             rs;
-
   rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
 
   rs = rwdts_api_keyspec_from_xpath(reg->apih, xpath, &keyspec);
 
@@ -2794,11 +2779,18 @@ rwdts_member_reg_handle_update_element(rwdts_member_reg_handle_t regh,
                                        uint32_t                  flags,
                                        rwdts_xact_t*             xact)
 {
-    return rwdts_member_data_update_list_element(xact,
-                                                 regh,
-                                                 pe,
-                                                 msg,
-                                                 flags);
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
+  return rwdts_member_data_update_list_element(xact,
+                                               regh,
+                                               pe,
+                                               msg,
+                                               flags);
 }
 
 rw_status_t
@@ -2808,6 +2800,13 @@ rwdts_member_reg_handle_update_element_keyspec(rwdts_member_reg_handle_t regh,
                                                uint32_t                  flags,
                                                rwdts_xact_t*             xact)
 {
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
   return rwdts_member_reg_handle_handle_create_update_element(regh, (rw_keyspec_path_t*)keyspec,
                                                               msg, xact, flags, RWDTS_UPDATE);
 }
@@ -2822,6 +2821,11 @@ rwdts_member_reg_handle_update_element_xpath(rwdts_member_reg_handle_t regh,
   rw_keyspec_path_t*      keyspec = NULL;
   rw_status_t             rs;
   rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
 
   rs = rwdts_api_keyspec_from_xpath(reg->apih, xpath, &keyspec);
 
@@ -2853,6 +2857,13 @@ rwdts_member_reg_handle_delete_element(rwdts_member_reg_handle_t regh,
                                        const ProtobufCMessage*   msg,
                                        rwdts_xact_t*             xact)
 {
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+  
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
   return rwdts_member_data_delete_list_element(xact,
                                                regh,
                                                (rw_keyspec_entry_t*)pe,
@@ -2868,6 +2879,13 @@ rwdts_member_reg_handle_delete_element_keyspec(rwdts_member_reg_handle_t regh,
                                                const ProtobufCMessage*   msg,
                                                rwdts_xact_t*             xact)
 {
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+  
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
   return rwdts_member_data_delete_list_element_w_key(xact,
                                                      regh,
                                                      (rw_keyspec_path_t*)keyspec,
@@ -2886,6 +2904,11 @@ rwdts_member_reg_handle_delete_element_xpath(rwdts_member_reg_handle_t regh,
   rw_keyspec_path_t*      keyspec = NULL;
   rw_status_t             rs;
   rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+  
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
 
   rs = rwdts_api_keyspec_from_xpath(reg->apih, xpath, &keyspec);
 
@@ -2918,7 +2941,14 @@ rwdts_member_reg_handle_get_element(rwdts_member_reg_handle_t  regh,
                                     rw_keyspec_path_t**        out_keyspec,
                                     const ProtobufCMessage**   out_msg)
 {
-    return rwdts_member_data_get_list_element(xact, regh, pe, out_keyspec, out_msg);
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+  
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
+  return rwdts_member_data_get_list_element(xact, regh, pe, out_keyspec, out_msg);
 }
 
 /*
@@ -2931,7 +2961,14 @@ rwdts_member_reg_handle_get_element_keyspec(rwdts_member_reg_handle_t  regh,
                                             rw_keyspec_path_t**        out_keyspec,
                                             const ProtobufCMessage**   out_msg)
 {
-    return rwdts_member_data_get_list_element_w_key(xact, regh, keyspec, out_keyspec, out_msg);
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+  
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
+  return rwdts_member_data_get_list_element_w_key(xact, regh, keyspec, out_keyspec, out_msg);
 }
 
 /*
@@ -2946,7 +2983,13 @@ rwdts_member_reg_handle_get_element_xpath(rwdts_member_reg_handle_t  regh,
 {
   rw_keyspec_path_t*      keyspec = NULL;
   rw_status_t             rs;
-
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
+  
+  if (!rwdts_api_in_correct_queue(reg->apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+  
   rs = rwdts_api_keyspec_from_xpath(((rwdts_member_registration_t*)regh)->apih,
                                     xpath,
                                     &keyspec);
@@ -3038,72 +3081,30 @@ void rwdts_member_data_merge_store(rwdts_member_data_record_t *mbr_data,
   return;
 }
 
-static rwdts_member_data_object_t*
-rwdts_member_data_store(rwdts_member_data_object_t** obj_list_p,
-                        rwdts_member_data_record_t *mbr_data,
-                        uint8_t *free_obj)
-{
-  RW_ASSERT_TYPE(mbr_data, rwdts_member_data_record_t);
-  RW_ASSERT(obj_list_p);
-  if (!obj_list_p) {
-    return NULL;
-  }
-
-  rwdts_member_data_object_t* new_mobj = NULL;
-  rwdts_api_t* apih = mbr_data->reg->apih;
-  RW_ASSERT(apih);
-  RW_ASSERT(free_obj);
-
-  *free_obj = false;
-
-  // keyp,  msg  and merged_keyspec are consumed by rwdts_member_data_init
-  new_mobj = rwdts_member_data_init_frm_mbr_data(mbr_data, false, false, RWDTS_CREATE);
-  // Failed to create a new object
-  if (new_mobj == NULL) {
-    RWDTS_API_LOG_EVENT(apih, DataMemberApiError, "create list element failed - rwdts_member_data_init returned null");
-    return NULL;
-  }
-
-  if (mbr_data->xact != NULL) {
-    new_mobj->create_flag = 1;
-    apih->stats.num_xact_create_objects++;
-    mbr_data->reg->stats.num_xact_create_objects++;
-  } else {
-    if (mbr_data->reg->shard && mbr_data->reg->shard->appdata) {
-      rwdts_shard_handle_appdata_create_element(mbr_data->reg->shard, mbr_data->keyspec, mbr_data->msg);
-      *free_obj = true;
-    }
-  }
-
-  // Add to the hash
-  RW_ASSERT(new_mobj->key);
-  RW_ASSERT(new_mobj->key_len > 0);
-  if (*free_obj == false) {
-    HASH_ADD_KEYPTR(hh_data, (*obj_list_p), new_mobj->key, new_mobj->key_len, new_mobj);
-  }
-
-  return new_mobj;
-}
 
 static void
 rwdts_member_pub_del(rwdts_member_data_record_t *mbr_data,
                      rwdts_member_data_object_t* mobj)
 {
+  rwdts_xact_t *xact = NULL;
 
   if ((mbr_data->reg->flags & RWDTS_FLAG_PUBLISHER) != 0)  {
     uint32_t flags = 0;
     if (mbr_data->member_advise_cb.cb)  {
       flags |= RWDTS_XACT_FLAG_EXECNOW;
     }
-    rwdts_member_data_advice_query_action(mbr_data->xact,
-                                          (rwdts_member_reg_handle_t)mobj->reg,
-                                          mobj->keyspec,
-                                          mobj->msg,
-                                          RWDTS_QUERY_DELETE,
-                                          flags,
-                                          &mbr_data->member_advise_cb,
-                                          &mbr_data->rcvd_member_advise_cb,
-                                          true);
+    xact = rwdts_member_data_advice_query_action(mbr_data->xact,
+                                                 (rwdts_member_reg_handle_t)mobj->reg,
+                                                 mobj->keyspec,
+                                                 mobj->msg,
+                                                 RWDTS_QUERY_DELETE,
+                                                 flags,
+                                                 &mbr_data->member_advise_cb,
+                                                 &mbr_data->rcvd_member_advise_cb,
+                                                 true);
+    RW_ASSERT(xact != NULL);
+    RW_ASSERT((!mbr_data->xact) || (mbr_data->xact == xact));
+    
     if (!mbr_data->xact && (mbr_data->reg->apih->rwtasklet_info &&
         ((mbr_data->reg->apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB) ||
         (mbr_data->reg->apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
@@ -3114,6 +3115,7 @@ rwdts_member_pub_del(rwdts_member_data_record_t *mbr_data,
         if (rs != RW_STATUS_SUCCESS) {
           /* Fail the VM and switchover to STANDBY */
         }
+        
       }
     }
   }
@@ -3146,7 +3148,7 @@ rwdts_get_member_data_array_from_msgs_and_keyspecs(rwdts_member_registration_t *
   RW_ASSERT_TYPE(apih, rwdts_api_t);
 
   *n_op = 0;
-  op = RW_MALLOC0_TYPE(sizeof(rwdts_member_data_object_t*) * n, rwdts_member_data_object_t*);
+  op = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_DATA_OBJECT, sizeof(rwdts_member_data_object_t*) * n, rwdts_member_data_object_t*);
 
   for (i = 0; i < n ; i++) {
     // ATTN -- fix this -- this is very very inefficient

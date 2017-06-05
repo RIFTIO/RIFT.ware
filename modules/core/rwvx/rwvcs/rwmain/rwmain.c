@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 #include <getopt.h>
 #include <unistd.h>
 #include <sys/resource.h>
@@ -221,7 +202,9 @@ static rwtasklet_info_ptr_t get_rwmain_tasklet_info(
   rw_status_t status = rw_setenv("RIFT_VAR_ROOT", rift_var_root);
   RW_ASSERT(status == RW_STATUS_SUCCESS);
   setenv("RIFT_VAR_ROOT", rift_var_root, true);
-
+  
+  free(rift_var_root);
+  
   info->rwlog_instance = rwlog_init(instance_name);
 
   broker_instance_id = 0;
@@ -367,7 +350,7 @@ struct rwmain_gi * rwmain_alloc(
   }
   RW_ASSERT(rwmain->vm_instance_id);
 
-
+  rwmain->no_heartbeat = rwvx->rwvcs->pb_rwmanifest->bootstrap_phase->no_heartbeat;
   // 10 hz with tolerance 600
   // TODO: Must take from YANG. These are currently defined as the defaults in rw-base.yang
   rwmain->rwproc_heartbeat = rwproc_heartbeat_alloc(10, 600);
@@ -571,12 +554,12 @@ rw_status_t process_init_phase(struct rwmain_gi * rwmain)
 {
   rw_status_t status;
   rwvcs_instance_ptr_t rwvcs;
+  char * instance_name = NULL;
 
   rwvcs = rwmain->rwvx->rwvcs;
 
   if (rwvcs->pb_rwmanifest->init_phase->settings->rwvcs->no_autostart == false) {
     vcs_manifest_component *m_component;
-    char * instance_name = NULL;
 
     instance_name = to_instance_name(rwmain->component_name, rwmain->instance_id);
     RW_ASSERT(*instance_name);
@@ -616,7 +599,9 @@ rw_status_t process_init_phase(struct rwmain_gi * rwmain)
       RW_CRASH();
     }
   }
-
+  
+  if (instance_name)
+    free(instance_name);
   return RW_STATUS_SUCCESS;
 }
 
@@ -911,6 +896,8 @@ static void check_parent_started(rwsched_CFRunLoopTimerRef timer, void * ctx)
   }
 
   rwsched_tasklet_CFRunLoopTimerRelease(rwmain->rwvx->rwsched_tasklet, timer);
+
+  protobuf_free_stack(c_info);
 }
 
 static void usage() {
@@ -926,6 +913,7 @@ static void usage() {
   printf("  -p,--parent [NAME]          Parent's instance-name.\n");
   printf("  -a,--ip_address [ADDRESS]   VM IP address.\n");
   printf("  -v,--vm_instance [ID]       VM instance id.\n");
+  printf("  -U,--userspace_coredump     Use userspace coredumper instead of kernel's\n");
   printf("  -C,--core_test <delay_s>    Coredumper test, segv after delay in sec.\n");
   printf("  -h, --help                  This screen.\n");
   printf("\n");
@@ -1066,8 +1054,8 @@ struct rwmain_gi * rwmain_setup(int argc, char ** argv, char ** envp)
   uint32_t instance_id = 0;
   uint32_t vm_instance_id = 0;
   char * coretest = NULL;
-
-  rwmain_sigaction_setup();
+  char * ha_component_name = NULL;
+  int use_googlecoredump = FALSE;
 
   // We need to reset optind here and after processing the command line options
   // as successive calls to getopt_long will leave optind=1. So, reset here as
@@ -1079,23 +1067,29 @@ struct rwmain_gi * rwmain_setup(int argc, char ** argv, char ** envp)
     long int lu;
 
     static struct option long_options[] = {
-      {"manifest",      required_argument,  0, 'm'},
-      {"name",          required_argument,  0, 'n'},
-      {"instance",      required_argument,  0, 'i'},
-      {"type",          required_argument,  0, 't'},
-      {"parent",        required_argument,  0, 'p'},
-      {"ip_address",    required_argument,  0, 'a'},
-      {"vm_instance",   required_argument,  0, 'v'},
-      {"help",          no_argument,        0, 'h'},
-      {"core_test",     required_argument,  0, 'C'},
-      {0,               0,                  0,  0},
+      {"manifest",          required_argument, 0, 'm'},
+      {"name",              required_argument, 0, 'n'},
+      {"instance",          required_argument, 0, 'i'},
+      {"type",              required_argument, 0, 't'},
+      {"parent",            required_argument, 0, 'p'},
+      {"ip_address",        required_argument, 0, 'a'},
+      {"vm_instance",       required_argument, 0, 'v'},
+      {"help",              no_argument,       0, 'h'},
+      {"core_test",         required_argument, 0, 'C'},
+      {"userspace_coredump",no_argument,       0, 'U'},
+      {"ha_component_name", required_argument, 0, 'N'},
+      {0,                   0,                 0, 0},
     };
 
-    c = getopt_long(argc, argv, "m:n:i:t:p:a:v:hC:", long_options, NULL);
+    c = getopt_long(argc, argv, "m:n:N:i:t:p:a:v:hC:U", long_options, NULL);
     if (c == -1)
       break;
 
     switch (c) {
+      case 'U':
+	use_googlecoredump = TRUE;
+	break;
+            
       case 'C':
 	coretest = strdup(optarg);
 	break;
@@ -1108,6 +1102,11 @@ struct rwmain_gi * rwmain_setup(int argc, char ** argv, char ** envp)
       case 'n':
         component_name = strdup(optarg);
         RW_ASSERT(component_name);
+        break;
+
+      case 'N':
+        ha_component_name = strdup(optarg);
+        RW_ASSERT(ha_component_name);
         break;
 
       case 'i':
@@ -1148,6 +1147,10 @@ struct rwmain_gi * rwmain_setup(int argc, char ** argv, char ** envp)
   }
   optind = 0;
 
+  if (use_googlecoredump) {
+    rwmain_sigaction_setup();
+  }
+  
   if (!manifest_file) {
     fprintf(stderr, "ERROR:  No manifest file specified.\n");
     exit(1);
@@ -1166,7 +1169,15 @@ struct rwmain_gi * rwmain_setup(int argc, char ** argv, char ** envp)
 
   status = rwvcs_process_manifest_file (rwvcs, manifest_file);
   bool mgmt_vm = rwvcs_manifest_is_mgmt_vm(rwvcs, component_name);
+
+  // WA for RIFT-14686
+  if (ha_component_name) {
+    mgmt_vm = true;
+    component_name = ha_component_name;
+  }
+
   rwmain_pm_struct_t pm = {};
+
   if (mgmt_vm) {
     start_pacemaker_and_determine_role(rwvx, rwvcs->pb_rwmanifest, &pm);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
@@ -1198,23 +1209,24 @@ struct rwmain_gi * rwmain_setup(int argc, char ** argv, char ** envp)
   rwmain_process_pm_inputs(rwvcs, &pm);
 
   char *vm_name = NULL;
+  int id = 0;
+  status = rwvcs_variable_evaluate_int(
+      rwvcs,
+      "$instance_id",
+      &id);
+
   if (!component_name) {
     char cn[1024];
-    int id;
-
     status = rwvcs_variable_evaluate_str(
         rwvcs,
         "$rw_component_name",
         cn,
         sizeof(cn));
-
-    status = rwvcs_variable_evaluate_int(
-        rwvcs,
-        "$instance_id",
-        &id);
     vm_name = to_instance_name(cn, id);
+  } else {
+    vm_name = to_instance_name(component_name, id);
   }
-    
+
   if (g_zk_rwq)
     rwvcs->zk_rwq = g_zk_rwq;
   status = rwvcs_instance_init(rwvcs, 
@@ -1267,11 +1279,11 @@ struct rwmain_gi * rwmain_setup(int argc, char ** argv, char ** envp)
   }
 #endif
 
-  rw_component_info c_info;
   if (!mgmt_vm) {
     if (rwmain->component_type == RWVCS_TYPES_COMPONENT_TYPE_RWVM) {
       struct timeval timeout = { .tv_sec = RWVCS_RWZK_TIMEOUT_S, .tv_usec = 0 };
       char * instance_name = NULL;
+      rw_component_info c_info;
       instance_name = to_instance_name(component_name, instance_id);
       RW_ASSERT(instance_name!=NULL);
       status = rwvcs_rwzk_lock(rwvcs, instance_name, &timeout);
@@ -1286,16 +1298,20 @@ struct rwmain_gi * rwmain_setup(int argc, char ** argv, char ** envp)
       status = rwvcs_rwzk_unlock(rwvcs, instance_name);
       RW_ASSERT(status == RW_STATUS_SUCCESS);
       free(instance_name);
+      protobuf_free_stack(c_info);
     } 
   }
   else  {
     if (rwvcs->mgmt_info.state == RWVCS_TYPES_VM_STATE_MGMTSTANDBY) {
+      rw_component_info c_info;
       status = rwvcs_rwzk_lookup_component(rwvcs, rwmain->parent_id, &c_info);
       RW_ASSERT(status != RW_STATUS_FAILURE);
+      
       if (status == RW_STATUS_NOTFOUND) {
         schedule_next(rwmain, check_parent_started, CHECK_PARENT_CHK_FREQ, rwmain);
         goto done;
       }
+      protobuf_free_stack(c_info);
       RW_ASSERT(status == RW_STATUS_SUCCESS);
     }
     
@@ -1329,6 +1345,9 @@ done:
   if (component_name)
     free(component_name);
 
+  if (vm_name)
+    free(vm_name);
+  
   if (component_type)
     free(component_type);
 

@@ -1,21 +1,7 @@
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
  * Creation Date: 6/6/16
- * 
+ * RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
  */
 
 #include <rwlib.h>
@@ -33,11 +19,9 @@
 namespace fs = boost::filesystem;
 
 const char* RW_VAR_NAME_DEFAULT_VNF = "rift";
-const char* RW_HOME_RIFT = "/home/rift";
-const char* RW_HOME_RIFT_INSTALL = "/home/rift/.install";
-const char* RW_BLD_RIFT_INSTALL = "/usr/rift/build/fc20_debug/install/usr/rift";
+const char* RW_BLD_RIFT_INSTALL = "/usr/rift/build/ub16_debug/install/usr/rift";
 const char* RW_USR_RIFT_INSTALL = "/usr/rift";
-const char* RW_VAR_RIFT = "/var/rift/";
+const char* RW_VAR_RIFT = "/var/rift";
 const int RW_UTIL_MAX_HOSTNAME_SZ = 64;
 
 static inline
@@ -160,29 +144,15 @@ rw_status_t rw_util_get_rift_var_root(const char* uid,
     /* RIFT_INSTALL/var/rift/RIFT_VAR_NAME, if RIFT_INSTALL is set.*/
     const char* rift_install = getenv("RIFT_INSTALL");
     if (rift_install) {
-      if (!strcmp(rift_install, RW_HOME_RIFT_INSTALL) ||
-          !strcmp(rift_install, "/") ||
+      if (!strcmp(rift_install, RW_USR_RIFT_INSTALL) ||
           !strcmp(rift_install, RW_BLD_RIFT_INSTALL) ||
-          !strcmp(rift_install, RW_USR_RIFT_INSTALL)) {
+          !strcmp(rift_install, "/")) {
         rvr = std::string(rift_install) + std::string(RW_VAR_RIFT);
       } else {
-        rvr = std::string(rift_install) + std::string(RW_VAR_RIFT) + rift_var_name;
+        rvr = std::string(rift_install) + std::string(RW_VAR_RIFT) + std::string("/") + rift_var_name;
       }
       rift_var_root = rvr.c_str();
       break;
-    }
-
-    /* /home/rift/.install/var/rift/RIFT_VAR_NAME if the directory
-     * /home/rift/.install exists and is writeable. */
-    struct stat st;
-    if (   stat(RW_HOME_RIFT_INSTALL, &st) == 0
-        && S_ISDIR(st.st_mode)) {
-
-      if ( access(RW_HOME_RIFT_INSTALL, W_OK) == 0) {
-        rvr = std::string(RW_HOME_RIFT_INSTALL) + std::string(RW_VAR_RIFT);
-        rift_var_root = rvr.c_str();
-        break;
-      }
     }
 
     rvr = std::string(RW_VAR_RIFT);

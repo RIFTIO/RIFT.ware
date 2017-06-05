@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rw_btrace.c
@@ -86,10 +67,17 @@ static int rw_get_file_and_line(unw_word_t addr,
   }
   
   // get function name
-  fgets(buf, 256, f);
-  
+  if (fgets(buf, 256, f) == NULL )  { 
+      pclose(f);
+      return 0;
+  }
+      
+
   // get file and line
-  fgets(buf, 256, f);
+  if (fgets(buf, 256, f) == NULL )  { 
+      pclose(f);
+      return 0;
+  }
   
   if (buf[0] != '?') {
     char *p = buf;

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /*!
  * @file rwuagent.hpp
  * @brief Private micro-agent header file
@@ -281,22 +262,25 @@ class NotificationYangNode {
   std::string ns_;     ///< Yang Node's namespace
 };
 
+/* ATTN: Should be using yangutil!! */
 static inline
 std::string get_rift_install()
 {
   auto rift_install = getenv("RIFT_INSTALL");
-  if (!rift_install) return "/home/rift/.install";
+  if (!rift_install) return "/usr/rift";
   return rift_install;
 }
 
+/* ATTN: Should be using yangutil!! */
 static inline
 std::string get_rift_var_root()
 {
   auto rift_var_root = getenv("RIFT_VAR_ROOT");
-  if (!rift_var_root) return "/home/rift/.install";
+  if (!rift_var_root) return "/usr/rift/var/rift";
   return rift_var_root;
 }
 
+/* ATTN: Should be using yangutil!! */
 /*!
  * Predicate to check if the agent is running
  * in production or not.
@@ -307,8 +291,11 @@ bool is_production()
   auto rift_prod_mode = getenv("RIFT_PRODUCTION_MODE");
   if (rift_prod_mode) return true;
 
-  std::array<const char*, 3> probable_vals {
-    "/", "/home/rift", "/home/rift/.install"
+  std::array<const char*, 4> probable_vals {
+    "/usr/rift",
+    "/usr/rift/build/ub16_debug/install/usr/rift",
+    "/usr/rift/build/fc20_debug/install/usr/rift",
+    "/"
   };
   auto it = std::find(probable_vals.begin(), probable_vals.end(), get_rift_install());
 
@@ -941,7 +928,7 @@ public:
   /*!
    * These functions are used to enqueue and
    * dequeue PB requests to serialize their processing.
-   * On calling enqueue, the pb-request will be appended to the 
+   * On calling enqueue, the pb-request will be appended to the
    * queue and the request at the start of the queue would be
    * dispatched for processing.
    * On calling dequeue, the entry from the front will be removed
@@ -1011,7 +998,7 @@ public:
    * Given the Yang name and namspace, this method fetches the notification
    * stream.
    * @param [in] node_name   Yang node name
-   * @param [in] node_ns     Yang node namespace 
+   * @param [in] node_ns     Yang node namespace
    * @returns The notifications stream on successful match. Otherwise empty
    * string.
    */
@@ -1209,7 +1196,7 @@ class ProtoSplitter
   /// The edit config SbReq instance which instantiated
   // this class.
   SbReqEditConfig* edit_cfg_ = nullptr;
-  
+
   /// The transaction to which protos are to be added
   rwdts_xact_t* xact_ = nullptr;
   /// Atleast one message was created

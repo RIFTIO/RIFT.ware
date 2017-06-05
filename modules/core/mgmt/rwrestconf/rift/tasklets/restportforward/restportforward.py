@@ -1,21 +1,7 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Max Beckett
 # Creation Date: 8/29/2015
-# 
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
 
 import asyncio
 import logging
@@ -76,7 +62,7 @@ def _remove_forwarding_rules():
     remove_tcp_dport_rule_from_chain("OUTPUT", "8008")
 
 def _set_port_forward(new_port_number):
-    eth0_command = "sudo iptables -t nat -I PREROUTING -i eth0 -p tcp --dport 8008 -j REDIRECT --to-port %d" % new_port_number
+    eth0_command = "sudo iptables -t nat -I PREROUTING -p tcp --dport 8008 -j REDIRECT --to-port %d" % new_port_number
     lo_command = "sudo iptables -t nat -I OUTPUT -o lo -p tcp --dport 8008 -j REDIRECT --to-port %d" % new_port_number
 
     _execute_shell_command(eth0_command)

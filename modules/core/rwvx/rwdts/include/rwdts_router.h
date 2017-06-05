@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /*!
  * @file rwdts_router.h
  * @brief Router for RW.DTS
@@ -50,6 +31,12 @@ typedef struct rwdts_router_xact_s rwdts_router_xact_t;
 typedef struct rwdts_router_xact_req_s rwdts_router_xact_req_t;
 typedef struct rwdts_router_xact_sing_req_s rwdts_router_xact_sing_req_t;
 typedef struct rwdts_router_xact_rwmsg_ent_s rwdts_router_xact_rwmsg_ent_t;
+
+#define RWDTS_XACT_TIMEOUT_SCALE (0.5)
+#define RWDTS_ROUTER_ASYNC_TIMEOUT_SCALE (0.2)
+#define RWDTS_STALE_XACT_TIMEOUT_SCALE (4 * RWDTS_XACT_TIMEOUT_SCALE) //2 minutes
+#define RWDTS_STALE_XACT_MAX_ELEM 10000
+
 
 typedef enum rwdts_router_comm_state_e {
   RWDTS_ROUTER_QUERY_NONE=0,    /* no state */
@@ -100,11 +87,13 @@ typedef struct rwdts_memb_router_registration_s {
   int  index;
 } rwdts_memb_router_registration_t;
 
-typedef struct rwdts_memb_trans_registration_s {
-  uint64_t xact_serialno;
-  rw_sklist_element_t element;
-  rwdts_memb_router_registration_t *registrations;
-} rwdts_memb_trans_registration_t;
+typedef struct rwdts_router_stale_xact_s {
+  UT_hash_handle  hh; /*  Hash by id */
+  rwdts_router_t *dts;/*Back-pointer to the parent which is the dts router*/
+  RWDtsXactID     id; /* Primary ID */
+  struct timeval  end_time;
+  rw_dl_element_t time_element;
+} rwdts_router_stale_xact_t;
 
 typedef struct router_member_stats_s {
   uint64_t reg_prepare_called;
@@ -126,14 +115,13 @@ struct rwdts_router_member_s {
 
   rwdts_memb_router_registration_t *registrations;
   rwdts_memb_router_registration_t *sub_registrations;
-  rw_sklist_t trans_reglist;
+ 
   rw_dl_t     queued_xacts;
   rw_dl_t     sing_reqs;
   uint32_t reg_count;
   uint64_t client_idx;
   uint64_t router_idx;
 
-  uint32_t refct;
   uint32_t dead:1;
   uint32_t xoff:1;                /* flow controlled */
   uint32_t _pad:30;
@@ -273,6 +261,7 @@ typedef struct rwdts_router_stats_s {
   uint64_t member_ct;                /* number of known members */
   uint64_t xact_ct;                /* number of extant xact structures */
   uint64_t total_xact;
+  uint64_t stale_xact_ct;
 } rwdts_router_stats_t;
 
 typedef struct rwdts_router_xact_stats_s {
@@ -287,13 +276,12 @@ struct rwdts_router_xact_sing_req_s {
   uint32_t sent_before:1;
   uint32_t any_cast:1;
   uint32_t memb_xfered:1;
-  uint32_t in_sing_reqs:1;
-  uint32_t pad:28;
+  uint32_t pad:29;
   int tracert_idx;                /* index into xres->dbg->tr->ent[] */
   rwmsg_request_t *req;                /* handle on our outstanding request */
   uint32_t credits; 
-  rwdts_router_xact_req_t *xreq;
-  rwdts_router_xact_t *xact;
+  uint32_t xreq_idx; /*Index into the array of xreq in the xact*/
+  rwdts_router_xact_t *xact; /*Back pointers to the xact*/
   rw_dl_element_t memb_element;
 #if 0
   RWDtsQueryResult result;        /* Query-dest's result(s). */
@@ -309,17 +297,20 @@ struct rwdts_router_xact_req_s {
   uint32_t query_idx;                /* query in the subx/block */
   uint32_t block_idx;                /* into xact->xact_blocks[], NOT into rwmsg_tab[] etc */
   uint32_t query_serial;
+  uint32_t index;  /*Array index of the xact->req*/
   const char *keystr;                /* pointer to keystr in block */
-  const RWDtsQuery *xquery;     /* pointer to the query itself, in the block/msg/etc */
+  uint32_t anycast_cnt;
   rwdts_router_xact_sing_req_t *sing_req;
   uint32_t sing_req_ct;
+  rwdts_router_xact_t *xact; /*Back pointers to the xact*/
 };
 
 struct rwdts_router_member_node_s {
   rwdts_router_member_t *member;
   uint32_t bnc:1;
   uint32_t abrt:1;
-  uint32_t _pad:30;
+  uint32_t ignore_bounce:1;
+  uint32_t _pad:29;
 #ifdef SUB_XACT_SUPPRT
   UT_hash_handle hh_block;
 #endif
@@ -396,7 +387,6 @@ typedef struct rwdts_router_wait_blocks_s {
 #define RWDTS_RTR_ADD_TR_ENT_ENDED(t_xact) { \
   if (t_xact->dbg) {\
     RWDtsTracerouteEnt ent;\
-    char xact_id_str[128];\
     rwdts_traceroute_ent__init(&ent);\
     ent.func = (char*) __PRETTY_FUNCTION__;\
     ent.line = __LINE__;\
@@ -410,7 +400,7 @@ typedef struct rwdts_router_wait_blocks_s {
               ent.dstpath, ent.srcpath);\
     }\
     rwdts_dbg_tracert_add_ent(t_xact->dbg->tr, &ent);\
-    RWDTS_TRACE_EVENT_REQ(t_xact->dts->rwtaskletinfo->rwlog_instance, RwDtsApiLog_notif_TraceReq,rwdts_xact_id_str(&t_xact->id,xact_id_str,128),ent);\
+    RWDTS_TRACE_EVENT_REQ(t_xact->dts->rwtaskletinfo->rwlog_instance, TraceReq,t_xact->xact_id_str, ent); \
   }\
 }
 
@@ -434,7 +424,7 @@ struct rwdts_router_xact_s {
 
   rwmemlog_buffer_t *rwml_buffer;
 
-  rwdts_router_t *dts;
+  rwdts_router_t *dts;/*Back-pointer to the parent which is the dts router*/
   rw_dl_t        queued_members;
 
   struct rwdts_router_xact_rwmsg_ent_s {
@@ -469,7 +459,6 @@ struct rwdts_router_xact_s {
   uint32_t ended:1;
   uint32_t pending_del:1;
   uint32_t more_sent:1;
-  uint32_t transient_reg:1;
   uint32_t blocks_advanced:1;        /* Set by block state machine to trigger further evaluation at xact fsm level */
   uint32_t move_to_precomm:1;
   uint32_t _pad1:23;
@@ -533,7 +522,6 @@ struct rwdts_router_xact_s {
      UTHASH, elem hh_xact. */
   rwdts_router_member_node_t *xact_union;
 
-  uint32_t anycast_cnt;
   struct timeval start_time;
   int xact_prep_time;
   struct timeval precommit_time;
@@ -549,6 +537,10 @@ struct rwdts_router_xact_s {
   char* ksi_errstr; //Overloaded. KSI error and other error strings.
   rwdts_router_xact_stats_t stats;
   rwdts_router_wait_block_t *wait_blocks;
+
+  uint32_t   flags;
+  bool       print;
+  char       xact_id_str[128];
 };
 
 typedef struct rwdts_router_peer_reg_s {
@@ -612,6 +604,9 @@ struct rwdts_router_s {
 
   rwdts_router_xact_t *xacts;        /* UTHASH of all extant transactions keyed on xact ID */
 
+  rwdts_router_stale_xact_t *stale_xacts; /*UTHASH of all the transactions that have happened in the past 10 minutes in this router*/
+  rw_dl_t                   stale_xacts_head;
+  
   rwdts_shard_tab_t *shard_tab;
 
   rwdts_api_t *apih;                /* Query/member API handle */
@@ -647,6 +642,15 @@ struct rwdts_router_s {
 #endif
 
   rwmemlog_instance_t *rwmemlog;
+
+  //config
+  rwdts_appconf_t                 *config_group_handle;
+  rwdts_member_reg_handle_t        config_member_handle;
+  uint64_t                         xact_timer_interval;
+  bool                             xact_timer_enable;
+
+  //memlog
+  rwmemlog_buffer_t                *rwml_buffer;
 };
 
 
@@ -762,7 +766,13 @@ rwdts_shard_del(rwdts_shard_t** parent);
 
 void rwdts_router_replay_queued_msgs(rwdts_router_t *dts);
 void rwdts_router_process_queued_xact_f(void *ctx);
-void rwdts_router_process_xacts_list(rwdts_router_member_t *memb);
+void rwdts_router_stop_member_sing_reqs(rwdts_router_member_t *memb);
+rw_status_t
+rwdts_router_add_stale_xact(rwdts_router_t *dts,
+                            rwdts_router_xact_t *xact,
+                            struct timeval *end_time);
+rwdts_router_stale_xact_t *rwdts_router_find_stale_xact(const rwdts_router_t* dts,
+                                                        const RWDtsXactID* id) ;
 __END_DECLS
 
 

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file ks_rrmerge_test.cpp
  * @author Sujithra Periasamy
@@ -3965,3 +3946,243 @@ TEST(KsRRMerge, RootKSReRootIterS)
   EXPECT_EQ(i, 1);
   rw_keyspec_path_reroot_iter_done(&state);
 }
+
+
+TEST(KsRRMerge, RerootMergeOpaqueNonKeyList)
+{
+  struct single_result{
+    RwSchemaPathSpec *keyspec;
+    ProtobufCBinaryData keybuf;
+    ProtobufCBinaryData paybuf;    
+  };
+  // Create keyspec1
+  RWPB_T_PATHSPEC(Company_data_Company_Customer_Department) *queryks = nullptr;
+  RWPB_T_PATHSPEC(Company_data_Company_Customer) *appks = nullptr;
+  RWPB_T_MSG(Company_data_Company_Customer) *customer = (RWPB_T_MSG(Company_data_Company_Customer) *)NULL;
+  unsigned int i;
+  unsigned int j;
+
+  RWPB_T_MSG(Company_data_Company_Customer_Department) **dept_s = NULL;
+  RWPB_T_MSG(Company_data_Company_Customer_Department_Contact) **contact_s = NULL;
+  RWPB_T_MSG(Company_data_Company_Customer_Department) *dept = NULL;
+  RWPB_T_MSG(Company_data_Company_Customer_Department_Contact) *contact = NULL;
+  rw_keyspec_path_reroot_iter_state_t state;
+  //REROOT
+  single_result *result_s[40];
+  single_result *result;
+  unsigned int n_result = 0;
+  //MERGEOPAQUE
+  ProtobufCBinaryData msg_in;
+  ProtobufCBinaryData msg_out;
+  rw_keyspec_path_t   *ks_out;
+  rw_keyspec_path_t *ks_in = NULL;
+  rw_status_t status;
+  single_result merged_result;
+  ProtobufCMessage *unpacked_msg[64];
+  rw_keyspec_path_t *unpacked_keyspec[64];  
+  rw_yang_pb_msgdesc_t*       desc_result   = NULL;
+  ProtobufCMessage * matchmsg = NULL;
+  rw_keyspec_path_t*     matchks  = NULL;
+
+  
+  //Create the query keyspec and app returned keyspec just as in the prepare callback in dts
+  rw_keyspec_path_create_dup(reinterpret_cast<const rw_keyspec_path_t*>(RWPB_G_PATHSPEC_VALUE(Company_data_Company_Customer)), nullptr, 
+                             reinterpret_cast<rw_keyspec_path_t**>(&appks));
+  
+  rw_keyspec_path_create_dup(reinterpret_cast<const rw_keyspec_path_t*>(RWPB_G_PATHSPEC_VALUE(Company_data_Company_Customer_Department)), nullptr, 
+                             reinterpret_cast<rw_keyspec_path_t**>(&queryks));
+  
+  
+  customer = RWPB_F_MSG_ALLOC(Company_data_Company_Customer);
+  
+  appks->dompath.path001.has_key00 = true;
+  appks->dompath.path001.key00.name = strdup("Verizon");
+  queryks->dompath.path001.has_key00 = true;
+  queryks->dompath.path001.key00.name = strdup("Verizon");
+
+  
+  //create the protobuf message
+  customer->name = strdup(appks->dompath.path001.key00.name);
+  dept_s = customer->department = (RWPB_T_MSG(Company_data_Company_Customer_Department)**)RW_MALLOC0(sizeof(*dept_s) * 10);
+  customer->n_department = 0;
+  for (i = 0; i < 10; i++){
+    dept_s[customer->n_department] = dept = (RWPB_T_MSG(Company_data_Company_Customer_Department) *)RW_MALLOC0(sizeof(*dept));
+    RWPB_F_MSG_INIT(Company_data_Company_Customer_Department, dept);
+    dept->name =(char*) RW_MALLOC0(64);
+    sprintf(dept->name, "Dept%d", i);
+    dept->contact = contact_s = (RWPB_T_MSG(Company_data_Company_Customer_Department_Contact) **)RW_MALLOC0(sizeof(*contact_s) * 10);
+    dept->n_contact = 0;
+    customer->n_department++;
+    for (j = 0; j < 10; j++){
+      contact_s[dept->n_contact] = contact = (RWPB_T_MSG(Company_data_Company_Customer_Department_Contact) *)RW_MALLOC0(sizeof(*contact));
+      RWPB_F_MSG_INIT(Company_data_Company_Customer_Department_Contact, contact);
+
+      contact->name= (char*)RW_MALLOC0(64);
+      sprintf(contact->name, "Contact%d", j);
+      dept->n_contact++;
+    }
+  }
+
+  /*Reroot it to the query-ks*/
+  {
+    rw_keyspec_path_reroot_iter_init((const rw_keyspec_path_t*)appks,
+                                     NULL,
+                                     &state, (const ProtobufCMessage*)customer,
+                                     (const rw_keyspec_path_t*)queryks);
+    n_result = 0;
+    while (rw_keyspec_path_reroot_iter_next(&state)) {
+      matchmsg = rw_keyspec_path_reroot_iter_take_msg(&state);
+      matchks = rw_keyspec_path_reroot_iter_take_ks(&state);
+      EXPECT_TRUE ((!matchmsg ||
+                    (matchmsg == (ProtobufCMessage*)customer) ||
+                    (matchks == (rw_keyspec_path_t *)appks) ||
+                    rw_keyspec_path_has_wildcards(matchks)) == 0);
+      result_s[n_result++] = result = (single_result *)RW_MALLOC0(sizeof(*result));
+      
+      result->paybuf.data  = protobuf_c_message_serialize(NULL, matchmsg,
+                                                          &result->paybuf.len);
+      rw_keyspec_path_serialize_dompath(matchks,
+                                        NULL, &result->keybuf);
+      result->keyspec = (RwSchemaPathSpec *)rw_keyspec_path_create_dup_of_type(matchks,
+                                                                               NULL,
+                                                                               &rw_schema_path_spec__descriptor);
+      
+      protobuf_c_message_free_unpacked(&protobuf_c_default_instance, matchmsg);
+      rw_keyspec_path_free(matchks, NULL);
+    }
+    rw_keyspec_path_reroot_iter_done(&state);
+  }
+  
+
+  //Merged the rerooted serialized protobuf using rw_keyspec_path_reroot_and_merge_opaque
+  ks_out = NULL;
+  msg_out.len = 0;
+  msg_out.data = NULL;
+  if (!msg_out.data) {
+    msg_in.len = 0;
+    msg_in.data = NULL;
+    ks_out = NULL;
+  }
+  for (j = 0; j < n_result; j++) {
+    result = result_s[j];
+    if (result->paybuf.len == 0) {
+      continue;
+    }
+    if (!ks_in && !msg_in.data) {
+      msg_in.data = (unsigned char*)RW_MALLOC0(result->paybuf.len);
+      msg_in.len = result->paybuf.len;
+      memcpy(msg_in.data, result->paybuf.data, msg_in.len);
+      rw_keyspec_path_create_dup((rw_keyspec_path_t*)result->keyspec, NULL , &ks_in);
+      continue;
+    }else if (msg_out.data && msg_out.len) {
+      rw_keyspec_path_free(ks_in, NULL);
+      ks_in = NULL;
+      rw_keyspec_path_create_dup(ks_out, NULL , &ks_in);
+      RW_FREE(msg_in.data);
+      msg_in.len = msg_out.len;
+      msg_in.data = (unsigned char *)RW_MALLOC(msg_in.len);
+      memcpy(msg_in.data, msg_out.data, msg_in.len);
+    }
+    if (ks_out) {
+      rw_keyspec_path_free(ks_out, NULL);
+      ks_out = NULL;
+    }
+    if (msg_out.data) {
+      RW_FREE(msg_out.data);
+    }
+    msg_out.len = 0;
+    msg_out.data = NULL;
+    status = rw_keyspec_path_reroot_and_merge_opaque(NULL,
+                                                     ks_in,
+                                                     (rw_keyspec_path_t*)result->keyspec,
+                                                     &msg_in,
+                                                     &result->paybuf,
+                                                     &ks_out, &msg_out);
+    EXPECT_TRUE(status == RW_STATUS_SUCCESS);
+  }
+  if (ks_in) {
+    rw_keyspec_path_free(ks_in, NULL);
+  }
+  if (msg_in.data) {
+    RW_FREE(msg_in.data);
+  }
+  
+  merged_result.paybuf.len = msg_out.len;
+  merged_result.paybuf.data = msg_out.data;
+  merged_result.keybuf.len = 0;
+  merged_result.keybuf.data = NULL;
+  rw_keyspec_path_serialize_dompath(ks_out, NULL, &merged_result.keybuf);
+  merged_result.keyspec = (RwSchemaPathSpec *)ks_out;
+
+  //free the results since they are merged into the merged result..
+  for (i = 0; i < n_result; i++){
+    rw_keyspec_path_free((rw_keyspec_path_t *)result_s[i]->keyspec, NULL);
+    RW_FREE(result_s[i]->paybuf.data);
+    RW_FREE(result_s[i]->keybuf.data);
+    RW_FREE(result_s[i]);
+  }
+
+
+
+  
+  /*Now that we have the merged serialized result, unpack it.*/
+  matchmsg = NULL;
+  n_result = 0;
+  const rw_yang_pb_schema_t* ks_schema = ((ProtobufCMessage*)queryks)->descriptor->ypbc_mdesc->module->schema?
+      ((ProtobufCMessage*)queryks)->descriptor->ypbc_mdesc->module->schema:NULL;
+  status = rw_keyspec_path_find_msg_desc_schema((rw_keyspec_path_t *)merged_result.keyspec, 
+                                                NULL,
+                                                ks_schema,
+                                                (const rw_yang_pb_msgdesc_t **)&desc_result,
+                                                NULL);
+  
+  matchmsg =  protobuf_c_message_unpack(NULL,
+                                        desc_result->u->msg_msgdesc.pbc_mdesc,
+                                        merged_result.paybuf.len,
+                                        merged_result.paybuf.data);
+  
+  ks_in = (rw_keyspec_path_t *)merged_result.keyspec;
+
+  rw_keyspec_path_reroot_iter_init(ks_in,
+                                   NULL,
+                                   &state,
+                                   matchmsg, (const rw_keyspec_path_t*)queryks);
+  while (rw_keyspec_path_reroot_iter_next(&state)) {
+    unpacked_msg[n_result] = rw_keyspec_path_reroot_iter_take_msg(&state);
+    if (unpacked_msg[n_result]) {
+      unpacked_keyspec[n_result] = rw_keyspec_path_reroot_iter_take_ks(&state);
+      n_result++;
+    }
+  }
+  rw_keyspec_path_reroot_iter_done(&state);
+  if (matchmsg)
+    protobuf_c_message_free_unpacked(NULL, matchmsg);
+  
+  
+  EXPECT_TRUE(n_result == 10);
+  for (i = 0; i < n_result; i++){
+    dept = (RWPB_T_MSG(Company_data_Company_Customer_Department) *)unpacked_msg[i];
+    EXPECT_TRUE(strcmp(dept->name,
+                       customer->department[i]->name) == 0);
+    EXPECT_TRUE(dept->n_contact == 10);
+    for (j = 0; j < dept->n_contact; j++){
+      EXPECT_TRUE(strcmp(dept->contact[j]->name,
+                         customer->department[i]->contact[j]->name) == 0);
+    }
+    rw_keyspec_path_free((rw_keyspec_path_t *)unpacked_keyspec[i], NULL);
+    protobuf_c_message_free_unpacked(NULL, unpacked_msg[i]);
+  }
+
+
+  
+  /*Check if the reroot and then merge came back the same*/
+  rw_keyspec_path_free((rw_keyspec_path_t *)merged_result.keyspec, NULL);
+  RW_FREE(merged_result.paybuf.data);
+  RW_FREE(merged_result.keybuf.data);
+  
+  rw_keyspec_path_free(reinterpret_cast<rw_keyspec_path_t *>(appks), NULL);
+  rw_keyspec_path_free(reinterpret_cast<rw_keyspec_path_t *>(queryks), NULL);  
+
+  protobuf_c_message_free_unpacked(NULL, &customer->base);
+}
+

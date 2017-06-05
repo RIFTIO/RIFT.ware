@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_member.c
  * @author Rajesh Velandy
@@ -399,13 +380,13 @@ rwdts_dispatch_query_response(void *ctx)
    */
 
   RW_ASSERT(rsp);
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, QUERY_RSP_DISPATCH, "Responding to query",
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, QueryRspDispatch, "Responding to query",
                            queryidx, query->corrid, (char*)rwdts_evtrsp_to_str(rsp->evtrsp));
 
   rwdts_xact_query_t *xquery = rwdts_xact_find_query_by_id(xact, queryidx);
 
   if (xquery == NULL) {
-    RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_QueryRspDispatchFailed, "No matching query found",
+    RWDTS_API_LOG_XACT_EVENT(apih, xact, QueryRspDispatchFailed, "No matching query found",
                              queryidx, 0, (char*)rwdts_evtrsp_to_str(rsp->evtrsp));
     goto finish;
   }
@@ -446,7 +427,7 @@ rwdts_dispatch_query_response(void *ctx)
     }
     // ATTN append to the exitsing results
     if (query) {
-      RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_QueryAppendRsp, "Appending response to query",
+      RWDTS_API_LOG_XACT_EVENT(apih, xact, QueryAppendRsp, "Appending response to query",
                               queryidx, query->corrid, (char*)rwdts_evtrsp_to_str(rsp->evtrsp));
     }
   }
@@ -461,11 +442,6 @@ rwdts_dispatch_query_response(void *ctx)
 
 finish:
   rwdts_xact_query_response_deinit(xact_rsp);
-  if (apih->xact_timer) {
-    rwsched_dispatch_source_cancel(apih->tasklet, apih->xact_timer);
-    rwsched_dispatch_release(apih->tasklet, apih->xact_timer);
-  }
-
   rwdts_xact_unref(xact, __PRETTY_FUNCTION__, __LINE__);
   return;
 }
@@ -526,7 +502,8 @@ rwdts_xact_query_deinit(rwdts_xact_query_t* xquery)
     xquery->query = NULL;
   }
 
-  RW_FREE_TYPE(xquery, rwdts_xact_query_t);
+  DTS_APIH_FREE_TYPE(xquery->xact->apih, RW_DTS_DTS_MEMORY_TYPE_XQUERY,
+                     xquery, rwdts_xact_query_t);
 }
 
 static int rwdts_xact_count;
@@ -547,9 +524,11 @@ rwdts_xact_query_unref(rwdts_xact_query_t *x, const char *file, int line)
 {
 
   RW_ASSERT_TYPE(x, rwdts_xact_query_t);
+#if 0 /* Following will crash because xact is null */  
   RWDTS_API_LOG_XACT_DEBUG_EVENT(x->xact->apih, x->xact, QresultRefDecr,
                                  RWLOG_ATTR_SPRINTF("xquery=%p ref_cnt=%d-1, from=%s:%d tot_count=%d - 1",
                                                     x, x->ref_cnt, file?file:"(nil)", line, rwdts_xact_count));
+#endif
   if(g_atomic_int_dec_and_test(&rwdts_xact_count))
     RW_ASSERT_TYPE(x, rwdts_xact_query_t);
   if (!g_atomic_int_dec_and_test(&x->ref_cnt)) {
@@ -573,7 +552,8 @@ rwdts_xact_query_init_internal(rwdts_xact_t *xact, RWDtsQuery *query)
 
   RW_ASSERT(xquery == NULL);
 
-  xquery = RW_MALLOC0_TYPE(sizeof(rwdts_xact_query_t), rwdts_xact_query_t);
+  xquery = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_XQUERY,
+                                 sizeof(rwdts_xact_query_t), rwdts_xact_query_t);
   RW_ASSERT(xquery);
 
   xquery->query = query;
@@ -605,7 +585,7 @@ void rwdts_member_prep_timer_cancel(rwdts_match_info_t* match, bool timeout, int
     RW_ASSERT_TYPE(apih, rwdts_api_t);
 
     rwsched_dispatch_source_cancel(apih->tasklet, match->prep_timer_cancel);
-    rwsched_dispatch_release(apih->tasklet, match->prep_timer_cancel);
+    rwsched_dispatch_source_release(apih->tasklet, match->prep_timer_cancel);
     match->prep_timer_cancel = NULL;
     if (!timeout) {
       rwdts_xact_unref(xact, __PRETTY_FUNCTION__, line);
@@ -631,14 +611,14 @@ static void rwdts_member_prep_check_timer(void* hndl)
     return;
   }
 
-  RWDTS_API_LOG_XACT_EVENT(apih,xact,RwDtsApiLog_notif_MemberRspTimeout, rwdts_get_app_addr_res(xact->apih, match->reg->cb.cb.prepare), xact->num_prepares_dispatched);
+  RWDTS_API_LOG_XACT_EVENT(apih,xact,MemberRspTimeout, rwdts_get_app_addr_res(xact->apih, match->reg->cb.cb.prepare), xact->num_prepares_dispatched);
 
   rwdts_member_query_rsp_t rsp;
   RW_ZERO_VARIABLE(&rsp);
   rsp.evtrsp = rwdts_is_transactional(xact)?RWDTS_EVTRSP_NACK:RWDTS_EVTRSP_NA;
   if (xact->tr) {
     RWDtsTracerouteEnt ent;
-    char tmp_log_xact_id_str[128] = "";
+    
     rwdts_traceroute_ent__init(&ent);
     ent.line = __LINE__;
     ent.func = (char*)__PRETTY_FUNCTION__;
@@ -649,14 +629,14 @@ static void rwdts_member_prep_check_timer(void* hndl)
       fprintf(stderr, "%s:%u: TYPE:%s, MEMBER:%s\n", ent.func, ent.line,
               rwdts_print_ent_type(ent.what), ent.srcpath);
     }
-    RWLOG_EVENT(apih->rwlog_instance, RwDtsApiLog_notif_TracePrepcheckTimeout, rwdts_xact_id_str(&xact->id,tmp_log_xact_id_str, sizeof(tmp_log_xact_id_str)),
+    RWLOG_EVENT(apih->rwlog_instance, RwDtsApiLog_notif_TracePrepcheckTimeout, xact->xact_id_str,
                 apih->client_path);
   }
   rwdts_member_send_response(xact, match->xact_info.queryh,&rsp);
   return;
 }
 
-#define RWDTS_ASYNC_TIMEOUT (150 * NSEC_PER_SEC)
+
 void rwdts_member_start_prep_timer_cancel(rwdts_match_info_t* match)
 {
   // If not running start
@@ -671,13 +651,19 @@ void rwdts_member_start_prep_timer_cancel(rwdts_match_info_t* match)
     rwdts_xact_ref(xact, __PRETTY_FUNCTION__, __LINE__);
 
     match->prep_timer_cancel = rwsched_dispatch_source_create(apih->tasklet,
-                                                              RWSCHED_DISPATCH_SOURCE_TYPE_TIMER, 0, 0, apih->client.rwq);
+                                                              RWSCHED_DISPATCH_SOURCE_TYPE_TIMER,
+                                                              0, 0, apih->client.rwq);
     rwsched_dispatch_source_set_event_handler_f(apih->tasklet,
-                                                match->prep_timer_cancel, rwdts_member_prep_check_timer);
+                                                match->prep_timer_cancel,
+                                                rwdts_member_prep_check_timer);
     rwsched_dispatch_set_context(apih->tasklet, match->prep_timer_cancel, match);
     rwsched_dispatch_source_set_timer(apih->tasklet, match->prep_timer_cancel,
-                                      dispatch_time(DISPATCH_TIME_NOW, RWDTS_ASYNC_TIMEOUT),
-                                      (RWDTS_ASYNC_TIMEOUT), 0);
+                                      dispatch_time(DISPATCH_TIME_NOW,
+                                                    RWDTS_TIMEOUT_QUANTUM_MULTIPLE(apih,
+                                                                                   RWDTS_ASYNC_TIMEOUT_SCALE)),
+                                      RWDTS_TIMEOUT_QUANTUM_MULTIPLE(apih,
+                                                                     RWDTS_ASYNC_TIMEOUT_SCALE),
+                                      0);
     rwsched_dispatch_resume(apih->tasklet, match->prep_timer_cancel);
 
   }
@@ -692,7 +678,8 @@ rwdts_xact_rmv_query(rwdts_xact_t *xact, rwdts_xact_query_t* xquery)
 
   HASH_DELETE(hh, xact->queries, xquery);
   RW_ASSERT(xquery);
-  xquery->xact = NULL;
+  //AKKI CHECK why this was done..
+  //xquery->xact = NULL;
 
   // free the matched entry list
   rwdts_match_list_deinit((&xquery->reg_matches));
@@ -714,7 +701,8 @@ rwdts_match_list_deinit(rw_sklist_t *match_list)
 {
   rwdts_match_info_t *match = NULL, *next_match = NULL, *removed = NULL;
   rw_status_t rs;
-
+  rwdts_api_t *apih;
+  
   match = RW_SKLIST_HEAD(match_list, rwdts_match_info_t);
   while(match) {
     next_match = RW_SKLIST_NEXT(match, rwdts_match_info_t, match_elt);
@@ -740,8 +728,10 @@ rwdts_match_list_deinit(rw_sklist_t *match_list)
                                  &match->matchid,
                                  &removed);
     RW_ASSERT(rs == RW_STATUS_SUCCESS);
+    apih = match->reg->apih;
     rwdts_member_reg_handle_unref((rwdts_member_reg_handle_t)match->reg);
-    RW_FREE_TYPE(match, rwdts_match_info_t);
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_MATCH_INFO,
+                       match, rwdts_match_info_t);
     match = next_match;
   }
   return RW_STATUS_SUCCESS;
@@ -905,9 +895,7 @@ rwdts_member_send_error(rwdts_xact_t*                   xact,
       keystr_buf = RW_STRDUP(query->key->keystr);
     }
   }
-  else if (xact && xact->mbr_data && xact->mbr_data->ks) {
-    ks = xact->mbr_data->ks;
-  }
+  
 
   rw_keyspec_path_t *output = NULL;
   if (ks) {
@@ -1242,7 +1230,7 @@ rwdts_member_send_response_int(rwdts_xact_t*                   xact,
 
   RW_ASSERT_TYPE(apih, rwdts_api_t);
 
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, MEMBER_XACT_RSP, "Member responding to transaction",
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, MemberXactRsp, "Member responding to transaction",
                            (char*)rwdts_evtrsp_to_str(rsp->evtrsp));
 
   rwdts_xact_query_t *xquery = NULL;
@@ -1342,7 +1330,7 @@ rwdts_member_send_response_more(rwdts_xact_t*                   xact,
                                 const rwdts_member_query_rsp_t* rsp,
                                 void*                           getnext_ptr)
 {
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, MemberRspMore, 
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, MemberRspMore, 
                                  RWLOG_ATTR_SPRINTF("Member[%s]: rwdts_member_send_response_more", xact->apih->client_path));
   rwdts_member_query_rsp_t rsp_int = *rsp;
   rsp_int.getnext_ptr = getnext_ptr;
@@ -1572,6 +1560,80 @@ rwdts_store_cache_set_callback(rwdts_kv_light_set_status_t status,
 }
 
 static void
+rwdts_reg_kv_store_cache_obj(rwdts_api_t *apih,
+                             rwdts_member_registration_t *reg,
+                             rwdts_member_data_object_t *mobj,
+                             bool listy)
+{
+  if (mobj->create_flag) {
+    rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_CREATE);
+    if (listy){
+      if ((reg->flags & RWDTS_FLAG_PUBLISHER) &&
+          (apih->rwtasklet_info &&
+           ((apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB)||
+            (apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
+        if (reg->kv_handle) {
+          uint8_t *payload;
+          size_t  payload_len;
+          payload = protobuf_c_message_serialize(NULL, mobj->msg, &payload_len);
+          rw_status_t rs = rwdts_kv_handle_add_keyval(reg->kv_handle, 0, (char *)mobj->key,
+                                                      mobj->key_len,
+                                                      (char *)payload, (int)payload_len,
+                                                      rwdts_store_cache_set_callback,
+                                                      (void *)reg->kv_handle);
+          RW_ASSERT(rs == RW_STATUS_SUCCESS);
+          if (rs != RW_STATUS_SUCCESS) {
+            /* Fail the VM and switchover to STANDBY */
+          }
+          RW_FREE(payload);
+        }
+      }
+    }
+  } else if (mobj->update_flag){
+    rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_UPDATE);
+    if (listy){
+      if ((reg->flags & RWDTS_FLAG_PUBLISHER) &&
+          (apih->rwtasklet_info &&
+           ((apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB) ||
+            (apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
+        if (reg->kv_handle) {
+          uint8_t *payload;
+          size_t  payload_len;
+          payload = protobuf_c_message_serialize(NULL, mobj->msg, &payload_len);
+          rw_status_t rs = rwdts_kv_handle_add_keyval(reg->kv_handle, 0,
+                                                      (char *)mobj->key, mobj->key_len,
+                                                      (char *)payload, (int)payload_len, rwdts_store_cache_set_callback,
+                                                      (void *)reg->kv_handle);
+          RW_ASSERT(rs == RW_STATUS_SUCCESS);
+          if (rs != RW_STATUS_SUCCESS) {
+            /* Fail the VM and switchover to STANDBY */
+          }
+          RW_FREE(payload);
+        }
+      }
+    }
+  }else if (mobj->delete_mark){
+    rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_DELETE);
+    if (listy) {
+      if ((reg->flags & RWDTS_FLAG_PUBLISHER) &&
+          (apih->rwtasklet_info &&
+           ((apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB)||
+            (apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
+        if (reg->kv_handle) {
+          rw_status_t rs = rwdts_kv_handle_del_keyval(reg->kv_handle, 0,
+                                                      (char *)mobj->key, mobj->key_len,
+                                                      rwdts_store_cache_set_callback, (void *)reg->kv_handle);
+          RW_ASSERT(rs == RW_STATUS_SUCCESS);
+          if (rs != RW_STATUS_SUCCESS) {
+            /* Fail the VM and switchover to STANDBY */
+          }
+        }
+      }
+    }
+  }
+}
+  
+static void
 rwdts_reg_store_cache_obj(rwdts_api_t *apih,
                           rwdts_xact_t* xact,                       
                           rwdts_member_data_object_t *mobj)
@@ -1580,192 +1642,108 @@ rwdts_reg_store_cache_obj(rwdts_api_t *apih,
   rwdts_member_data_object_t *newobj = NULL;
   rwdts_member_registration_t *reg = mobj->reg;
   bool listy;
+  rwdts_shard_handle_t* shard             = NULL;
+  RwDts__YangEnum__AuditTrailAction__E audit_action = RWDTS_MEMBER_OBJ_MAX_AUDIT_TRAIL;//invalid
+  bool free_newobj = false;
+  rw_status_t rs;
+  
   obj_list_p = &reg->obj_list;
-
-
   listy = rw_keyspec_path_is_listy(reg->keyspec);
-  if (!listy) {
-    HASH_FIND(hh_data, (*obj_list_p), mobj->key, mobj->key_len, newobj);
+  
+  /*When two xacts are happening in parallel i.e an xact was started to create an
+    element and before that xact is commited, another xact was started to update
+    the element with replace flag, we could end up with multiple mobjs in xact with
+    create flag set. This could lead us to inconsistent data.
 
-    if ((mobj->create_flag) ||
-        ((mobj->update_flag) && (newobj == NULL))){
-      RW_ASSERT(mobj->keyspec);
-      if (reg->shard && reg->shard->appdata) {
-        rwdts_shard_handle_appdata_create_element(reg->shard, mobj->keyspec, mobj->msg);
-      } else {
-        newobj = rwdts_member_data_init(reg, (ProtobufCMessage*)mobj->msg, mobj->keyspec, false, false);
+    We cannot control the ordering across, say, two participating members with the same two xacts in collision.  If both transactions originate in the same router, that router can do <something> to impose an ordering, but it must result in the prepares and commits happening in order with no intermingling of pending object computation and committing.  If the two transactions originate in different routers, the notion was to have the routers agree upon a commit order and return EAGAIN or whatever we call it for the other transaction(s) to be retried.
+    
+    The original DTS spec defines a distributed collision resolution scheme consisting of something like HASH(xact-id) and then all routers take the lowest value as the ?winner?.
+    
+    It is required that PRECOMMIT return the EAGAIN from the member in order for the router(s) to resolve the collision.  All pre-precommit transactions must be considered for collision in the member when it gets a precommit message.  At precommit arrival time we know that all members everywhere will either have a) all collisions in place as objects on various xacts or b) not have the collision present at all.
+    
+    It is required that objects involved in an ACKed PRECOMMIT transaction cause a hold on any future prepare/precommit activity until the commit or abort arrives; in other words there is a lock on all xact-imacted objects between precommit and commit/abort.  This can consist of a queueing of PREPARE messages, as the precommit->commit time is intended to be short, or it could be an EAGAIN sort of return from the prepare.
 
-        /* Add an audit trail that this record is updated */
+    The other option is speculative execution of transactions based on uncommitted results instead of committed results, but the ordering graph and dependency management becomes a bigger headache.  In practice we are better positioned to implement the EAGAIN collision detection retry thing.  And we can do the interim thing of just having the member restart it after a small random delay to tease out an ordering that doesn?t collide.
+  */
+  
+  shard = reg->shard;
+  if (shard && shard->appdata){
+    /*This is under the assumption that the shard apis for create/update handle the case where the update
+      will create if element does not exist and create will update the element if the element already
+      exists We cannot look at the reg->obj_list to make shard decisions as was done earlier..*/
+    if (mobj->create_flag){
+      rwdts_shard_handle_appdata_create_element(reg->shard, mobj->keyspec, mobj->msg);
+    }else if (mobj->update_flag){
+      rwdts_shard_handle_appdata_update_element(reg->shard, mobj->keyspec, mobj->msg);
+    }else if (mobj->delete_mark){
+      rwdts_shard_handle_appdata_delete_element(reg->shard, mobj->keyspec, mobj->msg);
+    }else{
+      /*REALLY NO CHANGE HERE AND YET NEED TO BE COMMITTED. LETS TRY ASSERTING..*/
+      RW_ASSERT(0);
+    }
 
-        rwdts_member_data_object_add_audit_trail(newobj,
-                                                 RW_DTS_AUDIT_TRAIL_EVENT_TRANSACTION,
-                                                 RW_DTS_AUDIT_TRAIL_ACTION_OBJ_CREATE);
-        HASH_ADD_KEYPTR(hh_data, (*obj_list_p), newobj->key, newobj->key_len, newobj);
-        apih->stats.num_committed_create_obj++;
-      }
-      if (mobj->create_flag) {
-        rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_CREATE);
-      } else {
-        rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_UPDATE);
-      }
-    } else if (mobj->delete_mark) {
-      apih->stats.num_committed_delete_obj++;
-      rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_DELETE);
-      if (reg->shard && reg->shard->appdata) {
-        rwdts_shard_handle_appdata_delete_element(reg->shard, mobj->keyspec, mobj->msg);
-      } else {
-        if (newobj != NULL) {
-          HASH_DELETE(hh_data, (*obj_list_p), newobj);
+    newobj = mobj; //shard does not have an entry in reg->obj_list
+    goto kvstore;
+  }
+  
 
-          rwdts_member_data_object_add_audit_trail(newobj,
-                                                   RW_DTS_AUDIT_TRAIL_EVENT_TRANSACTION,
-                                                   RW_DTS_AUDIT_TRAIL_ACTION_OBJ_DELETE);
+  HASH_FIND(hh_data, (*obj_list_p), mobj->key, mobj->key_len, newobj);
 
-          rw_status_t rs = rwdts_member_data_deinit(newobj);
-          RW_ASSERT(rs == RW_STATUS_SUCCESS);
-        }
-      }
-    } else if (mobj->update_flag) {
-      RW_ASSERT(newobj != NULL);
+  if (newobj){
+    /*Element already in the list*/
+    if (mobj->create_flag || mobj->update_flag){
       RW_ASSERT(mobj->keyspec);
       RW_ASSERT(newobj->keyspec);
       apih->stats.num_committed_update_obj++;
-      if (reg->shard && reg->shard->appdata) {
-        rwdts_shard_handle_appdata_update_element(reg->shard, mobj->keyspec, mobj->msg);
+      if (mobj->create_flag || !mobj->replace_flag) {
+        //merge(incoming/new, existing/old) => result in old
+        protobuf_c_boolean ret = protobuf_c_message_merge(NULL, mobj->msg, newobj->msg);
+        RW_ASSERT(ret == TRUE);
       } else {
-        if (!mobj->replace_flag) {
-          //merge(incoming/new, existing/old) => result in old
-          protobuf_c_boolean ret = protobuf_c_message_merge(NULL, mobj->msg, newobj->msg);
-          RW_ASSERT(ret == TRUE);
-        } else {
-          protobuf_c_message_free_unpacked(NULL, newobj->msg);
-          newobj->msg =  protobuf_c_message_duplicate(NULL, mobj->msg, mobj->msg->descriptor);
-        }
-
-        rwdts_member_data_object_add_audit_trail(newobj,
-                                                 RW_DTS_AUDIT_TRAIL_EVENT_TRANSACTION,
-                                                 RW_DTS_AUDIT_TRAIL_ACTION_OBJ_UPDATE);
+        protobuf_c_message_free_unpacked(NULL, newobj->msg);
+        newobj->msg =  protobuf_c_message_duplicate(NULL, mobj->msg, mobj->msg->descriptor);
       }
-      /* Should a update value be sent to KV? */
-      rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_UPDATE);
+      audit_action = RW_DTS_AUDIT_TRAIL_ACTION_OBJ_UPDATE;
+    }else if (mobj->delete_mark){
+      apih->stats.num_committed_delete_obj++;
+      HASH_DELETE(hh_data, (*obj_list_p), newobj);
+      audit_action = RW_DTS_AUDIT_TRAIL_ACTION_OBJ_DELETE;
+      //mark that the newobj has to be freed..
+      free_newobj = true;
     }
-  } else {
-    HASH_FIND(hh_data, (*obj_list_p), mobj->key, mobj->key_len, newobj);
-    if (((mobj->create_flag) && (newobj == NULL)) ||
-        ((mobj->update_flag) && (newobj == NULL))){
-      RW_ASSERT(mobj->keyspec);
-      if (reg->shard && reg->shard->appdata) {
-        rwdts_shard_handle_appdata_create_element(reg->shard, mobj->keyspec, mobj->msg);
-      } else {
-        newobj = rwdts_member_data_init(reg, (ProtobufCMessage*)mobj->msg, mobj->keyspec, false, true);
+  }else{
+    if (mobj->create_flag || mobj->update_flag){
+      newobj = rwdts_member_data_init(reg, (ProtobufCMessage*)mobj->msg, mobj->keyspec, false, listy);  
+      if (listy){
         mobj->keyspec = NULL;
-        apih->stats.num_committed_create_obj++;
-        HASH_ADD_KEYPTR(hh_data, (*obj_list_p), newobj->key, newobj->key_len, newobj);
-
-        rwdts_member_data_object_add_audit_trail(newobj,
-                                                 RW_DTS_AUDIT_TRAIL_EVENT_TRANSACTION,
-                                                 RW_DTS_AUDIT_TRAIL_ACTION_OBJ_CREATE);
       }
-      if (mobj->create_flag) {
-        rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_CREATE);
-      } else {
-        rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_UPDATE);
-      }
-      if ((reg->flags & RWDTS_FLAG_PUBLISHER) && (apih->rwtasklet_info &&
-          ((apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB)||
-          (apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
-        if (reg->kv_handle) {
-          uint8_t *payload;
-          size_t  payload_len;
-          payload = protobuf_c_message_serialize(NULL, newobj->msg, &payload_len);
-          rw_status_t rs = rwdts_kv_handle_add_keyval(reg->kv_handle, 0, (char *)newobj->key, newobj->key_len,
-                                                     (char *)payload, (int)payload_len, rwdts_store_cache_set_callback, (void *)reg->kv_handle);
-          RW_ASSERT(rs == RW_STATUS_SUCCESS);
-          if (rs != RW_STATUS_SUCCESS) {
-            /* Fail the VM and switchover to STANDBY */
-          }
-        }
-      }
-    } else if (mobj->delete_mark) {
-      apih->stats.num_committed_delete_obj++;
-      rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_DELETE);
-      if (reg->shard && reg->shard->appdata) {
-        rwdts_shard_handle_appdata_delete_element(reg->shard, mobj->keyspec, mobj->msg);
-      } else {
-        if (newobj != NULL) {
-
-          rwdts_member_data_object_add_audit_trail(newobj,
-                                                   RW_DTS_AUDIT_TRAIL_EVENT_TRANSACTION,
-                                                   RW_DTS_AUDIT_TRAIL_ACTION_OBJ_DELETE);
-          HASH_DELETE(hh_data, (*obj_list_p), newobj);
-          if ((reg->flags & RWDTS_FLAG_PUBLISHER) && (apih->rwtasklet_info &&
-              ((apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB)||
-              (apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
-            if (reg->kv_handle) {
-              rw_status_t rs = rwdts_kv_handle_del_keyval(reg->kv_handle, 0, (char *)newobj->key, newobj->key_len,
-                                                          rwdts_store_cache_set_callback, (void *)reg->kv_handle);
-              RW_ASSERT(rs == RW_STATUS_SUCCESS);
-              if (rs != RW_STATUS_SUCCESS) {
-                /* Fail the VM and switchover to STANDBY */
-              }
-            }
-          }
-          rw_status_t rs = rwdts_member_data_deinit(newobj);
-          RW_ASSERT(rs == RW_STATUS_SUCCESS);
-        }
-      }
-    } else if ((mobj->update_flag) || (newobj&&mobj->create_flag)) {
-      RW_ASSERT(newobj != NULL);
-      RW_ASSERT(mobj->keyspec);
-      RW_ASSERT(newobj->keyspec);
-      apih->stats.num_committed_update_obj++;
-      if (mobj->msg) {
-        /* Should a update value be sent to KV? */
-        rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_UPDATE);
-
-        if (reg->shard && reg->shard->appdata) {
-          rwdts_shard_handle_appdata_update_element(reg->shard, mobj->keyspec, mobj->msg);
-        } else {
-          if (!mobj->replace_flag) {
-            // merge(incoming/new, existing/old) => result in old
-            protobuf_c_boolean ret = protobuf_c_message_merge(NULL, mobj->msg, newobj->msg);
-            RW_ASSERT(ret == TRUE);
-          } else {
-            protobuf_c_message_free_unpacked(NULL, newobj->msg);
-            newobj->msg =  protobuf_c_message_duplicate(NULL, mobj->msg, mobj->msg->descriptor);
-          }
-          rwdts_member_data_object_add_audit_trail(newobj,
-                                                   RW_DTS_AUDIT_TRAIL_EVENT_TRANSACTION,
-                                                   RW_DTS_AUDIT_TRAIL_ACTION_OBJ_UPDATE);
-        }
-        /* Should a update value be sent to KV? */
-        rwdts_kv_update_db_xact_commit(mobj, RWDTS_QUERY_UPDATE);
-        if ((reg->flags & RWDTS_FLAG_PUBLISHER) && (apih->rwtasklet_info &&
-            ((apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_BDB) ||
-            (apih->rwtasklet_info->data_store == RWVCS_TYPES_DATA_STORE_REDIS)))) {
-          if (reg->kv_handle) {
-            uint8_t *payload;
-            size_t  payload_len;
-            payload = protobuf_c_message_serialize(NULL, newobj->msg, &payload_len);
-            rw_status_t rs = rwdts_kv_handle_add_keyval(reg->kv_handle, 0, (char *)newobj->key, newobj->key_len,
-                                                       (char *)payload, (int)payload_len, rwdts_store_cache_set_callback,
-                                                       (void *)reg->kv_handle);
-            RW_ASSERT(rs == RW_STATUS_SUCCESS);
-            if (rs != RW_STATUS_SUCCESS) {
-              /* Fail the VM and switchover to STANDBY */
-            }
-          }
-        }
-      } else {
-        RW_ASSERT_MESSAGE(0, "MSG NULL for update operation !!!!!!");
-      }
+      audit_action = RW_DTS_AUDIT_TRAIL_ACTION_OBJ_CREATE;
+      HASH_ADD_KEYPTR(hh_data, (*obj_list_p), newobj->key, newobj->key_len, newobj);
+      apih->stats.num_committed_create_obj++;
+    }else if (mobj->delete_mark){
+      /*No element to be deleted no action to the committed_list*/
     }
   }
-
-  if (xact->flags&RWDTS_XACT_FLAG_SOLICIT_RSP) {
-    rwdts_member_reg_run(reg, RW_DTS_REGISTRATION_EVT_ADVISE, newobj);
+  
+  if (newobj){
+    rwdts_member_data_object_add_audit_trail(newobj,
+                                             RW_DTS_AUDIT_TRAIL_EVENT_TRANSACTION,
+                                             audit_action);
   }
-
+kvstore:
+  if (newobj){
+    rwdts_reg_kv_store_cache_obj(apih, reg, newobj, listy);
+    ///???
+    if (xact->flags&RWDTS_XACT_FLAG_SOLICIT_RSP) {
+      rwdts_member_reg_run(reg, RW_DTS_REGISTRATION_EVT_ADVISE, newobj);
+    }
+  }
+  
+  if ((newobj != NULL) &&(free_newobj)){
+    rs = rwdts_member_data_deinit(apih, newobj);
+    RW_ASSERT(rs == RW_STATUS_SUCCESS);
+  }
+  
   return;
 }
 
@@ -1792,7 +1770,7 @@ rwdts_store_cache_obj(rwdts_xact_t* xact)
     rwdts_reg_store_cache_obj(apih, xact, mobj);
 
     HASH_DELETE(hh_data, (*xact_obj_p), mobj);
-    rw_status_t rs = rwdts_member_data_deinit(mobj);
+    rw_status_t rs = rwdts_member_data_deinit(apih, mobj);
     RW_ASSERT(rs == RW_STATUS_SUCCESS);
   }
 
@@ -1801,7 +1779,7 @@ rwdts_store_cache_obj(rwdts_xact_t* xact)
     rwdts_reg_store_cache_obj(apih, xact, mobj);
 
     HASH_DELETE(hh_data, (*xact_obj_p), mobj);
-    rw_status_t rs = rwdts_member_data_deinit(mobj);
+    rw_status_t rs = rwdts_member_data_deinit(apih, mobj);
     RW_ASSERT(rs == RW_STATUS_SUCCESS);
   }
 
@@ -1811,7 +1789,9 @@ rwdts_store_cache_obj(rwdts_xact_t* xact)
 static
 rwdts_group_t *rwdts_group_create(rwdts_api_t *apih,
                                   rwdts_group_cbset_t *cbset) {
-  rwdts_group_t *grp = RW_MALLOC0_TYPE(sizeof(rwdts_group_t), rwdts_group_t);
+  rwdts_group_t *grp = DTS_APIH_MALLOC0_TYPE(apih,
+                                             RW_DTS_DTS_MEMORY_TYPE_DTS_GROUP,
+                                             sizeof(rwdts_group_t), rwdts_group_t);
   RW_ASSERT(cbset);
   grp->apih = apih;
   memcpy(&grp->cb, cbset, sizeof(grp->cb));
@@ -1882,7 +1862,8 @@ void rwdts_group_destroy(rwdts_group_t *grp) {
   memset(&grp->cb, 0, sizeof(grp->cb));
 
   apih->group[grp->id] = NULL;
-  RW_FREE_TYPE(grp, rwdts_group_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_DTS_GROUP,
+                     grp, rwdts_group_t);
   grp = NULL;
 }
 
@@ -1969,8 +1950,8 @@ rwdts_dispatch_pending_query_response(void *ctx)
      * Find the matching  query in the transaction
      */
 
-    RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, QUERY_RSP_DISPATCH, "Responding to query",
-                             queryidx, query->corrid, (char*)rwdts_evtrsp_to_str(rsp[i]->evtrsp));
+    RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, QueryRspDispatch, "Responding to query",
+                             queryidx, query->corrid, (char*)rwdts_evtrsp_to_str(rsp->evtrsp));
 
     // Copy the new results if the response contain messages
     RWDtsXactResult result;
@@ -2005,7 +1986,7 @@ rwdts_dispatch_pending_query_response(void *ctx)
           return;
         }
       }
-      RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_QueryAppendRsp, "Appending response to query",
+      RWDTS_API_LOG_XACT_EVENT(apih, xact, QueryAppendRsp, "Appending response to query",
                                queryidx, query->corrid, (char*)rwdts_evtrsp_to_str(rsp->evtrsp));
     }
 
@@ -2024,10 +2005,6 @@ rwdts_dispatch_pending_query_response(void *ctx)
 finish:
   rwdts_xact_query_pend_response_deinit(xact_rsp);
   xquery->xact_rsp_pending = NULL;
-  if (apih->xact_timer) {
-    rwsched_dispatch_source_cancel(apih->tasklet, apih->xact_timer);
-    rwsched_dispatch_release(apih->tasklet, apih->xact_timer);
-  }
 
   return;
 }

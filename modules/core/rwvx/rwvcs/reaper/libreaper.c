@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -34,6 +20,11 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <time.h>
+#include <assert.h>
+#include <inttypes.h>
 
 #include "libreaper.h"
 
@@ -189,13 +180,13 @@ struct client * client_alloc(int socket) {
   }
 
   client->max_pids = 64;
-  client->pids = (uint16_t *)malloc(sizeof(uint16_t) * client->max_pids);
+  client->pids = (pid_t *)malloc(sizeof(pid_t) * client->max_pids);
   if (!client->pids) {
     err("malloc: %s\n", strerror(errno));
     free(client);
     return NULL;
   }
-  bzero(client->pids, sizeof(uint16_t) * client->max_pids);
+  bzero(client->pids, sizeof(pid_t) * client->max_pids);
 
   client->max_paths = 64;
   client->paths = (char **)malloc(sizeof(char *) * client->max_paths);
@@ -240,7 +231,7 @@ int reaper_add_client(struct reaper * reaper, int socket) {
   return 0;
 }
 
-int reaper_del_client_pid(struct reaper * reaper, struct client * client, uint16_t pid) {
+int reaper_del_client_pid(struct reaper * reaper, struct client * client, pid_t pid) {
 
   for (size_t i = 0; i < client->max_pids; ++i) {
     if (client->pids[i] == pid) {
@@ -252,7 +243,7 @@ int reaper_del_client_pid(struct reaper * reaper, struct client * client, uint16
   return -1;
 }
 
-int reaper_add_client_pid(struct reaper * reaper, struct client * client, uint16_t pid) {
+int reaper_add_client_pid(struct reaper * reaper, struct client * client, pid_t pid) {
   bool inserted = false;
 
   for (size_t i = 0; i < client->max_pids; ++i) {
@@ -264,9 +255,9 @@ int reaper_add_client_pid(struct reaper * reaper, struct client * client, uint16
   }
 
   if (!inserted) {
-    uint16_t * new_pids;
+    pid_t * new_pids;
 
-    new_pids = (uint16_t *)realloc(client->pids, sizeof(uint16_t) * 2 * client->max_pids);
+    new_pids = (pid_t *)realloc(client->pids, sizeof(pid_t) * 2 * client->max_pids);
     if (!new_pids) {
       err("failed to increase client pid list: %s\n", strerror(errno));
       return -1;
@@ -307,6 +298,102 @@ int reaper_add_client_path(struct reaper * reaper, struct client * client, const
   return 0;
 }
 
+static int reaper_check_filename_pid(const char *str, const char *pid_str) {
+  int retval = 0;
+  const char *pidptr = strstr(str, pid_str);
+  if (pidptr) {
+    /* Either end of string or non-digit surrounding the pid */
+    int before = (pidptr == str || (pidptr > str && !isdigit(pidptr[-1])));
+    int after = ((pidptr + strlen(pid_str) == str + strlen(str))
+		 || !isdigit(pidptr[strlen(pid_str)]));
+      
+    retval = (before && after);
+  }
+  return retval;
+}
+
+#define REAPER_SLEEP_MS(x) {						\
+  struct timespec ts = { .tv_sec = (x)/1000, .tv_nsec = ((x) % 1000) * 1000000 }; \
+  int rv = 0;								\
+  do {									\
+    rv = nanosleep(&ts, &ts);						\
+  } while (rv == -1 && errno == EINTR);					\
+}
+
+
+static void reaper_wait_for_core(pid_t pid) {
+  DIR *dir = NULL;
+  char cwdpath[1024];
+  char corepath[2048];
+
+  assert(sizeof(pid) == sizeof(int32_t));
+  sprintf(cwdpath, "/proc/%"PRIi32"/cwd", (int32_t)pid);
+  ssize_t s = readlink(cwdpath, corepath, 2048);
+  if (s > 0 && s < 2048) {
+    corepath[s] = '\0';
+    /* corepath is the process's cwd. */
+  } else {
+    if (!getcwd(corepath, 2048)) {
+      /* Meh, path too long */
+      return;
+    }
+  }
+  
+  /* scan cwd, of each process per proc, or our cwd if nothing better */
+  char pid_str[16];
+  int len = snprintf(pid_str, 16, "%"PRIi32, (int32_t)pid);
+  if (len > 0 && len < 16) {
+    pid_str[15] = '\0';
+    dir = opendir(corepath);
+    if (dir) {
+      info("reaper checking for pid %"PRIi32" cores in '%s'\n", (int32_t)pid, corepath);
+      struct dirent *dent;
+      for (dent = readdir(dir);
+	   dent;
+	   dent = readdir(dir)) {
+	if (strstr(dent->d_name, "core")
+	    && reaper_check_filename_pid(dent->d_name, pid_str)) {
+
+	  struct stat statbuf = { };
+	  int r = stat(dent->d_name, &statbuf);
+	  if (r == 0 && statbuf.st_mtime >= time(NULL) - 15) {
+	    int last_update = 0;
+	    err("waiting on core file '%s'\n", dent->d_name);
+	    int ii;
+	    for (ii = 0; ii < 240; ii += 5) {
+	      struct stat statbuf2 = { };
+	      int r = stat(dent->d_name, &statbuf2);
+	      if (r == 0) {
+		if (statbuf.st_mtime == statbuf2.st_mtime
+		    && statbuf.st_size == statbuf2.st_size) {
+		  if (ii - last_update > 20) {
+		    /* No change in 15s */
+		    goto ret;
+		  }
+		} else {
+		  last_update = ii;
+		  memcpy(&statbuf, &statbuf2, sizeof(statbuf));
+		}
+	      } else {
+		/* Vanished? Go to next file */
+		break;
+	      }
+	      REAPER_SLEEP_MS(5000);
+	      info(" +5s core file '%s'\n", dent->d_name);
+	    }
+	  }
+	}
+      }
+    }
+  }
+  
+ ret:
+  if (dir) {
+    closedir(dir);
+  }
+  return;
+}  
+
 int reaper_kill_client_pids(struct reaper * reaper, struct client * client) {
   int r;
   size_t cleared = 0;
@@ -314,10 +401,14 @@ int reaper_kill_client_pids(struct reaper * reaper, struct client * client) {
 
 
   for (n_pids = 0; client->pids[n_pids]; ++n_pids) {
+
+    /* Check for and wait on core file */
+    reaper_wait_for_core(client->pids[n_pids]);
+    
     info("Sending SIGTERM to %u\n", client->pids[n_pids]);
-    r = kill(-1 * (pid_t)client->pids[n_pids], SIGTERM);
+    r = kill(-1 * client->pids[n_pids], SIGTERM);
     if (r && errno != ESRCH)
-      err("kill(SIGTERM, %d): %s\n", -1 * (pid_t)client->pids[n_pids], strerror(errno));
+      err("kill(SIGTERM, %"PRIi32"): %s\n", -1 * (int32_t)client->pids[n_pids], strerror(errno));
   }
 
   for (size_t i = 0; i < 1000; ++i) {
@@ -328,7 +419,7 @@ int reaper_kill_client_pids(struct reaper * reaper, struct client * client) {
         if (r != -1 || errno != ESRCH)
           break;
 
-        info("%d exited on SIGTERM\n", client->pids[j]);
+        info("%"PRIi32" exited on SIGTERM\n", (int32_t)client->pids[j]);
         cleared++;
         client->pids[j] = 0;
       }
@@ -342,10 +433,10 @@ int reaper_kill_client_pids(struct reaper * reaper, struct client * client) {
 
   for (size_t i = 0; i < n_pids; ++i) {
     if (client->pids[i]) {
-      info("Sending SIGKILL TO %u\n", client->pids[i]);
+      info("Sending SIGKILL TO %"PRIi32"\n", (int32_t)client->pids[i]);
       r = kill(-1 * (pid_t)client->pids[i], SIGKILL);
       if (r)
-        err("kill(SIGTERM, %d): %s\n", -1 * (pid_t)client->pids[i], strerror(errno));
+        err("kill(SIGTERM, %"PRIi32"): %s\n", -1 * (int32_t)client->pids[i], strerror(errno));
     }
   }
 
@@ -378,6 +469,8 @@ struct reaper * reaper_alloc(const char * ipc_path, reaper_on_disconnect cb) {
   struct reaper * reaper;
   struct sockaddr_un addr;
   mode_t old_mask;
+
+  assert(sizeof(pid_t) == sizeof(int32_t));
 
   reaper = (struct reaper *)malloc(sizeof(struct reaper));
   if (!reaper) {
@@ -442,14 +535,14 @@ struct reaper * reaper_alloc(const char * ipc_path, reaper_on_disconnect cb) {
 
   bzero(&addr, sizeof(struct sockaddr_un));
   addr.sun_family = AF_UNIX;
-  r = snprintf(addr.sun_path, UNIX_PATH_MAX, ipc_path);
-  if (r < 0) {
+  r = snprintf(addr.sun_path, UNIX_PATH_MAX, "%s", ipc_path);
+  if (r < 0 || r >= UNIX_PATH_MAX) {
     err("snprintf: %s\n", strerror(errno));
     goto close_socket;
   }
 
-  r = snprintf(reaper->ipc_path, UNIX_PATH_MAX, ipc_path);
-  if (r < 0) {
+  r = snprintf(reaper->ipc_path, UNIX_PATH_MAX, "%s", ipc_path);
+  if (r < 0 || r >= UNIX_PATH_MAX) {
     err("snprintf: %s\n", strerror(errno));
     goto close_socket;
   }

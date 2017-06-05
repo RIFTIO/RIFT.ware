@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rwmsg_gtest_broker.cc
@@ -1099,13 +1080,13 @@ TEST(RWMsgBroker, AcceptClichanSleep) {
   ASSERT_EQ(rwmsg_broker_g.exitnow.neg_freed_err, 0);
 
   rwsched_dispatch_source_cancel(tenv.tasklet[1], tim);
-  rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, tim, tenv.rwsched, tenv.tasklet[1]);
+  rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, tim, tenv.rwsched, tenv.tasklet[1]);
 
 
   /* End clichan tasklet 1 */
   rwmsg_bool_t r;
   rwmsg_clichan_halt(cc);
-  rwsched_dispatch_release(tenv.tasklet[0], q);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], q);
   r = rwmsg_endpoint_halt_flush(ep, TRUE);
   ASSERT_TRUE(r);
 
@@ -1183,12 +1164,12 @@ TEST(RWMsgBroker, AcceptClichanSleep2Bros) {
   ASSERT_EQ(rwmsg_broker_g.exitnow.neg_freed_err, 0);
 
   rwsched_dispatch_source_cancel(tenv.tasklet[1], tim);
-  rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, tim, tenv.rwsched, tenv.tasklet[1]);
+  rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, tim, tenv.rwsched, tenv.tasklet[1]);
 
 
   /* End clichan tasklet 1 */
   rwmsg_clichan_halt(cc);
-  rwsched_dispatch_release(tenv.tasklet[0], q);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], q);
   r = rwmsg_endpoint_halt_flush(ep, TRUE);
   ASSERT_TRUE(r);
   }
@@ -1249,12 +1230,12 @@ TEST(RWMsgBroker, AcceptClichanSleep2Bros) {
   ASSERT_EQ(rwmsg_broker_g.exitnow.neg_freed_err, 0);
 
   rwsched_dispatch_source_cancel(tenv.tasklet[1], tim);
-  rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, tim, tenv.rwsched, tenv.tasklet[1]);
+  rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, tim, tenv.rwsched, tenv.tasklet[1]);
 
 
   /* End clichan tasklet 1 */
   rwmsg_clichan_halt(cc);
-  rwsched_dispatch_release(tenv.tasklet[1], q);
+  rwsched_dispatch_queue_release(tenv.tasklet[1], q);
   r = rwmsg_endpoint_halt_flush(ep, TRUE);
   ASSERT_TRUE(r);
   }
@@ -5673,9 +5654,9 @@ static void lottaraw(int squat, int mainq, int fixedrateserver, int window, int 
     if (ctx->flowexercise && ctx->sc_timer) {
       /* Fake pump the main queue for 1s, allow lingering async_f and
 	 timer calls to flush out */
-      rwsched_dispatch_source_cancel(tenv.tasklet[0], ctx->sc_timer);
+      rwsched_dispatch_source_cancel(tenv.tasklet[1], ctx->sc_timer);
       RW_ASSERT(bro);
-      rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ctx->sc_timer, tenv.rwsched, tenv.tasklet[0]);
+      rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ctx->sc_timer, tenv.rwsched, tenv.tasklet[1]);
       ctx->sc_timer = NULL;
       //      rwsched_dispatch_main_until(tenv.tasklet[0], 5, NULL);
     }
@@ -5785,7 +5766,7 @@ static void lottaraw(int squat, int mainq, int fixedrateserver, int window, int 
 	 timer calls to flush out */
       rwsched_dispatch_source_cancel(tenv.tasklet[0], ctx->sc_timer);
       RW_ASSERT(bro);
-      rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ctx->sc_timer, tenv.rwsched, tenv.tasklet[0]);
+      rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ctx->sc_timer, tenv.rwsched, tenv.tasklet[0]);
       ctx->sc_timer = NULL;
       //      rwsched_dispatch_main_until(tenv.tasklet[0], 5, NULL);
     }
@@ -5803,8 +5784,8 @@ static void lottaraw(int squat, int mainq, int fixedrateserver, int window, int 
   rwmsg_destination_release(dt);
 
   if (!mainq) {
-    rwsched_dispatch_release(tenv.tasklet[0], ctx->rwq[0]);
-    rwsched_dispatch_release(tenv.tasklet[1], ctx->rwq[1]);
+    rwsched_dispatch_queue_release(tenv.tasklet[0], ctx->rwq[0]);
+    rwsched_dispatch_queue_release(tenv.tasklet[1], ctx->rwq[1]);
   }
 
   r = rwmsg_endpoint_halt_flush(ep, TRUE);
@@ -6815,7 +6796,7 @@ static void lottaraw2bros(int squat, int mainq, int fixedrateserver, int window,
 	 timer calls to flush out */
       rwsched_dispatch_source_cancel(tenv.tasklet[0], ctx->sc_timer);
       RW_ASSERT(bro);
-      rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ctx->sc_timer, tenv.rwsched, tenv.tasklet[0]);
+      rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ctx->sc_timer, tenv.rwsched, tenv.tasklet[1]);
       ctx->sc_timer = NULL;
       //      rwsched_dispatch_main_until(tenv.tasklet[0], 5, NULL);
     }
@@ -6924,7 +6905,7 @@ static void lottaraw2bros(int squat, int mainq, int fixedrateserver, int window,
 	 timer calls to flush out */
       rwsched_dispatch_source_cancel(tenv.tasklet[0], ctx->sc_timer);
       RW_ASSERT(bro);
-      rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ctx->sc_timer, tenv.rwsched, tenv.tasklet[0]);
+      rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ctx->sc_timer, tenv.rwsched, tenv.tasklet[0]);
       ctx->sc_timer = NULL;
       //      rwsched_dispatch_main_until(tenv.tasklet[0], 5, NULL);
     }
@@ -6942,8 +6923,8 @@ static void lottaraw2bros(int squat, int mainq, int fixedrateserver, int window,
   rwmsg_destination_release(dt);
 
   if (!mainq) {
-    rwsched_dispatch_release(tenv.tasklet[0], ctx->rwq[0]);
-    rwsched_dispatch_release(tenv.tasklet[0], ctx->rwq[1]);
+    rwsched_dispatch_queue_release(tenv.tasklet[0], ctx->rwq[0]);
+    rwsched_dispatch_queue_release(tenv.tasklet[1], ctx->rwq[1]);
   }
 
   r = rwmsg_endpoint_halt_flush(ep_c, TRUE);

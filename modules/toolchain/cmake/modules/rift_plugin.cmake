@@ -1,21 +1,7 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Anil Gunturu, Tim Mortsolf
 # Creation Date: 8/24/2013
-# 
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
 
 # This file contains cmake macros for plugin infra structure
 
@@ -27,8 +13,7 @@ function(rift_add_vala target)
   # Parse the function arguments
   set(parse_options DONT_AUTOLINK_BASE_PACKAGES)
   set(parse_onevalargs GENERATE_HEADER_FILE GENERATE_SO_FILE 
-    GENERATE_VAPI_FILE GENERATE_GIR_FILE GENERATE_TYPELIB_FILE
-    DONT_AUTOLINK_BASE_PACKAGES)
+    GENERATE_VAPI_FILE GENERATE_GIR_FILE GENERATE_TYPELIB_FILE)
   set(parse_multivalueargs VALA_FILES VALAC_FLAGS GIR_COMPILER_FLAGS DEPENDS
     VAPI_DIRS VALA_PACKAGES GIR_PATHS LIBRARIES)
   cmake_parse_arguments(ARGS "${parse_options}" "${parse_onevalargs}" 

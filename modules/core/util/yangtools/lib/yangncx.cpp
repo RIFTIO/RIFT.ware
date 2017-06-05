@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /*!
  * @file yangncx.cpp
@@ -722,6 +703,15 @@ void YangNodeNcx::set_mode_path()
   is_mode_path_ = true;
 }
 
+// set all the nodes in the path to the root as "mode_path" nodes
+void YangNodeNcx::set_mode_path_to_root()
+{
+  is_mode_path_ = true;
+    for (YangNode *parent = parent_; parent && !parent->is_mode_path() ; parent = parent->get_parent()) {
+      parent->set_mode_path();
+    }
+}
+
 bool YangNodeNcx::is_rpc()
 {
   return (RW_YANG_STMT_TYPE_RPC == stmt_type_);
@@ -857,13 +847,6 @@ intptr_t YangNodeNcx::app_data_set_and_give_ownership(const AppDataTokenBase* to
 
 intptr_t YangNodeNcx::app_data_set_and_keep_ownership(const AppDataTokenBase* token, intptr_t data)
 {
-  if (token->ext_ == RW_YANG_CLI_EXT_NEW_MODE) {
-    // set all the nodes in the path to the root as "mode_path" nodes
-    is_mode_path_ = true;
-    for (YangNode *parent = parent_; parent && !parent->is_mode_path() ; parent = parent->get_parent()) {
-      parent->set_mode_path();
-    }
-  }
   return app_data_.set_and_keep_ownership(token, data);
 }
 

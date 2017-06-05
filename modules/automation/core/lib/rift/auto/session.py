@@ -1,19 +1,5 @@
 
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT
 
 import functools
 import logging
@@ -21,6 +7,7 @@ import lxml.etree as etree
 import os
 import re
 import requests
+import subprocess
 import time
 import ncclient.manager
 
@@ -1321,12 +1308,24 @@ class Session(object):
         Arguments:
             timeout - maximum time allowed before connect fails
         '''
-        self.session_impl.connect(timeout=timeout)
+        return self.session_impl.connect(timeout=timeout)
 
     def close(self):
         '''Close session connection
         '''
-        self.session_impl.close()
+        return self.session_impl.close()
+
+    def cli(self, command):
+        """ Execute a CLI command targeting the session's host
+
+        Arguments:
+          command - cli command to be executed
+
+        Returns:
+          result of cli command execution
+
+        """
+        return self.session_impl.cli(command=command)
 
     def proxy(self, module):
         """ Get a proxy interface to the supplied module
@@ -1342,6 +1341,28 @@ class Session(object):
         """
         return self.session_impl.proxy(module=module)
 
+    @classmethod
+    def find_var_root(cls, rift_var_root):
+        '''Attempts to resolve location of rift_var_root if it wasn't expressed as an absolute path
+
+        Arguments:
+            rift_var_root - location of riftware variable root
+
+        Returns:
+            actual location of riftware variable root
+        '''
+        if rift_var_root is None:
+            return rift_var_root
+
+        if os.path.exists(rift_var_root):
+            return rift_var_root
+
+        check_path = os.path.join(os.environ['RIFT_INSTALL'], 'var', 'rift', rift_var_root)
+        if os.path.exists(check_path):
+            return check_path
+
+        raise FileNotFoundError('Failed to locate rift_var_root: %s' % (rift_var_root))
+
 
 class NetconfSession(Session):
     DEFAULT_CONNECTION_TIMEOUT = 360
@@ -1354,7 +1375,8 @@ class NetconfSession(Session):
             host='127.0.0.1',
             port=DEFAULT_PORT,
             username=DEFAULT_USERNAME,
-            password=DEFAULT_PASSWORD):
+            password=DEFAULT_PASSWORD,
+            rift_var_root=None):
         ''' Class representing a Netconf based session
 
         Arguments:
@@ -1362,6 +1384,7 @@ class NetconfSession(Session):
             port - port of Netconf host
             username - username credential
             password - password credential
+            rift_var_root - location of riftware variable root
         '''
         super(NetconfSession, self).__init__(
                 NetconfSessionImpl(
@@ -1369,6 +1392,7 @@ class NetconfSession(Session):
                     port=port,
                     username=username,
                     password=password,
+                    rift_var_root=Session.find_var_root(rift_var_root),
         ))
 
     @property
@@ -1387,7 +1411,8 @@ class RestconfSession(Session):
             host='127.0.0.1',
             port=DEFAULT_PORT,
             username=DEFAULT_USERNAME,
-            password=DEFAULT_PASSWORD):
+            password=DEFAULT_PASSWORD,
+            rift_var_root=None):
         ''' Class representing a Restconf based session
 
         Arguments:
@@ -1395,6 +1420,7 @@ class RestconfSession(Session):
             port - port of Restconf host
             username - username credential
             password - password credential
+            rift_var_root - location of riftware variable root
         '''
         super(RestconfSession, self).__init__(
                 RestconfSessionImpl(
@@ -1402,6 +1428,7 @@ class RestconfSession(Session):
                     port=port,
                     username=username,
                     password=password,
+                    rift_var_root=Session.find_var_root(rift_var_root),
         ))
 
 
@@ -1411,7 +1438,7 @@ class NetconfSessionImpl(object):
 
     OPERATION_TIMEOUT_SECS = Proxy.OPERATION_TIMEOUT_SECS
 
-    def __init__(self, host, port, username, password):
+    def __init__(self, host, port, username, password, rift_var_root):
         '''Initialize a new Netconf Session instance
 
         Arguments:
@@ -1419,6 +1446,7 @@ class NetconfSessionImpl(object):
             port - host port
             username - credentials for accessing the host, username
             password - credentials for accessing the host, password
+            rift_var_root - location of riftware variable root
 
         Returns:
             A newly initialized Netconf session instance
@@ -1427,6 +1455,7 @@ class NetconfSessionImpl(object):
         self.port = port
         self.username = username
         self.password = password
+        self.rift_var_root = rift_var_root
 
     def connect(self, timeout):
         '''Connect Netconf Session
@@ -1504,6 +1533,30 @@ class NetconfSessionImpl(object):
 
         return self._nc_mgr
 
+    def cli(self, command):
+        options = [
+            '--username', self.username,
+            '--passwd', self.password,
+            '--rwmsg',
+        ]
+
+        if self.rift_var_root is not None:
+            options += ['--rift_var_root', self.rift_var_root]
+
+        ssh_command = 'ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no {host} '.format(
+            host=self.host
+        )
+        rift_shell_command = '{rift_root}/rift-shell -e -r'.format(
+            rift_root=os.environ['RIFT_ROOT'],
+        )
+        rwcli_command = '{ssh_command} -- "{rift_shell_command} -- rwcli {options} -c \\"sleep 2 && {command}\\""'.format(
+            ssh_command=ssh_command,
+            rift_shell_command=rift_shell_command,
+            options=' '.join(options),
+            command=command,
+        )
+        return subprocess.check_output(rwcli_command, shell=True).decode('ascii')
+
 
     def proxy(self, module):
         """ Get a netconf proxy interface to the supplied module
@@ -1530,7 +1583,7 @@ class RestconfSessionImpl(object):
         'Content-Type':'application/vnd.yang.data+xml',
     }
 
-    def __init__(self, host, port, username, password):
+    def __init__(self, host, port, username, password, rift_var_root):
         '''Initialize a new Restconf Session instance
 
         Arguments:
@@ -1538,6 +1591,7 @@ class RestconfSessionImpl(object):
             port - host port
             username - credentials for accessing the host, username
             password - credentials for accessing the host, password
+            rift_var_root - location of riftware variable root
 
         Returns:
             A newly initialized Restconf session instance
@@ -1546,6 +1600,7 @@ class RestconfSessionImpl(object):
         self.port = port
         self.username = username
         self.password = password
+        self.rift_var_root = rift_var_root
         self.auth = (self.username, self.password)
         https = certs.USE_SSL
 
@@ -1599,6 +1654,31 @@ class RestconfSessionImpl(object):
         Also a noop
         """
         pass
+
+    def cli(self, command):
+        options = [
+            '--username', self.username,
+            '--passwd', self.password,
+            '--rwmsg'
+        ]
+
+        if self.rift_var_root is not None:
+            options += ['--rift_var_root', self.rift_var_root]
+
+        ssh_command = 'ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no {host} '.format(
+            host=self.host
+        )
+        rift_shell_command = '{rift_root}/rift-shell -e -r'.format(
+            rift_root=os.environ['RIFT_ROOT'],
+        )
+        rwcli_command = '{ssh_command} -- "{rift_shell_command} -- rwcli {options} -c \\"sleep 2 && {command}\\""'.format(
+            ssh_command=ssh_command,
+            rift_shell_command=rift_shell_command,
+            options=' '.join(options),
+            command=command,
+        )
+        return subprocess.check_output(rwcli_command, shell=True).decode('ascii')
+
 
     def proxy(self, module):
         """ Get a restconf proxy interface to the supplied module

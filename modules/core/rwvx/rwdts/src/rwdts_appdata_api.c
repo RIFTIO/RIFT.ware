@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file   rwdts_appdata_api.c
  * @author Prashanth Bhaskar <prashanth.bhaskar@riftio.com>
@@ -90,7 +71,7 @@ rwdts_appdata_stop_put_tmr(rwdts_api_t* apih,
   RW_ASSERT(safe_data);
 
   rwsched_dispatch_source_cancel(apih->tasklet, safe_data->safe_put_timer);
-  rwsched_dispatch_release(apih->tasklet, safe_data->safe_put_timer);
+  rwsched_dispatch_source_release(apih->tasklet, safe_data->safe_put_timer);
   safe_data->safe_put_timer = NULL;
   rwdts_safe_put_data_t* safe_info;
   RW_SKLIST_REMOVE_BY_KEY(&appdata->safe_data_list,
@@ -200,6 +181,8 @@ rwdts_appdata_start_put_tmr(rwdts_shard_handle_t* shard_tab,
   rwsched_dispatch_source_set_event_handler_f(shard->apih->tasklet,
                       safe_put_data->safe_put_timer, rwdts_appdata_safe_put_timer);
   rwsched_dispatch_set_context(shard->apih->tasklet, safe_put_data->safe_put_timer, safe_put_data);
+  /*This timer is not using the RWDTS_TIMEOUT_QUANTUM_MULTIPLE since there is no dependency on
+    whether we are running in collapsed mode or not.*/
   rwsched_dispatch_source_set_timer(shard->apih->tasklet, safe_put_data->safe_put_timer,
                       dispatch_time(DISPATCH_TIME_NOW, RWDTS_APPDATA_SAFE_TIMEOUT),
                       (RWDTS_APPDATA_SAFE_TIMEOUT), 0);
@@ -2131,7 +2114,9 @@ rwdts_shard_handle_appdata_get_current_cursor(rwdts_shard_handle_t* shard)
   rwdts_appdata_t* appdata = shard->appdata;
 
   if (!appdata->cursor) {
-    appdata->cursor = RW_MALLOC0_TYPE(sizeof(rwdts_appdata_cursor_impl_t), rwdts_appdata_cursor_impl_t);
+    appdata->cursor = DTS_APIH_MALLOC0_TYPE(shard->apih,
+                                            RW_DTS_DTS_MEMORY_TYPE_APPDATA_CURSOR,
+                                            sizeof(rwdts_appdata_cursor_impl_t), rwdts_appdata_cursor_impl_t);
     RW_ASSERT(appdata->cursor);
   }
   return ((rwdts_appdata_cursor_t *)appdata->cursor);

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwsched_object.h
  * @author Tim Mortsolf (tim.mortsolf@riftio.com)
@@ -92,30 +73,6 @@ void
 rwsched_dispatch_retain(rwsched_tasklet_ptr_t tasklet_info,
                         rwsched_dispatch_object_t object);
 
-/*!
- * @function rwsched_dispatch_release
- *
- * @abstract
- * Decrement the reference count of a dispatch object.
- *
- * @discussion
- * A dispatch object is asynchronously deallocated once all references are
- * released (i.e. the reference count becomes zero). The system does not
- * guarantee that a given client is the last or only reference to a given
- * object.
- *
- * @param tasklet_info
- * rwsched tasklet_info handle
- *
- * @param object
- * The object to release.
- * The result of passing NULL in this parameter is undefined.
- */
-
-DISPATCH_EXPORT DISPATCH_NONNULL_ALL DISPATCH_NOTHROW
-void
-rwsched_dispatch_release(rwsched_tasklet_ptr_t tasklet_info,
-                         rwsched_dispatch_object_t object);
 
 /*!
  * @function rwsched_dispatch_get_context

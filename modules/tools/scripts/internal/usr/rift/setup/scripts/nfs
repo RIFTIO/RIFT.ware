@@ -13,13 +13,26 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+# Usage:
+# -C   - install appropriate for a container, i.e. no nfs-kernel-server on Ubuntu
 #
 # 3 July 2016 -- Jeremy Mordkoff -- Added Ubuntu Support
 # 6 July 2016 -- Jeremy Mordkoff -- Fixed install lists, code moved from enable_lab
 
+### process options
+while getopts C opt
+do
+        case $opt in
+	C)      opt_container=1 ;;
+        esac
+done
+
 if python3 -mplatform | grep -qi ubuntu; then
     apt-get update
-	apt-get -y install nfs-kernel-server autofs net-tools rpcbind
+    apt-get -y install autofs net-tools rpcbind
+    if [[ $opt_container -ne 1 ]]; then
+	apt-get -y install nfs-kernel-server 
+    fi
 	sed -i 's/#\/net/\/net/' /etc/auto.master 
 else
 	yum install -y autofs nfs-utils rpcbind net-tools 
@@ -29,10 +42,13 @@ fi
 if ! grep -q localdisk /etc/exports; then
 	echo "/localdisk *(rw,no_root_squash)" >>/etc/exports
 fi
-systemctl enable nfs-server
 systemctl enable autofs
-systemctl restart nfs-server
 systemctl restart autofs
+
+if [[ $opt_container -ne 1 ]]; then
+    systemctl enable nfs-server
+    systemctl restart nfs-server
+fi
 
 
 

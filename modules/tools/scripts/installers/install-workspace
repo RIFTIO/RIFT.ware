@@ -1,0 +1,225 @@
+#!/bin/bash
+# 
+#   Copyright 2016 RIFT.IO Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# Author(s): Jeremy Mordkoff, Lezz Giles, Paul Laidler
+# Creation Date: 01/26/2017
+# 
+# This script tries to follow https://google.github.io/styleguide/shell.xml
+#
+
+# This is a top-level installer for the RIFT.io launchpad from a workspace
+#
+# Arguments and options: use -h or --help
+#
+# dependencies -- requires sudo rights
+
+# Defensive bash programming flags
+set -o errexit    # Exit on any error
+trap 'echo "ERROR: Command failed at $BASH_SOURCE:$LINENO: \"$BASH_COMMAND\"" >&2' ERR
+
+###############################################################################
+# Options and arguments
+
+params="$(getopt -o h -l help --name "$0" -- "$@")"
+if [ $? != 0 ] ; then
+    echo "Failed parsing options." >&2
+    exit 1
+fi
+
+eval set -- $params
+
+while true; do
+    case "$1" in
+  -h|--help)
+      echo
+      echo "NAME:"
+      echo "  $0"
+      echo
+      echo "SYNOPSIS:"
+      echo "  $0 -h|--help"
+      echo
+      echo "DESCRIPTION:"
+      echo "  Prepare current system to run launchpad as a service from the current workspace."
+      echo
+      exit 0;;
+  --) shift; break;;
+  *) echo "Not implemented: $1" >&2; exit 1;;
+    esac
+done
+
+
+###############################################################################
+# Preflight checks
+
+if grep -qi "Ubuntu 16.04" /etc/issue; then
+    readonly PLATFORM=ub16
+elif grep -qi "Fedora release 20" /etc/issue; then
+    readonly PLATFORM=fc20
+else
+    echo "This installer only runs on Ubuntu 16.04 or Fedora release 20." >&2
+    exit 1
+fi
+
+# Check the wordsize
+arch=`arch`
+if [[ $arch != x86_64 ]]; then
+    echo "You can only install RIFT.ware on a 64-bit platform, but this platform is not 64-bit"
+    exit 1
+fi
+
+# Temporary check until we properly support fc20.  Allow installation of
+# an explicit build number from an explicit repo, but disallow installing from
+# defaults.
+if [[ $PLATFORM == fc20 && $# -ne 2 ]]; then
+    echo "You cannot currently use this script to install launchpad on Fedora Core 20."
+    echo "This functionality is coming soon."
+    exit 1
+fi
+
+###############################################################################
+# Main block
+
+function join { 
+    sep="$1"; shift;
+    for arg do shift
+      set -- "$@" "${sep}" "$arg"
+    done; shift
+    printf %s "$@"
+}
+
+function package_install {
+    if [[ $PLATFORM == ub16 ]]; then
+        dpkg --force-all -i $@
+    elif [[ $PLATFORM == fc20 ]]; then
+        rpm -Uvh --nodeps --force $@
+    fi
+}
+
+if [[ $PLATFORM == ub16 ]]; then
+	RIFT_PKG_EXT='deb'
+elif [[ $PLATFORM == fc20 ]]; then
+  RIFT_PKG_EXT='rpm'
+fi
+
+if [ -z ${RIFT_PKG_VERSION} ]; then
+    RIFT_PKG_VERSION="$(cat ${RIFT_ROOT}/build/VERSION)-$(uname)"
+fi
+
+if [ -z ${RIFT_PKG_DIR} ]; then
+    RIFT_PKG_DIR=${RIFT_BUILD}
+fi
+
+set -x
+
+curl http://repos.riftio.com/public/xenial-riftware-public-key | sudo apt-key add -
+sudo curl -o /etc/apt/sources.list.d/${PLATFORM_REPOSITORY}.list \
+    http://buildtracker.riftio.com/repo_file/ub16/${PLATFORM_REPOSITORY}/
+sudo apt-get update
+
+required_packages=(
+rw.tools-${RIFT_PKG_VERSION}-container-tools.${RIFT_PKG_EXT}
+rw.tools-${RIFT_PKG_VERSION}-scripts.${RIFT_PKG_EXT}
+rw.toolchain-${RIFT_PKG_VERSION}-rwbase.${RIFT_PKG_EXT}
+rw.toolchain-${RIFT_PKG_VERSION}-rwtoolchain.${RIFT_PKG_EXT}
+rw.core.mgmt-${RIFT_PKG_VERSION}-mgmt.${RIFT_PKG_EXT}
+rw.core.util-${RIFT_PKG_VERSION}-util.${RIFT_PKG_EXT}
+rw.core.rwvx-${RIFT_PKG_VERSION}-rwvx.${RIFT_PKG_EXT}
+rw.core.rwvx-${RIFT_PKG_VERSION}-rwdts.${RIFT_PKG_EXT}
+rw.automation.core-${RIFT_PKG_VERSION}-RWAUTO.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwconfig_agent_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwlaunchpad_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-mano_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-common-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwsdn_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-mano-types_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal-cloudsim-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rw_conman_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcalproxytasklet-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwlaunchpad-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal-openmano-vimconnector-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal-propcloud1-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-lpmocklet_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwmon-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcloud_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal-openstack-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwmon_yang_ylib-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcm-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal-mock-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwmano_examples-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal-cloudsimproxy-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-models-1.0.${RIFT_PKG_EXT}
+rw.core.mano-${RIFT_PKG_VERSION}-rwcal-aws-1.0.${RIFT_PKG_EXT}
+rw.ui-${RIFT_PKG_VERSION}-skyquake.${RIFT_PKG_EXT}
+)
+
+found_packages=($(find ${RIFT_PKG_DIR} -name "*.${RIFT_PKG_EXT}" | \
+									grep -v CPack | \
+                  grep -v foss | \
+                  grep -e $(join ' -e ' ${required_packages[@]})))
+
+if [[ ${#required_packages[@]} != ${#found_packages[@]} ]]; then
+    function diff_package_lists {
+        declare -a a=("${!1}")
+        declare -a b=("${!2}")
+
+        IFS=$'\n';
+        files_a=($(echo "${a[*]}" | sed -r 's/.*\///g'| sort))
+        files_b=($(echo "${b[*]}" | sed -r 's/.*\///g'| sort))
+        
+        comm -23 <(echo "${files_a[*]}") <(echo "${files_b[*]}")
+    }
+
+    missing_packages=($(diff_package_lists required_packages[@] found_packages[@]))
+    echo "Missing required packages from workspace:  ${missing_packages[@]}"
+    echo "Failed to install packages."
+    exit 1
+fi 
+
+package_install ${found_packages[@]}
+
+# this file gets in the way of the one generated by the build
+sudo chmod 777 /usr/rift /usr/rift/usr/share
+
+cat <<EOF | sudo tee /etc/systemd/system/launchpad.service
+[Unit]
+Description=RIFT.ware Launchpad
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'nohup /usr/rift/bin/start_launchpad'
+ExecStop=/bin/sh -c 'killall rwmain'
+
+[Install]
+WantedBy=default.target
+EOF
+
+sudo chmod 664 /etc/systemd/system/launchpad.service
+
+if ! sudo systemctl daemon-reload; then
+    echo "WARNING: Not able to reload daemons: this must be run in a privileged container: sudo systemctl daemon-reload ; sudo systemctl enable launchpad.service"
+else
+    # enable launchpad at boot - should always succeed in a privileged container
+    sudo systemctl enable launchpad.service
+fi
+
+echo
+echo "RIFT.ware Launchpad is now installed. Run 'sudo systemctl start launchpad.service' to start the service."
+echo
+

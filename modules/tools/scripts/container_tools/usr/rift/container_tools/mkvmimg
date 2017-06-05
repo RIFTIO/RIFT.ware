@@ -1,6 +1,7 @@
 #!/bin/bash
 # vim: set ts=4 sw=4 sts=4 et :
-#   Copyright 2016 RIFT.IO Inc
+#
+#   Copyright 2016-2017 RIFT.io Inc
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -19,6 +20,8 @@
 # deprecating the -d switch -- there is a script inside the VM that can enable developer mode
 # 1-7-2015 -- JLM -- parameterize the kernel rev
 # 6-23-2016 -- JLM -- pretty major rewrite to allow for running inside a container
+# 20 Feb 2017 -- JLM -- bring back --latest and strip all unneeded version numbers
+# 3-Mar-2017 -- JLM -- remove all references to kilo packages
 #
 #
 
@@ -427,8 +430,7 @@ pip_install() {
         cmd $cmd install --cache-dir /tmp/pip/ "$@" || die "$cmd install $@ from $repo failed"
     else
         cmd $cmd install --cache-dir /tmp/pip/ --use-wheel --no-index \
-            --find-links=${repo} \
-            "$@" || die "$cmd install $@ from $repo failed"
+            --find-links=${repo} "$@" || die "$cmd install $@ from $repo failed"
     fi
 }
 
@@ -439,15 +441,6 @@ pip2_install() {
 pip3_install() {
     pip_install $PIP3_INSTALLER https://wheel.riftio.com/mirrors/python3_wheelhouse/ "$@"
 }
-
-pip3_install_kilo_modules() {
-    pip_install $PIP3_INSTALLER https://wheel.riftio.com/mirrors/python3_kilo_wheelhouse/ "$@"
-}
-
-pip3_install_kilo42_modules() {
-    pip_install $PIP3_INSTALLER https://wheel.riftio.com/mirrors/python3_kilo_rel_4.2_wheelhouse/ "$@"
-}
-
 
 configure_repository() { 
 
@@ -463,6 +456,18 @@ configure_repository() {
     esac
 
 }
+        
+setup_apt_mirror() { 
+
+        newRepo='http://ubuntu.mirrors.eng.riftio.com'
+
+        test -f $STAGING/etc/apt/sources.list.rbc.bak || cp $STAGING/etc/apt/sources.list $STAGING/etc/apt/sources.list.rbc.bak
+        for r in "archive.ubuntu.com" "nova.clouds.archive.ubuntu.com" "us.archive.ubuntu.com" "security.ubuntu.com"; do
+            sed -i "s#http://$r#$newRepo#" $STAGING/etc/apt/sources.list
+        done
+        cmd apt clean
+}
+
 
 setup_package_repos() {
     announce $FUNCNAME
@@ -478,9 +483,10 @@ setup_package_repos() {
         fi
     fi
     configure_repository packages
-    configure_repository release
     if [ -n "$REPOSITORY" ]; then
         configure_repository $REPOSITORY
+    else
+        echo -e "\n### WARNING -- no repository specified. \n"
     fi
     if [[ $DISTRO == fedora ]]; then
         # Three standard repos
@@ -498,10 +504,13 @@ setup_package_repos() {
             
     
     elif [[ $DISTRO == ubuntu ]]; then
+        if $ONLY_RIFT_PKG_REPOS ; then
+            setup_apt_mirror
+        fi
         if [[ "$REPO_FILE" =~ .deb$ ]]; then
             cmd dpkg -i $REPO_FILE
         elif [ -n "$REPO_FILE" ]; then
-            cp $REPO_FILE $STAGING/etc/apt/sources.list.d
+            cp $REPO_FILE $STAGING/etc/apt/sources.list.d/
         fi
         cmd apt update
     fi        
@@ -520,21 +529,30 @@ setup_package_repos() {
 setup_pip_repos() {
     announce $FUNCNAME
 
+    # HEADS UP  -- back ported from master
     rm -Rfv /tmp/pip_build_root # fixes: The temporary folder for building (/tmp/pip_build_root) is not owned by your user!
-    # When python2 is phased out, remove 'python' from here and also remove all references to python2 and pip2
-    yum_install python python3
-    cmd curl -o /tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
-    cmd python3 /tmp/get-pip.py
-    #cmd rm -rf '/usr/lib/python2.7/site-packages/pip*'
-    cmd python2 /tmp/get-pip.py
     if [[ $DISTRO == fedora ]]; then
-        PIP3_INSTALLER=$(which pip3.3 || which pip3)
+        cmd rm -rf /bin/pip3\* /usr/lib/python3.3/site-packages/pip\* 
+        cmd_rc yum erase -y python3-pip 
+        cmd curl -o /tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
+        cmd python3 /tmp/get-pip.py
+        cmd python2 /tmp/get-pip.py
+        PIP3_INSTALLER=$(which pip3.3 || which python3-pip || which pip3)
         PIP2_INSTALLER=/bin/pip2
     else
-        PIP2_INSTALLER=/usr/local/bin/pip2
-        PIP3_INSTALLER=/usr/local/bin/pip3
+        yum_install python python3 python3-pip python-pip
+        python -mpip install --upgrade pip
+        PIP2_INSTALLER=$(PATH=/usr/local/bin:$PATH which pip2)
+        PIP3_INSTALLER=$(PATH=/usr/local/bin:$PATH which pip3)
     fi
+    echo PIP3_INSTALLER is $PIP3_INSTALLER
+    ls -l $PIP3_INSTALLER || exit 1
+    $PIP3_INSTALLER install --upgrade pip
+    echo PIP2_INSTALLER is $PIP2_INSTALLER
+    ls -l $PIP2_INSTALLER || exit 1
+    $PIP2_INSTALLER install --upgrade pip
 }
+
 
 setup_usr_rift() {
     announce $FUNCNAME
@@ -620,6 +638,33 @@ output_images() {
     done
 }
 
+add_mode2() {
+    if [[ "$MODES" =~ " $1 " ]]; then
+        return
+    fi
+    if [ -f $VM_DIR/${1}.depends ]; then
+        for dep in $(cat $VM_DIR/${1}.depends); do
+            add_mode2 $dep
+        done
+    fi
+    MODES=" $MODES $1 "
+}
+
+add_mode() {
+    IMG_PREFIX="${IMG_PREFIX}-${1}"
+    add_mode2 $1
+}
+
+
+
+
+##########################################################
+#
+# MAIN
+#
+#########################################################
+
+
 RIFT_ROOT=$(dirname $(dirname $(dirname $(realpath $0))))
 HERE=$(realpath $(dirname $0))
 BUILDDIR="${RIFT_ROOT}/.build/vm"
@@ -681,7 +726,7 @@ _EXTRA_DISK_SPACE_K=1572864
 # if true, strip the version numbers from the package lists in the *.rpm files
 # EXCEPT ext.rpms which is ALWAYS versioned so that we get the right packages to support
 # the platform code
-LATEST=true
+LATEST=false
 REPO_FILE=""
 # if 1, only the RIFT mirrors will be used to install fedora
 # does not work with Ubuntu
@@ -865,7 +910,6 @@ while [ $# -gt 0 ]; do
             ONLY_RIFT_PKG_REPOS=true
             USE_INTERNET_PIP_REPOS=false
             KERNEL_REV="3.12.9-301.fc20.x86_64"
-            LATEST=false
             ;;
         --no-fix-pip)
             FIX_PIP=0
@@ -884,7 +928,7 @@ while [ $# -gt 0 ]; do
             echo "--no-kernel-rev is depracated as it is now the default" >&2
             ;;
         --latest)
-            echo "--latest is deprecated as it is now the default" >&2
+            LATEST=true
             ;;
         --repo)
             shift
@@ -918,26 +962,18 @@ fi
 # process MODES
 MODES=" "
 
-add_mode2() {
-    if [[ "$MODES" =~ " $1 " ]]; then
-        return
-    fi
-    if [ -f $VM_DIR/${1}.depends ]; then
-        for dep in $(cat $VM_DIR/${1}.depends); do
-            add_mode2 $dep
-        done
-    fi
-    MODES=" $MODES $1 "
-}
-
-add_mode() {
-    IMG_PREFIX="${IMG_PREFIX}-${1}"
-    add_mode2 $1
-}
 
 for mode in $modes_in; do
     add_mode $mode
 done
+
+for mode in $MODES; do
+    announce "pre-install check for $mode"
+    if [ -f "${VM_DIR}/${mode}.prereq.sh" ]; then
+        source "${VM_DIR}/${mode}.prereq.sh"
+    fi
+done
+        
 
 if ! ${CONTAINER}; then
     SHA=$(git rev-parse --short HEAD)
@@ -1020,9 +1056,13 @@ do_mode() {
         elif [[ $DISTRO == fedora && $FILTER_PACKAGES == true ]]; then
             announce "Installing filtered set of specified versions in $basename.rpms for $SHORTNAME"
             packages=$(rpm -q $(cat $basename.rpms | sed 's/#.*//' | egrep -v '^\s*$' | egrep '^[^:]*'$SHORTNAME'[^:]*:|^[^:]+$' | sed -r 's/^[^:]*:\s*//') | grep -Po '(?<=package ).*(?= is not installed)')
-        elif [[ $LATEST == true && $mode != ext && ( ! $mode =~ ^platform ) && $mode != launchpad ]]; then
+        elif [[ $LATEST == true && $mode != ext && ( ! $mode =~ ^platform ) && $mode != launchpad && $mode != rwui && $mode != mano ]]; then
             announce "Installing LATEST $basename.rpms for $SHORTNAME"
-            packages=$(cat $basename.rpms | sed 's/#.*//' | egrep -v '^\s*$' | egrep '^[^:]*'$SHORTNAME'[^:]*:|^[^:]+$' | sed -r 's/^[^:]*:\s*//' | sed -r 's/([-.:]([0-9]+|[0-9]+(git|pre|cvs|svn|gitcd|alpha)[0-9a-f]*|git[0-9]+|dsf|fc20|fc22|x86_64|noarch))*$//' )
+	    if [[ $DISTRO == fedora ]]; then
+		packages=$(cat $basename.rpms | sed 's/#.*//' | egrep -v '^\s*$' | egrep '^[^:]*'$SHORTNAME'[^:]*:|^[^.*[:alnum:]].*:|^[^:]+$' | sed -r 's/^[^:]*:\s*//' | sed -r 's/-[[:digit:]].*//')
+	    elif [[ $DISTRO == ubuntu ]]; then
+		packages=$(cat $basename.rpms | sed 's/#.*//' | egrep -v '^\s*$' | egrep '^[^:]*'$SHORTNAME'[^:]*:|^[^.*[:alnum:]].*:|^[^:]+$' | sed -r 's/^[^:]*:\s*//' | sed -r 's/=[[:digit:]].*//')
+	    fi
         else
             announce "Installing specified versions in $basename.rpms for $SHORTNAME"
             packages=$(cat $basename.rpms | sed "s/\${RIFTWARE_VERSION}/$rw_version/" | sed 's/#.*//' | egrep -v '^\s*$' | egrep '^[^:]*'$SHORTNAME'[^:]*:|^[^:]+$' | sed -r 's/^[^:]*:\s*//')
@@ -1046,21 +1086,13 @@ do_mode() {
 	fi
         cmd df -h /
     fi
-    if [ -s $basename.kilo ]; then
-        announce "Installing $basename.kilo"
-
-        #pip3_install_kilo_modules $(cat $basename.kilo)
-        # switch to new kilo pip3 wheelhouse after 4.1
-        pip3_install_kilo42_modules $(cat $basename.kilo)
-
-        cmd df -h /
-    fi
     if [ -s $basename.config.sh ]; then
         announce "Sourcing $basename.config.sh"
         source $basename.config.sh
         cmd df -h /
     fi
 }
+
 
 for mode in $MODES; do
     announce "installing $mode"

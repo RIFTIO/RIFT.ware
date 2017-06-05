@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -79,7 +65,7 @@ TEST(ToyschedUnittest, ToytaskCreateAndDestroy)
 }
 
 static void
-toyfd_callback(uint64_t id, int fd, int revents, void *ud)
+toyfd_callback(struct rwmsg_toyfd_s * id, int fd, int revents, void *ud)
 {
   UNUSED(id);
   toysched_callback_context_t *context = (toysched_callback_context_t *) ud;
@@ -110,8 +96,7 @@ TEST(ToyschedUnittest, ToyfdAddAndDelete)
 {
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task;
-  uint64_t toyfd_callback_id;
-  uint64_t rc;
+  struct rwmsg_toyfd_s * toyfd_callback_id;
 
   // Create an instance of the toy scheduler
   rwmsg_toysched_init(&tsched);
@@ -127,10 +112,8 @@ TEST(ToyschedUnittest, ToyfdAddAndDelete)
   EXPECT_TRUE(toyfd_callback_id);
 
   // Delete the toytask file descriptor callback
-  rc = rwmsg_toyfd_del(task, toyfd_callback_id);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_callback_id);
-
+  rwmsg_toyfd_del(task, toyfd_callback_id);
+  
   // Destroy the toytask
   rwmsg_toytask_destroy(task);
 
@@ -140,7 +123,7 @@ TEST(ToyschedUnittest, ToyfdAddAndDelete)
 
 
 static void
-toytimer_callback(uint64_t id, void *ud)
+toytimer_callback(struct rwmsg_toytimer_s * id, void *ud)
 {
   UNUSED(id);
   toysched_callback_context_t *context = (toysched_callback_context_t *) ud;
@@ -188,14 +171,10 @@ class ToyFdIoTest : public ::testing::Test {
 
     void TearDown(){
       // Delete the toytask file descriptor read and write callbacks
-      uint64_t rc;
-      rc = rwmsg_toyfd_del(task, callback_id[0]);
-      EXPECT_TRUE(rc);
-      EXPECT_EQ(rc, callback_id[0]);
-      rc = rwmsg_toyfd_del(task, callback_id[1]);
-      EXPECT_TRUE(rc);
-      EXPECT_EQ(rc, callback_id[1]);
+      rwmsg_toyfd_del(task, callback_id[0]);
 
+      rwmsg_toyfd_del(task, callback_id[1]);
+      
       // Free the callback context structure
       RW_FREE_TYPE(context, toysched_callback_context_t);
 
@@ -209,7 +188,7 @@ class ToyFdIoTest : public ::testing::Test {
     rwmsg_toysched_t tsched;
     rwmsg_toytask_t *task;
     toysched_callback_context_t *context;
-    uint64_t callback_id[2];
+    struct rwmsg_toyfd_s *callback_id[2];
     int pipe_rc, pipe_fds[2];
 
 };
@@ -250,8 +229,7 @@ TEST(ToyschedUnittest, ToytimerAddAndDelete)
 {
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task;
-  uint64_t callback_id;
-  uint64_t rc;
+  struct rwmsg_toytimer_s *callback_id;
 
   // Create an instance of the toy scheduler
   rwmsg_toysched_init(&tsched);
@@ -266,9 +244,8 @@ TEST(ToyschedUnittest, ToytimerAddAndDelete)
   EXPECT_TRUE(callback_id);
 
   // Delete the toytask timer callback
-  rc = rwmsg_toytimer_del(task, callback_id);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, callback_id);
+  rwmsg_toytimer_del(task, callback_id);
+
 
   // Destroy the toytask
   rwmsg_toytask_destroy(task);
@@ -282,8 +259,8 @@ TEST(ToyschedUnittest, SingleToytaskToytimerCallback)
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task;
   toysched_callback_context_t *context;
-  uint64_t callback_id;
-  //uint64_t rc;
+  struct rwmsg_toytimer_s * callback_id;
+  
 
   // Create an instance of the toy scheduler
   rwmsg_toysched_init(&tsched);
@@ -333,7 +310,7 @@ TEST(ToyschedUnittest, MultiToytaskToytimerCallback)
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task[ntasks];
   toysched_callback_context_t *context;
-  uint64_t callback_id[ntasks];
+  struct rwmsg_toytimer_s * callback_id[ntasks];
   //uint64_t rc;
   int i;
 
@@ -391,7 +368,7 @@ TEST(ToyschedUnittest, SingleToytaskBlockingModeWithoutData)
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task;
   toysched_callback_context_t *context;
-  uint64_t toyfd_id[2];
+  struct rwmsg_toyfd_s * toyfd_id[2];
   int revents[2];
 
   // Create an instance of the toy scheduler
@@ -427,14 +404,9 @@ TEST(ToyschedUnittest, SingleToytaskBlockingModeWithoutData)
   EXPECT_EQ(revents[1], POLLOUT);
 
   // Delete the toytask file descriptor read and write callbacks
-  uint64_t rc;
-  rc = rwmsg_toyfd_del(task, toyfd_id[0]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[0]);
-  rc = rwmsg_toyfd_del(task, toyfd_id[1]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[1]);
-
+  rwmsg_toyfd_del(task, toyfd_id[0]);
+  rwmsg_toyfd_del(task, toyfd_id[1]);
+  
   // Free the callback context structure
   RW_FREE_TYPE(context, toysched_callback_context_t);
 
@@ -454,7 +426,7 @@ TEST(ToyschedUnittest, SingleToytaskBlockingModeWithData)
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task;
   toysched_callback_context_t *context;
-  uint64_t toyfd_id[2];
+  struct rwmsg_toyfd_s * toyfd_id[2];
   int revents[2];
 
   // Create an instance of the toy scheduler
@@ -502,13 +474,9 @@ TEST(ToyschedUnittest, SingleToytaskBlockingModeWithData)
 #endif
 
   // Delete the toytask file descriptor read and write callbacks
-  uint64_t rc;
-  rc = rwmsg_toyfd_del(task, toyfd_id[0]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[0]);
-  rc = rwmsg_toyfd_del(task, toyfd_id[1]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[1]);
+  rwmsg_toyfd_del(task, toyfd_id[0]);
+  rwmsg_toyfd_del(task, toyfd_id[1]);
+
 
   // Free the callback context structure
   RW_FREE_TYPE(context, toysched_callback_context_t);
@@ -530,7 +498,7 @@ TEST(ToyschedUnittest, MultiToytaskBlockingModeWithData)
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task[ntasks];
   toysched_callback_context_t *context;
-  uint64_t toyfd_id[ntasks][2];
+  struct rwmsg_toyfd_s * toyfd_id[ntasks][2];
   int revents[2];
   //uint64_t callback_id[ntasks];
   //uint64_t rc;
@@ -597,13 +565,9 @@ TEST(ToyschedUnittest, MultiToytaskBlockingModeWithData)
 
   // Delete the toytask file descriptor read and write callbacks
   for (i = 0 ; i < ntasks ; i++) {
-    uint64_t rc;
-    rc = rwmsg_toyfd_del(task[i], toyfd_id[i][0]);
-    EXPECT_TRUE(rc);
-    EXPECT_EQ(rc, toyfd_id[i][0]);
-    rc = rwmsg_toyfd_del(task[i], toyfd_id[i][1]);
-    EXPECT_TRUE(rc);
-    EXPECT_EQ(rc, toyfd_id[i][1]);
+    rwmsg_toyfd_del(task[i], toyfd_id[i][0]);
+
+    rwmsg_toyfd_del(task[i], toyfd_id[i][1]);
   }
 
   // Free the callback context structure
@@ -629,9 +593,8 @@ TEST(ToyschedUnittest, SingleToytaskToytimerCallbackWhileBlocking)
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task;
   toysched_callback_context_t *context;
-  uint64_t callback_id;
-  uint64_t rc;
-  uint64_t toyfd_id[2];
+  struct rwmsg_toytimer_s *callback_id;
+  struct rwmsg_toyfd_s *toyfd_id[2];
   int revents[2];
   int msec;
 
@@ -683,12 +646,10 @@ TEST(ToyschedUnittest, SingleToytaskToytimerCallbackWhileBlocking)
 
 
   // Delete the toytask file descriptor read and write callbacks
-  rc = rwmsg_toyfd_del(task, toyfd_id[0]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[0]);
-  rc = rwmsg_toyfd_del(task, toyfd_id[1]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[1]);
+  rwmsg_toyfd_del(task, toyfd_id[0]);
+
+  rwmsg_toyfd_del(task, toyfd_id[1]);
+  
 
   // Free the callback context structure
   RW_FREE_TYPE(context, toysched_callback_context_t);
@@ -705,7 +666,7 @@ TEST(ToyschedUnittest, SingleToytaskToytimerCallbackWhileBlocking)
 }
 
 static void
-toytimer_callback_1T(uint64_t id, void *ud)
+toytimer_callback_1T(struct rwmsg_toytimer_s*id, void *ud)
 {
   UNUSED(id);
   toysched_callback_context_t *context = (toysched_callback_context_t *) ud;
@@ -725,9 +686,8 @@ TEST(ToyschedUnittest, SingleToytaskToy1TtimerCallbackWhileBlocking)
   rwmsg_toysched_t tsched;
   rwmsg_toytask_t *task;
   toysched_callback_context_t *context;
-  uint64_t callback_id;
-  uint64_t rc;
-  uint64_t toyfd_id[2];
+  struct rwmsg_toytimer_s * callback_id;
+  struct rwmsg_toyfd_s *toyfd_id[2];
   int revents[2];
   UNUSED(revents);
   int msec;
@@ -771,13 +731,10 @@ TEST(ToyschedUnittest, SingleToytaskToy1TtimerCallbackWhileBlocking)
   EXPECT_EQ(context->timer_callback_count, 2); // Timer shall fire now
 
   // Delete the toytask file descriptor read and write callbacks
-  rc = rwmsg_toyfd_del(task, toyfd_id[0]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[0]);
-  rc = rwmsg_toyfd_del(task, toyfd_id[1]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[1]);
+  rwmsg_toyfd_del(task, toyfd_id[0]);
 
+  rwmsg_toyfd_del(task, toyfd_id[1]);
+  
   // Free the callback context structure
   RW_FREE_TYPE(context, toysched_callback_context_t);
 
@@ -794,7 +751,7 @@ TEST(ToyschedUnittest, SingleToytaskToy1TtimerCallbackWhileBlocking)
 }
 
 static void
-toyRtimer_callback(uint64_t id, void *ud)
+toyRtimer_callback(struct rwmsg_toytimer_s* id, void *ud)
 {
   UNUSED(id);
   toysched_callback_context_t *context = (toysched_callback_context_t *) ud;
@@ -813,9 +770,8 @@ TEST(ToyschedUnittest, SingleToytaskToyRtimerCallbackWhileBlocking)
   rwmsg_toytask_t *task;
   toysched_callback_context_t *context;
   //toysched_callback_context_t *context1;
-  uint64_t callback_id;
-  uint64_t rc;
-  uint64_t toyfd_id[2];
+  struct rwmsg_toytimer_s *callback_id;
+  struct rwmsg_toyfd_s *toyfd_id[2];
   int revents[2];
   UNUSED(revents);
   int msec;
@@ -874,12 +830,10 @@ TEST(ToyschedUnittest, SingleToytaskToyRtimerCallbackWhileBlocking)
   EXPECT_EQ(context->timer_callback_count, 4); // Now that timer is stopped, it shall not fire any more
 
   // Delete the toytask file descriptor read and write callbacks
-  rc = rwmsg_toyfd_del(task, toyfd_id[0]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[0]);
-  rc = rwmsg_toyfd_del(task, toyfd_id[1]);
-  EXPECT_TRUE(rc);
-  EXPECT_EQ(rc, toyfd_id[1]);
+  rwmsg_toyfd_del(task, toyfd_id[0]);
+  
+  rwmsg_toyfd_del(task, toyfd_id[1]);
+  
 
   // Free the callback context structure
   RW_FREE_TYPE(context, toysched_callback_context_t);
@@ -907,7 +861,7 @@ typedef enum {
 
 struct toytimer_context_s {
   toytimer_type_t type;
-  uint64_t id;
+  struct rwmsg_toytimer_s* id;
   rwmsg_toytask_t *toytask;
   int timer_count;
   bool stopped;
@@ -920,11 +874,11 @@ toytimer_oneshot_create(rwmsg_toytask_t *toytask,
 			toytimer_context_t toytimer_context);
 
 static void
-toytimer_oneshot_callback(uint64_t id, void *ud);
+toytimer_oneshot_callback(struct rwmsg_toytimer_s* id, void *ud);
 
 
 static void
-toytimer_oneshot_callback(uint64_t id, void *ud)
+toytimer_oneshot_callback(struct rwmsg_toytimer_s * id, void *ud)
 {
   toytimer_context_t toytimer_context = (toytimer_context_t) ud;
 
@@ -945,7 +899,7 @@ static void
 toytimer_oneshot_create(rwmsg_toytask_t *toytask,
                         toytimer_context_t toytimer_context)
 {
-  uint64_t toytimer_id;
+  struct rwmsg_toytimer_s* toytimer_id;
 
   // Validate input parameters
   RW_ASSERT_TYPE(toytimer_context, toytimer_context_t);

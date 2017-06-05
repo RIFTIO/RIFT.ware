@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -126,7 +112,7 @@ rwmsg_toytask_destroy(rwmsg_toytask_t *toy)
   RW_CF_TYPE_FREE(toytask, rwtoytask_tasklet_ptr_t);
 }
 
-uint64_t
+struct rwmsg_toyfd_s*
 rwmsg_toyfd_add(rwmsg_toytask_t *toy, int fd, int pollbits, toyfd_cb_t cb, void *ud)
 {
   rwsched_instance_ptr_t instance;
@@ -183,7 +169,6 @@ rwmsg_toyfd_add(rwmsg_toytask_t *toy, int fd, int pollbits, toyfd_cb_t cb, void 
 
   // Fill in the toyfd structure
   toyfd->cf_ref = cfsocket;
-  toyfd->id = cfsocket->index;
   toyfd->fd = fd;
   toyfd->cb = cb;
   toyfd->ud = ud;
@@ -200,11 +185,11 @@ rwmsg_toyfd_add(rwmsg_toytask_t *toy, int fd, int pollbits, toyfd_cb_t cb, void 
   }
 
   // Return the callback id
-  return (uint64_t) toyfd->id;
+  return toyfd;
 }
 
-uint64_t
-rwmsg_toyfd_del(rwmsg_toytask_t *toy, uint64_t id)
+void
+rwmsg_toyfd_del(rwmsg_toytask_t *toy, struct rwmsg_toyfd_s *id)
 {
   rwsched_instance_ptr_t instance;
   rwmsg_toytask_t *toytask = toy;
@@ -221,9 +206,8 @@ rwmsg_toyfd_del(rwmsg_toytask_t *toy, uint64_t id)
   RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
 
   // Lookup the cfsocket corresponding to id
-  RW_ASSERT(id < toytask->rwsched_tasklet_info->cfsocket_array->len);
-  cfsocket = g_array_index(toytask->rwsched_tasklet_info->cfsocket_array, rwsched_CFSocketRef, id);
-  RW_ASSERT(cfsocket->index == id);
+  cfsocket = (( struct rwmsg_toyfd_s *)id)->cf_ref;
+  
   rwsched_tasklet_CFSocketGetContext(toytask->rwsched_tasklet_info, cfsocket, &cf_context);
 
   // Free the cfsocket
@@ -246,11 +230,10 @@ rwmsg_toyfd_del(rwmsg_toytask_t *toy, uint64_t id)
   // Free the toyfd
   RW_CF_TYPE_FREE(toyfd, rwmsg_toyfd_ptr_t);
 
-  // Return the callback id
-  return id;
+  return;
 }
 
-uint64_t
+struct rwmsg_toytimer_s*
 rwmsg_toytimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
 {
   rwsched_instance_ptr_t instance;
@@ -289,7 +272,6 @@ rwmsg_toytimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
   rwsched_tasklet_CFRunLoopAddTimer(toytask->rwsched_tasklet_info, runloop, cftimer, instance->main_cfrunloop_mode);
 
   // Fill in the toytimer structure
-  toytimer->id = cftimer->index;
   toytimer->cb = cb;
   toytimer->ud = ud;
 
@@ -299,11 +281,11 @@ rwmsg_toytimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
   toytimer->context.u.toytimer.toytimer = toytimer;
 
   // Return the callback id
-  return (uint64_t) toytimer->id;
+  return toytimer;
 }
 
-uint64_t
-rwmsg_toytimer_del(rwmsg_toytask_t *toy, uint64_t id)
+void
+rwmsg_toytimer_del(rwmsg_toytask_t *toy,  struct rwmsg_toytimer_s*id)
 {
   rwsched_instance_ptr_t instance;
   rwmsg_toytask_t *toytask = toy;
@@ -320,20 +302,9 @@ rwmsg_toytimer_del(rwmsg_toytask_t *toy, uint64_t id)
 
   // Lookup the cftimer corresponding to id
 #if 1
-  RW_ASSERT(1 < toytask->rwsched_tasklet_info->cftimer_array->len);
-  unsigned int i;
-  for (i = 1 ; i < toytask->rwsched_tasklet_info->cftimer_array->len ; i++) {
-    cftimer = g_array_index(toytask->rwsched_tasklet_info->cftimer_array, rwsched_CFRunLoopTimerRef, i);
-    if (id == cftimer->index) {
-      break;
-    }
-  }
-  RW_ASSERT(i < toytask->rwsched_tasklet_info->cftimer_array->len);
-#else
-  RW_ASSERT(id < toytask->rwsched_tasklet_info->cftimer_array->len);
-  cftimer = g_array_index(toytask->rwsched_tasklet_info->cftimer_array, rwsched_CFRunLoopTimerRef, id);
-  RW_ASSERT(cftimer->index == id);
+  cftimer = ((struct rwmsg_toytimer_s *)id)->context.source.cftimer;
 #endif
+
   rwsched_tasklet_CFRunLoopTimerGetContext(toytask->rwsched_tasklet_info, cftimer, &cf_context);
 
   // Invalidate the cftimer
@@ -344,11 +315,10 @@ rwmsg_toytimer_del(rwmsg_toytask_t *toy, uint64_t id)
   toytimer = cf_context.info;
   RW_CF_TYPE_FREE(toytimer, rwmsg_toytimer_ptr_t);
 
-  // Return the callback id
-  return id;
+  return;
 }
 
-uint64_t
+struct rwmsg_toytimer_s*
 rwmsg_toy1Ttimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
 {
   rwsched_instance_ptr_t instance;
@@ -387,7 +357,6 @@ rwmsg_toy1Ttimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
   rwsched_tasklet_CFRunLoopAddTimer(toytask->rwsched_tasklet_info, runloop, cftimer, instance->main_cfrunloop_mode);
 
   // Fill in the toytimer structure
-  toytimer->id = cftimer->index;
   toytimer->cb = cb;
   toytimer->ud = ud;
 
@@ -397,7 +366,7 @@ rwmsg_toy1Ttimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
   toytimer->context.u.toytimer.toytimer = toytimer;
 
   // Return the callback id
-  return (uint64_t) toytimer->id;
+  return toytimer;
 }
 
 void
@@ -441,7 +410,8 @@ rwmsg_toysched_runloop(rwmsg_toysched_t *ts, rwmsg_toytask_t *tt_blk, int max_ev
 }
 
 int
-rwmsg_toytask_block(rwmsg_toytask_t *toy, uint64_t id, int timeout_ms)
+rwmsg_toytask_block(rwmsg_toytask_t *toy, struct rwmsg_toyfd_s * id,
+                    int timeout_ms)
 {
   rwsched_instance_ptr_t instance;
   rwmsg_toytask_t *toytask = toy;
@@ -457,9 +427,8 @@ rwmsg_toytask_block(rwmsg_toytask_t *toy, uint64_t id, int timeout_ms)
   RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
 
   // Lookup the cfsocket corresponding to id
-  RW_ASSERT(id < toytask->rwsched_tasklet_info->cfsocket_array->len);
-  cfsocket = g_array_index(toytask->rwsched_tasklet_info->cfsocket_array, rwsched_CFSocketRef, id);
-  RW_ASSERT(cfsocket->index == id);
+  cfsocket =(( struct rwmsg_toyfd_s *)id)->cf_ref;
+      
   rwsched_tasklet_CFSocketGetContext(toytask->rwsched_tasklet_info, cfsocket, &cf_context);
   toyfd = cf_context.info;
 
@@ -526,7 +495,7 @@ rwmsg_toysched_io_callback(rwsched_CFSocketRef s,
 
   // Invoke the user specified callback
   RW_ASSERT(toyfd->cb);
-  toyfd->cb(toyfd->id, toyfd->fd, revents, toyfd->ud);
+  toyfd->cb(toyfd, toyfd->fd, revents, toyfd->ud);
 
   // Inalidate the socket so the callback is not invoked again
   rwsched_tasklet_CFSocketInvalidate(toytask->rwsched_tasklet_info, s);
@@ -546,11 +515,11 @@ rwmsg_toysched_timer_callback(rwsched_CFRunLoopTimerRef timer, void *info)
 
   // Invoke the user specified callback
   RW_ASSERT(toytimer->cb);
-  toytimer->cb(toytimer->id, toytimer->ud);
+  toytimer->cb(toytimer, toytimer->ud);
 
   // Free the timer slot
   // Note: We have a race condition if the timer was deleted but an event is in the runloop_queue
-  rwmsg_toytimer_del(toytask, toytimer->id);
+  rwmsg_toytimer_del(toytask, (void*)toytimer);
 }
 
 static void
@@ -567,10 +536,10 @@ rwmsg_toysched_Rtimer_callback(rwsched_CFRunLoopTimerRef timer, void *info)
 
   // Invoke the user specified callback
   RW_ASSERT(toytimer->cb);
-  toytimer->cb(toytimer->id, toytimer->ud);
+  toytimer->cb(toytimer, toytimer->ud);
 }
 
-uint64_t
+struct rwmsg_toytimer_s *
 rwmsg_toyRtimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
 {
   rwsched_instance_ptr_t instance;
@@ -609,7 +578,6 @@ rwmsg_toyRtimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
   rwsched_tasklet_CFRunLoopAddTimer(toytask->rwsched_tasklet_info, runloop, cftimer, instance->main_cfrunloop_mode);
 
   // Fill in the toytimer structure
-  toytimer->id = cftimer->index;
   toytimer->cb = cb;
   toytimer->ud = ud;
 
@@ -618,6 +586,5 @@ rwmsg_toyRtimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud)
   toytimer->context.source.cftimer = cftimer;
   toytimer->context.u.toytimer.toytimer = toytimer;
 
-  // Return the callback id
-  return (uint64_t) toytimer->id;
+  return toytimer;
 }

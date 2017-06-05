@@ -1,19 +1,5 @@
 """
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 
 @file demo.py
 @author Joshua Downer (joshua.downer@riftio.com)
@@ -178,7 +164,8 @@ class Demo(object):
                        agent_mode="AUTOMODE",
                        persist_dir_name="persist.riftware",
                        test_name=None,
-                       rift_var_root=None
+                       rift_var_root=None,
+                       no_heartbeat=False,
                        ):
         """Returns a PreparedSystem object encapsulating the SystemInfo and PortNetwork objects
 
@@ -206,6 +193,7 @@ class Demo(object):
             persist_dir_name - The configuration persistence directory name
             test_name        - Testcase name
             rift_var_root    - prefix for RIFT ROOT path
+            no_heartbeat     - Disable heartbeat 
 
         Raises:
             An UnsupportedModeError is raised if the specified mode is not in
@@ -239,6 +227,7 @@ class Demo(object):
         sysinfo.persist_dir_name = persist_dir_name
         sysinfo.test_name = test_name
         sysinfo.rift_var_root = rift_var_root
+        sysinfo.no_heartbeat = no_heartbeat 
         sysinfo.multi_broker = multi_broker
         sysinfo.multi_dtsrouter = multi_dtsrouter
         sysinfo.dtsperfmgr = dtsperfmgr
@@ -943,7 +932,9 @@ def prepared_system_from_demo_and_args(demo, args,
             agent_mode=agent_mode,
             persist_dir_name=args.persist_dir_name,
             test_name=args.test_name,
-            rift_var_root=args.rift_var_root)
+            rift_var_root=args.rift_var_root,
+            no_heartbeat=args.no_heartbeat,
+    )
 
     prepared_system_params = {"sysinfo": sysinfo,
                               "port_network": port_network}
@@ -1151,6 +1142,11 @@ class DemoArgParser(argparse.ArgumentParser):
                           type=str,
                           dest='test_name',
                           help="Test Case Name")
+
+        self.add_argument('--no-heartbeat',
+                          action='store_true',
+                          default=False,
+                          help="Disable heartbeat for debugging")
                           
         self.add_argument('--ha-mode',
                           dest='ha_mode',

@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -41,7 +27,11 @@ static void *(*memalignp)(size_t, size_t);
 static void (*freep) (void *);
 
 #define RETURN_ADDRESS(n) __builtin_return_address(n)
-//#define MEM_ALLOC_PRINTF(fmt, _args...) fprintf(stderr, fmt, ##_args)
+/*
+#define MEM_ALLOC_PRINTF(fmt, _args...)   \
+  if (g_tasklet_info)                     \
+    fprintf(stderr, fmt, ##_args)
+*/
 #define MEM_ALLOC_PRINTF(fmt, _args...)
 
 typedef struct {
@@ -218,8 +208,8 @@ void *calloc (size_t n, size_t len)
     memset(&callers[callstack_depth+2], '\0',
            (RW_RESOURCE_TRACK_MAX_CALLERS-callstack_depth)*sizeof(callers[0]));
     caller = (void*)(&callers[2]);
-    if (g_tasklet_info) MEM_ALLOC_PRINTF("%p-%p calloc(%zu, %zu", caller, g_tasklet_info, n, len);
-    if (g_tasklet_info) MEM_ALLOC_PRINTF(") -> %p\n", ret);
+    MEM_ALLOC_PRINTF("%p-%p calloc(%zu, %zu", caller, g_tasklet_info, n, len);
+    MEM_ALLOC_PRINTF(") -> %p\n", ret);
     _add_tracking(ret, n*len, "calloc", (void*)(&callers[2]));
   }
   no_hook = 0;
@@ -249,11 +239,9 @@ void *malloc (size_t len)
   if (track_this) {
     int callstack_depth = g_callstack_depth;
     rw_btrace_backtrace(callers, callstack_depth+2);
-    memset(&callers[callstack_depth+2], '\0',
-           (RW_RESOURCE_TRACK_MAX_CALLERS-callstack_depth)*sizeof(callers[0]));
     caller = (void*)(&callers[2]);
-    if (g_tasklet_info) MEM_ALLOC_PRINTF("%p-%p malloc(%zu", caller, g_tasklet_info, len);
-    if (g_tasklet_info) MEM_ALLOC_PRINTF(") -> %p\n", ret);
+    MEM_ALLOC_PRINTF("%p-%p malloc(%zu", caller, g_tasklet_info, len);
+    MEM_ALLOC_PRINTF(") -> %p\n", ret);
     _add_tracking(ret, len, "malloc", (void*)(&callers[2]));
   }
   no_hook = 0;
@@ -280,11 +268,9 @@ void *realloc(void *ptr, size_t len)
   if (track_this) {
     int callstack_depth = g_callstack_depth;
     rw_btrace_backtrace(callers, callstack_depth+2);
-    memset(&callers[callstack_depth+2], '\0',
-           (RW_RESOURCE_TRACK_MAX_CALLERS-callstack_depth)*sizeof(callers[0]));
     caller = (void*)(&callers[2]);
-    if (g_tasklet_info) MEM_ALLOC_PRINTF("%p-%p realloc(%p, %zu", caller, g_tasklet_info, ptr, len);
-    if (g_tasklet_info) MEM_ALLOC_PRINTF(") -> %p\n", ret);
+    MEM_ALLOC_PRINTF("%p-%p realloc(%p, %zu", caller, g_tasklet_info, ptr, len);
+    MEM_ALLOC_PRINTF(") -> %p\n", ret);
     _add_tracking(ret, len, "realloc", (void*)(&callers[2]));
   }
   no_hook = 0;
@@ -304,9 +290,9 @@ void free (void *ptr)
   }
   no_hook = 1;
   caller = RETURN_ADDRESS(0);
-  if (g_tasklet_info) MEM_ALLOC_PRINTF("%p-%p free(%p", caller, g_tasklet_info, ptr);
+  MEM_ALLOC_PRINTF("%p-%p free(%p", caller, g_tasklet_info, ptr);
   _do_free(ptr, freep);
-  if (g_tasklet_info) MEM_ALLOC_PRINTF(") -> \n");
+  MEM_ALLOC_PRINTF(") -> \n");
   no_hook = 0;
 
 _return:
@@ -324,9 +310,9 @@ void *memalign(size_t len, size_t size)
   }
   no_hook = 1;
   caller = RETURN_ADDRESS(0);
-  if (g_tasklet_info) MEM_ALLOC_PRINTF("%p-%p memalign(%zu, %zu", caller, g_tasklet_info, len, size);
+  MEM_ALLOC_PRINTF("%p-%p memalign(%zu, %zu", caller, g_tasklet_info, len, size);
   ret = (*memalignp)(len, size);
-  if (g_tasklet_info) MEM_ALLOC_PRINTF(") -> %p\n", ret);
+  MEM_ALLOC_PRINTF(") -> %p\n", ret);
   no_hook = 0;
 
 _return:

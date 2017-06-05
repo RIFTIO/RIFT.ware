@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /*!
  * @file rwdts_api.h
  * @brief Core API for RW.DTS
@@ -56,8 +37,13 @@
 
 __BEGIN_DECLS
 
+#define RWDTS_TIMEOUT_QUANTUM_MULTIPLE(apih, scale) ((apih)->timeout_base * (scale))
+#define RWDTS_CONFIG_MONITOR_WARN_PERIOD_SCALE (0.1)
+#define RWDTS_ASYNC_TIMEOUT_SCALE (5)
+
 #define RWDTS_MEMBER_MAX_RETRIES_REG 2 /* determine the retry for registrations getting aborts*/
 #define RWDTS_TIMEIT_THRESH_MS (5)
+
 #define RWDTS_TIMEIT(xxx) ({						\
         int shown=FALSE;						\
 	unsigned int cbms=0;						\
@@ -78,6 +64,37 @@ shown=TRUE;								\
 })
 
 
+#define DTS_APIH_MALLOC(_apih, _type, _size) \
+  RW_MALLOC((_size));                           \
+  if (_apih)                                    \
+    (_apih)->memory_stats[(_type)]->num_allocs++;
+
+#define DTS_APIH_MALLOC0(_apih, _type, _size)   \
+  RW_MALLOC0((_size));                          \
+  if (_apih)                                    \
+    (_apih)->memory_stats[(_type)]->num_allocs++;
+
+#define DTS_APIH_MALLOC_TYPE(_apih, _type, _size, _cftype) \
+  RW_MALLOC_TYPE((_size), _cftype);                      \
+  if (_apih)                                             \
+    (_apih)->memory_stats[(_type)]->num_allocs++;
+
+
+#define DTS_APIH_MALLOC0_TYPE(_apih, _type, _size, _cftype) \
+  RW_MALLOC0_TYPE((_size), _cftype);                      \
+  if (_apih)                                              \
+    (_apih)->memory_stats[(_type)]->num_allocs++;
+
+#define DTS_APIH_FREE(_apih, _type, _data)      \
+  if (_apih)                                     \
+    (_apih)->memory_stats[(_type)]->num_frees++; \
+  RW_FREE((_data));                             
+
+#define DTS_APIH_FREE_TYPE(_apih, _type, _data, _cftype) \
+  if (_apih)                                    \
+    (_apih)->memory_stats[(_type)]->num_frees++; \
+  RW_FREE_TYPE((_data), _cftype);                
+   
 
 #if 0
 #define PRINT_STR(path, fmt, args...) \
@@ -586,6 +603,7 @@ struct rwdts_member_registration_s {
   union rwdts_shard_flavor_params_u params; 
   bool  has_index;
   int   index;
+  rwdts_chunk_id_t chunk_id;
 #endif
 
 };
@@ -615,26 +633,6 @@ typedef struct rwdts_api_client_s {
   rwmsg_request_t*         rwreq;
 } rwdts_api_client_t;
 
-/*
- *  Member data structure  used to store member data registrations
- */
-
-struct rwdts_member_data_s {
-  rwdts_member_data_obj_t obj;
-  rwdts_member_data_cb_t registration;
-  uint32_t outboard:1;
-  uint32_t xact_data:1;
-  uint32_t _pad:30;
-  uint32_t flags;
-  uint8_t* ks_binpath;     /*!< keyspec bin path */
-  size_t   ks_binpath_len; /*!< keyspec bin path len */
-  rw_keyspec_path_t *ks;
-  rwdts_api_t *apih;
-  rwdts_xact_t *xact;
-  UT_hash_handle hh;
-};
-
-typedef struct rwdts_member_data_s rwdts_member_data_t;
 
 /*
  * Internal srtucture in API to hold the API server side details
@@ -652,6 +650,8 @@ typedef struct rwdts_api_reg_info_s {
    uint32_t flags;
    rw_keyspec_path_t *keyspec;
    char *keystr;
+   bool update; /*Will be set if this is a new registration or the registration is getting
+                     updated in the router*/
    rw_sklist_element_t element;
 } rwdts_api_reg_info_t;
 
@@ -725,7 +725,6 @@ struct rwdts_api_s {
   rwdts_api_server_t server;
   uint64_t xact_id;
   rw_sklist_t sent_reg_list;
-  rw_sklist_t sent_reg_update_list;
   rw_sklist_t sent_dereg_list;
   rw_sklist_t reg_list;
 
@@ -733,7 +732,7 @@ struct rwdts_api_s {
   rwmemlog_instance_t *rwmemlog;
 
   struct rwdts_xact_s *xacts;
-  rwsched_dispatch_source_t xact_timer;
+  //rwsched_dispatch_source_t xact_timer;
   rwtrace_ctx_t *rwtrace_instance;
   rwdts_state_t  dts_state;
   uint32_t reg_usable;
@@ -758,14 +757,15 @@ struct rwdts_api_s {
   uint32_t next_table_id;
   rwdts_shard_t *shard_tree;
   uint32_t next_shard_id;
-  rwsched_dispatch_source_t timer;
-  rwsched_dispatch_source_t update_timer;
+  rwsched_dispatch_source_t reg_timer;
+
   rw_sklist_t  kv_table_handle_list;
   rwdts_kv_handle_t *handle;
   char **dereg_path;
   rwdts_api_dereg_path_info_t *path_dereg;
   uint32_t path_dereg_cnt;
-  rwsched_dispatch_source_t deregp_timer;
+  rwsched_dispatch_source_t deregp_timer; //this can be deleted. the vcs should add the member and the individual registrations should be added by the member..AKKI TBD
+ 
   rwsched_dispatch_source_t dereg_timer;
 
   rwsched_tasklet_ptr_t tasklet;
@@ -865,9 +865,9 @@ struct rwdts_api_s {
     uint64_t num_notif_rsp_count;
   } stats;
   RWPB_T_MSG(RwDts_data_Dts_Member_PayloadStats) payload_stats;
+  RWPB_T_MSG(RwDts_data_Dts_Member_State_MemoryStats) *memory_stats[RW_DTS_DTS_MEMORY_TYPE_MAX+1];
   //5x3x3x31
 
-  rwdts_member_data_t *mbr_data;
   uint64_t client_idx;
   uint64_t router_idx;
 
@@ -901,6 +901,8 @@ struct rwdts_api_s {
 
   /*  GDestroyNotify callback */
   GDestroyNotify api_destroyed;
+
+  uint64_t timeout_base;
 };
 
 /*
@@ -1045,7 +1047,7 @@ typedef struct rwdts_query_error_s {
 } rwdts_query_error_t;
 
 rwdts_query_error_t *
-rwdts_query_error_new ();
+rwdts_query_error_new (rwdts_api_t *apih);
 
 rwdts_query_error_t*
 rwdts_query_error_ref(rwdts_query_error_t *boxed);
@@ -1132,7 +1134,6 @@ struct rwdts_xact_s {
   rw_dl_t                     children;
   rwdts_member_xact_state_t   mbr_state;
   struct rwdts_xact_query_s*  queries;
-  rwdts_member_data_t*        mbr_data;
   rwdts_member_data_object_t* pub_obj_list;
   rwdts_member_data_object_t* sub_obj_list;
 
@@ -1166,6 +1167,8 @@ struct rwdts_xact_s {
   int ref_trace_indx;
   xact_ref_trace_t ref_trace[30];
 #endif
+  bool       print; // debug -- make this better TBD AKKI
+  char       xact_id_str[128];
 };
 
 struct rwdts_scratch_s {
@@ -1305,13 +1308,6 @@ rwdts_member_find_matches(rwdts_api_t* apih,
 
 const char* rwdts_evtrsp_to_str(RWDtsEventRsp evt);
 
-rwdts_member_registration_t* rwdts_member_registration_init(rwdts_api_t*  apih,
-                                                            const rw_keyspec_path_t*               ks,
-                                                            const rwdts_member_event_cb_t*    cb,
-                                                            uint32_t                          flags,
-                                                            const ProtobufCMessageDescriptor* desc,
-                                                            const rwdts_shard_info_detail_t *shard_detail);
-
 const char* rwdts_evtrsp_to_str(RWDtsEventRsp evt);
 
 rwdts_member_registration_t* rwdts_member_registration_init_local(rwdts_api_t*  apih,
@@ -1325,10 +1321,11 @@ rw_status_t rwdts_member_registration_deinit(rwdts_member_registration_t* reg);
 rw_status_t rwdts_member_cursor_deinit(rwdts_member_cursor_t *cursor);
 
 rw_status_t
-rwdts_member_reg_commit_record_deinit(rwdts_reg_commit_record_t *reg_creci);
+rwdts_member_reg_commit_record_deinit(rwdts_api_t *apih,
+                                      rwdts_reg_commit_record_t *reg_creci);
 
 rw_status_t
-rwdts_member_commit_record_deinit(rwdts_commit_record_int_t *creci);
+rwdts_member_commit_record_deinit(rwdts_api_t *apih,rwdts_commit_record_int_t *creci);
 
 rwdts_reg_commit_record_t*
 rwdts_member_find_reg_commit_record(rwdts_xact_t*  xact, rwdts_member_registration_t* reg);
@@ -1341,13 +1338,6 @@ rwdts_add_commit_record(rwdts_xact_t*                xact,
                         rwdts_member_op_t            op,
                         rw_keyspec_path_t*           in_ks, 
                         RwDtsQuerySerial*            serial);
-
-rw_status_t
-rwdts_member_reg_commit_record_deinit(rwdts_reg_commit_record_t *reg_crec);
-
-rw_status_t
-rwdts_member_commit_record_deinit(rwdts_commit_record_int_t *creci);
-
 bool rwdts_member_responded_to_router(rwdts_xact_t* xact);
 
 void rwdts_appconf_register_deinit(rwdts_member_registration_t *reg);
@@ -1366,7 +1356,8 @@ rwdts_query_action_to_str(RWDtsQueryAction action, char *str, size_t str_len);
 /* rwdts_member_data_api.c */
 
 rw_status_t
-rwdts_member_data_deinit(rwdts_member_data_object_t *mobj);
+rwdts_member_data_deinit(rwdts_api_t*                 apih,
+                         rwdts_member_data_object_t *mobj);
 
 rwdts_member_data_object_t*
 rwdts_member_data_init(rwdts_member_registration_t* reg,
@@ -1429,18 +1420,20 @@ rwdts_trace_print_req(RWDtsTracerouteEnt *ent, char *logbuf,char *evt, char *sta
  */
 
 #define RWDTS_API_LOG_XACT_EVENT(__apih__, __xact__, __evt__, ...)  \
-{ \
-  char tmp_log_xact_id_str[256] = ""; \
-  RWLOG_EVENT((__apih__)->rwlog_instance, __evt__, (char*)rwdts_xact_id_str(&(__xact__)->id, \
-              tmp_log_xact_id_str, sizeof(tmp_log_xact_id_str)), __VA_ARGS__); \
-}
+  RWLOG_EVENT_CODE((__apih__)->rwlog_instance, RwDtsApiLog_notif_##__evt__, \
+                   (/* code_before_event */ \
+                       char RWDTS_API_tmp_log_xact_id_str[256] = "";              \
+                       rwdts_xact_id_str(&(__xact__)->id, RWDTS_API_tmp_log_xact_id_str, sizeof(RWDTS_API_tmp_log_xact_id_str)); \
+                     ),\
+                   (/* code_after_event_ */), \
+                   RWDTS_API_tmp_log_xact_id_str, __VA_ARGS__);
 
 /*
  * DTS logging macro for xact related debug events
  */
 
 #define RWDTS_API_LOG_XACT_DEBUG_EVENT(__apih__, __xact__, __evt__, ...)  \
-  //RWDTS_API_LOG_XACT_EVENT(__apih__, __xact__, __evt__, __VA_ARGS__)
+  //    RWDTS_API_LOG_XACT_EVENT(__apih__, __xact__, __evt__, __VA_ARGS__)
 
 /*
  * DTS logging macro for registration related events
@@ -1482,19 +1475,21 @@ rwdts_trace_print_req(RWDtsTracerouteEnt *ent, char *logbuf,char *evt, char *sta
   }                                                                        \
 }
 
-
 #define RWDTS_ROUTER_LOG_XACT_EVENT(__dts__, __xact__, evvtt, ...)        \
 {                                                                        \
-  char tmp_log_xact_id_str[256] = "";                                        \
   if ((__dts__)->rwtaskletinfo->rwlog_instance) {                        \
-    RWLOG_EVENT((__dts__)->rwtaskletinfo->rwlog_instance, evvtt, (__dts__)->rwmsgpath, \
-      ((char*)rwdts_xact_id_str(&(__xact__)->id,tmp_log_xact_id_str,sizeof(tmp_log_xact_id_str))), __VA_ARGS__); \
+    RWLOG_EVENT_CODE((__dts__)->rwtaskletinfo->rwlog_instance, RwDtsRouterLog_notif_##evvtt, \
+                     (/* code_before_event_ */ \
+                         char RWDTS_ROUTER_LOG_tmp_log_xact_id_str[256] = "";    \
+                         rwdts_xact_id_str(&(__xact__)->id,RWDTS_ROUTER_LOG_tmp_log_xact_id_str,sizeof(RWDTS_ROUTER_LOG_tmp_log_xact_id_str)); \
+                      ), \
+                     (/* code_after_event */), \
+                     (__dts__)->rwmsgpath, RWDTS_ROUTER_LOG_tmp_log_xact_id_str, __VA_ARGS__); \
   }                                                                        \
-}
+}  
 
-
-#define RWDTS_ROUTER_LOG_XACT_DEBUG_EVENT(__dts__, __xact__, __evt__, ...)
- //Disabled for now RWDTS_ROUTER_LOG_XACT_EVENT(__dts__, __xact__, __evt__, __VA_ARGS__)
+#define RWDTS_ROUTER_LOG_XACT_DEBUG_EVENT(__dts__, __xact__, __evt__, ...) \
+  //  RWDTS_ROUTER_LOG_XACT_EVENT(__dts__, __xact__, __evt__, __VA_ARGS__)
 
 #define RWDTS_Impl_Paste3(a,b,c) a##_##b##_##c
 
@@ -1519,14 +1514,14 @@ rwdts_trace_print_req(RWDtsTracerouteEnt *ent, char *logbuf,char *evt, char *sta
     char logbuf[RWDTS_MAX_LOGBUFSZ+1]; \
     int blkidx = ent.block->block?ent.block->block->blockidx:0;\
     rwdts_trace_event_print_block(&ent, logbuf, schema); \
-    RWLOG_EVENT(ctx_,path_, xact_id, blkidx, ent.dstpath, logbuf); \
+    RWLOG_EVENT(ctx_,RwDtsApiLog_notif_##path_, xact_id, blkidx, ent.dstpath, logbuf); \
 }\
 
 #define RWDTS_TRACE_EVENT_REQ(ctx_,path_,xact_id, ent) \
 {\
     char logbuf[RWDTS_MAX_LOGBUFSZ+1],evt[32],state[32],res_code[64]; \
     rwdts_trace_print_req(&ent, logbuf,evt, state,res_code);\
-    RWLOG_EVENT(ctx_,path_,xact_id,evt,ent.srcpath,ent.dstpath,state,res_code,ent.res_count,ent.elapsed_us,logbuf);\
+    RWLOG_EVENT(ctx_,RwDtsApiLog_notif_##path_,xact_id,evt,ent.srcpath,ent.dstpath,state,res_code,ent.res_count,ent.elapsed_us,logbuf);\
 }
 
 
@@ -1534,7 +1529,7 @@ rwdts_trace_print_req(RWDtsTracerouteEnt *ent, char *logbuf,char *evt, char *sta
 /* Debug traceroute / dump support functions */
 extern void rwdts_xact_dbg_tracert_start(RWDtsXact *xact, rwdts_trace_filter_t *filt);
 extern void rwdts_xactres_dbg_tracert_start(RWDtsXactResult *xact);
-
+extern void rwdts_dbg_tracert_remove_all_ent(RWDtsTraceroute *tr);
 extern void rwdts_dbg_add_tr(RWDtsDebug *dbg, rwdts_trace_filter_t *fit);
 extern int rwdts_dbg_tracert_add_ent(RWDtsTraceroute *tr, RWDtsTracerouteEnt *ent);
 extern void rwdts_dbg_tracert_append(RWDtsTraceroute *dst, RWDtsTraceroute *src);
@@ -1549,8 +1544,6 @@ rwdts_get_merged_keyspec(rw_keyspec_entry_t* pe, rw_schema_minikey_opaque_t* mk,
                          rw_keyspec_path_t *reg_keyspec, rw_keyspec_path_t **merged_keyspec);
 
 void rwdts_xact_query_result_list_deinit(rwdts_xact_t *xact);
-
-bool rwdts_is_transactional(rwdts_xact_t *xact);
 
 bool
 rwdts_reroot_merge_queries(RWDtsQueryResult* qres,
@@ -1734,7 +1727,7 @@ rwdts_xact_init_query_from_pb(rwdts_api_t*                  apih,
     char shard[100] = "\0"; \
     sprintf(shard, "%d-%s-%s", reg_id, client, rtr);
 
-void rwdts_xact_status_deinit(rwdts_xact_status_t *s);
+void rwdts_xact_status_deinit(rwdts_api_t *apih, rwdts_xact_status_t *s);
 
 rwdts_xact_info_t *rwdts_xact_info_ref(const rwdts_xact_info_t *boxed);
 
@@ -1859,6 +1852,16 @@ rwdts_xact_get_result_pb_local(rwdts_xact_t*                xact,
 RWDtsKey*
 rwdts_init_key_from_keyspec_int(const rw_keyspec_path_t* keyspec);
 
+rwdts_member_reg_handle_t
+rwdts_member_register_int(rwdts_xact_t*   xact,
+                          rwdts_api_t*                      apih,
+                          rwdts_member_reg_handle_t         reg_handle,
+                          rwdts_group_t*                    group,
+                          const rw_keyspec_path_t*          keyspec,
+                          rwdts_member_event_cb_t*    cb,
+                          const ProtobufCMessageDescriptor* desc,
+                          uint32_t                          flags,
+                          const rwdts_shard_info_detail_t*  shard_detail);
 
 rw_status_t
 rwdts_advise_query_proto_int(rwdts_api_t*             apih,
@@ -1955,17 +1958,6 @@ rwdts_query_fill_serial(RWDtsQuery*                  query,
                         rwdts_api_t*                 apih,
                         rwdts_member_registration_t* reg);
 
-rwdts_xact_t*
-rwdts_member_data_advice_query_action(rwdts_xact_t*             xact,
-                                      rwdts_member_reg_handle_t regh,
-                                      rw_keyspec_path_t*        keyspec,
-                                      const ProtobufCMessage*   msg,
-                                      RWDtsQueryAction          action,
-                                      uint32_t                  flags,
-                                      rwdts_event_cb_t*         advise_cb,
-                                      rwdts_event_cb_t*         rcvd_advise_cb,
-                                      bool                      inc_serial);
-
 void rwdts_member_data_advise_cb(rwdts_xact_t*        xact,
                                  rwdts_xact_status_t* status,
                                  void*                ud);
@@ -2010,14 +2002,16 @@ void
 rwdts_init_commit_serial_list(rw_sklist_t* skl);
 
 void
-rwdts_add_entry_to_commit_serial_list(rw_sklist_t*              skl,
+rwdts_add_entry_to_commit_serial_list(rwdts_api_t *apih,
+                                      rw_sklist_t*              skl,
                                       const rwdts_pub_serial_t* entry,
                                       uint64_t*                 high_commit_serial);
 void 
 dump_commit_serial_list(rw_sklist_t* skl);
 
 void
-rwdts_deinit_commit_serial_list(rw_sklist_t* skl);
+rwdts_deinit_commit_serial_list(rwdts_api_t *apih,
+                                rw_sklist_t* skl);
 
 
 rwdts_xact_t*
@@ -2171,15 +2165,6 @@ rwdts_shard_handle_get_current_cursor(rwdts_shard_handle_t* shard);
 
 void
 rwdts_shard_handle_reset_cursor(rwdts_shard_handle_t* shard);
-rwdts_member_reg_handle_t
-rwdts_member_update_registration_int(rwdts_xact_t*   xact,
-                          rwdts_api_t*                      apih,
-                          rwdts_member_reg_handle_t         reg_handle,
-                          const rw_keyspec_path_t*          keyspec,
-                          const rwdts_member_event_cb_t*    cb,
-                          uint32_t                          flags,
-                          const ProtobufCMessageDescriptor* desc,
-                          const rwdts_shard_info_detail_t*  shard_detail);
 
 /* Shard and App data related changes END */
 
@@ -2240,6 +2225,67 @@ rwdts_group_reg_reset_audit_comp(rwdts_group_t *group);
 void
 rwdts_group_reg_install_event(rwdts_group_t *group,
                               uint32_t reg_id);
+
+static inline bool
+rwdts_query_allow_wildcards(RWDtsQuery *query)
+{
+  if ((query->action == RWDTS_QUERY_READ) ||
+      (query->action == RWDTS_QUERY_DELETE) ||
+      (query->action == RWDTS_QUERY_RPC)){
+    return true;
+  }
+  
+  if (((query->flags & RWDTS_XACT_FLAG_KEYLESS) &&
+       (query->flags & RWDTS_XACT_FLAG_ADVISE) == 0) &&
+      (query->action == RWDTS_QUERY_CREATE)){
+    return true;
+  }
+  return false;
+}
+
+static inline bool rwdts_query_is_transactional(rwdts_xact_query_t *xquery)
+{
+  if ((xquery->query->action != RWDTS_QUERY_READ) &&
+      !(xquery->query->flags&RWDTS_XACT_FLAG_NOTRAN)) {
+    return true;
+  }
+  return false;
+}
+
+static inline bool rwdts_is_transactional(rwdts_xact_t *xact)
+{
+  RW_ASSERT_TYPE(xact, rwdts_xact_t);
+
+  rwdts_xact_query_t *xquery=NULL, *xqtmp=NULL;
+  HASH_ITER(hh, xact->queries, xquery, xqtmp) {
+    if (rwdts_query_is_transactional(xquery)){
+      return true;
+    }
+  }
+  return false;
+}
+
+static inline bool rwdts_api_in_correct_queue(rwdts_api_t* apih)
+{
+  pid_t tid;
+
+  
+  if (apih->client.rwq != rwsched_dispatch_get_main_queue(apih->sched)){
+    /*apih using its own queue and not the main queue. Once we have the ability
+      to get the queue on which the dispatch is happening, we need to check that queue
+      with the client rwq. Until then assume that things are happening on the correct
+      queue. Currently the router is the only one using its own queue*/
+    return true;
+  }
+  
+  tid  = RWSCHED_GETTID();
+  if (tid == apih->tasklet->cfrunloop_tid){
+    return true;
+  }
+  return false;
+}
+
+
 __END_DECLS
 
 #endif /* __RWDTS_API_H */

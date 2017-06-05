@@ -1,19 +1,5 @@
 
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT
 
 import abc
 import asyncio
@@ -236,8 +222,8 @@ class AbstractDTSTest(unittest.TestCase):
             tinfo.rwsched_instance.CFRunLoopStop()
 
         def tick(*args):
-            self.loop.call_later(0.1, self.loop.stop)
-
+            self.loop.call_soon(self.loop.stop)
+            
             try:
                 self.loop.run_forever()
             except KeyboardInterrupt:
@@ -246,13 +232,22 @@ class AbstractDTSTest(unittest.TestCase):
 
             if test_done():
                 shutdown()
-
-        self.asyncio_timer = tinfo.rwsched_tasklet.CFRunLoopTimer(
-            cf.CFAbsoluteTimeGetCurrent(),
-            0.1,
-            tick,
-            None)
-
+            else:
+                if (len(self.loop._ready)):
+                    tinfo.rwsched_tasklet.CFRunLoopTimerSetNextFireDate(self.asyncio_timer,
+                                                                        cf.CFAbsoluteTimeGetCurrent())
+                else:
+                    tinfo.rwsched_tasklet.CFRunLoopTimerSetNextFireDate(self.asyncio_timer,
+                                                                        cf.CFAbsoluteTimeGetCurrent() + 0.1)
+        # See discussion url below, we have random intervals at which we want
+        # this timer to fire so we set a massive interval and then call
+        # SetNextFireDate() when we actually need to trigger it.
+        # https://developer.apple.com/library/mac/documentation/CoreFoundation/Reference/CFRunLoopTimerRef/index.html#//apple_ref/c/func/CFRunLoopTimerCreate
+        self.asyncio_timer = tinfo.rwsched_tasklet.CFRunLoopTimer(fireDate=0,
+                                                                  interval=60 * 60 * 24 * 365 * 100,
+                                                                  callback=tick,
+                                                                  user_data=None)
+        
         self.stop_timer = tinfo.rwsched_tasklet.CFRunLoopTimer(
             cf.CFAbsoluteTimeGetCurrent() + timeout,
             0,

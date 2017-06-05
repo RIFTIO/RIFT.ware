@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -31,17 +17,14 @@ extern __thread void *g_tasklet_info;
 struct rwsched_dispatch_queue_s {
   struct rwsched_dispatch_struct_header_s header;
   void *user_context;
-  gboolean is_source;
   gboolean is_sthread;
 };
 
 struct rwsched_dispatch_source_s {
   struct rwsched_dispatch_struct_header_s header;
   void *user_context;
-  gboolean is_source;
   dispatch_function_t event_handler;
   dispatch_function_t cancel_handler;
-  rwsched_tasklet_ptr_t tasklet_info;
 };
 
 struct rwsched_instance_s {
@@ -64,6 +47,7 @@ struct rwsched_instance_s {
   rwlog_ctx_t *rwlog_instance;
   struct {
     int check_threshold_ms;
+    uint64_t clock_per_ms;
   } latency;
   struct {
     unsigned int total_cb_registered;
@@ -92,6 +76,31 @@ rwsched_dispatch_unblock_sources(rwsched_tasklet_ptr_t tasklet_info);
 
 extern unsigned int g_rwsched_instance_count;
 extern unsigned int g_rwsched_tasklet_count;
+
+/*!
+ * @function rwsched_dispatch_release
+ *
+ * @abstract
+ * Decrement the reference count of a dispatch object.
+ *
+ * @discussion
+ * A dispatch object is asynchronously deallocated once all references are
+ * released (i.e. the reference count becomes zero). The system does not
+ * guarantee that a given client is the last or only reference to a given
+ * object.
+ *
+ * @param tasklet_info
+ * rwsched tasklet_info handle
+ *
+ * @param object
+ * The object to release.
+ * The result of passing NULL in this parameter is undefined.
+ */
+DISPATCH_EXPORT DISPATCH_NONNULL_ALL DISPATCH_NOTHROW
+void
+rwsched_dispatch_release(rwsched_tasklet_ptr_t tasklet_info,
+                         rwsched_dispatch_object_t object);
+
 #define RWSCHED_FPRINTF(file, ...)
 
 #endif // !defined(__RWSCHED_INTERNAL_H_)

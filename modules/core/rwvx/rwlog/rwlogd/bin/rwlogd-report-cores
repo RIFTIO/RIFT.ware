@@ -23,18 +23,21 @@ logger.addHandler(rwlogger)
 def get_file_size_bytes(filepath):
     return os.stat(filepath).st_size
 
-def wait_until_file_size_stops_incrementing(filepath, poll_period_secs, timeout_secs):
+def wait_until_file_size_stops_incrementing(filepath, poll_period_secs, timeout_secs, same_period_ct):
     start_time = time.time()
     last_bytes = 0
+    mod_time = time.time()
     while (time.time() - start_time) < timeout_secs:
         time.sleep(poll_period_secs)
         cur_bytes = get_file_size_bytes(filepath)
         if cur_bytes == last_bytes:
-            return
-
+            if mod_time + 5 < time.time():
+                return
+        else:
+            mod_time = time.time()
         last_bytes = cur_bytes
 
-    logger.warning("Timed out waiting for core file %s to finish writing", filepath)
+    logger.error("Timed out waiting for core file %s to finish writing", filepath)
 
 def get_executable_from_file_cmd_output(file_cmd_output):
     if "python" in file_cmd_output:
@@ -59,7 +62,7 @@ def get_executable_from_file_cmd_output(file_cmd_output):
     return exe
 
 def get_backtrace_from_core_file(core_filepath, exe):
-    gdb_command = '/usr/bin/gdb {exe} --core {core} --batch --quiet -ex "p riftware_ver" -ex "thread apply all bt" -ex "thread apply all py-bt" -ex "quit"'.format(
+    gdb_command = '/usr/bin/gdb {exe} --core {core} --batch --quiet -ex "p riftware_ver" -ex "thread apply all -ascending bt" -ex "thread apply all py-bt" -ex "quit"'.format(
             exe=exe,
             core=core_filepath)
 
@@ -131,7 +134,8 @@ def main():
     while True:
         ldir_cores = glob.glob(os.path.join(ldir, 'core.*'))
         curdir_cores = glob.glob(os.path.join(os.path.realpath('.'), 'core.*'))
-        for f in ldir_cores + curdir_cores:
+        curdir_core = glob.glob(os.path.join(os.path.realpath('.'), 'core'))
+        for f in ldir_cores + curdir_cores + curdir_core:
             try:
                 # If the file is owned by root, let's ensure we can operate with it.
                 stat = os.stat(f)
@@ -142,6 +146,10 @@ def main():
                 reported = os.path.join(
                         os.path.dirname(f),
                         'reported-%s-%s' % (instance_name, os.path.basename(f),))
+                if os.path.basename(f) == 'core':
+                    reported = os.path.join(
+                        os.path.dirname(f),
+                        'reported-%s-%s.%d' % (instance_name, os.path.basename(f), time.time(),))
 
                 if os.path.exists(reported):
                     continue
@@ -151,8 +159,8 @@ def main():
                 wait_until_file_size_stops_incrementing(
                         filepath=f,
                         poll_period_secs=.5,
-                        timeout_secs=300
-                        )
+                        timeout_secs=300,
+                        same_period_ct=(5.0/0.5))
 
                 whenzit = time.ctime(os.stat(f).st_ctime)
                 whatzit = get_file_command_output(f)

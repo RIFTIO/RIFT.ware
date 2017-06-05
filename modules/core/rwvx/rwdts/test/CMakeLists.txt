@@ -1,28 +1,14 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Anil Gunturu
 # Creation Date: 8/29/2013
-# 
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
 
 cmake_minimum_required(VERSION 2.8)
 
 set(subdirs yang lib)
 rift_add_subdirs(SUBDIR_LIST ${subdirs})
 
-set(test_srcs rwdts_gtest.cc rwdts_gtest_ut.cc)
+set(test_srcs rwdts_gtest.cc rwdts_gtest_ut.cc rwdts_ensemble.cc)
 set(test_libs
   rwdts_api
   rwdts_router
@@ -67,6 +53,18 @@ rift_gtest(rwdts_gtest_long
   DEPENDS ${test_deps}
   TEST_ARGS --gtest_shuffle --gtest_repeat=1)
 
+set (test_single_gtest_srcs rwdts_single_gtest.cc rwdts_ensemble.cc)
+rift_gtest(rwdts_single_gtest
+  TEST_SRCS ${test_single_gtest_srcs}
+  TEST_LIBS ${test_libs} 
+  TEST_ARGS --gtest_shuffle --gtest_repeat=1)
+
+
+set (test_rbac_gtest_srcs rwdts_rbac.cc rwdts_ensemble.cc)
+rift_gtest(rwdts_rbac_gtest
+  TEST_SRCS ${test_rbac_gtest_srcs}
+  TEST_LIBS ${test_libs} 
+  TEST_ARGS --gtest_shuffle --gtest_repeat=1)
 
 set(test_srcs_redis rwdts_gtest_redis.cc)
 

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file   rw_ut_confd.cpp
@@ -301,12 +282,12 @@ void ConfdUnittestHarness::populate_test_dir()
     dir = test_root_/"etc/ssh";
     create_directory(dir);
 
-    srcf = confd_install_root_/"etc/confd/ssh/ssh_host_dsa_key";
-    newf = dir/"ssh_host_dsa_key";
+    srcf = confd_install_root_/"etc/confd/ssh/ssh_host_rsa_key";
+    newf = dir/"ssh_host_rsa_key";
     create_symlink(srcf, newf);
 
-    srcf = confd_install_root_/"etc/confd/ssh/ssh_host_dsa_key.pub";
-    newf = dir/"ssh_host_dsa_key.pub";
+    srcf = confd_install_root_/"etc/confd/ssh/ssh_host_rsa_key.pub";
+    newf = dir/"ssh_host_rsa_key.pub";
     create_symlink(srcf, newf);
 
     dir = test_root_/"var";
@@ -568,7 +549,8 @@ void ConfdUnittestHarness::start()
     // Try to exec confd and handle failures
     st = execve(argv[0], const_cast<char**>(argv), const_cast<char**>(envp));
     int e = errno;
-    write(fd_exec_errno_write, &e, sizeof(e));
+    int size __attribute((unused)) = write(fd_exec_errno_write, &e, sizeof(e));
+    // ignored size
     _exit(1);
   }
 
@@ -723,35 +705,37 @@ bool ConfdUnittestHarness::is_running()
 
 bool ConfdUnittestHarness::wait_till_phase2(sockaddr_t* sun)
 {
-  auto sock = socket(sun->sun_family, SOCK_STREAM, 0);
-  RW_ASSERT(sock >= 0);
-  
-  auto ret = cdb_connect(sock, CDB_READ_SOCKET, (sockaddr*)sun, sizeof(sockaddr_t));
-  if (ret != CONFD_OK) {
-    std::cerr << "cdb_connect failed: " << std::string(confd_lasterr()) << std::endl;
-    return false;
-  }
+  for (unsigned retry_count = 0;
+       retry_count < 10;
+       (sleep(1), (++retry_count))) {
+    auto sock = socket(sun->sun_family, SOCK_STREAM, 0);
+    RW_ASSERT(sock >= 0);
 
-  int retry_count = 0;
-  struct cdb_phase cdb_phase;
-
-  while (retry_count++ < 5) {
-    auto ret = cdb_get_phase(sock, &cdb_phase);
+    auto ret = cdb_connect(sock, CDB_READ_SOCKET, (sockaddr*)sun, sizeof(sockaddr_t));
     if (ret != CONFD_OK) {
-      std::cerr << "Confd get phase failed!" << std::endl;
-      return false;
+      std::cerr << "cdb_connect failed: " << std::string(confd_lasterr()) << std::endl;
+      close(sock);
+      continue;
     }
+
+    struct cdb_phase cdb_phase;
+    ret = cdb_get_phase(sock, &cdb_phase);
+    close(sock);
+
+    if (ret != CONFD_OK) {
+      std::cerr << "Confd get phase failed" << std::string(confd_lasterr()) << std::endl;
+      continue;
+    }
+
     if (cdb_phase.phase != 2) {
-      sleep(1);
+      std::cerr << "Still in phase" << cdb_phase.phase << std::endl;
+      continue;
     }
+
+    return true;
   }
 
-  cdb_get_phase(sock, &cdb_phase);
-  std::cout << "Confd Phase: " << cdb_phase.phase << std::endl;
-  if (cdb_phase.phase < 1) { // Confd phase-1 would also be enough for internal things
-    return false;
-  }
-  return true;
+  return false;
 }
 
 void ConfdUnittestHarness::make_confd_sockaddr(

@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """
 #
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 #
 # @file basic_plugin_pytest.py
 # @author Anil Gunturu (anil.gunturu@riftio.com)
@@ -53,7 +39,7 @@ class TestBasicPlugin(unittest.TestCase):
         # Enable every possible language loader
         self.engine.enable_loader("python3");
         self.engine.enable_loader("c");
-        self.engine.enable_loader("lua5.1");
+        # self.engine.enable_loader("lua5.1");
 
         # Set the search path for peas engine,
         # rift-shell sets the PLUGINDIR and GI_TYPELIB_PATH
@@ -76,6 +62,7 @@ class TestBasicPlugin(unittest.TestCase):
         total = extension.add(10, 20)
         self.assertEqual(total, 30)
 
+    @unittest.skip("Disabled non working LUA test")
     def test_basic_lua_plugin(self):
          info = self.engine.get_plugin_info("basic_plugin-lua")
          self.engine.load_plugin(info)

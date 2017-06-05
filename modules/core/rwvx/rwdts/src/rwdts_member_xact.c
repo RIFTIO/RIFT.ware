@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_member_xact.c
  * @author Rajesh Velandy(rajesh.velandy@riftio.com)
@@ -211,7 +192,7 @@ static inline void
 rwdts_member_xact_transition(rwdts_xact_t* xact, rwdts_member_xact_state_t state, rwdts_member_xact_evt_t evt)
 {
   RW_ASSERT(xact);
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, XACT_FSM_TRANSITION,
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, XactFsmTransition,
                                  "Member xact fsm transition",
                                  (char*)rwdts_member_state_to_str(xact->mbr_state),
                                  (char*)rwdts_member_state_to_str(state));
@@ -253,12 +234,19 @@ rwdts_add_commit_record(rwdts_xact_t*                xact,
   RW_ASSERT_TYPE(xact, rwdts_xact_t);
   rwdts_reg_commit_record_t *reg_crec = NULL;
   rw_status_t status;
+  rwdts_api_t *apih;
 
+  if (xact){
+    apih = xact->apih;
+  }else{
+    apih = reg->apih;
+  }
   reg_crec = rwdts_member_find_reg_commit_record(xact, reg);
 
   /* There is no commit record yet for this registration in this transaction */
   if (reg_crec == NULL) {
-    reg_crec         = RW_MALLOC0_TYPE(sizeof(rwdts_reg_commit_record_t), rwdts_reg_commit_record_t);
+    reg_crec         = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_COMMIT_RECORD,
+                                             sizeof(rwdts_reg_commit_record_t), rwdts_reg_commit_record_t);
     reg_crec->reg    = reg;
     reg_crec->xact   = xact;
     reg_crec->reg_id = reg->reg_id;
@@ -269,7 +257,7 @@ rwdts_add_commit_record(rwdts_xact_t*                xact,
 
   RW_ASSERT_TYPE(reg_crec, rwdts_reg_commit_record_t);
 
-  rwdts_commit_record_int_t *creci = RW_MALLOC0_TYPE(sizeof(rwdts_commit_record_int_t), rwdts_commit_record_int_t);
+  rwdts_commit_record_int_t *creci = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_COMMIT_RECORD_INT,sizeof(rwdts_commit_record_int_t), rwdts_commit_record_int_t);
   RW_ASSERT_TYPE(creci, rwdts_commit_record_int_t);
   status = rw_keyspec_path_create_dup(keyspec, &xact->ksi, &creci->crec.ks);
   if(status != RW_STATUS_SUCCESS) {
@@ -389,7 +377,7 @@ rwdts_member_process_query_action(rwdts_xact_t*                xact,
         }
         if (rs != RW_STATUS_SUCCESS) {
           RW_ASSERT_TYPE(reg->apih, rwdts_api_t);
-          RWDTS_API_LOG_XACT_EVENT(reg->apih, xact ,RwDtsApiLog_notif_XactDeleteFailed, 
+          RWDTS_API_LOG_XACT_EVENT(reg->apih, xact ,XactDeleteFailed, 
                                    "DTS member data delete failed for registration", reg->reg_id);
         }
       }
@@ -532,7 +520,7 @@ rwdts_member_process_query_action(rwdts_xact_t*                xact,
   UNUSED(ks_str);
   rw_keyspec_path_get_new_print_buffer(keyspec, NULL, NULL, &ks_str);
 
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, COMMIT_REC_ADDED, "Added commit record",
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(xact->apih, xact, CommitRecAdded, "Added commit record",
                                  (char*)rwdts_query_action_to_str(op, op_str, sizeof(op_str)),
                                  ks_str ? ks_str : "");
 
@@ -547,10 +535,12 @@ rwdts_member_process_query_action(rwdts_xact_t*                xact,
  */
 
 rw_status_t
-rwdts_member_reg_commit_record_deinit(rwdts_reg_commit_record_t *reg_crec)
+rwdts_member_reg_commit_record_deinit(rwdts_api_t *apih,
+                                      rwdts_reg_commit_record_t *reg_crec)
 {
   int i;
-
+  
+  
   if (reg_crec == NULL) {
     return RW_STATUS_SUCCESS;
   }
@@ -570,7 +560,7 @@ rwdts_member_reg_commit_record_deinit(rwdts_reg_commit_record_t *reg_crec)
 
   if (reg_crec->n_commits) {
     for (i =  reg_crec->n_commits - 1;  i >= 0; i--) {
-      rwdts_member_commit_record_deinit(reg_crec->commits[i]);
+      rwdts_member_commit_record_deinit(apih, reg_crec->commits[i]);
       reg_crec->commits[i] = NULL;
     }
   }
@@ -580,7 +570,8 @@ rwdts_member_reg_commit_record_deinit(rwdts_reg_commit_record_t *reg_crec)
   free(reg_crec->commits);
   reg_crec->commits = NULL;
 
-  RW_FREE_TYPE(reg_crec, rwdts_reg_commit_record_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_COMMIT_RECORD,
+                     reg_crec, rwdts_reg_commit_record_t);
 
 
   return RW_STATUS_SUCCESS;
@@ -591,7 +582,7 @@ rwdts_member_reg_commit_record_deinit(rwdts_reg_commit_record_t *reg_crec)
  */
 
 rw_status_t
-rwdts_member_commit_record_deinit(rwdts_commit_record_int_t *creci)
+rwdts_member_commit_record_deinit(rwdts_api_t *apih, rwdts_commit_record_int_t *creci)
 {
   if (creci == NULL) {
     return RW_STATUS_SUCCESS;
@@ -639,7 +630,8 @@ rwdts_member_commit_record_deinit(rwdts_commit_record_int_t *creci)
     creci->serial = NULL;
   }
 
-  RW_FREE_TYPE(creci, rwdts_commit_record_int_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_COMMIT_RECORD_INT,
+                     creci, rwdts_commit_record_int_t);
   return RW_STATUS_SUCCESS;
 }
 
@@ -667,7 +659,7 @@ void rwdts_member_xact_run(rwdts_xact_t*  xact,
 
   if (status == FSM_FAILED) {
     //  Log the failure
-    RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+    RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                              "dts member transaction fsm failed",
                              (char*)rwdts_member_state_to_str(xact->mbr_state),
                              (char*)rwdts_member_event_to_str(evt),
@@ -717,27 +709,18 @@ rwdts_member_xact_fsm_state_init(rwdts_xact_t*           xact,
       rwdts_member_xact_transition(xact, RWDTS_MEMB_XACT_ST_PREPARE, RWDTS_MEMB_XACT_EVT_PREPARE);
 
       rw_status_t rs = rwdts_member_xact_handle_prepare_query(xact, xquery);
-
-      if (rs == RW_STATUS_SUCCESS) {
-        fsm_status = FSM_OK;
-        if (!rwdts_is_transactional(xact)) {
-          if (xquery->query->flags&RWDTS_XACT_FLAG_SOLICIT_RSP) {
-            rwdts_process_solicit_rsp_advise(xact, xquery->query);
-          } else {
-            rwdts_store_cache_obj(xact);
-          }
-          rwdts_journal_consume_xquery (xquery, RWDTS_MEMB_XACT_EVT_END);
+      
+      RW_ASSERT(rs == RW_STATUS_SUCCESS);
+      fsm_status = FSM_OK;
+      if (!rwdts_is_transactional(xact)) {
+        if (xquery->query->flags&RWDTS_XACT_FLAG_SOLICIT_RSP) {
+          rwdts_process_solicit_rsp_advise(xact, xquery->query);
+        } else {
+          rwdts_store_cache_obj(xact);
         }
-        else {
-          rwdts_journal_consume_xquery (xquery, RWDTS_MEMB_XACT_EVT_PREPARE);
-        }
+        rwdts_journal_consume_xquery (xquery, RWDTS_MEMB_XACT_EVT_END);
       } else {
-        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
-                                 "member xact fsm failed",
-                                 (char*)rwdts_member_state_to_str(xact->mbr_state),
-                                 (char*)rwdts_member_event_to_str(evt),
-                                 xact->apih->client_path);
-        rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_EVT_END, NULL);
+        rwdts_journal_consume_xquery (xquery, RWDTS_MEMB_XACT_EVT_PREPARE);
       }
     }
     break;
@@ -786,7 +769,7 @@ rwdts_member_xact_fsm_state_init(rwdts_xact_t*           xact,
 
     default: {
       // Log
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "Unknown transition - dts member xact fsm failed",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -836,20 +819,11 @@ rwdts_member_xact_fsm_state_prepare(rwdts_xact_t*           xact,
 
       // Handle  this query request and respond to the router
       rw_status_t rs = rwdts_member_xact_handle_prepare_query(xact, xquery);
-
-      if (rs == RW_STATUS_SUCCESS) {
-        fsm_status = FSM_OK;
-        rwdts_member_xact_transition(xact, RWDTS_MEMB_XACT_ST_PREPARE, RWDTS_MEMB_XACT_EVT_PREPARE);
-        if (!rwdts_is_transactional(xact)) {
-          rwdts_store_cache_obj(xact);
-          rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_EVT_END, NULL);
-        }
-      } else {
-        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
-                                 "DTS member xact fsm failed",
-                                 (char*)rwdts_member_state_to_str(xact->mbr_state),
-                                 (char*)rwdts_member_event_to_str(evt),
-                                 xact->apih->client_path);
+      RW_ASSERT(rs == RW_STATUS_SUCCESS);
+      fsm_status = FSM_OK;
+      rwdts_member_xact_transition(xact, RWDTS_MEMB_XACT_ST_PREPARE, RWDTS_MEMB_XACT_EVT_PREPARE);
+      if (!rwdts_is_transactional(xact)) {
+        rwdts_store_cache_obj(xact);
         rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_EVT_END, NULL);
       }
     }
@@ -921,12 +895,12 @@ rwdts_member_xact_fsm_state_prepare(rwdts_xact_t*           xact,
 
           if(!async_rsp) {
             rwdts_member_xact_post_end_f(apih->tasklet,
-                                     apih->client.rwq,
-                                     xact);
+                                         apih->client.rwq,
+                                         xact);
           }
         }
         else {
-          RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_QueryPendingRsp,
+          RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, QueryPendingRsp,
                                    "Received Query responses, pending responses still",
                                    xact->num_prepares_dispatched, xact->num_responses_received);
         }
@@ -950,7 +924,7 @@ rwdts_member_xact_fsm_state_prepare(rwdts_xact_t*           xact,
 
     default: {
       // Log
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "DTS member xact fsm failed",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -991,7 +965,7 @@ rwdts_member_xact_fsm_state_precommit(rwdts_xact_t*           xact,
       apih->stats.num_prepare_evt_pcommit_state++;
       // The router should not be sending us a pepare after sending precommit
       // send a Nak and log
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "DTS member xact fsm failed - prepare rcvd in pre-commit",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -1002,7 +976,7 @@ rwdts_member_xact_fsm_state_precommit(rwdts_xact_t*           xact,
     case RWDTS_MEMB_XACT_EVT_PRECOMMIT: {
       apih->stats.num_pcommit_evt_pcommit_state++;
       // Makes no sense to get multiple precommits -- did the router screw up? send a Nack
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "DTS member xact fsm failed - precommit rcvd in pre-commit",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -1066,7 +1040,7 @@ rwdts_member_xact_fsm_state_precommit(rwdts_xact_t*           xact,
 
     default: {
       // Log
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "DTS member xact fsm failed",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -1115,7 +1089,7 @@ rwdts_member_xact_fsm_state_commit(rwdts_xact_t*           xact,
 
     default: {
       // Log
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "DTS member xact fsm failed",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -1154,7 +1128,7 @@ rwdts_member_xact_fsm_state_commit_rsp(rwdts_xact_t*           xact,
 
     default: {
       // Log
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "DTS member xact fsm failed",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -1200,7 +1174,7 @@ rwdts_member_xact_fsm_state_abort(rwdts_xact_t*           xact,
 
     default: {
       // Log
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "DTS member xact fsm failed",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -1240,7 +1214,7 @@ rwdts_member_xact_fsm_state_abort_rsp(rwdts_xact_t*           xact,
 
     default: {
       // Log
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_XactFsmFailed,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, XactFsmFailed,
                                "DTS member xact fsm failed",
                                (char*)rwdts_member_state_to_str(xact->mbr_state),
                                (char*)rwdts_member_event_to_str(evt),
@@ -1267,32 +1241,34 @@ rwdts_member_xact_fsm_state_end(rwdts_xact_t*           xact,
                                 const void*             ud)
 {
   switch (evt) {
-  case RWDTS_MEMB_XACT_EVT_PREPARE:
-    rwdts_member_xact_transition(xact, RWDTS_MEMB_XACT_ST_PREPARE, RWDTS_MEMB_XACT_EVT_PREPARE);
-    rwdts_member_xact_run(xact, evt, ud);
-    return FSM_OK;
-  case RWDTS_MEMB_XACT_EVT_PRECOMMIT:
-    rwdts_member_xact_transition(xact, RWDTS_MEMB_XACT_ST_INIT, evt);
-    rwdts_member_xact_run(xact, evt, ud);
-    return FSM_OK;
-  case RWDTS_MEMB_XACT_QUERY_RSP:
-    return FSM_FINISHED;
-  case RWDTS_MEMB_XACT_EVT_END:
-    if (!rwdts_is_transactional(xact)) {
-      /* unref this after the current stack unwinds
-       * so that calling functions can still access xact
-       * after returning from here.
-       */
-      rwsched_dispatch_async_f(xact->apih->tasklet,
-                               xact->apih->client.rwq,
-                               xact,
-                               rwdts_xact_unref_async);
+    case RWDTS_MEMB_XACT_EVT_PREPARE:
+      rwdts_member_xact_transition(xact, RWDTS_MEMB_XACT_ST_PREPARE, RWDTS_MEMB_XACT_EVT_PREPARE);
+      rwdts_member_xact_run(xact, evt, ud);
       return FSM_OK;
-    }
-  default:
-    break;
+    case RWDTS_MEMB_XACT_EVT_PRECOMMIT:
+      rwdts_member_xact_transition(xact, RWDTS_MEMB_XACT_ST_INIT, evt);
+      rwdts_member_xact_run(xact, evt, ud);
+      return FSM_OK;
+    case RWDTS_MEMB_XACT_EVT_COMMIT:
+    case RWDTS_MEMB_XACT_EVT_ABORT:
+    case RWDTS_MEMB_XACT_QUERY_RSP:
+      return FSM_FINISHED;
+    case RWDTS_MEMB_XACT_EVT_END:
+      if (!rwdts_is_transactional(xact)) {
+        /* unref this after the current stack unwinds
+         * so that calling functions can still access xact
+         * after returning from here.
+         */
+        rwsched_dispatch_async_f(xact->apih->tasklet,
+                                 xact->apih->client.rwq,
+                                 xact,
+                                 rwdts_xact_unref_async);
+        return FSM_OK;
+      }
+    default:
+      break;
   }
-
+  
   // something is wrong -- -this transaction is done ...
   RW_ASSERT_MESSAGE(0, "invalid end %u", evt);
   return FSM_FAILED;
@@ -1440,7 +1416,6 @@ rwdts_handle_reg_prepare(rwdts_xact_t *xact, rwdts_xact_query_t *xquery)
   ProtobufCMessage  *proto = NULL;
   rw_keyspec_path_t *keyspec = NULL;
   uint32_t credits =0;
-  char tmp_log_xact_id_str[128] = "";
 
   rwdts_update_query_exp_rsp(xquery);
 
@@ -1467,7 +1442,7 @@ rwdts_handle_reg_prepare(rwdts_xact_t *xact, rwdts_xact_query_t *xquery)
           xact->group_len = apih->group_len;
         }
         if (!xact->group[reg->group.group->id]) {
-          xact->group[reg->group.group->id] = RW_MALLOC0_TYPE(sizeof(rwdts_group_xact_t), rwdts_group_xact_t);
+          xact->group[reg->group.group->id] = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_GROUP_XACT, sizeof(rwdts_group_xact_t), rwdts_group_xact_t);
         }
         /* Call group xinit as needed */
         RW_ASSERT(!xact->group[reg->group.group->id]->xinit);
@@ -1492,12 +1467,15 @@ rwdts_handle_reg_prepare(rwdts_xact_t *xact, rwdts_xact_query_t *xquery)
       ent.n_queryid = 1;
       ent.has_reg_id = 1;
       ent.reg_id = reg->reg_id;
+      ent.has_reg_flags = 1;
+      ent.reg_flags = reg->flags;
       rwdts_dbg_tracert_add_ent(xact->tr, &ent);
       if (xact->tr->print_) {
         fprintf(stderr, "%s:%u: TYPE:%s, DST:%s, SRC:%s, MATCH-PATH:%s\n", ent.func, ent.line,
                 rwdts_print_ent_type(ent.what), ent.dstpath, ent.srcpath, ent.matchpath);
       }
-      RWLOG_EVENT(apih->rwlog_instance, RwDtsApiLog_notif_TraceMemberMatch, rwdts_xact_id_str(&xact->id,tmp_log_xact_id_str, sizeof(tmp_log_xact_id_str)),
+      RWLOG_EVENT(apih->rwlog_instance, RwDtsApiLog_notif_TraceMemberMatch,
+                  xact->xact_id_str,
                   apih->client_path, query->queryidx,xquery->query->key->keystr,reg->keystr,reg->reg_id);
     }
 
@@ -1516,7 +1494,7 @@ rwdts_handle_reg_prepare(rwdts_xact_t *xact, rwdts_xact_query_t *xquery)
 
       rw_keyspec_path_get_new_print_buffer(reg->keyspec, NULL, ks_schema, &ks_str);
 
-      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_PrepareCbInvoked,
+      RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, PrepareCbInvoked,
                                "DTS member Invoking prepare callback",
                                rwdts_get_app_addr_res(xact->apih, reg->cb.cb.prepare),
                                ks_str ? ks_str : "");
@@ -1706,7 +1684,7 @@ rwdts_member_xact_handle_commit(rwdts_xact_t *xact, RWDtsXact *input)
 
     {
       if (reg->cb.cb.commit) {
-        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_CommitCbInvoked,
+        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, CommitCbInvoked,
                                  "DTS member Invoking commit callback",
                                  rwdts_get_app_addr_res(xact->apih, (void *)reg->cb.cb.commit));
 
@@ -1848,7 +1826,7 @@ rwdts_member_xact_handle_precommit(rwdts_xact_t *xact, RWDtsXact *input)
     rwdts_member_registration_t *reg = reg_crec->reg;
     {
       if (reg->cb.cb.precommit) {
-        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_PrecommitCbInvoked,
+        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, PrecommitCbInvoked,
                                  "DTS member Invoking precommit callback",
                                  rwdts_get_app_addr_res(xact->apih, (void *)reg->cb.cb.precommit));
 
@@ -1969,7 +1947,7 @@ rwdts_member_xact_handle_abort(rwdts_xact_t *xact, RWDtsXact *input)
 
     {
       if (reg->cb.cb.abort) {
-        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_AbortCbInvoked,
+        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, AbortCbInvoked,
                                  "DTS member Invoking abort callback",
                                  rwdts_get_app_addr_res(xact->apih, (void *)reg->cb.cb.abort));
         rwdts_xact_info_t *xact_info = &reg_crec->xact_info;
@@ -2095,7 +2073,8 @@ rwdts_member_xact_handle_end(rwdts_xact_t *xact, const void *input)
         }
 
         /* Also, toss group_xact record */
-        RW_FREE_TYPE(xact->group[i], rwdts_group_xact_t);
+        DTS_APIH_FREE_TYPE(xact->apih, RW_DTS_DTS_MEMORY_TYPE_GROUP_XACT,
+                           xact->group[i], rwdts_group_xact_t);
         xact->group[i] = NULL;
       }
     }
@@ -2106,22 +2085,8 @@ rwdts_member_xact_handle_end(rwdts_xact_t *xact, const void *input)
     }
   }
 
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, XACT_DESTROYED, "destroying xact");
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, XactDestroyed, "destroying xact");
   rwdts_xact_unref(xact, __PRETTY_FUNCTION__, __LINE__);
   return RW_STATUS_SUCCESS;
 }
 
-bool
-rwdts_is_transactional(rwdts_xact_t *xact)
-{
-  RW_ASSERT_TYPE(xact, rwdts_xact_t);
-
-  rwdts_xact_query_t *xquery=NULL, *xqtmp=NULL;
-  HASH_ITER(hh, xact->queries, xquery, xqtmp) {
-    if ((xquery->query->action != RWDTS_QUERY_READ) &&
-        !(xquery->query->flags&RWDTS_XACT_FLAG_NOTRAN)) {
-      return true;
-    }
-  }
-  return false;
-}

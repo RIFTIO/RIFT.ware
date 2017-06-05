@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -51,13 +37,15 @@ public:
     log_cli = NULL;
     logs_from_peer = 0;
     cli_dest_path = NULL;
+    int r;
     if(filename[0] == '/') {
-      asprintf(&_filename,
+      r = asprintf(&_filename,
                "%s",filename);
     }else { 
-      asprintf(&_filename,
+      r = asprintf(&_filename,
                "/tmp/%s",filename);
     }
+    RW_ASSERT(r > 0);
     if(_lead_instance_id == inst_data->rwtasklet_info->identity.rwtasklet_instance_id || _lead_instance_id == 0) {
       _is_lead_instance = TRUE;
       _file_fd = open(_filename,O_RDWR|O_CREAT|O_APPEND|O_CLOEXEC,S_IRWXU);
@@ -77,7 +65,7 @@ public:
       log_cli_chan = inst_data->cc;
       log_cli = &inst_data->rwlogd_peer_msg_client; 
       int r = asprintf (&cli_dest_path, "/R/%s/%d", RWLOGD_PROC, lead_instance_id);
-      RW_ASSERT(r);
+      RW_ASSERT(r > 0);
       if (!r) { return; }
 
       dest = rwmsg_destination_create(
@@ -226,8 +214,9 @@ public:
   {
     strncpy(sink_name_, sink_name,SINKNAMESZ);
     filename_ = RW_STRDUP(filename);
-    asprintf(&filename_,
-              "%s-%d.pcap",filename,rwlog_get_systemId());
+    int r = asprintf(&filename_,
+                     "%s-%d.pcap",filename,rwlog_get_systemId());
+    RW_ASSERT(r > 0);
     lead_instance_id_ = lead_instance_id;
 
     FILE *fp_ = fopen(filename_, "w");

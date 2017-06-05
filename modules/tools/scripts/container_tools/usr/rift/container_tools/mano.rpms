@@ -1,3 +1,5 @@
+ub16: python3-crypto
+
 ub16: rw.core.mano-rwcal_yang_ylib-1.0=${RIFTWARE_VERSION}
 ub16: rw.core.mano-rwconfig_agent_yang_ylib-1.0=${RIFTWARE_VERSION}
 ub16: rw.core.mano-rwlaunchpad_yang_ylib-1.0=${RIFTWARE_VERSION}

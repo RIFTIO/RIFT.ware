@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file dts-test.yang
@@ -161,6 +142,83 @@ module dts-test
         list level-four {
           key "key-four";
           leaf key-four { type int32; }
+        }
+      }
+    }
+  }
+
+  
+  container rbac{
+    container rbac-config{
+      rwpb:msg-new DtsTestRbacConfig;
+      list role-definition {
+        rwpb:msg-new DtsTestRbacRoleConfig;
+        key role;
+        leaf role {
+          description "The Role identity.";
+          type string;
+        }
+      }
+      list users{
+        rwpb:msg-new DtsTestRbacUserConfig;
+        key "user-name user-domain";
+        leaf user-domain {
+          type string;
+        }
+        leaf user-name {
+          type string;
+        }
+      }
+    }
+    
+    
+    container rbac-internal{
+      config false;
+      rwpb:msg-new DtsTestRbacOpData;
+      list user {
+        rwpb:msg-new DtsTestRbacUser;
+        config false;
+        key "user-name user-domain";
+        leaf user-domain {
+          type string;
+        }
+        leaf user-name {
+          type string;
+        }
+        container state-machine {
+          leaf state{
+            type string;
+          }
+        }
+        
+      }
+
+      list roles{
+        rwpb:msg-new DtsTestRbacRole;
+        config false;
+        key "role";
+        leaf role {
+          type string;
+        }
+        list users {
+          rwpb:msg-new DtsTestRbacRoleUser;
+          key "user-name user-domain";
+          leaf user-domain {
+            type string;
+          }
+          leaf user-name {
+            type string;
+          }
+          container state-machine {
+            leaf state{
+              type string;
+            }
+          } 
+        }
+        container state-machine {
+          leaf state{
+            type string;
+          }
         }
       }
     }

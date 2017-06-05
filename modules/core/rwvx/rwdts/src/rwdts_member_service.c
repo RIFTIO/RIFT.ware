@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file   rwdts_member_service.c
  * @author Rajesh Velandy(rajesh.velandy@riftio.com)
@@ -58,6 +39,9 @@ const char* rwdts_evtrsp_to_str(RWDtsEventRsp evt) {
       break;
     case RWDTS_EVTRSP_INTERNAL:
       strcpy(str, "RWDTS_EVTRSP_INTERNAL");
+      break;
+    case RWDTS_EVTRSP_CANCELLED:
+      strcpy(str, "RWDTS_EVTRSP_CANCELLED");
       break;
     default:
       snprintf(str,63, "Invalid - %d\n",evt);
@@ -150,20 +134,6 @@ RWDtsEventRsp rwdts_final_rsp_code(rwdts_xact_query_t *xquery)
   return ret_rsp;
 }
 
-static bool rwdts_is_getnext(rwdts_xact_query_t *xquery)
-{
-  rwdts_match_info_t *match;
-
-  match = RW_SKLIST_HEAD(&(xquery->reg_matches), rwdts_match_info_t);
-  while (match) {
-    if (match->getnext_ptr) {
-      return true;
-    }
-    match = RW_SKLIST_NEXT(match, rwdts_match_info_t, match_elt);
-  }
-  return false;
-}
-
 static rw_status_t
 rwdts_rsp_add_err_and_trace (rwdts_xact_t *xact,
                            RWDtsXactResult *rsp)
@@ -185,6 +155,7 @@ rwdts_rsp_add_err_and_trace (rwdts_xact_t *xact,
         (RWDtsTraceroute *)protobuf_c_message_duplicate(NULL,
                                                         &xact->tr->base,
                                                         xact->tr->base.descriptor);
+    rwdts_dbg_tracert_remove_all_ent(xact->tr);
   }
 
   if (xact->err_report)
@@ -193,7 +164,7 @@ rwdts_rsp_add_err_and_trace (rwdts_xact_t *xact,
         (RWDtsErrorReport *) protobuf_c_message_duplicate(NULL,
                                                           &xact->err_report->base,
                                                           xact->err_report->base.descriptor);
-    RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_ErrReportXact, "Updated error report in xact");
+    RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, ErrReportXact, "Updated error report in xact");
     protobuf_c_message_free_unpacked(NULL, &xact->err_report->base);
     xact->err_report = NULL;
   }
@@ -370,7 +341,7 @@ void rwdts_respond_router_f(void *arg)
           apih->stats.num_query_response++;
         }
         xquery->responded = 1;
-        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, RwDtsApiLog_notif_QueryPendingRsp,
+        RWDTS_API_LOG_XACT_EVENT(xact->apih, xact, QueryPendingRsp,
                                  "Responded to router ",
                                  xquery->responded, apih->stats.num_query_response);
 
@@ -414,12 +385,14 @@ void rwdts_respond_router_f(void *arg)
     }
 
     if (xquery->evtrsp != RWDTS_EVTRSP_ASYNC) {
-      if (!(xquery->query->flags&RWDTS_XACT_FLAG_NOTRAN) &&
-          (xquery->query->action != RWDTS_QUERY_READ)) {
+      if (rwdts_query_is_transactional(xquery)){
         if (xquery->evtrsp == RWDTS_EVTRSP_NA ) {
           end_cnt++;
         }
       } else {
+        /*The read request or no transaction is set for this query so there is
+          not going to be any more reqs from the router so change the state to
+          query-rsp which will end the xact*/
         rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_QUERY_RSP, xquery);
       }
     }
@@ -458,6 +431,8 @@ void rwdts_respond_router_f(void *arg)
   RW_FREE(t);
 
   if (q_cnt && xact->rsp_ct >= q_cnt) {
+    /*This is the case where all the registrations responsed with NA for this query so cannot expect
+      precommits/commits from here on and hence ending the xact*/
     if (q_cnt == end_cnt) {
       if ((xact->mbr_state != RWDTS_MEMB_XACT_ST_COMMIT) &&
           (xact->mbr_state != RWDTS_MEMB_XACT_ST_ABORT)) { 
@@ -544,7 +519,7 @@ rwdts_add_match_info(rw_sklist_t*                 skl,
                      rw_keyspec_path_t*           in_ks)
 {
   RW_ASSERT(skl);
-  rwdts_match_info_t *match_info  = RW_MALLOC0_TYPE(sizeof(rwdts_match_info_t), rwdts_match_info_t);
+  rwdts_match_info_t *match_info  = DTS_APIH_MALLOC0_TYPE(reg->apih, RW_DTS_DTS_MEMORY_TYPE_MATCH_INFO, sizeof(rwdts_match_info_t), rwdts_match_info_t);
   RW_ASSERT_TYPE(match_info, rwdts_match_info_t);
   RW_ASSERT(reg);
   RW_ASSERT_TYPE(reg, rwdts_member_registration_t);
@@ -571,8 +546,7 @@ rwdts_add_match_info(rw_sklist_t*                 skl,
   }
 
   RW_ASSERT((void*)&rw_schema_path_spec__concrete_descriptor!= (void*)((ProtobufCMessage*)ks)->descriptor);
-  if (query &&
-     (query->action == RWDTS_QUERY_CREATE || query->action == RWDTS_QUERY_UPDATE)) {
+  if (query && !rwdts_query_allow_wildcards(query)){
     if (rw_keyspec_path_has_wildcards(ks)) {
       RWDTS_MEMBER_SEND_ERROR(NULL, ks, query, apih, NULL, RW_STATUS_FAILURE,
                               RWDTS_ERRSTR_KEY_WILDCARDS);
@@ -736,7 +710,8 @@ rwdts_member_find_matches(rwdts_api_t* apih,
   // Get Query action
   action = query->action;
   RW_ASSERT(action != RWDTS_QUERY_INVALID);
-  if (action == RWDTS_QUERY_CREATE || action == RWDTS_QUERY_UPDATE) {
+  
+  if (query && !rwdts_query_allow_wildcards(query)){
     if (rw_keyspec_path_has_wildcards(ks_query)) {
       RWDTS_MEMBER_SEND_ERROR(NULL, NULL, query, apih, NULL,
                               RW_STATUS_FAILURE,
@@ -759,10 +734,9 @@ rwdts_member_find_matches(rwdts_api_t* apih,
       if (chunks[j]->elems.member_info.n_sub_reg) {
         rwdts_chunk_member_info_t *mbr_info= NULL, *tmp_mbr_info = NULL;
         HASH_ITER(hh_mbr_record, chunks[j]->elems.member_info.sub_mbr_info, mbr_info, tmp_mbr_info) { //TBD other flavors
-          if (mbr_info->flags & RWDTS_FLAG_SUBSCRIBER) { 
-            entry = (rwdts_member_registration_t *) mbr_info->member;
-            rwdts_member_match_keyspecs(apih, entry, query, matches, ks_query, in_category, &matchid);
-          }
+          RW_ASSERT(mbr_info->flags & RWDTS_FLAG_SUBSCRIBER); 
+          entry = (rwdts_member_registration_t *) mbr_info->member;
+          rwdts_member_match_keyspecs(apih, entry, query, matches, ks_query, in_category, &matchid);
         }
       } 
     }
@@ -770,10 +744,9 @@ rwdts_member_find_matches(rwdts_api_t* apih,
       if (chunks[j]->elems.member_info.n_pub_reg) {
         rwdts_chunk_member_info_t *mbr_info= NULL, *tmp_mbr_info = NULL;
         HASH_ITER(hh_mbr_record, chunks[j]->elems.member_info.pub_mbr_info, mbr_info, tmp_mbr_info) { // TBD other flavors
-          if (mbr_info->flags & RWDTS_FLAG_PUBLISHER) { 
-            entry = (rwdts_member_registration_t *) mbr_info->member;
-            rwdts_member_match_keyspecs(apih, entry, query, matches, ks_query, in_category, &matchid);
-          }
+          RW_ASSERT(mbr_info->flags & RWDTS_FLAG_PUBLISHER);
+          entry = (rwdts_member_registration_t *) mbr_info->member;
+          rwdts_member_match_keyspecs(apih, entry, query, matches, ks_query, in_category, &matchid);
         }
       }
     }
@@ -846,12 +819,12 @@ static void rwdts_member_msg_prepare_f(void *arg)
 
   int i,j ;
 
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, PREPARE_RCVD, "Member received prepare", input->n_subx);
-
   apih->stats.num_prepare_frm_rtr++;
 
   rwdts_xact_t *xact = rwdts_member_xact_init(apih, input);
   RW_ASSERT(xact);
+
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, PrepareRcvd, "Member received prepare", input->n_subx);
 
   rwmsg_request_memlog_hdr (&xact->rwml_buffer, 
                             rwreq, 
@@ -899,7 +872,7 @@ static void rwdts_member_msg_prepare_f(void *arg)
       if (ks_query) {
         rw_keyspec_path_get_new_print_buffer(ks_query, NULL , NULL, &ks_str);
         RW_KEYSPEC_PATH_FREE(ks_query, NULL ,NULL);
-        RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, QUERY_RCVD,
+        RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, QueryRcvd,
                                        "Member received query", query->queryidx,
                                        ks_str ? ks_str : "");
         free(ks_str);
@@ -915,47 +888,14 @@ static void rwdts_member_msg_prepare_f(void *arg)
       RW_ASSERT(xquery);
       xquery->rwreq = rwreq;        /* note this in xquery for rwreq-vs-xquery correlation in rwdts_respond_router */
 
-      if (rs == RW_STATUS_DUPLICATE)
-      {
-        //No Duplicates without pending RSP
-
-        xquery->responded = 0;
-        if (xquery->xact_rsp_pending)
-        {
-          // Dispatch async..
-          rwdts_dispatch_pending_query_response(xquery->xact_rsp_pending);
-          if (rwdts_final_rsp_code(xquery) != RWDTS_EVTRSP_ASYNC) {
-
-            /* FIXME wut.  This use of evtrsp for special-purpose status as we juggle temporarily pending responses is nuts */
-
-            evtrsp = RWDTS_EVTRSP_ACK;
-          }
-        }
-        else if(!rwdts_is_getnext(xquery))
-        {
-          // this needs to wait on a timer for more responses!  just wait instead?
-          xquery->evtrsp = RWDTS_EVTRSP_ASYNC;
-          evtrsp = RWDTS_EVTRSP_ASYNC;
-
-          //?? BUG add timer, respond after 10-20 second of being idle so the router can reissue
-          // return here????  //?? //??
-          protobuf_c_message_free_unpacked(NULL, (struct ProtobufCMessage *)&input->base);
-          return;
-
-        }
-        else
-        {
-          //run with prepare with getnext ptr
-          rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_EVT_PREPARE, xquery);
-        }
-      }
-      else
+      RW_ASSERT(rs != RW_STATUS_DUPLICATE);
       {
         rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_EVT_PREPARE, xquery);
         xquery->evtrsp = rwdts_final_rsp_code(xquery);
-              if (xquery->evtrsp == RWDTS_EVTRSP_ASYNC) {
-                RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, QueryRspAsync, "member prepare, RWDTS_EVTRSP_ASYNC, returning for now");
-                //?? BUG add timer, respond after 10-20 second of being idle so the router can reissue
+        if (xquery->evtrsp == RWDTS_EVTRSP_ASYNC) {
+          // FIXME - the below needs 3 more arguments
+          // RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, QueryRspAsync, "member prepare, RWDTS_EVTRSP_ASYNC, returning for now");
+          //?? BUG add timer, respond after 10-20 second of being idle so the router can reissue
           xquery->clo = clo;
           RWMEMLOG(&xact->rwml_buffer, 
                    RWMEMLOG_MEM0, 
@@ -963,7 +903,7 @@ static void rwdts_member_msg_prepare_f(void *arg)
                    RWMEMLOG_ARG_ENUM_FUNC(rwdts_evtrsp_to_str, "", (xquery->evtrsp)));
           protobuf_c_message_free_unpacked(NULL, (struct ProtobufCMessage *)&input->base);
           return;
-              }
+        }
       }
     }
   }
@@ -1008,7 +948,7 @@ static void rwdts_member_msg_pre_commit(RWDtsMember_Service *mysrv,
   rwdts_xact_t *xact =  rwdts_lookup_xact_by_id(apih, &input->id);
 
   if (!xact) {
-    RWDTS_API_LOG_XACT_EVENT(apih, input, RwDtsApiLog_notif_XactNotFound, "Member pre-commit - no matching xact found");
+    RWDTS_API_LOG_XACT_EVENT(apih, input, XactNotFound, "Member pre-commit - no matching xact found");
     rwdts_respond_router_no_xact(apih, clo, RWDTS_EVTRSP_NACK, rwreq, input);
     return;
   }
@@ -1052,7 +992,7 @@ static void rwdts_member_msg_pre_commit_f(void *args)
                             __LINE__,
                             "(Precommit)");
 
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, PRECOMMIT_RCVD, "Member received pre-commit");
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, PrecommitRcvd, "Member received pre-commit");
   rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_EVT_PRECOMMIT, xact);
 
   rwdts_respond_router(clo, xact, RWDTS_EVTRSP_ACK, rwreq, false);
@@ -1078,7 +1018,7 @@ static void rwdts_member_msg_abort(RWDtsMember_Service *mysrv,
   apih->stats.num_pre_commit_frm_rtr++;
 
   if (!xact) {
-    RWDTS_API_LOG_XACT_EVENT(apih, input, RwDtsApiLog_notif_XactNotFound, "Member abort - no matching xact found");
+    RWDTS_API_LOG_XACT_EVENT(apih, input, XactNotFound, "Member abort - no matching xact found");
     rwdts_respond_router_no_xact(apih, clo, RWDTS_EVTRSP_NACK, rwreq, input);
     return;
   }
@@ -1120,7 +1060,7 @@ static void rwdts_member_msg_abort_f(void *args)
                             __LINE__,
                             "(Abort)");
 
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, ABORT_RCVD, "Member received abort");
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, AbortRcvd, "Member received abort");
   rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_EVT_ABORT, xact);
 
   rwdts_respond_router(clo, xact, RWDTS_EVTRSP_ACK, rwreq, true);
@@ -1146,7 +1086,7 @@ static void rwdts_member_msg_commit(RWDtsMember_Service *mysrv,
   rwdts_xact_t *xact =  rwdts_lookup_xact_by_id(apih, &input->id);
 
   if (!xact) {
-    RWDTS_API_LOG_XACT_EVENT(apih, input, RwDtsApiLog_notif_XactNotFound, "Member commit - no matching xact found");
+    RWDTS_API_LOG_XACT_EVENT(apih, input, XactNotFound, "Member commit - no matching xact found");
     rwdts_respond_router_no_xact(apih, clo, RWDTS_EVTRSP_NACK, rwreq, input);
     return;
   }
@@ -1188,7 +1128,7 @@ static void rwdts_member_msg_commit_f(void *args)
                             __LINE__,
                             "(Commit)");
 
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, COMMIT_RCVD, "Member received commit");
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, CommitRcvd, "Member received commit");
   rwdts_member_xact_run(xact, RWDTS_MEMB_XACT_EVT_COMMIT, xact);
 
   rwdts_respond_router(clo, xact, RWDTS_EVTRSP_ACK, rwreq, true);
@@ -1404,7 +1344,7 @@ rwdts_member_match_create_update(rwdts_member_registration_t *entry, RWDtsQuery*
   size_t index = 0;
   rw_yang_pb_msgdesc_t* result = NULL;
   rw_status_t rs;
-
+  
   if (!RW_KEYSPEC_PATH_IS_A_SUB_KEYSPEC(NULL, entry->keyspec , ks_query, NULL)) {
     return;
   }
@@ -1421,7 +1361,7 @@ rwdts_member_match_create_update(rwdts_member_registration_t *entry, RWDtsQuery*
     // ks_quer is freed before the function exits
     rs = RW_KEYSPEC_PATH_CREATE_DUP(ks_query, NULL , &matchks, NULL);
     RW_ASSERT(rs == RW_STATUS_SUCCESS);
-
+    
     rs = rwdts_add_match_info(matches, entry, matchks, matchmsg, ++(*matchid), query, NULL);
     // This should not fail -- We cannot  have a duplicate regn  here
     RW_ASSERT(rs == RW_STATUS_SUCCESS);
@@ -1431,10 +1371,15 @@ rwdts_member_match_create_update(rwdts_member_registration_t *entry, RWDtsQuery*
   } else {
     rw_keyspec_path_t*           local_keyspec = NULL;
     ProtobufCMessage*       trans_msg     = NULL;
-
     size_t depth_i = rw_keyspec_path_get_depth(ks_query);
     size_t depth_o = rw_keyspec_path_get_depth(entry->keyspec);
-
+    
+    if (query && !rwdts_query_allow_wildcards(query)){
+      if (rw_keyspec_path_has_wildcards(ks_query)) {
+        return;
+      }
+    }
+    
     if ((entry->flags & RWDTS_FLAG_DEPTH_LISTS) &&
         (entry->flags & RWDTS_FLAG_SUBSCRIBER)) {
       if (RW_KEYSPEC_PATH_IS_A_SUB_KEYSPEC(NULL, entry->keyspec , ks_query, NULL)) {

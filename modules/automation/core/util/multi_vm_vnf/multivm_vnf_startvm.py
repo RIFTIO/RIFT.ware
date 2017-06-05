@@ -18,8 +18,8 @@ arg_vdu_id = sys.argv[2]
 arg_master_ip_addr = sys.argv[3]
 arg_vm_ip_addr = sys.argv[4]
 
-rift_root = os.environ["RIFT_ROOT"]
-kmod_cmd = "sudo %s/scripts/cloud/install_kernel_mods --rift-root %s" % (rift_root, rift_root)
+rift_install = os.environ["RIFT_INSTALL"]
+kmod_cmd = "sudo %s/cloud/install_kernel_mods --rift-install %s" % (rift_install, rift_install)
 subprocess.check_call(shlex.split(kmod_cmd))
 
 lock_path = '/sys/rwmain/iamup-LOCK'

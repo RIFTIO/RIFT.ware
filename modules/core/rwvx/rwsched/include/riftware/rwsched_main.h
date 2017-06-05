@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -67,7 +53,6 @@ RWSCHED_TYPE_DECL(rwsched_cftimer_callback_context);
 
 struct rwsched_CFSocket_s {
   CFRuntimeBase _base;
-  uint64_t index;
 #ifdef _CF_
   CFSocketRef cf_object;
   rwsched_CFSocketCallBack cf_callout;
@@ -86,7 +71,6 @@ struct rwsched_CFSocket_s {
 
 struct rwsched_CFRunLoopTimer_s {
   CFRuntimeBase _base;
-  uint64_t index;
 #ifdef _CF_
   CFRunLoopTimerRef cf_object;
   CFRunLoopTimerContext cf_context;
@@ -97,8 +81,6 @@ struct rwsched_CFRunLoopTimer_s {
   CFRunLoopTimerContext tmp_context;
   uint32_t onetime_timer:1;
   uint32_t onetime_timer_fired_while_blocked:1;
-  uint32_t release_called:1;
-  uint32_t invalidate_called:1;
   uint32_t _pad:28;
   struct {
     CFAllocatorRef allocator;
@@ -145,16 +127,20 @@ typedef struct rwsched_dispatch_context_s rwsched_dispatch_context_t;
 typedef struct rwsched_dispatch_context_s *rwsched_dispatch_context_ptr_t;
 
 struct rwsched_tasklet_counters_s {
-    unsigned int sources;
+  unsigned int cf_timers; 
+  unsigned int cf_sockets;/*Total number of CF native sockets using rwsched_tasklet_CFSocketCreateWithNative and released using rwsched_tasklet_CFSocketRelease*/
+  unsigned int cf_sources;/*Total number of socket sources using rwsched_tasklet_CFSocketCreateRunLoopSource and released using rwsched_tasklet_CFSocketReleaseRunLoopSource*/
 
-    unsigned int queues;
-    unsigned int sthread_queues;
-
-    unsigned int sockets;
-    unsigned int socket_sources;
-
-    unsigned long  memory_allocated;
-    unsigned long  memory_chunks;
+  //NEED TO ADD ONE COUNTER FOR EACH TYPE OF SOURCE...
+  unsigned int ld_sources; /*Total number of sources of any kind incuding timers/sockets... */
+  
+  unsigned int ld_queues; /* Total number of queues of any kind including serial...*/
+  unsigned int ld_sthreads; /*Total number of sthread queues and not included in the regular queues above*/
+  
+  unsigned int ld_whats; /* total number of async dispatch handlers. this should be equal to the number in the g_array -1 */
+  
+  unsigned long  memory_allocated;
+  unsigned long  memory_chunks;
 };
 typedef struct rwsched_tasklet_counters_s rwsched_tasklet_counters_t;
 
@@ -179,6 +165,7 @@ struct rwsched_tasklet_s {
   rwsched_sighandler_t signal_handler[RWSCHED_MAX_SIGNALS];
   void *signal_dtor_ud[RWSCHED_MAX_SIGNALS];
   GDestroyNotify signal_dtor[RWSCHED_MAX_SIGNALS];
+  pid_t         cfrunloop_tid;
 };
 
 void rwsched_tasklet_get_counters(rwsched_tasklet_t *info, rwsched_tasklet_counters_t *counters);

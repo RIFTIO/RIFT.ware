@@ -1,23 +1,9 @@
 #!/usr/bin/env python
 
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Austin Cormier
 # Creation Date: 09/09/2014
-# 
+# RIFT_IO_STANDARD_COPYRIGHT_HEADER(END)
 #
 # Automation VM Utility function/classes to easily perform common automation
 # operations across many VM's
@@ -34,6 +20,7 @@ import time
 import concurrent.futures
 
 import rift.auto.ip_utils
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +54,14 @@ def run_command_on_vm(ip_address, command_str, root=False):
     if root and os.geteuid() != 0:
         logger.info('Skipped running command because user is non-root - %s', command_str)
         return 0
+    if ip_address == '127.0.0.1':
+        fmt = "bash -c \"{command}\""
+        ssh_command = fmt.format(command=command_str)
     else:
         fmt = "ssh -q -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=10 -t -t {ip_address} \"{command}\""
-    ssh_command = fmt.format(ip_address=ip_address, command=command_str)
-    logger.info('ssh command: {}'.format(ssh_command))
-
+        ssh_command = fmt.format(ip_address=ip_address, command=command_str)
+    logger.info('run_command_on_vm: {}'.format(ssh_command))
+    
     command_args = shlex.split(ssh_command)
     result = subprocess.check_output(command_args)
     logger.info(result)

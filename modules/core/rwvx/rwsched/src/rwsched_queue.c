@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -47,9 +33,9 @@ rwsched_dispatch_queue_create(rwsched_tasklet_ptr_t sched_tasklet,
     queue->header.libdispatch_object._dq = dispatch_queue_create(label, attr);
     RW_ASSERT(queue->header.libdispatch_object._dq);
 
-    rwsched_tasklet_ref(sched_tasklet);
-    ck_pr_inc_32(&sched_tasklet->counters.queues);
-
+    queue->header.sched_tasklet = rwsched_tasklet_ref(sched_tasklet);
+    ck_pr_inc_32(&sched_tasklet->counters.ld_queues);
+    
     return queue;
   }
 
@@ -57,6 +43,33 @@ rwsched_dispatch_queue_create(rwsched_tasklet_ptr_t sched_tasklet,
   RW_CRASH();
   return NULL;
 }
+
+void
+rwsched_dispatch_queue_release(rwsched_tasklet_ptr_t tasklet_info,
+                               rwsched_dispatch_queue_t queue)
+{
+  RW_ASSERT(tasklet_info != NULL);
+  RW_ASSERT(queue != NULL);
+  RW_CF_TYPE_VALIDATE(tasklet_info, rwsched_tasklet_ptr_t);
+  rwsched_instance_ptr_t instance = tasklet_info->instance;
+  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
+  RW_ASSERT_TYPE(queue, rwsched_dispatch_queue_t);
+
+  RW_ASSERT(queue->header.sched_tasklet == tasklet_info);
+  
+  if (instance->use_libdispatch_only) {
+    ck_pr_dec_32(&tasklet_info->counters.ld_queues);
+    rwsched_dispatch_release(queue->header.sched_tasklet,
+                             (rwsched_dispatch_object_t)queue);
+    rwsched_tasklet_unref(queue->header.sched_tasklet);
+    RW_MAGIC_FREE(queue);
+    return;
+  }
+
+  RW_ASSERT(0);//not implemented
+  return;
+}
+
 
 #ifndef  __cplusplus
 void
@@ -147,6 +160,7 @@ rwsched_dispatch_intercept(void *ud)
   (what->closure.handler)(what->closure.context);
 
   RW_FREE_TYPE(what, rwsched_dispatch_what_ptr_t);
+  ck_pr_dec_32(&sched_tasklet->counters.ld_whats);
   rwsched_tasklet_unref(sched_tasklet);
 
   g_tasklet_info = 0;
@@ -186,6 +200,7 @@ rwsched_dispatch_async_f(rwsched_tasklet_ptr_t sched_tasklet,
       what->closure.context = context;
       what->queue = queue;
       rwsched_tasklet_ref(sched_tasklet);
+      ck_pr_inc_32(&sched_tasklet->counters.ld_whats);
       what->tasklet_info = sched_tasklet;
       dispatch_async_f(queue->header.libdispatch_object._dq, (void*)what, rwsched_dispatch_intercept);
     }
@@ -229,6 +244,7 @@ rwsched_dispatch_after_f(rwsched_tasklet_ptr_t sched_tasklet,
       what->closure.context = context;
       what->queue = queue;
       rwsched_tasklet_ref(sched_tasklet);
+      ck_pr_inc_32(&sched_tasklet->counters.ld_whats);
       what->tasklet_info = sched_tasklet;
       dispatch_after_f(when, queue->header.libdispatch_object._dq, (void*)what, rwsched_dispatch_intercept);
     }

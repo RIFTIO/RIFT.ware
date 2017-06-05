@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rwyangutil_test.cc
@@ -57,7 +38,7 @@ class FileProOpsTestsFixture : public ::testing::Test
       rift_install_ = "/";
     }
 
-    std::string rift_var_root = std::string(rift_install_) + "/var/rift/0-schema-test-ut/";
+    std::string rift_var_root = std::string(rift_install_) + "/var/rift/0-schema-test-ut";
     setenv("RIFT_VAR_ROOT", rift_var_root.c_str(), 1);
 
     schema_path_ = std::string(getenv("RIFT_VAR_ROOT")) + "/" + RW_SCHEMA_ROOT_PATH;
@@ -80,7 +61,7 @@ class FileProOpsTestsFixture : public ::testing::Test
       TearDown(); // Just for first test case.
     }
 
-    std::string rift_var_root = std::string(rift_install_) + "/var/rift/0-schema-test-ut/";
+    std::string rift_var_root = std::string(rift_install_) + "/var/rift/0-schema-test-ut";
     auto ret = setenv("RIFT_VAR_ROOT", rift_var_root.c_str(), 1);
     ASSERT_EQ(ret, 0);
 
@@ -95,7 +76,8 @@ class FileProOpsTestsFixture : public ::testing::Test
 
     lock_file_ = rift_var_root + "/" + RW_SCHEMA_LOCK_PATH + "/" + RW_SCHEMA_LOCK_FILENAME;
     if (fs::exists(lock_file_)) {
-      std::system("rwyangutil --lock-file-delete");
+      ret = std::system("rwyangutil --lock-file-delete");
+      ASSERT_EQ (ret, 0);
     }
 
     schema_all_tmp_loc_        = rift_var_root + "/" + RW_SCHEMA_TMP_ALL_PATH;

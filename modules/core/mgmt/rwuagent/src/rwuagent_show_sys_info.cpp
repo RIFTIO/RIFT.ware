@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwuagent_show_sys_info.cpp
  * @date 2015/11/11
@@ -131,10 +112,11 @@ StartStatus ShowSysInfo::execute()
     RW_ASSERT (ssi_fname_.length());
 
     // Open the file for writing. If exists append, else create
-    child_write_fd_ = open(ssi_fname_.c_str(), O_WRONLY | O_APPEND | O_CREAT);
+    child_write_fd_ = open(ssi_fname_.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644);
     RETURN_IOERR ( child_write_fd_ > 0, "Failed to open file" );
   }
 
+  char* oldUID  = NULL;
   // Fork
   child_pid_ = fork();
   switch (child_pid_) {
@@ -149,7 +131,15 @@ StartStatus ShowSysInfo::execute()
         close(parent_read_fd_);
         parent_read_fd_ = -1;
       }
+      /* issue-14071: env variable RIFT_INSTANCE_UID is not used in CLI.*/
+      oldUID = getenv("RIFT_INSTANCE_UID");
+      if ( oldUID ) {
+	  unsetenv("RIFT_INSTANCE_UID");
+      }
       execute_child_process();
+      if (oldUID)
+	  setenv("RIFT_INSTANCE_UID", oldUID, 1);
+
       RW_ASSERT_NOT_REACHED();
 
     default:
@@ -237,6 +227,7 @@ void ShowSysInfo::execute_child_process()
 
   // Now invoke the cli
   auto rift_install  = get_rift_install();
+  auto rift_var_root = get_rift_var_root();
 
   char* ssd_path = nullptr;
   ioerr = asprintf( &ssd_path, "%s%s", rift_install.c_str(), RW_MGMT_AGENT_SSD_PATH );
@@ -268,6 +259,8 @@ void ShowSysInfo::execute_child_process()
   argv.emplace_back( "admin");
   argv.emplace_back( "--passwd");
   argv.emplace_back( "admin");
+  argv.emplace_back( "--rift_var_root" );
+  argv.emplace_back( rift_var_root.c_str() );
   argv.emplace_back( ssd_path );
   argv.emplace_back( nullptr );
 
@@ -296,7 +289,7 @@ void ShowSysInfo::cleanup_and_send_response()
   auto tasklet = instance_->rwsched_tasklet();
   if (child_read_src_ != NULL) {
     rwsched_dispatch_source_cancel(tasklet, child_read_src_);
-    rwsched_dispatch_release(tasklet, child_read_src_);
+    rwsched_dispatch_source_release(tasklet, child_read_src_);
     child_read_src_ = NULL;
   }
 

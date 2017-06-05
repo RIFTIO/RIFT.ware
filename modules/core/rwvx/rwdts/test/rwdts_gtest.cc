@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rwdts_gtest.cc
@@ -77,9 +58,169 @@
 #include <rwdts_kv_light_api_gi.h>
 #include <rwdts_appconf_api.h>
 #include <rwdts_xpath.h>
+#include "rwdts_ensemble.hpp"
 
-#define TEST_MAX_RECOVER_AUDIT 8
-#define REDIS_CLUSTER_PORT_INCR 10000
+struct tenv1 RWDtsEnsemble::tenv;
+struct venv venv_g;
+
+
+typedef struct {
+  struct queryapi_state *s;
+  struct tenv1::tenv_info *ti;
+  struct qapi_member *member;
+  struct {
+    rwdts_appconf_t *ac;
+    rwdts_member_reg_handle_t reg_nmap;
+    rwdts_member_reg_handle_t reg_nmap_test;
+    rwdts_member_reg_handle_t reg_nmap_test_na;
+  } conf1;
+  int conf_apply_count;
+} myappconf_t;
+
+struct qapi_member {
+  rwsched_dispatch_queue_t rwq;
+  enum treatment_e treatment;
+  myappconf_t appconf;
+  myappconf_t sec_appconf;
+  bool call_getnext_api;
+  uint32_t    cb_count;
+};
+typedef enum rwdts_audit_test_type_e {
+  RW_DTS_AUDIT_TEST_RECONCILE_SUCCESS = 1,
+  RW_DTS_AUDIT_TEST_REPORT = 2,
+  RW_DTS_AUDIT_TEST_RECOVERY = 3,
+  RW_DTS_AUDIT_TEST_FAIL_CONVERGE = 4
+} rwdts_audit_test_type_t;
+
+
+typedef struct memberdata_api_corr_s {
+  int correlate_sent;
+  struct queryapi_state *s;
+} memberdata_api_corr_t;
+
+typedef enum del_tc_num {
+  DEL_WC_1 = 1,
+  DEL_WC_2 = 2
+} del_tc_num_t;
+
+typedef struct shard_safe_data_s {
+  rwdts_shard_t *shard;
+  uint32_t safe_id;
+} shard_safe_data_t;
+
+typedef enum appdata_type {
+  APPDATA_KS = 1,
+  APPDATA_PE = 2,
+  APPDATA_MK = 3
+} appdata_type_t;
+
+typedef enum appdata_test_type {
+  APPDATA_SAFE = 1,
+  APPDATA_UNSAFE = 2,
+  APPDATA_QUEUE = 3
+} appdata_test_type_t;
+
+struct queryapi_state {
+#define QAPI_STATE_MAGIC (0x0a0e0402)
+  uint32_t magic;
+  int testno;
+  uint32_t exitnow;
+  uint32_t exit_soon;                // flag, should go on to set exitnow in xact_deinit
+  uint32_t exit_without_checks;
+  uint32_t member_startct;
+  uint32_t install;
+  char test_name[128];
+  char test_case[128];
+  struct tenv1 *tenv;
+  int include_nonmember;
+  int ignore;
+  int keep_alive;
+  int after;
+  int exit_on_member_xact_finished;
+  int append_done;
+  int stream_results;
+  int use_reg;
+  int committed;
+  int abort;
+  int delete_test;
+  int total_queries;
+  uint32_t reg_ready_called;
+  struct {
+    /* A bunch of this is persistent client state across all ensemble
+       tests and should move inside the API and/or into
+       tenv->t[TASKLET_CLIENT].mumble */
+    rwsched_dispatch_queue_t rwq;
+    rwmsg_clichan_t *cc;
+    rwmsg_destination_t *dest;
+    RWDtsQueryRouter_Client querycli;
+    rwmsg_request_t *rwreq;
+    int rspct;
+    bool noreqs;
+    int transactional;
+    int wildcard;
+    int getnext;
+    int client_abort;
+    RWDtsQueryAction action;
+    int usebuilderapi;
+    int usexpathapi;
+    bool userednapi;
+    bool userednblk;
+    int testperf_numqueries;
+    int testperf_itercount;
+    void *perfdata;
+    uint32_t tv_usec;
+    uint32_t tv_sec;
+    enum expect_result_e expect_result;
+    enum reroot_test_e reroot_test;
+    char *xpath; // Send different XPath queries
+    bool no_xml; // XML result not available
+    bool expect_value; // Expect a value from query result
+    ProtobufCType val_type;
+  } client;
+  struct qapi_member member[TASKLET_MEMBER_CT_NEW];
+  uint32_t expected_notification_count;
+  uint32_t notification_count;
+  rwdts_audit_action_t audit_action;
+  rwdts_audit_test_type_t audit_test;
+  uint32_t expected_advise_rsp_count;
+  int num_responses;
+  uint32_t subscribed_data_attempt;
+  uint32_t pub_data_check_success;
+  uint32_t expected_pub_data_check_success;
+  bool client_dreg_done;
+  bool multi_router;
+  int  memberapi_dummy_cb_correlation_rcvd;
+  rwdts_member_reg_handle_t regh[TASKLET_CT];
+  uint32_t  query_cb_rcvd;
+  uint32_t  prepare_cb_called;
+  uint32_t  query_cb_called;
+  uint32_t  prepare_list_cb_called;
+  uint32_t  publisher_ready:8;
+  uint32_t  subs_ready:8;
+  uint32_t  subs_created:8;
+  uint32_t  pubs_created:8;
+  rwdts_member_reg_handle_t client_regh;
+  rwdts_member_reg_handle_t ip_nat_regh[TASKLET_CT];
+  rwdts_member_reg_handle_t nc_regh[TASKLET_CT];
+  rwdts_shard_handle_t* shard[TASKLET_CT];
+  int recover_audit_attempts;
+  del_tc_num_t del_tc;
+  appdata_type_t appdata;
+  appdata_test_type_t appdata_test;
+  ProtobufCMessage *msg[TASKLET_CT];
+  ProtobufCMessage *getnext_msg[5];
+  rw_keyspec_path_t *getnext_ks[5];
+  rw_keyspec_entry_t *getnext_pe[5];
+  char* getnext_mk[5];
+  uint32_t position;
+  int32 regct;
+  int Dlevel;
+  int Dleftover;
+  bool started;
+  bool MultipleAdvise;
+  uint32_t expected_notif_rsp_count;
+  bool sec_reg_done; 
+};
 
 const rw_yang_pb_schema_t* rw_ypbc_gi__dts_test_get_schema(void);
 
@@ -119,7 +260,7 @@ memberapi_client_sub_app_start_f(void *ctx);
 
 static void memberapi_dumpmember(void *ctx, rwdts_xact_t *xact);
 static void memberapi_client_start_f(void *ctx);
-
+static void memberapi_member_shared_start_f(void *ctx);
 static rwdts_member_rsp_code_t
 memberapi_test_prepare(const rwdts_xact_info_t* xact_info,
                        RWDtsQueryAction         action,
@@ -230,23 +371,6 @@ member_reg_appdata_ready_unsafe_old(rwdts_member_reg_handle_t regh,
                      void*                     ctx);
 
 static void memberapi_sub_before_pub_client_start_f(void *ctx);
-
-#define TSTPRN(args...) {                        \
-  if (!venv_g.checked) {                        \
-    const char *e = getenv("V");                \
-    if (e && atoi(e) == 1) {                        \
-      venv_g.val = 1;                                \
-    }                                                \
-    venv_g.checked = 1;                                \
-  }                                                \
-  if (venv_g.val) {                                \
-    fprintf(stderr, args);                        \
-  }                                                \
-}
-static struct {
-  int checked;
-  int val;
-} venv_g;
 
 using ::testing::MatchesRegex;
 using ::testing::ContainsRegex;
@@ -408,7 +532,7 @@ TEST(RWDtsShardAPI, ShardMatchSimple)
   rw_keyspec_path_set_category(keyspec, NULL, RW_SCHEMA_CATEGORY_DATA);
 
   // add shard1
-  shard1 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard , RW_DTS_SHARD_FLAVOR_NULL ,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL, RWDTS_SHARD_DEMUX_ROUND_ROBIN);
+  shard1 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard , RW_DTS_SHARD_FLAVOR_NULL ,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL, RWDTS_SHARD_DEMUX_ROUND_ROBIN);
 
   ASSERT_TRUE(shard1 != NULL);
   ASSERT_TRUE(NULL != rootshard);
@@ -443,7 +567,7 @@ TEST(RWDtsShardAPI, ShardMatchRange)
   rw_keyspec_path_set_category(keyspec, NULL, RW_SCHEMA_CATEGORY_DATA);
 
   // add shard1
-  shard1 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard , RW_DTS_SHARD_FLAVOR_RANGE ,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL, RWDTS_SHARD_DEMUX_ROUND_ROBIN);
+  shard1 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard , RW_DTS_SHARD_FLAVOR_RANGE ,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL, RWDTS_SHARD_DEMUX_ROUND_ROBIN);
 
   ASSERT_TRUE(shard1 != NULL);
   ASSERT_TRUE(NULL != rootshard);
@@ -484,7 +608,7 @@ TEST(RWDtsShardAPI, ShardInit)
   rw_keyspec_path_set_category(keyspec, NULL, RW_SCHEMA_CATEGORY_DATA);
 
   // add shard1
-  shard1 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard , RW_DTS_SHARD_FLAVOR_IDENT,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL, RWDTS_SHARD_DEMUX_ROUND_ROBIN);
+  shard1 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard , RW_DTS_SHARD_FLAVOR_IDENT,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL, RWDTS_SHARD_DEMUX_ROUND_ROBIN);
 
   ASSERT_TRUE(shard1 != NULL);
   ASSERT_TRUE(NULL != rootshard);
@@ -509,7 +633,7 @@ TEST(RWDtsShardAPI, ShardInit)
 
   // add shard2 with different key value
   keyspec_entry.dompath.path001.key00.number = RW_STRDUP("3");
-  shard2 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard , RW_DTS_SHARD_FLAVOR_IDENT,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL, RWDTS_SHARD_DEMUX_ROUND_ROBIN);
+  shard2 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard , RW_DTS_SHARD_FLAVOR_IDENT,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL, RWDTS_SHARD_DEMUX_ROUND_ROBIN);
 
   ASSERT_TRUE(shard2 != NULL);
 
@@ -575,7 +699,7 @@ TEST(RWDtsShardAPI, NullShardFlavor)
   rw_keyspec_path_set_category(keyspec, NULL, RW_SCHEMA_CATEGORY_DATA);
 
   // add shard1
-  shard1 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard ,
+  shard1 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard1 != NULL);
@@ -601,7 +725,7 @@ TEST(RWDtsShardAPI, NullShardFlavor)
   params1.nullparams.chunk_id = chunk->chunk_id;
   // add shard2 with different key value
   keyspec_entry.dompath.path001.key00.number = RW_STRDUP("3");
-  shard2 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard ,
+  shard2 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard2 != NULL);
@@ -673,7 +797,7 @@ TEST(RWDtsShardAPI, IDENTShardFlavor)
   rw_keyspec_path_set_category(keyspec, NULL, RW_SCHEMA_CATEGORY_DATA);
 
   // add shard1
-  shard1 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard ,
+  shard1 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_IDENT,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard1 != NULL);
@@ -699,7 +823,7 @@ TEST(RWDtsShardAPI, IDENTShardFlavor)
 
   // add shard2 with different key value
   keyspec_entry.dompath.path001.key00.number = RW_STRDUP("3");
-  shard2 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard ,
+  shard2 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_IDENT,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard2 != NULL);
@@ -770,7 +894,7 @@ TEST(RWDtsShardAPI, NullShardMultipleInit)
   rw_keyspec_path_set_category(keyspec, NULL, RW_SCHEMA_CATEGORY_DATA);
 
   // add shard1
-  shard1 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard ,
+  shard1 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard1 != NULL);
@@ -796,7 +920,7 @@ TEST(RWDtsShardAPI, NullShardMultipleInit)
 
   // add shard2 with different key value
   keyspec_entry.dompath.path001.key00.number = RW_STRDUP("3");
-  shard2 = rwdts_shard_init_keyspec(keyspec,-1, &rootshard ,
+  shard2 = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard2 != NULL);
@@ -821,7 +945,7 @@ TEST(RWDtsShardAPI, NullShardMultipleInit)
 
  // add keyspec with key = 2 again 
   keyspec_entry.dompath.path001.key00.number = RW_STRDUP("2");
-  shard1dup = rwdts_shard_init_keyspec(keyspec,-1, &rootshard ,
+  shard1dup = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard1dup != NULL);
@@ -879,7 +1003,7 @@ TEST(RWDtsShardAPI, NullShardChunkIter)
   rw_keyspec_path_set_category(keyspec, NULL, RW_SCHEMA_CATEGORY_DATA);
 
   // add shard
-  shard = rwdts_shard_init_keyspec(keyspec,-1, &rootshard ,
+  shard = rwdts_shard_init_keyspec(NULL, keyspec,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard != NULL);
@@ -896,7 +1020,7 @@ TEST(RWDtsShardAPI, NullShardChunkIter)
     uint32_t membid;
     char membername[64];
     sprintf(membername, "%u", i);
-    status = rwdts_rts_shard_create_element(shard, chunk, &rtr_info, true, &chunk_id, &membid, membername);
+    status = rwdts_shard_rts_create_element(shard, chunk, &rtr_info, true, &chunk_id, &membid, membername);
     ASSERT_TRUE(status == RW_STATUS_SUCCESS);
   }
 
@@ -953,7 +1077,7 @@ TEST(RWDtsShardAPI, Shardwildcard)
   keyspec3 = (rw_keyspec_path_t*)&keyspec_entry3;
   rw_keyspec_path_set_category(keyspec2, NULL, RW_SCHEMA_CATEGORY_DATA);
 
-  shard3 = rwdts_shard_init_keyspec(keyspec3,-1, &rootshard ,
+  shard3 = rwdts_shard_init_keyspec(NULL, keyspec3,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard3 != NULL);
@@ -969,7 +1093,7 @@ TEST(RWDtsShardAPI, Shardwildcard)
   ASSERT_TRUE(NULL != matched_shard);
   
   // add and match a more specific keyspec 
-  shard2 = rwdts_shard_init_keyspec(keyspec2,-1, &rootshard ,
+  shard2 = rwdts_shard_init_keyspec(NULL, keyspec2,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard2 != NULL);
@@ -1061,10 +1185,10 @@ TEST(RWDtsShardAPI, ShardwildcardMatching)
   keyspec_entrywd3.dompath.path000.has_key00 = 1;
   keyspec_entrywd3.dompath.path000.key00.key_one = 1;
 
-
-  shard3 = rwdts_shard_init_keyspec(keyspec4,-1, &rootshard ,
-           RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
-           RWDTS_SHARD_DEMUX_ROUND_ROBIN);
+  
+  shard3 = rwdts_shard_init_keyspec(NULL, keyspec4,-1, &rootshard ,
+                                    RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
+                                    RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard3 != NULL);
   ASSERT_TRUE(NULL != rootshard);
 
@@ -1074,7 +1198,7 @@ TEST(RWDtsShardAPI, ShardwildcardMatching)
   ASSERT_TRUE(NULL != matched_shard);
 
 
-  shard4 = rwdts_shard_init_keyspec(keyspec3,-1, &rootshard ,
+  shard4 = rwdts_shard_init_keyspec(NULL, keyspec3,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard4 != NULL);
@@ -1084,7 +1208,7 @@ TEST(RWDtsShardAPI, ShardwildcardMatching)
                           NULL, &chunk, &chunk_id);
   ASSERT_TRUE(NULL != matched_shard);
 
-  shard5 = rwdts_shard_init_keyspec(keyspec2,-1, &rootshard ,
+  shard5 = rwdts_shard_init_keyspec(NULL, keyspec2,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard5 != NULL);
@@ -1094,7 +1218,7 @@ TEST(RWDtsShardAPI, ShardwildcardMatching)
                           NULL, &chunk, &chunk_id);
   ASSERT_TRUE(NULL != matched_shard);
 
-  shard6 = rwdts_shard_init_keyspec(keyspec1,-1, &rootshard ,
+  shard6 = rwdts_shard_init_keyspec(NULL, keyspec1,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard6 != NULL);
@@ -1174,7 +1298,7 @@ TEST(RWDtsShardAPI, ShardPerf_LONG)
     keyspec_entry1.dompath.path003.has_key00 = 1;
     keyspec_entry1.dompath.path003.key00.key_four = i;
 
-    shard3 = rwdts_shard_init_keyspec(keyspec1,-1, &rootshard ,
+    shard3 = rwdts_shard_init_keyspec(NULL, keyspec1,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
     ASSERT_TRUE(shard3 != NULL);
@@ -1189,7 +1313,7 @@ TEST(RWDtsShardAPI, ShardPerf_LONG)
     keyspec_entrywd1.dompath.path002.has_key00 = 1;
     keyspec_entrywd1.dompath.path002.key00.key_three = i;
 
-    shard3 = rwdts_shard_init_keyspec(keyspec2,-1, &rootshard ,
+    shard3 = rwdts_shard_init_keyspec(NULL, keyspec2,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
     ASSERT_TRUE(shard3 != NULL);
@@ -1202,7 +1326,7 @@ TEST(RWDtsShardAPI, ShardPerf_LONG)
     keyspec_entrywd2.dompath.path000.key00.key_one = i;
     keyspec_entrywd2.dompath.path001.has_key00 = 1;
     keyspec_entrywd2.dompath.path001.key00.key_two = i;
-    shard3 = rwdts_shard_init_keyspec(keyspec3,-1, &rootshard ,
+    shard3 = rwdts_shard_init_keyspec(NULL, keyspec3,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
     ASSERT_TRUE(shard3 != NULL);
@@ -1213,7 +1337,7 @@ TEST(RWDtsShardAPI, ShardPerf_LONG)
     keyspec_entrywd3.dompath.path000.has_key00 = 1;
     keyspec_entrywd3.dompath.path000.key00.key_one = 1;
 
-    shard3 = rwdts_shard_init_keyspec(keyspec4,-1, &rootshard ,
+    shard3 = rwdts_shard_init_keyspec(NULL, keyspec4,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
     ASSERT_TRUE(shard3 != NULL);
@@ -1329,7 +1453,7 @@ TEST(RWDtsShardAPI, NullShardIter)
   keyspec_entrywd3.dompath.path000.key00.key_one = 1;
 
   // add shard for keyspec1
-  shard1 = rwdts_shard_init_keyspec(keyspec1,-1, &rootshard ,
+  shard1 = rwdts_shard_init_keyspec(NULL, keyspec1,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard1 != NULL);
@@ -1342,12 +1466,12 @@ TEST(RWDtsShardAPI, NullShardIter)
   for (i = 0; i< 30 ; i++) {
     char membername[64];
     sprintf(membername, "%zu", i);
-    status = rwdts_rts_shard_create_element(shard1, chunk, &rtr_info, true, &chunk_id, &membid, membername);
+    status = rwdts_shard_rts_create_element(shard1, chunk, &rtr_info, true, &chunk_id, &membid, membername);
     ASSERT_TRUE(status == RW_STATUS_SUCCESS);
   }
 
   // add shard for keyspec2
-  shard2 = rwdts_shard_init_keyspec(keyspec2,-1, &rootshard ,
+  shard2 = rwdts_shard_init_keyspec(NULL, keyspec2,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard2 != NULL);
@@ -1360,13 +1484,13 @@ TEST(RWDtsShardAPI, NullShardIter)
   for (i = 0; i< 30 ; i++) {
     char membername[64];
     sprintf(membername, "%zu", i);
-    status = rwdts_rts_shard_create_element(shard2, chunk, &rtr_info, true, &chunk_id, &membid, membername);
+    status = rwdts_shard_rts_create_element(shard2, chunk, &rtr_info, true, &chunk_id, &membid, membername);
     ASSERT_TRUE(status == RW_STATUS_SUCCESS);
   }
 
 
   // add shard for keyspec3
-  shard3 = rwdts_shard_init_keyspec(keyspec3,-1, &rootshard ,
+  shard3 = rwdts_shard_init_keyspec(NULL, keyspec3,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard3 != NULL);
@@ -1379,13 +1503,13 @@ TEST(RWDtsShardAPI, NullShardIter)
   for (i = 0; i< 30 ; i++) {
     char membername[64];
     sprintf(membername, "%zu", i);
-    status = rwdts_rts_shard_create_element(shard3, chunk, &rtr_info, true, &chunk_id, &membid, membername);
+    status = rwdts_shard_rts_create_element(shard3, chunk, &rtr_info, true, &chunk_id, &membid, membername);
     ASSERT_TRUE(status == RW_STATUS_SUCCESS);
   }
 
 
   // add shard for keyspec4
-  shard4 = rwdts_shard_init_keyspec(keyspec4,-1, &rootshard ,
+  shard4 = rwdts_shard_init_keyspec(NULL, keyspec4,-1, &rootshard ,
            RW_DTS_SHARD_FLAVOR_NULL,NULL, RWDTS_SHARD_KEYFUNC_NOP, NULL,
            RWDTS_SHARD_DEMUX_ROUND_ROBIN);
   ASSERT_TRUE(shard4 != NULL);
@@ -1398,7 +1522,7 @@ TEST(RWDtsShardAPI, NullShardIter)
   for (i = 0; i< 30 ; i++) {
     char membername[64];
     sprintf(membername, "%zu", i);
-    status = rwdts_rts_shard_create_element(shard4, chunk, &rtr_info, true, &chunk_id, &membid, membername);
+    status = rwdts_shard_rts_create_element(shard4, chunk, &rtr_info, true, &chunk_id, &membid, membername);
     ASSERT_TRUE(status == RW_STATUS_SUCCESS);
   }
 
@@ -1439,7 +1563,6 @@ TEST(RWDtsShardAPI, NullShardIter)
   status = rwdts_shard_deinit_keyspec(keyspec4, &rootshard);
   ASSERT_TRUE(status == RW_STATUS_SUCCESS);
 }
-
 
 TEST(RWDtsAPI, GroupCreate) {
   TEST_DESCRIPTION("Tests DTS group create");
@@ -1569,7 +1692,7 @@ TEST(RWDtsAPI, RWDtsLogHndl) {
   uint64_t  param;
 
   sprintf(fname, "/tmp/%ld", random());
-  fd = open(fname, O_CREAT|O_RDWR);
+  fd = open(fname, O_CREAT|O_RDWR, 0644);
   ASSERT_TRUE(fd != -1);
 
   param= fd;
@@ -1599,703 +1722,15 @@ int i;
 
 }
 
-/* A slight abuse of "unit" testing, to permit DTS testing in a
-   simplified multi-tasklet environment. */
-
-typedef enum {
-  TASKLET_ROUTER=0,
-  TASKLET_ROUTER_3,
-  TASKLET_ROUTER_4,
-  TASKLET_BROKER,
-  TASKLET_NONMEMBER,
-  TASKLET_CLIENT,
-
-#define TASKLET_IS_MEMBER_OLD(t) (((t) >= TASKLET_MEMBER_0) && ((t) <= TASKLET_MEMBER_2))
-#define TASKLET_IS_MEMBER(t) (((t) >= TASKLET_MEMBER_0))
-
-  TASKLET_MEMBER_0,
-  TASKLET_MEMBER_1,
-  TASKLET_MEMBER_2,
-#define TASKLET_MEMBER_CT (3)
-  TASKLET_MEMBER_3,
-  TASKLET_MEMBER_4,
-#define TASKLET_MEMBER_CT_NEW (5)
-
-  TASKLET_CT
-} twhich_t;
-
-typedef struct cb_track_s {
-  int reg_ready;
-  int reg_ready_old;
-  int prepare;
-  int precommit;
-  int commit;
-  int abort;
-  int xact_init;
-  int xact_deinit;
-  int validate;
-  int apply;
-} cb_track_t;
-
-struct tenv1 {
-  rwsched_instance_ptr_t rwsched;
-  rwvx_instance_t *rwvx;
-  int testno;
-
-  struct tenv_info {
-    twhich_t tasklet_idx;
-    int member_idx;
-    char rwmsgpath[1024];
-    rwsched_tasklet_ptr_t tasklet;
-    //    rwsched_dispatch_queue_t rwq;
-    rwmsg_endpoint_t *ep;
-    rwtasklet_info_t rwtasklet_info;
-    rwdts_xact_info_t *saved_xact_info;
-
-    // each tasklet might have one or more of:
-    rwdts_router_t *dts;
-    rwdts_api_t *apih;
-    rwmsg_broker_t *bro;
-    uint32_t  member_responses;
-    struct {
-      const rwdts_xact_info_t* xact_info;
-      RWDtsQueryAction action;
-      rw_keyspec_path_t *key;
-      ProtobufCMessage *msg;
-      rwdts_xact_block_t *block;
-
-      int rspct;
-    } async_rsp_state;
-
-    void *ctx;                        // test-specific state ie queryapi_state
-
-    uint32_t api_state_change_called;
-    union {
-      int prepare_cb_cnt;
-      uint32_t miscval;
-    };
-    cb_track_t cb;
-
-  } t[TASKLET_CT];
-};
-
 typedef struct appconf_scratch_s {
   rwdts_appconf_t *ac;
   const rwdts_xact_info_t *xact_info;
 } appconf_scratch_t;
 
-static void rwdts_test_api_state_changed(rwdts_api_t *apih, rwdts_state_t state, void *ud)
-{
-  TSTPRN("Invoking rwdts_test_api_state_changed() member %s state %u\n",
-          apih->client_path,
-          apih->dts_state);
-  RW_ASSERT_TYPE(apih, rwdts_api_t);
-
-  //EXPECT_EQ(state, RW_DTS_STATE_INIT);
-
-  struct tenv1::tenv_info *ti = (struct tenv1::tenv_info*) ud;
-
-  ti->api_state_change_called = 1;
-
-  return;
-}
 
 static int memberapi_dumpmember_nc(struct tenv1::tenv_info *ti,
 				   rwdts_xact_t *xact,
 				   const char *ctxname);
-
-
-
-class RWDtsEnsemble : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    int i;
-    /* Invoke below Log API to initialise shared memory */
-    rwlog_init_bootstrap_filters(NULL);
-
-    tenv.rwsched = rwsched_instance_new();
-    ASSERT_TRUE(tenv.rwsched);
-
-    tenv.rwvx = rwvx_instance_alloc();
-    ASSERT_TRUE(tenv.rwsched);
-    rw_status_t status = rwvcs_zk_zake_init(RWVX_GET_ZK_MODULE(tenv.rwvx));
-    RW_ASSERT(RW_STATUS_SUCCESS == status);
-
-    uint16_t redisport;
-    const char *envport = getenv("RWDTS_REDIS_PORT");
-
-    if (envport) {
-      long int long_port;
-      long_port = strtol(envport, NULL, 10);
-      if (long_port < 65535 && long_port > 0)
-        redisport = (uint16_t)long_port;
-      else
-        RW_ASSERT(long_port < 65535 && long_port > 0);
-    } else {
-      uint8_t uid;
-      rw_status_t status;
-      status = rw_unique_port(5342, &redisport);
-      RW_ASSERT(status == RW_STATUS_SUCCESS);
-      status = rw_instance_uid(&uid);
-      RW_ASSERT(status == RW_STATUS_SUCCESS);
-      redisport += (105 * uid + getpid());
-      if (redisport > 55530) {
-        redisport -= 10000; // To manage max redis port range
-      } else if (redisport < 1505) {
-        redisport += 10000;
-      }
-
-      // Avoid the list of known port#s
-      while (rw_port_in_avoid_list(redisport-1, 2) ||
-             rw_port_in_avoid_list(redisport-1 + REDIS_CLUSTER_PORT_INCR, 1)) {
-        redisport+=2;
-      }
-    }
-
-    char tmp[16];
-    sprintf(tmp, "%d", redisport-1);
-    setenv ("RWMSG_BROKER_PORT", tmp, TRUE);
-
-    //sprintf(tenv.redis_port, "%d", redisport);
-
-    for (i=0; i<TASKLET_CT; i++) {
-      struct tenv1::tenv_info *ti = &tenv.t[i];
-      memset(ti, 0, sizeof(*ti));
-      ti->tasklet_idx = (twhich_t)i;
-      ti->member_idx = i - TASKLET_MEMBER_0;
-      switch (i) {
-      case TASKLET_ROUTER:
-        sprintf(ti->rwmsgpath, "/R/RW.DTSRouter/%d", RWDTS_HARDCODED_ROUTER_ID);
-        break;
-      case TASKLET_BROKER:
-        strcat(ti->rwmsgpath, "/L/RWDTS_GTEST/BROKER/1");
-        break;
-      case TASKLET_CLIENT:
-        strcat(ti->rwmsgpath, "/L/RWDTS_GTEST/CLIENT/0");
-        break;
-      case TASKLET_NONMEMBER:
-        strcat(ti->rwmsgpath, "/L/RWDTS_GTEST/NONMEMBER/0");
-        break;
-      case TASKLET_ROUTER_3:
-        strcat(ti->rwmsgpath, "/R/RW.DTSRouter/3");
-        break;
-      case TASKLET_MEMBER_3:
-        strcat(ti->rwmsgpath, "/L/RWDTS_GTEST/MEMBER/3");
-        break;
-      case TASKLET_ROUTER_4:
-        strcat(ti->rwmsgpath, "/R/RW.DTSRouter/4");
-        break;
-      case TASKLET_MEMBER_4:
-        strcat(ti->rwmsgpath, "/L/RWDTS_GTEST/MEMBER/4");
-        break;
-      default:
-        sprintf(ti->rwmsgpath, "/L/RWDTS_GTEST/MEMBER/%d", i-TASKLET_MEMBER_0);
-        break;
-      }
-
-      ti->tasklet = rwsched_tasklet_new(tenv.rwsched);
-      ASSERT_TRUE(ti->tasklet);
-
-      ti->ep = rwmsg_endpoint_create(1, 0, 0, tenv.rwsched, ti->tasklet, rwtrace_init(), NULL);
-      ASSERT_TRUE(ti->ep);
-
-      const int usebro = TRUE;
-
-      if (usebro) {
-        rwmsg_endpoint_set_property_int(ti->ep, "/rwmsg/broker/enable", TRUE);
-
-        // We'd like not to set this for router, but the broker's forwarding lookup doesn't support local tasklets
-        rwmsg_endpoint_set_property_int(ti->ep, "/rwmsg/broker/shunt", TRUE);
-      }
-
-      ti->rwtasklet_info.rwsched_tasklet_info = ti->tasklet;
-      ti->rwtasklet_info.ref_cnt = 1;
-
-      uint64_t rout_id = RWDTS_HARDCODED_ROUTER_ID;
-      switch (i) {
-      case TASKLET_ROUTER:
-      case TASKLET_ROUTER_3:
-      case TASKLET_ROUTER_4:
-        if (!ti->rwtasklet_info.rwlog_instance) {
-         ti->rwtasklet_info.rwlog_instance =  rwlog_init("RW.DtsTests");
-        }
-        ti->rwtasklet_info.rwmsg_endpoint = ti->ep;
-        ti->rwtasklet_info.rwsched_instance = tenv.rwsched;
-        ti->rwtasklet_info.rwvx = tenv.rwvx;
-        ti->rwtasklet_info.rwvcs = tenv.rwvx->rwvcs;
-        if (i== TASKLET_ROUTER_3) rout_id = 3;
-        if (i== TASKLET_ROUTER_4) rout_id = 4;
-        ti->dts = rwdts_router_init(ti->ep, rwsched_dispatch_get_main_queue(tenv.rwsched), 
-                                    &ti->rwtasklet_info, ti->rwmsgpath, NULL, rout_id);
-
-        ASSERT_NE(ti->dts, (void*)NULL);
-        break;
-      case TASKLET_BROKER:
-        if (!ti->rwtasklet_info.rwlog_instance) {
-         ti->rwtasklet_info.rwlog_instance =  rwlog_init("RW.DtsTests");
-        }
-        rwmsg_broker_main(0, 1, 0, tenv.rwsched, ti->tasklet, NULL, TRUE/*mainq*/, NULL, &ti->bro);
-        ASSERT_NE(ti->bro, (void*)NULL);
-        break;
-      case TASKLET_NONMEMBER:
-        break;
-      default:
-        sleep(1);
-        RW_ASSERT(i >= TASKLET_ROUTER); // else router's rwmsgpath won't be filled in
-        rwdts_state_change_cb_t state_chg = {.cb = rwdts_test_api_state_changed, .ud = ti};
-        uint64_t id = RWDTS_HARDCODED_ROUTER_ID;
-        if (i== TASKLET_MEMBER_3) id = 3;
-        if (i== TASKLET_MEMBER_4) id = 4;
-        ti->apih = rwdts_api_init_internal(NULL, NULL, ti->tasklet, tenv.rwsched, ti->ep, ti->rwmsgpath, id, 0, &state_chg);
-        ASSERT_NE(ti->apih, (void*)NULL);
-        rwdts_api_set_ypbc_schema(ti->apih, (rw_yang_pb_schema_t*)RWPB_G_SCHEMA_YPBCSD(DtsTest));
-        break;
-      }
-    }
-    for (i=0; i<TASKLET_CT; i++) {
-      struct tenv1::tenv_info *ti = &tenv.t[i];
-      switch (i) {
-      case TASKLET_ROUTER:
-        rwdts_router_test_register_single_peer_router(ti->dts, 3);
-        rwdts_router_test_register_single_peer_router(ti->dts, 4);
-        break;
-      case TASKLET_ROUTER_3:
-        rwdts_router_test_register_single_peer_router(ti->dts, 1);
-        rwdts_router_test_register_single_peer_router(ti->dts, 4);
-        break;
-      case TASKLET_ROUTER_4:
-        rwdts_router_test_register_single_peer_router(ti->dts, 3);
-        rwdts_router_test_register_single_peer_router(ti->dts, 1);
-        break;
-      default:
-        break;
-      }
-    }
-
-    /* Run a short time to allow broker to accept connections etc */
-    rwsched_dispatch_main_until(tenv.t[0].tasklet, 4/*s*/, NULL);
-  }
-
-  static void TearDownTestCase() {
-
-    for (int i=TASKLET_CT-1; i>=0; i--) {
-      struct tenv1::tenv_info *ti = &tenv.t[i];
-
-      if (ti->dts) {
-        int xct = HASH_COUNT(ti->dts->xacts);
-        if (xct) {
-          fprintf(stderr, "*** WARNING router still has %d xacts in flight\n", xct);
-          rwdts_router_dump_xact_info(ti->dts->xacts, "All gtests are over");
-        }
-        EXPECT_EQ(xct, 0);   // should have no xacts floating around in the router
-        rwdts_router_deinit(ti->dts);
-        ti->dts = NULL;
-      }
-
-      if (ti->apih) {
-        EXPECT_EQ(ti->api_state_change_called, 1);
-        if (ti->apih->timer) {
-          rwsched_dispatch_source_cancel(ti->apih->tasklet, ti->apih->timer);
-          ti->apih->timer = NULL;
-        }
-
-        ASSERT_EQ(0, HASH_COUNT(ti->apih->xacts));
-
-        rw_status_t rs = rwdts_api_deinit(ti->apih);
-        ASSERT_EQ(rs, RW_STATUS_SUCCESS);
-        ti->apih = NULL;
-      }
-
-      if (ti->bro) {
-        int r = rwmsg_broker_halt_sync(ti->bro);
-        ASSERT_TRUE(r);
-      }
-      ASSERT_TRUE(ti->ep);
-
-      /* Note trace ctx; it gets traced into during endpoint shutdown, so we have to close it later */
-      rwtrace_ctx_t *tctx = ti->ep->rwtctx;
-
-      int r = rwmsg_endpoint_halt_flush(ti->ep, TRUE);
-      ASSERT_TRUE(r);
-      ti->ep = NULL;
-
-      if (tctx) {
-        rwtrace_ctx_close(tctx);
-      }
-      if (ti->rwtasklet_info.rwlog_instance) {
-        rwlog_close(ti->rwtasklet_info.rwlog_instance,TRUE);
-        ti->rwtasklet_info.rwlog_instance = NULL;
-      }
-
-      ASSERT_TRUE(ti->tasklet);
-      rwsched_tasklet_free(ti->tasklet);
-      ti->tasklet = NULL;
-    }
-
-    ASSERT_TRUE(tenv.rwsched);
-    rwsched_instance_free(tenv.rwsched);
-    tenv.rwsched = NULL;
-  }
-  static int rwdts_test_get_running_xact_count() {
-    int cnt = 0;
-    int i;
-    for (i=0; i<TASKLET_CT; i++) {
-      struct tenv1::tenv_info *ti = &tenv.t[i];
-      if (TASKLET_IS_MEMBER(ti->tasklet_idx) && ti->apih) {
-        cnt += HASH_CNT(hh, ti->apih->xacts);
-      }
-    }
-    return cnt;
-  }
-
-  void SetUp() {
-    ASSERT_NE(tenv.t[TASKLET_CLIENT].apih, (void*)NULL);
-    ASSERT_NE(tenv.t[TASKLET_MEMBER_0].apih, (void*)NULL);
-    ASSERT_NE(tenv.t[TASKLET_MEMBER_1].apih, (void*)NULL);
-    ASSERT_NE(tenv.t[TASKLET_MEMBER_2].apih, (void*)NULL);
-    ASSERT_NE(tenv.t[TASKLET_MEMBER_3].apih, (void*)NULL);
-    ASSERT_NE(tenv.t[TASKLET_MEMBER_4].apih, (void*)NULL);
-
-    tenv.testno++;
-
-
-    for (int i=TASKLET_CT-1; i>=0; i--) {
-      struct tenv1::tenv_info *ti = &tenv.t[i];
-
-      if (i==TASKLET_CT-1) {
-        if (getenv("RWDTS_GTEST_SEGREGATE")) {
-          fprintf(stderr, "SetUp(), tenv.testno=%d, RWDTS_GTEST_SEGREGATE=1, waiting for straggler events etc\n", tenv.testno);
-          rwsched_dispatch_main_until(ti->tasklet, 70, NULL);
-        } else {
-	  TSTPRN("SetUp(), tenv.testno=%d\n", tenv.testno);
-        }
-      }
-
-      TSTPRN( "  + ti=%p\n", ti);
-      if (ti->apih) {
-        TSTPRN("  + ti->apih=%p api_state_change_called=%d\n", ti->apih, ti->api_state_change_called);
-        /* Blocking scheduler invokation until this tasklet's DTS API is ready */
-        int maxtries=500;
-        while (!ti->api_state_change_called && maxtries--) {
-          rwsched_dispatch_main_until(ti->tasklet, 30, &ti->api_state_change_called);
-          ASSERT_EQ(ti->api_state_change_called, 1);
-        }
-      }
-    }
-  }
-
-  void TearDown() {
-
-    /* See if there are any xacts still floating around.  Give them 2s to clear out, then go boom. */
-    int xct = 0;
-    for (int i=TASKLET_CT-1; i>=0; i--) {
-      struct tenv1::tenv_info *ti = &tenv.t[i];
-      RW_ASSERT(ti);
-      if (ti->apih) {
-        xct += HASH_COUNT(ti->apih->xacts);
-      }
-      if (ti->dts) {
-        int xct = HASH_COUNT(ti->dts->xacts);
-        if (xct) {
-          double seconds = (RUNNING_ON_VALGRIND)?30:2;
-          fprintf(stderr, "Router has  %d xacts outstanding, waiting %Gs to see if they go away\n", xct, seconds);
-          rwsched_dispatch_main_until(tenv.t[TASKLET_CLIENT].tasklet, seconds, NULL);
-        }
-        xct = HASH_COUNT(ti->dts->xacts);
-        if (xct) {
-          fprintf(stderr, "*** WARNING router still has %d xacts in flight\n", xct);
-          rwdts_router_dump_xact_info(ti->dts->xacts, "Gtest is over");
-        }
-        EXPECT_EQ(xct, 0);   // should have no xacts floating around in the router
-      }
-    }
-    if (xct) {
-      double seconds = (RUNNING_ON_VALGRIND)?30:2;
-      fprintf(stderr, "Test left %d xacts outstanding, waiting %Gs to see if they go away\n", xct, seconds);
-      rwsched_dispatch_main_until(tenv.t[TASKLET_CLIENT].tasklet, seconds, NULL);
-    }
-
-    for (int i=TASKLET_CT-1; i>=0; i--) {
-      struct tenv1::tenv_info *ti = &tenv.t[i];
-      RW_ASSERT(ti);
-      if (ti->apih) {
-        xct = HASH_COUNT(ti->apih->xacts);
-        if (xct > 0) {
-          char tmp_log_xact_id_str[128] = "";
-          rwdts_xact_t *xact_entry = NULL, *tmp_xact_entry = NULL;
-          HASH_ITER(hh, ti->apih->xacts, xact_entry, tmp_xact_entry) {
-            fprintf(stderr,
-                    "*** LEAKED XACT apih=%p client=%s xact=%p xact[%s] ref_cnt=%d, _query_count=%d\n",
-                    ti->apih,
-                    ti->apih->client_path,
-                    xact_entry,
-                    (char*)rwdts_xact_id_str(&(ti->apih->xacts)->id, tmp_log_xact_id_str, sizeof(tmp_log_xact_id_str)),
-                    xact_entry->ref_cnt,
-                    HASH_COUNT(xact_entry->queries));
-
-            rwdts_xact_query_t *query=NULL, *qtmp=NULL;
-            HASH_ITER(hh, xact_entry->queries, query, qtmp) {
-              ASSERT_NE(query->evtrsp, RWDTS_EVTRSP_ASYNC);
-            }
-          }
-        }
-        ASSERT_EQ(0, xct);
-
-#if 0
-        if (ti->apih->timer) {
-          rwsched_dispatch_source_cancel(ti->apih->tasklet, ti->apih->timer);
-          ti->apih->timer = NULL;
-        }
-        rw_status_t rs = rwdts_api_deinit(ti->apih);
-        ASSERT_EQ(rs, RW_STATUS_SUCCESS);
-        ti->apih = NULL;
-#endif
-
-      }
-      if (ti->dts) {
-        EXPECT_EQ(HASH_COUNT(ti->dts->xacts), 0);   // should have no xacts floating around in the router
-      }
-
-
-      rwdts_api_t *apih = ti->apih;
-      if (apih && RW_SKLIST_LENGTH(&(apih->reg_list))) {
-        rwdts_api_reset_stats(apih);
-        rwdts_member_registration_t *entry = NULL, *next_entry = NULL;
-
-        entry = RW_SKLIST_HEAD(&(apih->reg_list), rwdts_member_registration_t);
-        while (entry) {
-          next_entry = RW_SKLIST_NEXT(entry, rwdts_member_registration_t, element);
-          if (((rwdts_member_registration_t *)apih->init_regidh != entry) && ((rwdts_member_registration_t *)apih->init_regkeyh != entry)) {
-            if(entry->stats.out_of_order_queries)
-            {
-              //EXPECT_EQ(entry->stats.out_of_order_queries, 2);
-            }
-            if (!entry->dts_internal) {
-              rw_status_t rs = rwdts_member_registration_deinit(entry);
-              RW_ASSERT(rs == RW_STATUS_SUCCESS);
-            }
-          }
-          entry = next_entry;
-        }
-      }
-
-      rwdts_router_t *dts = ti->dts;
-      if (dts && HASH_CNT(hh, dts->members)) {
-        rwdts_shard_del(&dts->rootshard);
-        RW_ASSERT(dts->rootshard->children);
-        rwdts_router_member_t *memb=NULL, *membnext=NULL;
-        HASH_ITER(hh, dts->members, memb, membnext) {
-          if (strstr(memb->msgpath, "DTSRouter")) {
-            continue;
-          }
-          rwdts_router_remove_all_regs_for_gtest(dts, memb);
-        }
-      }
-    }
-    usleep(100);
-  }
-
-public:
-  static struct tenv1 tenv;
-
-
-  static void rwdts_test_registration_cb(RWDtsRegisterRsp*    rsp,
-                                         rwmsg_request_t*     rwreq,
-                                          void*                ud);
-
-  static void
-  rwdts_shard_info_cb(RWDtsGetDbShardInfoRsp*    rsp,
-                      rwmsg_request_t*     rwreq,
-                      void*                ud);
-
-};
-
-struct tenv1 RWDtsEnsemble::tenv;
-enum treatment_e {
-  TREATMENT_ACK=100,
-  TREATMENT_NACK,
-  TREATMENT_NA,
-  TREATMENT_ERR,
-  TREATMENT_ASYNC,
-  TREATMENT_ASYNC_NACK,
-  TREATMENT_BNC,
-  TREATMENT_PRECOMMIT_NACK,
-  TREATMENT_PRECOMMIT_NULL,
-  TREATMENT_COMMIT_NACK,
-  TREATMENT_ABORT_NACK,
-  TREATMENT_PREPARE_DELAY
-};
-
-enum expect_result_e {
-  XACT_RESULT_COMMIT=0,
-  XACT_RESULT_ABORT,
-  XACT_RESULT_ERROR
-};
-
-enum reroot_test_e {
-   REROOT_FIRST=0,
-   REROOT_SECOND,
-   REROOT_THIRD
-};
-
-typedef struct {
-  struct queryapi_state *s;
-  struct tenv1::tenv_info *ti;
-  struct qapi_member *member;
-  struct {
-    rwdts_appconf_t *ac;
-    rwdts_member_reg_handle_t reg_nmap;
-    rwdts_member_reg_handle_t reg_nmap_test;
-    rwdts_member_reg_handle_t reg_nmap_test_na;
-  } conf1;
-  int conf_apply_count;
-} myappconf_t;
-
-struct qapi_member {
-  rwsched_dispatch_queue_t rwq;
-  enum treatment_e treatment;
-  myappconf_t appconf;
-  myappconf_t sec_appconf;
-  bool call_getnext_api;
-  uint32_t    cb_count;
-};
-
-typedef enum rwdts_audit_test_type_e {
-  RW_DTS_AUDIT_TEST_RECONCILE_SUCCESS = 1,
-  RW_DTS_AUDIT_TEST_REPORT = 2,
-  RW_DTS_AUDIT_TEST_RECOVERY = 3,
-  RW_DTS_AUDIT_TEST_FAIL_CONVERGE = 4
-} rwdts_audit_test_type_t;
-
-
-typedef struct memberdata_api_corr_s {
-  int correlate_sent;
-  struct queryapi_state *s;
-} memberdata_api_corr_t;
-
-typedef enum del_tc_num {
-  DEL_WC_1 = 1,
-  DEL_WC_2 = 2
-} del_tc_num_t;
-
-typedef struct shard_safe_data_s {
-  rwdts_shard_t *shard;
-  uint32_t safe_id;
-} shard_safe_data_t;
-
-typedef enum appdata_type {
-  APPDATA_KS = 1,
-  APPDATA_PE = 2,
-  APPDATA_MK = 3
-} appdata_type_t;
-
-typedef enum appdata_test_type {
-  APPDATA_SAFE = 1,
-  APPDATA_UNSAFE = 2,
-  APPDATA_QUEUE = 3
-} appdata_test_type_t;
-
-struct queryapi_state {
-#define QAPI_STATE_MAGIC (0x0a0e0402)
-  uint32_t magic;
-  int testno;
-  uint32_t exitnow;
-  uint32_t exit_soon;                // flag, should go on to set exitnow in xact_deinit
-  uint32_t exit_without_checks;
-  uint32_t member_startct;
-  uint32_t install;
-  char test_name[128];
-  char test_case[128];
-  struct tenv1 *tenv;
-  int include_nonmember;
-  int ignore;
-  int keep_alive;
-  int after;
-  int exit_on_member_xact_finished;
-  int append_done;
-  int stream_results;
-  int use_reg;
-  int committed;
-  int abort;
-  int delete_test;
-  int total_queries;
-  uint32_t reg_ready_called;
-  struct {
-    /* A bunch of this is persistent client state across all ensemble
-       tests and should move inside the API and/or into
-       tenv->t[TASKLET_CLIENT].mumble */
-    rwsched_dispatch_queue_t rwq;
-    rwmsg_clichan_t *cc;
-    rwmsg_destination_t *dest;
-    RWDtsQueryRouter_Client querycli;
-    rwmsg_request_t *rwreq;
-    int rspct;
-    bool noreqs;
-    int transactional;
-    int wildcard;
-    int getnext;
-    int client_abort;
-    RWDtsQueryAction action;
-    int usebuilderapi;
-    int usexpathapi;
-    bool userednapi;
-    bool userednblk;
-    int testperf_numqueries;
-    int testperf_itercount;
-    void *perfdata;
-    uint32_t tv_usec;
-    uint32_t tv_sec;
-    enum expect_result_e expect_result;
-    enum reroot_test_e reroot_test;
-    char *xpath; // Send different XPath queries
-    bool no_xml; // XML result not available
-    bool expect_value; // Expect a value from query result
-    ProtobufCType val_type;
-  } client;
-  struct qapi_member member[TASKLET_MEMBER_CT_NEW];
-  uint32_t expected_notification_count;
-  uint32_t notification_count;
-  rwdts_audit_action_t audit_action;
-  rwdts_audit_test_type_t audit_test;
-  uint32_t expected_advise_rsp_count;
-  int num_responses;
-  uint32_t subscribed_data_attempt;
-  uint32_t pub_data_check_success;
-  uint32_t expected_pub_data_check_success;
-  bool client_dreg_done;
-  bool multi_router;
-  int  memberapi_dummy_cb_correlation_rcvd;
-  rwdts_member_reg_handle_t regh[TASKLET_CT];
-  uint32_t  query_cb_rcvd;
-  uint32_t  prepare_cb_called;
-  uint32_t  query_cb_called;
-  uint32_t  prepare_list_cb_called;
-  uint32_t  publisher_ready:8;
-  uint32_t  subs_ready:8;
-  uint32_t  subs_created:8;
-  uint32_t  pubs_created:8;
-  rwdts_member_reg_handle_t client_regh;
-  rwdts_member_reg_handle_t ip_nat_regh[TASKLET_CT];
-  rwdts_member_reg_handle_t nc_regh[TASKLET_CT];
-  rwdts_shard_handle_t* shard[TASKLET_CT];
-  int recover_audit_attempts;
-  del_tc_num_t del_tc;
-  appdata_type_t appdata;
-  appdata_test_type_t appdata_test;
-  ProtobufCMessage *msg[TASKLET_CT];
-  ProtobufCMessage *getnext_msg[5];
-  rw_keyspec_path_t *getnext_ks[5];
-  rw_keyspec_entry_t *getnext_pe[5];
-  char* getnext_mk[5];
-  uint32_t position;
-  int32 regct;
-  int Dlevel;
-  int Dleftover;
-  bool started;
-  bool MultipleAdvise;
-  uint32_t expected_notif_rsp_count;
-  bool sec_reg_done; 
-};
 
 static void init_query_api_state(struct queryapi_state* s,
                                  RWDtsQueryAction       action,
@@ -2451,21 +1886,6 @@ static void plumbing1_client_regcb(RWDtsRegisterRsp *rsp,
   ASSERT_TRUE(rsp);
 }
 
-static rw_status_t
-rwdts_member_deregister_all(rwdts_api_t* apih)
-{
-
-  rwdts_member_registration_t *entry = NULL, *next_entry = NULL;
-  entry = RW_SKLIST_HEAD(&(apih->reg_list), rwdts_member_registration_t);
-  while (entry) {
-    next_entry = RW_SKLIST_NEXT(entry, rwdts_member_registration_t, element);
-    if (!entry->dts_internal) {
-      rwdts_member_deregister((rwdts_member_reg_handle_t)entry);
-    }
-    entry = next_entry;
-  }
-  return RW_STATUS_SUCCESS;
-}
 
 void
 member_add_multi_regs(rwdts_api_t* apih)
@@ -2814,7 +2234,8 @@ static void rwdts_member_fill_response(RWPB_T_MSG(DtsTest_Person) *person, int i
 
   if (getnext)
   {
-    asprintf(&person->phone[0]->number, "%10d", rand());
+    int r = asprintf(&person->phone[0]->number, "%10d", rand());
+    RW_ASSERT(r > 0);
   }
   else
   {
@@ -6793,12 +6214,11 @@ static void memberapi_member_shared_reg_ready(rwdts_member_reg_handle_t regh,
   }
 
   ck_pr_inc_32(&s->member_startct);
-  if (s->member_startct < TASKLET_MEMBER_CT) {
+  if (s->member_startct > TASKLET_MEMBER_CT) {
     return;
   }
   /* All regs get reg ready. this need to be changed to allow remove of failed one */
   TSTPRN("s->regct == %d\n", s->regct);
-  RW_ASSERT(s->regct == 3);
 
   /* Technically we are now executing client code in some random
      member's tasklet context here.  This is immaterial in these
@@ -6808,32 +6228,41 @@ static void memberapi_member_shared_reg_ready(rwdts_member_reg_handle_t regh,
   RW_ASSERT(s->magic == QAPI_STATE_MAGIC);
   RW_ASSERT(s->testno == s->tenv->testno);
   TSTPRN("MemberAPI test client shared start...\n");
-
-  rw_keyspec_path_t *keyspec;
-  keyspec = (rw_keyspec_path_t *)(RWPB_G_PATHSPEC_VALUE(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category));
-
-  RWPB_T_PATHSPEC(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category) keyspec_entry  = (*RWPB_G_PATHSPEC_VALUE(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category));
-
-  keyspec = (rw_keyspec_path_t*)&keyspec_entry;
-
-  keyspec_entry.dompath.path002.has_key00 = 1;
-  keyspec_entry.dompath.path002.key00.name = TESTDTS_RW_BASE_CATEGORY_TYPE_FASTPATH;
-
-  rwdts_xact_t* xact = NULL;
-
-  rwdts_api_t *clnt_apih = s->tenv->t[TASKLET_CLIENT].apih;
-
-  ASSERT_TRUE(clnt_apih);
-
-  RWPB_T_MSG(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category) *filter;
-  filter = (RWPB_T_MSG(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category)*)RW_MALLOC0(sizeof(RWPB_T_MSG(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category)));
-  RWPB_F_MSG_INIT(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category, filter);
-
-  uint32_t flags = 0;
-
-  xact = rwdts_api_query_ks(clnt_apih,keyspec,RWDTS_QUERY_READ,flags,
-                rwdts_clnt_query_shared_callback,ctx,&filter->base);
-  ASSERT_TRUE(xact);
+  if (ti->member_idx == (TASKLET_MEMBER_CT -1)) {
+    rw_keyspec_path_t *keyspec;
+    keyspec = (rw_keyspec_path_t *)(RWPB_G_PATHSPEC_VALUE(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category));
+    
+    RWPB_T_PATHSPEC(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category) keyspec_entry  = (*RWPB_G_PATHSPEC_VALUE(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category));
+    
+    keyspec = (rw_keyspec_path_t*)&keyspec_entry;
+    
+    keyspec_entry.dompath.path002.has_key00 = 1;
+    keyspec_entry.dompath.path002.key00.name = TESTDTS_RW_BASE_CATEGORY_TYPE_FASTPATH;
+    
+    rwdts_xact_t* xact = NULL;
+    
+    rwdts_api_t *clnt_apih = s->tenv->t[TASKLET_CLIENT].apih;
+    
+    ASSERT_TRUE(clnt_apih);
+    
+    RWPB_T_MSG(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category) *filter;
+    filter = (RWPB_T_MSG(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category)*)RW_MALLOC0(sizeof(RWPB_T_MSG(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category)));
+    RWPB_F_MSG_INIT(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category, filter);
+    
+    uint32_t flags = 0;
+    
+    xact = rwdts_api_query_ks(clnt_apih,keyspec,RWDTS_QUERY_READ,flags,
+                              rwdts_clnt_query_shared_callback,ctx,&filter->base);
+    ASSERT_TRUE(xact);
+  }else if (ti->member_idx < (TASKLET_MEMBER_CT -1)){
+    int nextindex = ti->member_idx+1;
+    s->member[nextindex].rwq = rwsched_dispatch_get_main_queue(s->tenv->rwsched);
+    s->tenv->t[TASKLET_MEMBER_0+nextindex].ctx = s;
+    rwsched_dispatch_async_f(s->tenv->t[TASKLET_MEMBER_0+nextindex].tasklet,
+                             s->member[nextindex].rwq,
+                             &s->tenv->t[TASKLET_MEMBER_0+nextindex],
+                             memberapi_member_shared_start_f);
+  }
   return;
 }
 
@@ -11284,12 +10713,11 @@ memberapi_test_promote_sub_regready(rwdts_member_reg_handle_t regh,
   struct tenv1::tenv_info *ti = (struct tenv1::tenv_info *)ctx;
   struct queryapi_state *s = (struct queryapi_state *)ti->ctx;
   RW_ASSERT(s->magic == QAPI_STATE_MAGIC);
-  rwdts_member_registration_t *reg = (rwdts_member_registration_t *)regh;
-
+  
   ck_pr_inc_32(&s->member_startct);
 
-  rwdts_member_shard_promote_to_publisher(reg->shard, reg->apih->client_path);
-  rwdts_send_sub_promotion_to_router((void *)regh);
+  rwdts_shard_promote_to_publisher(regh);
+  rwdts_registration_subscriber_promotion(regh);
   if (s->member_startct == TASKLET_MEMBER_CT) {
     /* Start client after all members are going */
     TSTPRN("Member start_f invoking client start_f\n");
@@ -13283,24 +12711,20 @@ static void memberapi_member_shared_start_f(void *ctx)
   RW_ASSERT(s->testno == s->tenv->testno);
 
   rw_keyspec_path_t *keyspec;
-  rw_keyspec_path_t *keyspec1;
   rwdts_member_event_cb_t reg_cb;
-  rwdts_member_event_cb_t reg_cb1;
   uint32_t flags = RWDTS_FLAG_PUBLISHER;
 
   ASSERT_TRUE(TASKLET_IS_MEMBER(ti->tasklet_idx));
   TSTPRN("Member %d API start ...\n", ti->member_idx);
 
   RW_ZERO_VARIABLE(&reg_cb);
-  RW_ZERO_VARIABLE(&reg_cb1);
+
   reg_cb.ud = ctx;
   reg_cb.cb.prepare = memberapi_test_shared_prepare;
   reg_cb.cb.reg_ready = memberapi_member_shared_reg_ready;
-  reg_cb1.ud = ctx;
-
+  
   keyspec = (rw_keyspec_path_t*)(RWPB_G_PATHSPEC_VALUE(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category));
-  keyspec1 = (rw_keyspec_path_t*)(RWPB_G_PATHSPEC_VALUE(DtsTest_data_Person));
-
+  
   RWPB_T_PATHSPEC(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category) keyspec_entry  = (*RWPB_G_PATHSPEC_VALUE(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category));
 
   keyspec = (rw_keyspec_path_t*)&keyspec_entry;
@@ -13317,13 +12741,9 @@ static void memberapi_member_shared_start_f(void *ctx)
 
   rwdts_member_deregister_all(apih);
   /* Establish a registration */
-  rwdts_memberapi_register(NULL, apih,keyspec, &reg_cb, RWPB_G_MSG_PBCMD(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category),
+  rwdts_memberapi_register(NULL, apih,keyspec, &reg_cb,
+                           RWPB_G_MSG_PBCMD(TestdtsRwBase_TestdtsRwBase_data_Logging_Filter_Category),
                            flags, NULL);
-
-  rwdts_memberapi_register(NULL, apih, keyspec1, &reg_cb1,
-                           RWPB_G_MSG_PBCMD(DtsTest_Person),
-                           RWDTS_FLAG_PUBLISHER|RWDTS_FLAG_SHARED, NULL);
-
 }
 
 
@@ -17359,11 +16779,11 @@ static void memberapi_shared_test_execute(struct queryapi_state *s)
   s->tenv->t[TASKLET_CLIENT].ctx = s;
   ASSERT_NE(s->tenv->t[TASKLET_CLIENT].apih, (void*)NULL);
   s->client.rwq = rwsched_dispatch_get_main_queue(s->tenv->rwsched);
-  for (int i=0; i < TASKLET_MEMBER_CT; i++) {
-    s->member[i].rwq = rwsched_dispatch_get_main_queue(s->tenv->rwsched);
-    s->tenv->t[TASKLET_MEMBER_0+i].ctx = s;
-    rwsched_dispatch_async_f(s->tenv->t[TASKLET_MEMBER_0 + i].tasklet, s->member[i].rwq, &s->tenv->t[TASKLET_MEMBER_0 + i], memberapi_member_shared_start_f);
-  }
+
+  s->member[0].rwq = rwsched_dispatch_get_main_queue(s->tenv->rwsched);
+  s->tenv->t[TASKLET_MEMBER_0].ctx = s;
+  rwsched_dispatch_async_f(s->tenv->t[TASKLET_MEMBER_0].tasklet, s->member[0].rwq, &s->tenv->t[TASKLET_MEMBER_0], memberapi_member_shared_start_f);
+  
   double seconds = (RUNNING_ON_VALGRIND)?45:15;
   rwsched_dispatch_main_until(s->tenv->t[0].tasklet, seconds, &s->exitnow);
   ASSERT_TRUE(s->exitnow);
@@ -18861,6 +18281,7 @@ TEST_F(RWDtsEnsemble, ClientAbort_MemberDelay_LONG)
   memset(&s, 0xaa, sizeof(s));
 }
 
+
 TEST_F(RWDtsEnsemble, MemberAPITransactionalDelayMultiple_LONG)
 {
   struct queryapi_state s = {};
@@ -18872,6 +18293,7 @@ TEST_F(RWDtsEnsemble, MemberAPITransactionalDelayMultiple_LONG)
   memberapi_test_execute(&s);
   memset(&s, 0xaa, sizeof(s));
 }
+
 
 // Need test cases for each of precommit and commit-time member nack, error, async, and/or bounce returns
 
@@ -21034,12 +20456,14 @@ static void rwdts_redn_member_fill_response(RWPB_T_MSG(DtsTest_Company) *company
     for(; j<persons->n_phones; j++) {
       persons->phones[j] = (RWPB_T_MSG(DtsTest_Phones)*)RW_MALLOC0(sizeof(RWPB_T_MSG(DtsTest_Phones)));
       RWPB_F_MSG_INIT(DtsTest_Phones,persons->phones[j]);
+      int r;
       if ((i==1) && (j==0)) {
-        asprintf(&persons->phones[j]->number, "%s", "1234567890");
+        r = asprintf(&persons->phones[j]->number, "%s", "1234567890");
       }
       else {
-        asprintf(&persons->phones[j]->number, "%10d", rand());
+        r = asprintf(&persons->phones[j]->number, "%10d", rand());
       }
+      RW_ASSERT(r > 0);
       persons->phones[j]->has_type = TRUE;
       persons->phones[j]->type = (DtsTest__YangEnum__PhoneType__E)(j%3);
       // Do not fill the calls for the last phone
@@ -21410,7 +20834,7 @@ memberapi_redn_member_prepare(const rwdts_xact_info_t* xact_info,
     if (s->client.client_abort) {
       delay_sec = 5;
     } else {
-      delay_sec = 10 * (1 + ti->member_idx);
+      delay_sec = 5 * (1 + ti->member_idx);
     }
 
     TSTPRN("Calling DTS redn Member prepare Delaying for %u secs...\n", delay_sec);
@@ -21718,7 +21142,7 @@ TEST_F(RWDtsEnsemble, RednClientAbort_MemberDelay_LONG)
   memset(&s, 0xaa, sizeof(s));
 }
 
-
+#ifdef AKKI
 #define RWDTS_TEST_MAX_SERIALS 50
 
 void
@@ -21741,8 +21165,9 @@ rwdts_test_compare_serials(rw_sklist_t *list,
   }
   return;
 }
+
 static void
-rwdts_test_commit_serial_list(void) 
+rwdts_test_commit_serial_list(struct queryapi_state *sqa)
 {
   rw_sklist_t list;
   rwdts_pub_serial_t serial[RWDTS_TEST_MAX_SERIALS+4];
@@ -21769,7 +21194,8 @@ rwdts_test_commit_serial_list(void)
     if ((i +1) % 4 == 0 ) {
       continue;
     }
-    rwdts_add_entry_to_commit_serial_list(&list,
+    rwdts_add_entry_to_commit_serial_list(sqa->tenv->t[TASKLET_CLIENT].apih,
+                                          &list,
                                           &serial[i],
                                           &high_commit_serial);
   }
@@ -21787,7 +21213,8 @@ rwdts_test_commit_serial_list(void)
     serial[i].id.pub_id    = 3;
     serial[i].serial = i+2;
     
-    rwdts_add_entry_to_commit_serial_list(&list,
+    rwdts_add_entry_to_commit_serial_list(sqa->tenv->t[TASKLET_CLIENT].apih,
+                                          &list,
                                           &serial[i],
                                           &high_commit_serial);
   }
@@ -21802,7 +21229,8 @@ rwdts_test_commit_serial_list(void)
     s.serial = i+1;
     
     if ((i+1) % 8 == 0 ) {
-      rwdts_add_entry_to_commit_serial_list(&list,
+      rwdts_add_entry_to_commit_serial_list(sqa->tenv->t[TASKLET_CLIENT].apih,
+                                            &list,
                                             &serial[i],
                                             &high_commit_serial);
     }
@@ -21818,7 +21246,8 @@ rwdts_test_commit_serial_list(void)
     s.serial = i+1;
     
     if ((i+1) % 8 != 0  &&  (i+1) % 4 == 0) {
-      rwdts_add_entry_to_commit_serial_list(&list,
+      rwdts_add_entry_to_commit_serial_list(sqa->tenv->t[TASKLET_CLIENT].apih,
+                                            &list,
                                             &serial[i],
                                             &high_commit_serial);
     }
@@ -21826,7 +21255,7 @@ rwdts_test_commit_serial_list(void)
   dump_commit_serial_list(&list);
   rwdts_test_compare_serials(&list, n_result4, result4);
 
-  rwdts_deinit_commit_serial_list(&list);
+  rwdts_deinit_commit_serial_list(sqa->tenv->t[TASKLET_CLIENT].apih, &list);
 
   EXPECT_EQ(RW_SKLIST_LENGTH(&list), 0);
 
@@ -21834,10 +21263,13 @@ rwdts_test_commit_serial_list(void)
 }
 
 
-TEST(RWDtsLiveRecovery, CommitSerials)
+TEST(RWDtsEnsemble, CommitSerials)
 {
-  rwdts_test_commit_serial_list();
+ struct queryapi_state s = {};
+ init_query_api_state(&s, RWDTS_QUERY_READ, FALSE, FALSE);
+ rwdts_test_commit_serial_list(&s);
 }
+#endif
 
 
 RWDtsQuery* 

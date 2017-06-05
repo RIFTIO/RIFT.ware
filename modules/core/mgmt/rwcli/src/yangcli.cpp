@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file yangcli.cpp
@@ -35,6 +16,7 @@
 #include <algorithm>
 #include <iterator>
 #include <sstream>
+#include "rwlib.h"
 #include "yangcli.hpp"
 
 using namespace rw_yang;
@@ -1145,7 +1127,8 @@ rw_yang_stmt_type_t ParseNodeYang::get_stmt_type() const {
  */
 void ParseNodeYang::set_mode(const char *display) {
   RW_ASSERT (yangnode_);
-  yangnode_->app_data_set_and_keep_ownership(cli_.ms_adpt_.get_yang_token(), display);
+  yangnode_->app_data_set_and_give_ownership(cli_.ms_adpt_.get_yang_token(), (const char*)RW_STRDUP(display));
+  yangnode_->set_mode_path_to_root();
 }
 
 /**
@@ -1153,7 +1136,7 @@ void ParseNodeYang::set_mode(const char *display) {
  */
 void ParseNodeYang::set_cli_print_hook(const char *api) {
   RW_ASSERT (yangnode_);
-  yangnode_->app_data_set_and_keep_ownership(cli_.ph_adpt_.get_yang_token(), api);
+  yangnode_->app_data_set_and_give_ownership(cli_.ph_adpt_.get_yang_token(), (const char*)RW_STRDUP(api));
 }
 
 void ParseNodeYang::set_suppressed() {
@@ -1791,6 +1774,12 @@ void ParseNodeYang::fill_visible_keys()
       }
     }
     last_key_child_ = ci;
+   
+    if (flags_.is_set(ParseFlags::GET_GENERIC) 
+        && last_key_child_ != children_.end()) {
+      // For show commands include a wildcard in place of keys
+      visible_.insert(new ParseNodeValueWildcard(cli_, ci->get()));
+    }
   } else {
     for (child_iter_t ci = children_.begin(); ci != children_.end(); ++ci) {
       if ((*ci)->is_key() && (*ci)->is_suitable(flags_)) {
@@ -1798,6 +1787,7 @@ void ParseNodeYang::fill_visible_keys()
       }
     }
   }
+
 
   flags_.set(ParseFlags::V_FILLED);
   flags_.set(ParseFlags::V_LIST_KEYS);
@@ -3238,6 +3228,201 @@ void ParseNodeValueInternal::next(ParseLineResult* plr)
 }
 
 
+ParseNodeValueWildcard::ParseNodeValueWildcard(
+        BaseCli& cli,
+        ParseNode* parent)
+  : ParseNode (cli, parent)
+{
+  RW_ASSERT(parent_);
+  help_str_ = std::string("any ") + parent_->token_text_get();
+}
+
+/**
+ * Create a internal value parse node.
+ */
+ParseNodeValueWildcard::ParseNodeValueWildcard(
+    const ParseNodeValueWildcard& other,
+    ParseNode* parent)
+  : ParseNode(other, parent)
+{
+  RW_ASSERT(parent_);
+  help_str_ = std::string("any ") + parent_->token_text_get();
+}
+
+/**
+ * Clone a internal value node.  This function provides a strong exception
+ * guarantee - if this function throws, the new node is deleted,
+ * new_parent is left in a consistent state, and nothing leaks.
+ */
+ParseNode::ptr_t ParseNodeValueWildcard::clone(ParseNode* new_parent) const
+{
+  RW_ASSERT(NULL == new_parent || &cli_ == &new_parent->cli_);
+  ptr_t new_clone(new ParseNodeValueWildcard(*this,new_parent));
+  return new_clone;
+}
+
+/**
+ * Check if another node is a clone of me.  Uses the type for comparision.
+ */
+bool ParseNodeValueWildcard::is_clone(const ParseNode& other) const
+{
+  if (this == &other) {
+    // Cannot be a clone of self.
+    return false;
+  }
+  clone_visit_t cv(this);
+  return other.is_clone_visit(&cv, sizeof(cv));
+}
+
+/**
+ * Check if another node is a clone of me.
+ */
+bool ParseNodeValueWildcard::is_clone_visit(const void* ocv, size_t size) const
+{
+  if (size != sizeof(clone_visit_t)) {
+    return false;
+  }
+  clone_visit_t cv(this);
+  return 0 == memcmp(&cv,ocv,size);
+}
+
+/**
+ * Values are leafy by definition.
+ */
+bool ParseNodeValueWildcard::is_leafy() const
+{
+  return true;
+}
+
+/**
+ * 
+ */
+bool ParseNodeValueWildcard::is_key() const
+{
+  return parent_->is_key();
+}
+
+/**
+ * Determine if a command is complete, from this node down.  Command is
+ * complete if a value has been set.
+ */
+bool ParseNodeValueWildcard::is_sentence() const
+{
+  // Cannot be complete if never visted this node.
+  if (! flags_.is_set(ParseFlags::VISITED)) {
+    return false;
+  }
+
+  // Cannot be complete if value was not set
+  return flags_.is_set(ParseFlags::HAS_VALUE);
+}
+
+/**
+ * Yes, a value is a value. Duh.
+ */
+bool ParseNodeValueWildcard::is_value() const
+{
+  return true;
+}
+
+/**
+ * is this configuration?
+ */
+bool ParseNodeValueWildcard::is_config() const
+{
+  return parent_->is_config();
+}
+
+/**
+ * Value nodes can't have descendant keys.
+ */
+bool ParseNodeValueWildcard::has_keys() const
+{
+  return false;
+}
+
+/**
+ * Value nodes are never modes
+ */
+bool ParseNodeValueWildcard::is_mode() const
+{
+  return false;
+}
+
+/**
+ * Value nodes are not keywords
+ */
+bool ParseNodeValueWildcard::is_keyword() const
+{
+  return false;
+}
+
+/**
+ * Get a string that represents the keyword, or value type, that can be
+ * used for identifying and sorting keywords in the CLI for help.
+ */
+const char* ParseNodeValueWildcard::token_text_get() const
+{
+  return wildcard_str_;
+}
+
+/**
+ * Get a short help string.  The short help string is used in the CLI
+ * '?' completion list, to summarize each command or value.  It should
+ * not contain embedded newlines.
+ */
+const char* ParseNodeValueWildcard::help_short_get() const
+{
+  return help_str_.c_str();
+}
+
+/**
+ * Get a full help string.  The full help string is used by the CLI
+ * help command, or when displaying help with a shell command line
+ * argument.  It may contain embedded newlines.
+ */
+const char* ParseNodeValueWildcard::help_full_get() const
+{
+  return help_str_.c_str();
+}
+
+/**
+ * Attempt to match a string value to the node.
+ * always true - for now
+ */
+bool ParseNodeValueWildcard::value_is_match(
+        const std::string& value,
+        bool check_prefix) const
+{
+  // ATTN: this needs to change to correctly identify any issues in the values
+  return (value == wildcard_str_);
+}
+
+/**
+ * Try to complete a value.  If the value is not a keyword, it will be
+ * taken as is.  Assumes that the value matches; no checks are
+ * performed.
+ */
+const std::string& ParseNodeValueWildcard::value_complete(const std::string& value)
+{
+  value_set(value);
+  return value_;
+}
+
+/**
+ * Determine the root node for parsing the next word in the line
+ * buffer.  Depending on the context, it could be the current node, or
+ * one of the node's ancestors.
+ */
+void ParseNodeValueWildcard::next(ParseLineResult* plr)
+{
+  flags_.set(ParseFlags::VISITED);
+  plr->result_node_ = plr->result_node_->parent_;
+  plr->parse_node_ = parent_;
+  parent_->next_hide_all(plr);
+  return;
+}
+
 /*****************************************************************************/
 /**
  * Create the root mode state.  This always exists, and only gets
@@ -3497,7 +3682,12 @@ XMLNode *ModeState::merge_xml (XMLDocument *doc, XMLNode *parent_xml, ParseNode 
             if (pn->children_.begin() != pn->children_.end()) {
               ParseNode *child = pn->children_.begin()->get();
               RW_ASSERT(child->is_value());
-              value_child = static_cast<ParseNodeValue*>(child);
+
+              // For a wildcard no text context 
+              // (filtering based on selection node)
+              if (child->value_ != "*") {
+                value_child = static_cast<ParseNodeValue*>(child);
+              }
             }
 
             current_xml = pn->get_xml_node (doc, parent_xml);
@@ -3619,7 +3809,7 @@ void ModeState::set_idref_value(XMLNode* xml_element, ParseNodeValue* value)
   if (xml_element->get_name_space() == ns) {
     // The Element and the value in the same namespace, use the prefix of the
     // element
-    prefix = xml_element->get_prefix().c_str();
+    prefix = RW_STRDUP(xml_element->get_prefix().c_str());
   } else {
     // Element in a differnet namespace and the identity value in a different
     // namespace. Set the new namespace to the element and use the identity
@@ -4135,7 +4325,7 @@ void BaseCli::add_behaviorals(void)
   show_node->help_full_set (show_help);
   show_node->flags_.set_inherit (ParseFlags::HIDE_MODES);
   show_node->flags_.set_inherit (ParseFlags::HIDE_VALUES);
-  show_node->flags_.set (ParseFlags::GET_GENERIC);
+  show_node->flags_.set_inherit (ParseFlags::GET_GENERIC);
   show_node->set_callback (new CallbackBaseCli (this, &BaseCli::show_behavioral));
 
   ParseNodeBehavior* no_node = new ParseNodeBehavior (*this, "no", NULL);
@@ -4524,13 +4714,21 @@ bool BaseCli::generate_help(const std::string& line_buffer)
       } else {
         RW_ASSERT(parse_node->is_value());
 
-        // Display a mode helpmsg for the completion
-        std::cout << std::setw(15) << std::left << "VALUE" << std::right // ATTN: VALUE should be overridable?
+        if (strcmp(parse_node->token_text_get(), "*") == 0) {
+          std::cout << std::setw(15) << std::left
+                  << parse_node->token_text_get() << std::right // ATTN: VALUE should be overridable?
+                  << " - VALUE: "
+                  << parse_node->help_short_get()
+                  << std::endl;
+        } else {
+          // Display a mode helpmsg for the completion
+          std::cout << std::setw(15) << std::left << "VALUE" << std::right // ATTN: VALUE should be overridable?
                   << " - type "
                   << parse_node->token_text_get()
                   << ": "
                   << parse_node->help_short_get()
                   << std::endl;
+        }
       }
     }
 

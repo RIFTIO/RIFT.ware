@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 
 """
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 
 @file driver
 @author Jeremy Mordkoff (Jeremy.Mordkoff@riftio.com)
@@ -493,7 +479,7 @@ res = None
 max_et = datetime.timedelta(seconds=test_config.timeout) * cmdargs.timeout
 status="running"
 rc=-1
-do_ping = True
+do_ping = False
 
 try:
     dbg_ssh_cmd= "/usr/rift/bin/ssh_root {mgmt_ip} -q -n -o BatchMode=yes -o StrictHostKeyChecking=no -- "
@@ -573,7 +559,7 @@ if cmdargs.rpm:
     try:
         archive_cmd = (
             "{ssh_cmd} {host} -i {keyfile} -o StrictHostKeyChecking=no "
-            "/usr/rift/rift-shell -e -r -i /usr/rift -b /usr/rift/.build -a /usr/rift/.artifacts -- rwyangutil --archive-mgmt-persist-ws test-name:{test_name} --remove-schema-dir "
+            "/usr/rift/rift-shell -e -r -i /usr/rift -b /usr/rift/.build -a /usr/rift/.artifacts -- rwyangutil --archive-mgmt-persist-ws --test-name {test_name} --remove-schema-dir "
         ).format(
             ssh_cmd=ssh_cmd,
             host=host,
@@ -624,7 +610,7 @@ if cmdargs.rpm:
 
 else:
     try:
-        archive_cmd = "{rift_shell} -e -r -- rwyangutil --archive-mgmt-persist-ws test-name:{test_name} --remove-schema-dir" \
+        archive_cmd = "{rift_shell} -e -r -- rwyangutil --archive-mgmt-persist-ws --test-name {test_name} --remove-schema-dir" \
         .format(rift_shell=rift_shell,
             test_name = test_config.test_name)
         print("===== driver archiving confd perist directories - %s" % (archive_cmd))

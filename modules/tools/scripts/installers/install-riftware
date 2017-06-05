@@ -45,6 +45,7 @@ fi
 eval set -- $params
 
 LOCAL=false
+use_rift_mirrors=false
 
 while true; do
     case "$1" in
@@ -64,6 +65,7 @@ while true; do
 	    echo "OPTIONS:"
 	    echo "  -l --local  install packages from the local workspace instead of a"
 	    echo "              remote repo"
+        echo "  --rift      install from the rift mirrors when possible"
 	    echo
 	    echo "ARGUMENTS:"
 	    echo
@@ -80,6 +82,7 @@ while true; do
 	    echo "  RIFTWARE_VERSION (optional): version of the platform packages to be installed."
 	    echo
 	    exit 0;;
+    --rift) use_rift_mirrors=true;;
 	-l|--local) LOCAL=true; shift;;
 	    
 	--) shift; break;;
@@ -98,6 +101,13 @@ elif grep -qi "Fedora release 20" /etc/issue; then
     readonly PLATFORM=fc20
 else
     echo "This installer only runs on Ubuntu 16.04 or Fedora release 20." >&2
+    exit 1
+fi
+
+# Check the wordsize
+arch=`arch`
+if [[ $arch != x86_64 ]]; then
+    echo "You can only install RIFT.ware on a 64-bit platform, but this platform is not 64-bit"
     exit 1
 fi
 
@@ -194,7 +204,12 @@ fi
 
 # Install all required packages; this includes the RIFT platform code and tools
 # and install of the packages required to run launchpad.
-sudo /usr/rift/container_tools/mkcontainer --modes $MODE --rw-version ${RIFTWARE_VERSION}
+flags=""
+if $use_rift_mirrors; then
+    flags="$flags --rift"
+fi
+sudo -H /usr/rift/container_tools/mkcontainer $flags --modes $MODE --rw-version ${RIFTWARE_VERSION}
 
-sudo chmod 777 /usr/rift /usr/rift/usr/share
+test -d /usr/rift && sudo chmod 777 /usr/rift
+test -d /usr/rift/usr/share && sudo chmod 777 /usr/rift/usr/share
     

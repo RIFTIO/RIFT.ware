@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwmsg_broker.c
  * @author Grant Taylor <grant.taylor@riftio.com>
@@ -30,6 +11,8 @@
 #include "rwmsg_broker.h"
 #include "rwvcs_rwzk.h"
 #include "rwtasklet.h"
+
+struct rwmsg_broker_global_s rwmsg_broker_g = { };
 
 
 /* Call in mainq thread, in a mainq callback or not */
@@ -124,8 +107,6 @@ static struct rwmsg_channel_funcs brofuncs[] = {
   },
   //TBD bropeer
 };
-
-struct rwmsg_broker_global_s rwmsg_broker_g = { };
 
 
 void rwmsg_broker_dump(rwmsg_broker_t *bro) {

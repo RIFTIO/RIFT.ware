@@ -1,21 +1,7 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Anil Gunturu
 # Creation Date: 03/26/2014
-# 
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
 
 ##
 # This file should only be included once at the top level
@@ -34,7 +20,7 @@
 #                      to add doxygen targets, rift_asciidoc_to_pdf and rift_asciidoc_to_html
 #                      for asciidoc conversion routines.
 ##
-include(rift_topdir)
+include(rift_topdir NO_POLICY_SCOPE)
 include(rift_utils)
 include(rift_install)
 ## rift_install MUST PRECEDE THE REST OF THE INCLUDES
@@ -359,20 +345,12 @@ endmacro(rift_add_subdirs)
 macro(rift_create_packages)
   # Parse the function arguments
   set(parse_options "")
-  set(parse_onevalargs SUBMODULE_PACKAGE_NAME DESCRIPTION_FILE SCRIPTION_SUMMARY)
+  set(parse_onevalargs SUBMODULE_PACKAGE_NAME)
   set(parse_multivalueargs CMAKE_COMPONENTS EXTERNAL_COMPONENTS)
   cmake_parse_arguments(ARGS "${parse_options}" "${parse_onevalargs}" "${parse_multivalueargs}" ${ARGN})
 
   set(CPACK_COMPONENTS_ALL ${ARGS_CMAKE_COMPONENTS} ${ARGS_EXTERNAL_COMPONENTS})
   
-  if (ARGS_DESCRIPTION_FILE)
-    set(CPACK_PACKAGE_DESCRIPTION_FILE ${ARGS_DESCRIPTION_FILE})
-  endif (ARGS_DESCRIPTION_FILE)
-
-  if (ARGS_DESCRIPTION_SUMMARY)
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${ARGS_DESCRIPTION_SUMMARY})
-  endif (ARGS_DESCRIPTION_SUMMARY)
-
   # Deb config
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   set(CPACK_DEBIAN_PACKAGE_DEBUG "ON")
@@ -462,7 +440,7 @@ endfunction(rift_append_to_external_package_list)
 macro(rift_add_submodule_targets)
   # Parse the function arguments
   set(parse_options "")
-  set(parse_onevalargs SUBMODULE_PACKAGE_NAME DESCRIPTION_FILE DESCRIPTION_SUMMARY)
+  set(parse_onevalargs SUBMODULE_PACKAGE_NAME)
   set(parse_multivalueargs)
   cmake_parse_arguments(ARGS "${parse_options}" "${parse_onevalargs}" "${parse_multivalueargs}" ${ARGN})
 
@@ -563,8 +541,10 @@ macro(rift_add_submodule_targets)
 
   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/foss.txt)
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/foss.txt
-            DESTINATION foss/${RIFT_SUBMODULE_PREFIX}
-            COMPONENT ${ARGS_SUBMODULE_PACKAGE_NAME}_foss)
+      DESTINATION foss/${RIFT_SUBMODULE_PREFIX}
+      COMPONENT ${ARGS_SUBMODULE_PACKAGE_NAME}_foss)
+    rift_set_component_package_fields("${ARGS_SUBMODULE_PACKAGE_NAME}_foss"
+      DESCRIPTION "FOSS license for ${ARGS_SUBMODULE_PACKAGE_NAME}")
   endif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/foss.txt)
 
   ##
@@ -576,27 +556,88 @@ macro(rift_add_submodule_targets)
   #
   ##
 
-  # Optional argument
-  if(ARGS_DESCRIPTION_FILE)
-    set(DESCRIPTION_FILE "DESCRIPTION_FILE ${ARGS_DESCRIPTION_FILE}")
-  endif(ARGS_DESCRIPTION_FILE)
-
-  # Optional argument
-  if(ARGS_DESCRIPTION_SUMMARY)
-    set(DESCRIPTION_SUMMARY "DESCRIPTION_SUMMARY ${ARGS_DESCRIPTION_SUMMARY}")
-  endif(ARGS_DESCRIPTION_SUMMARY)
-
   message("CMAKE Component List: ${RIFT_COMPONENT_LIST}")
   message("CMAKE External Project List: ${RIFT_EXTERNAL_PACKAGE_LIST}")
   rift_create_packages(
     SUBMODULE_PACKAGE_NAME ${ARGS_SUBMODULE_PACKAGE_NAME}
-    ${DESCRIPTION_FILE}
-    ${DESCRIPTION_SUMMARY}
     CMAKE_COMPONENTS ${RIFT_COMPONENT_LIST}
     EXTERNAL_COMPONENTS ${RIFT_EXTERNAL_PACKAGE_LIST})
 
 endmacro(rift_add_submodule_targets)
 
+##
+# This function sets per-component values that are put into the package files (.deb, .rpm, etc.)
+# DESCRIPTION - A one-line description for the package
+#
+# These named arguments provide scripting.  The same script is used for all targets, e.g. for rpm and deb.
+# PRE_INSTALL_SCRIPT - name of a script to run before install.  The script basename must be preinst.
+# POST_INSTALL_SCRIPT - name of a script to run after install.  The script basename must be postinst.
+# PRE_RM_SCRIPT      - name of a script to run before removal.  The script basename must be prerm.
+# POST_RM_SCRIPT      - name of a script to run after removal.  The script basename must be postrm.
+##
+
+function(rift_set_component_package_fields component)
+  # Parse the function arguments
+  set(parse_options "")
+  set(parse_onevalargs DESCRIPTION PRE_INSTALL_SCRIPT POST_INSTALL_SCRIPT PRE_RM_SCRIPT POST_RM_SCRIPT)
+  set(parse_multivalueargs "")
+  cmake_parse_arguments(ARGS "${parse_options}" "${parse_onevalargs}" "${parse_multivalueargs}" ${ARGN})
+
+  string(TOUPPER ${component} COMPONENT_UPPER)
+  
+  set(CPACK_COMPONENT_${COMPONENT_UPPER}_DESCRIPTION "${ARGS_DESCRIPTION}" PARENT_SCOPE)
+  
+  # Make sure the basename of the preinstall script is 'preinst' - this is required by the Debian packaging.
+  if(ARGS_PRE_INSTALL_SCRIPT)
+    get_filename_component(basename "${ARGS_PRE_INSTALL_SCRIPT}" NAME)
+    if(NOT basename STREQUAL "preinst")
+      message(FATAL_ERROR "Pre install script must be named 'preinst': ${ARGS_PRE_INSTALL_SCRIPT}")
+    endif()
+    
+    LIST(APPEND EXTRA_SCRIPTS "${ARGS_PRE_INSTALL_SCRIPT}")
+    set(CPACK_RPM_${COMPONENT_UPPER}_PRE_INSTALL_SCRIPT_FILE "${ARGS_PRE_INSTALL_SCRIPT}" PARENT_SCOPE)
+    
+  endif()
+  
+  # Make sure the basename of the postinstall script is 'postinst' - this is required by the Debian packaging.
+  if(ARGS_POST_INSTALL_SCRIPT)
+    get_filename_component(basename "${ARGS_POST_INSTALL_SCRIPT}" NAME)
+    if(NOT basename STREQUAL "postinst")
+      message(FATAL_ERROR "Post install script must be named 'postinst': ${ARGS_POST_INSTALL_SCRIPT}")
+    endif()
+    
+    LIST(APPEND EXTRA_SCRIPTS "${ARGS_POST_INSTALL_SCRIPT}")
+    set(CPACK_RPM_${COMPONENT_UPPER}_POST_INSTALL_SCRIPT_FILE "${ARGS_POST_INSTALL_SCRIPT}" PARENT_SCOPE)
+    
+  endif()
+  
+  # Make sure the basename of the prerm script is 'prerm' - this is required by the Debian packaging.
+  if(ARGS_PRE_RM_SCRIPT)
+    get_filename_component(basename "${ARGS_PRE_RM_SCRIPT}" NAME)
+    if(NOT basename STREQUAL "prerm")
+      message(FATAL_ERROR "Pre removal script must be named 'prerm': ${ARGS_PRE_RM_SCRIPT}")
+    endif()
+    
+    LIST(APPEND EXTRA_SCRIPTS "${ARGS_PRE_RM_SCRIPT}")
+    set(CPACK_RPM_${COMPONENT_UPPER}_PRE_UNINSTALL_SCRIPT_FILE "${ARGS_PRE_RM_SCRIPT}" PARENT_SCOPE)
+
+  endif()
+  
+  # Make sure the basename of the postrm script is 'postrm' - this is required by the Debian packaging.
+  if(ARGS_POST_RM_SCRIPT)
+    get_filename_component(basename "${ARGS_POST_RM_SCRIPT}" NAME)
+    if(NOT basename STREQUAL "postrm")
+      message(FATAL_ERROR "Post removal script must be named 'postrm': ${ARGS_POST_RM_SCRIPT}")
+    endif()
+    
+    LIST(APPEND EXTRA_SCRIPTS "${ARGS_POST_RM_SCRIPT}")
+    set(CPACK_RPM_${COMPONENT_UPPER}_POST_UNINSTALL_SCRIPT_FILE "${ARGS_POST_RM_SCRIPT}" PARENT_SCOPE)
+
+  endif()
+  
+  set(CPACK_DEBIAN_${COMPONENT_UPPER}_PACKAGE_CONTROL_EXTRA "${EXTRA_SCRIPTS}" PARENT_SCOPE)
+  
+endfunction(rift_set_component_package_fields)
 
 ##
 # This function returns the path relative to the root of the submodule

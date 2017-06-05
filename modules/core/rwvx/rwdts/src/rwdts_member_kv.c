@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file   rwdts_member_kv.c
  * @author Prashanth Bhaskar
@@ -157,7 +138,9 @@ rwdts_kv_update_db_update(rwdts_member_data_object_t *mobj, RWDtsQueryAction act
   RW_ASSERT(apih);
   msg = mobj->msg;
 
-  shard_key1 = RW_MALLOC0_TYPE(sizeof(rwdts_shard_info_detail_t), rwdts_shard_info_detail_t);
+  shard_key1 = DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_SHARD_DETAIL_INFO,
+                                     sizeof(rwdts_shard_info_detail_t),
+                                     rwdts_shard_info_detail_t);
   shard_key1->shard_key_detail.u.byte_key.k.key = (void *)RW_MALLOC(sizeof(str));
   memcpy((char *)shard_key1->shard_key_detail.u.byte_key.k.key, &str[0], strlen(str));
   shard_key1->shard_key_detail.u.byte_key.k.key_len = strlen(str);
@@ -201,6 +184,9 @@ rwdts_kv_update_db_update(rwdts_member_data_object_t *mobj, RWDtsQueryAction act
                                   payload_len,
                                   (void *)rwdts_kv_light_insert_obj_cb,
                                   (void *)mobj);
+      //the inserts are all done inline and are not scheduled so free the payload
+      RW_FREE(payload);
+      
     } else if (apih->db_up && (action == RWDTS_QUERY_DELETE)) {
       rwdts_kv_light_table_xact_delete(kv_tab_handle, 0,
                                        (void *)mobj->key,
@@ -215,7 +201,8 @@ rwdts_kv_update_db_update(rwdts_member_data_object_t *mobj, RWDtsQueryAction act
   RW_FREE(shard_db_num_info);
   rw_keyspec_path_free(local_keyspec, NULL);
   RW_FREE(shard_key1->shard_key_detail.u.byte_key.k.key);
-  RW_FREE_TYPE(shard_key1, rwdts_shard_info_detail_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_DETAIL_INFO,
+                     shard_key1, rwdts_shard_info_detail_t);
   return RW_STATUS_SUCCESS;
 }
 
@@ -246,7 +233,8 @@ rwdts_kv_update_db_xact_precommit(rwdts_member_data_object_t *mobj, RWDtsQueryAc
   RW_ASSERT(action != RWDTS_QUERY_INVALID);
   msg = mobj->msg;
 
-  shard_key1 = RW_MALLOC0_TYPE(sizeof(rwdts_shard_info_detail_t), rwdts_shard_info_detail_t);
+  shard_key1 = DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_SHARD_DETAIL_INFO,
+                                     sizeof(rwdts_shard_info_detail_t), rwdts_shard_info_detail_t);
   shard_key1->shard_key_detail.u.byte_key.k.key = (void *)RW_MALLOC(sizeof(str));
   memcpy((char *)shard_key1->shard_key_detail.u.byte_key.k.key, &str[0], strlen(str));
   shard_key1->shard_key_detail.u.byte_key.k.key_len = strlen(str);
@@ -288,6 +276,9 @@ rwdts_kv_update_db_xact_precommit(rwdts_member_data_object_t *mobj, RWDtsQueryAc
                                        payload_len,
                                        (void *)rwdts_kv_light_insert_xact_obj_cb,
                                        (void *)mobj);
+      //inserts are done inline and hence free the payload...
+      RW_FREE(payload);
+      
     } else if (apih->db_up && (action == RWDTS_QUERY_DELETE)) {
        rwdts_kv_light_table_xact_delete(kv_tab_handle, 0,
                                         (void *)mobj->key,
@@ -302,7 +293,8 @@ rwdts_kv_update_db_xact_precommit(rwdts_member_data_object_t *mobj, RWDtsQueryAc
   RW_FREE(shard_db_num_info);
   rw_keyspec_path_free(local_keyspec, NULL);
   RW_FREE(shard_key1->shard_key_detail.u.byte_key.k.key);
-  RW_FREE_TYPE(shard_key1, rwdts_shard_info_detail_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_DETAIL_INFO,
+                     shard_key1, rwdts_shard_info_detail_t);
   return RW_STATUS_SUCCESS;
 }
 

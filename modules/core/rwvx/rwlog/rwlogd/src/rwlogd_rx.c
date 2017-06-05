@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -823,7 +809,7 @@ rwtimer_deinit(stw_t *hdl, rwtasklet_info_ptr_t rwtasklet, rwsched_dispatch_sour
 {
   RC_STW_t result;
   rwsched_dispatch_source_cancel(rwtasklet->rwsched_tasklet_info,id);
-  rwsched_dispatch_release(rwtasklet->rwsched_tasklet_info, id);
+  rwsched_dispatch_source_release(rwtasklet->rwsched_tasklet_info, id);
   result = stw_timer_destroy(hdl);
   if (result == RC_STW_OK){
     return RW_STATUS_SUCCESS;

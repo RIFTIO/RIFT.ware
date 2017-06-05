@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwmsg_broker_channel.c
  * @author Grant Taylor <grant.taylor@riftio.com>
@@ -96,8 +77,8 @@ void rwmsg_broker_channel_create(rwmsg_broker_channel_t *bch,
 
 void rwmsg_broker_channel_destroy(rwmsg_broker_channel_t *bch) {
   if (bch->rwq && bch->rwq != rwsched_dispatch_get_main_queue(bch->bro->ep->rwsched)) {
-    //defer via gc mechanism: rwsched_dispatch_release(bch->bro->ep->rwsched, bch->bro->ep->taskletinfo, bch->q);
-    rwmsg_garbage(&bch->bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, bch->rwq, bch->bro->ep->rwsched, bch->bro->ep->taskletinfo);
+    //defer via gc mechanism: rwsched_dispatch_source_release(bch->bro->ep->rwsched, bch->bro->ep->taskletinfo, bch->q);
+    rwmsg_garbage(&bch->bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_QREL, bch->rwq, bch->bro->ep->rwsched, bch->bro->ep->taskletinfo);
   }
   bch->rwq = NULL;
   rwmsg_broker_g.exitnow.bch_count--;

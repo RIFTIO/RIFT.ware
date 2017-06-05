@@ -1,22 +1,9 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
+
 
 #include "rwsched.h"
 #include "rwsched_object.h"
@@ -28,6 +15,11 @@
 #include "rw-log.pb-c.h"
 #include "rwlog.h"
 #include <ck_pr.h>
+
+#define RW_USE_TSC
+#ifdef RW_USE_TSC
+#include <x86intrin.h>
+#endif
 
 void
 rwsched_dispatch_cancel_handler_intercept(void *ud);
@@ -52,8 +44,6 @@ rwsched_dispatch_source_cancel(rwsched_tasklet_ptr_t sched_tasklet,
 
     dispatch_source_cancel(ds);
 
-    ck_pr_dec_32(&sched_tasklet->counters.sources);
-
     return;
   }
 
@@ -61,29 +51,35 @@ rwsched_dispatch_source_cancel(rwsched_tasklet_ptr_t sched_tasklet,
   RW_CRASH();
 }
 
-long
-rwsched_dispatch_source_testcancel(rwsched_tasklet_ptr_t sched_tasklet,
-				   rwsched_dispatch_source_t source)
+
+
+void
+rwsched_dispatch_source_release(rwsched_tasklet_ptr_t sched_tasklet,
+                                rwsched_dispatch_source_t source)
 {
-  // Validate input paraemters
+  RW_ASSERT(sched_tasklet != NULL);
+  RW_ASSERT(source != NULL);
   RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
   rwsched_instance_ptr_t instance = sched_tasklet->instance;
-  long rs = 0;
   RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
   RW_ASSERT_TYPE(source, rwsched_dispatch_source_t);
+  
+  RW_ASSERT(source->header.sched_tasklet == sched_tasklet);
 
-  // If libdispatch is enabled for the entire instance, then call the libdispatch routine
   if (instance->use_libdispatch_only) {
-    if ((rs = dispatch_source_testcancel(source->header.libdispatch_object._ds))) {
-      ck_pr_dec_32(&sched_tasklet->counters.sources);
-    }
-    return rs;
+    
+    ck_pr_dec_32(&sched_tasklet->counters.ld_sources);
+    rwsched_dispatch_release(source->header.sched_tasklet,
+                             (rwsched_dispatch_object_t)source);
+    rwsched_tasklet_unref(source->header.sched_tasklet);
+    //How can the source be freed if the cancel handler is not invoked...
+    RW_MAGIC_FREE(source);
+    return;
   }
-
-  // Not yet implemented
-  RW_CRASH();
-  return 0;
+  RW_ASSERT(0);//not implemented
+  return;
 }
+
 
 unsigned long
 rwsched_dispatch_source_get_data(rwsched_tasklet_ptr_t sched_tasklet,
@@ -129,7 +125,7 @@ rwsched_dispatch_event_handler_intercept(void *ud)
 {
   rwsched_dispatch_source_t source = (rwsched_dispatch_source_t)ud;
   RW_ASSERT_TYPE(source, rwsched_dispatch_source_t);
-  rwsched_tasklet_ptr_t sched_tasklet = source->tasklet_info;
+  rwsched_tasklet_ptr_t sched_tasklet = source->header.sched_tasklet;
   RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
   rwsched_instance_ptr_t instance = sched_tasklet->instance;
   if (sched_tasklet->blocking_mode.blocked) {
@@ -141,34 +137,66 @@ rwsched_dispatch_event_handler_intercept(void *ud)
     g_rwresource_track_handle = sched_tasklet->rwresource_track_handle;
     g_tasklet_info = sched_tasklet;
 
+#ifndef RW_USE_TSC
     struct timeval tv_begin, tv_end, tv_delta;
     if (sched_tasklet->instance->latency.check_threshold_ms) {
       gettimeofday(&tv_begin, NULL);
     } else {
       tv_begin.tv_sec = 0;
     }
-
+#else
+    unsigned long long int tsc_begin, tsc_end, tsc_delta;
+    if (sched_tasklet->instance->latency.check_threshold_ms) {
+      tsc_begin = __rdtsc();
+    } else {
+      tsc_begin = 0;
+    }
+#endif
+    
     (source->event_handler)(source->user_context);
     sched_tasklet->instance->stats.total_cb_invoked++;
 
-//  RW_ASSERT(instance->rwlog_instance);
-    if (instance->rwlog_instance && tv_begin.tv_sec
-	&& sched_tasklet->instance->latency.check_threshold_ms) {
+    if (
+#ifndef RW_USE_TSC
+        tv_begin.tv_sec
+#else
+        tsc_begin && sched_tasklet->instance->latency.clock_per_ms
+#endif
+        && sched_tasklet->instance->latency.check_threshold_ms) {
+
+#ifndef RW_USE_TSC
       gettimeofday(&tv_end, NULL);
       timersub(&tv_end, &tv_begin, &tv_delta);
       unsigned int cbms = (tv_delta.tv_sec * 1000 + tv_delta.tv_usec / 1000);
-      if (cbms >= sched_tasklet->instance->latency.check_threshold_ms * 5) {
+#else
+      tsc_end = __rdtsc();
+      if (tsc_end >= tsc_begin) {
+        tsc_delta = tsc_end - tsc_begin;
+      } else {
+        /* Time running backwards?  Wild and crazy tsc behavior? */ 
+        tsc_delta = 0;
+      }
+      unsigned int cbms = tsc_delta / instance->latency.clock_per_ms;
+      if (cbms > 5 * 60 * 1000) {
+        /* Over 5m?  Wild and crazy tsc behavior? */
+        cbms = 0;
+      }
+#endif
+
+      if (cbms >= sched_tasklet->instance->latency.check_threshold_ms) {
         char *name = rw_unw_get_proc_name(source->event_handler);
-        RWSCHED_LOG_EVENT(instance, SchedError,
-           RWLOG_ATTR_SPRINTF("rwsched[%d] dispatch event took %ums ctx %p callback %s",
-                              getpid(), cbms, source->user_context, name));
-        sched_tasklet->instance->stats.total_latency_ts++;
-        free(name);
-      } else if (cbms >= sched_tasklet->instance->latency.check_threshold_ms) {
-        char *name = rw_unw_get_proc_name(source->event_handler);
-        RWSCHED_LOG_EVENT(instance, SchedWarning,
-           RWLOG_ATTR_SPRINTF("rwsched[%d] dispatch event took %ums ctx %p callback %s",
-                              getpid(), cbms, source->user_context, name));
+        if (instance->rwlog_instance) {
+          if (cbms >= sched_tasklet->instance->latency.check_threshold_ms * 5) {
+            RWSCHED_LOG_EVENT(instance, SchedError,
+                              RWLOG_ATTR_SPRINTF("rwsched[%d] dispatch event took %ums ctx %p callback %s",
+                                                 getpid(), cbms, source->user_context, name));
+          } else {
+            RWSCHED_LOG_EVENT(instance, SchedWarning,
+                              RWLOG_ATTR_SPRINTF("rwsched[%d] dispatch event took %ums ctx %p callback %s",
+                                                 getpid(), cbms, source->user_context, name));
+          }
+        }
+
         sched_tasklet->instance->stats.total_latency_ts++;
         free(name);
       }
@@ -183,7 +211,7 @@ rwsched_dispatch_cancel_handler_intercept(void *ud)
 {
   rwsched_dispatch_source_t source = (rwsched_dispatch_source_t)ud;
   RW_ASSERT_TYPE(source, rwsched_dispatch_source_t);
-  rwsched_tasklet_ptr_t sched_tasklet = source->tasklet_info;
+  rwsched_tasklet_ptr_t sched_tasklet = source->header.sched_tasklet;
   RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
   dispatch_source_set_cancel_handler_f(source->header.libdispatch_object._ds, NULL);
   if (sched_tasklet->blocking_mode.blocked) {
@@ -217,10 +245,8 @@ rwsched_dispatch_source_create(rwsched_tasklet_ptr_t sched_tasklet,
   // Allocate memory for the dispatch source
   source = (rwsched_dispatch_source_t) RW_MALLOC0_TYPE(sizeof(*source), rwsched_dispatch_source_t); /* always leaked! */
   RW_ASSERT_TYPE(source, rwsched_dispatch_source_t);
-  source->tasklet_info = sched_tasklet;
 
-  source->is_source = TRUE;
-  source->tasklet_info = sched_tasklet;
+  source->header.is_source = TRUE;
 
   // If libdispatch is enabled for the entire instance, then call the libdispatch routine
   if (instance->use_libdispatch_only) {
@@ -232,9 +258,10 @@ rwsched_dispatch_source_create(rwsched_tasklet_ptr_t sched_tasklet,
     dispatch_set_context(source->header.libdispatch_object, source);
     dispatch_source_set_cancel_handler_f(source->header.libdispatch_object._ds, rwsched_dispatch_cancel_handler_intercept);
 
-    ck_pr_inc_32(&sched_tasklet->counters.sources);
+    ck_pr_inc_32(&sched_tasklet->counters.ld_sources);
 
-    rwsched_tasklet_ref(sched_tasklet);
+    source->header.sched_tasklet =  rwsched_tasklet_ref(sched_tasklet);
+
     return source;
   }
 

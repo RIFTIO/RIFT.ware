@@ -1,6 +1,8 @@
-RIFT_NB=${RIFT_INSTALL}/var/rift/schema/version/latest/northbound/yang/
+RIFT_NB=${RIFT_VAR_ROOT}/schema/version/latest/northbound/yang/
 echo "------------- current Time ------------------------"
 date
+echo "------------- environment variables ---------------"
+echo `env`
 echo "------------- show config -------------------------"
 show config
 
@@ -24,7 +26,11 @@ do
   # If not skip executing the ssi
   ybase=$(basename $file)
   ybase=${ybase%%.*}
-  if [[ ! -f ${RIFT_NB}${ybase}.yang ]]
+
+  yangpath="${RIFT_NB}/${ybase}.yang"
+  #print $yangpath
+
+  if [[ ! -f ${yangpath} ]]
   then
     continue
   fi
@@ -33,6 +39,7 @@ do
   then
      afile=`realpath $file`
   fi
+
   . $afile
 done
 

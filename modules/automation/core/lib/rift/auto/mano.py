@@ -1,19 +1,5 @@
 """
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 
 @file mano.py
 @author Varun Prasad (varun.prasad@riftio.com)
@@ -33,8 +19,9 @@ from gi import require_version
 require_version('RwCal', '1.0')
 require_version('RwcalYang', '1.0')
 require_version('RwTypes', '1.0')
+require_version('RwNsrYang', '1.0')
 
-from gi.repository import RwcalYang, RwTypes
+from gi.repository import RwcalYang, RwTypes, RwNsrYang
 import rw_peas
 import rwlogger
 

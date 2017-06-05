@@ -1,19 +1,5 @@
 
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT
 
 import copy
 import logging
@@ -1021,6 +1007,7 @@ class RaManifest(object):
                  netconf_trace=None,
                  zookeeper=None,
                  test_name=None,
+                 no_heartbeat=False,
                  agent_mode="AUTOMODE",
                  rift_var_root=None,
                  ):
@@ -1050,6 +1037,7 @@ class RaManifest(object):
         self.persist_dir_name = persist_dir_name
         self.test_name = test_name
         self.rift_var_root = rift_var_root
+        self.no_heartbeat = no_heartbeat 
 
         if netconf_trace is None:
             self.netconf_trace = "AUTO"
@@ -1418,6 +1406,8 @@ class ProtobufManifestConverter(object):
         if manifest.rift_var_root is not None:
            bootstrap_phase.rift_var_root = manifest.rift_var_root
 
+        bootstrap_phase.no_heartbeat = manifest.no_heartbeat
+
         # Add zookeeper info to the bootstrap phase
         if manifest.zookeeper is not None:
             zookeeper = bootstrap_phase.zookeeper
@@ -1426,7 +1416,7 @@ class ProtobufManifestConverter(object):
             zookeeper.zake = manifest.zookeeper.zake
 
         # Add serf info into bootstrap phase
-        bootstrap_phase.serf.start = False
+        bootstrap_phase.serf.start = True
 
         # Add initial ssl certs to bootstraph phase
         try:

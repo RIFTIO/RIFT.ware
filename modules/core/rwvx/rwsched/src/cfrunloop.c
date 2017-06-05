@@ -1,26 +1,13 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
 #include "rwsched/cfrunloop.h"
 #include "rwsched_main.h"
 #include "rwsched_internal.h"
+#include <ck_pr.h>
 
 RW_CF_TYPE_DEFINE("RW.Sched CFRunLoopSource Type", rwsched_CFRunLoopSourceRef);
 RW_CF_TYPE_DEFINE("RW.Sched CFRunLoopTimer Type", rwsched_CFRunLoopTimerRef);
@@ -225,19 +212,83 @@ rwsched_tasklet_CFRunLoopRemoveSource(rwsched_tasklet_ptr_t sched_tasklet,
   CFRunLoopRemoveSource(rl, source->cf_object, mode);
 }
 
+
 CF_EXPORT void
 rwsched_tasklet_CFRunLoopSourceInvalidate(rwsched_tasklet_ptr_t sched_tasklet,
 				  rwsched_CFRunLoopSourceRef source)
 {
   // Validate input paraemters
   RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
-  rwsched_instance_ptr_t instance = sched_tasklet->instance;
-  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
   RW_CF_TYPE_VALIDATE(source, rwsched_CFRunLoopSourceRef);
 
+  int i;
+  for (i = 1 ; i < sched_tasklet->cfsource_array->len ; i++) {
+    if (g_array_index(sched_tasklet->cfsource_array, rwsched_CFRunLoopSourceRef, i) == source) {
+      g_array_remove_index_fast(sched_tasklet->cfsource_array, i);
+      break;
+    }
+  }
+  
   // Call the native CFRunLoop function
   CFRunLoopSourceInvalidate(source->cf_object);
 }
+
+CF_EXPORT rwsched_CFRunLoopSourceRef
+rwsched_tasklet_CFSocketCreateRunLoopSource(rwsched_tasklet_t *sched_tasklet,
+				    CFAllocatorRef allocator,
+				    rwsched_CFSocketRef s,
+				    CFIndex order)
+{
+  UNUSED(sched_tasklet);
+  rwsched_CFRunLoopSourceRef rwsched_object;
+
+  // Validate input paraemters
+  RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
+  rwsched_instance_ptr_t instance = sched_tasklet->instance;
+  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
+
+  // Allocate a rwsched container type and track it
+  rwsched_object = RW_CF_TYPE_MALLOC0(sizeof(*rwsched_object), rwsched_CFRunLoopSourceRef);
+
+  g_array_append_val(sched_tasklet->cfsource_array, rwsched_object);
+  
+  // Update the callback context structure
+  s->callback_context.cfsource = rwsched_object;
+
+  // Create a CFSocketRunloopSource
+  rwsched_object->cf_object = CFSocketCreateRunLoopSource(allocator, s->cf_object, order);
+  RW_ASSERT(rwsched_object->cf_object);
+
+  ck_pr_inc_32(&sched_tasklet->counters.cf_sources);
+  rwsched_tasklet_ref(sched_tasklet);
+  
+  rwsched_instance_ref(instance);
+
+  // Return the rwsched container type
+  return rwsched_object;
+}
+
+CF_EXPORT void
+rwsched_tasklet_CFSocketReleaseRunLoopSource(rwsched_tasklet_t *sched_tasklet,
+                                     rwsched_CFRunLoopSourceRef rl)
+{
+  // Validate input paraemters
+  RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
+  rwsched_instance_ptr_t instance = sched_tasklet->instance;
+  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
+  
+  rwsched_tasklet_CFRunLoopSourceInvalidate(sched_tasklet, rl);
+  
+  CFRelease(rl->cf_object);
+  RW_CF_TYPE_FREE(rl, rwsched_CFRunLoopSourceRef);
+
+  ck_pr_dec_32(&sched_tasklet->counters.cf_sources);
+
+  rwsched_tasklet_unref(sched_tasklet);
+  rwsched_instance_unref(instance);
+}
+
+
 
 
 CF_EXPORT rwsched_CFRunLoopTimerRef
@@ -256,30 +307,17 @@ rwsched_tasklet_CFRunLoopTimerCreate(rwsched_tasklet_ptr_t sched_tasklet,
   RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
 
   rwsched_CFRunLoopTimerRef rwsched_timer;
-  unsigned int i;
 
   RW_ASSERT(context->info);
 
   // Allocate a rwsched container type and track it
   rwsched_timer = RW_CF_TYPE_MALLOC0(sizeof(*rwsched_timer), rwsched_CFRunLoopTimerRef);
 
-  // Look for an unused entry in cftimer_array (start the indexes at 1 for now)
-  //RW_GOBJECT_TYPE_VALIDATE(sched_tasklet->cftimer_array, GArray);
-  for (i = 1 ; i < sched_tasklet->cftimer_array->len ; i++) {
-    if (g_array_index(sched_tasklet->cftimer_array, rwsched_CFRunLoopTimerRef, i) == NULL) {
-      g_array_index(sched_tasklet->cftimer_array, rwsched_CFRunLoopTimerRef, i) = rwsched_timer;
-      break;
-    }
-  }
-  if (i >= sched_tasklet->cftimer_array->len) {
-    // Insert a new element at the end of the array
-    g_array_append_val(sched_tasklet->cftimer_array, rwsched_timer);
-  }
-
+  g_array_append_val(sched_tasklet->cftimer_array, rwsched_timer);
+  
   // Mark the rwsched_timer as in use
   RW_CF_TYPE_VALIDATE(rwsched_timer, rwsched_CFRunLoopTimerRef);
-  rwsched_timer->index = i;
-
+  
   if (interval == 0) {
     rwsched_timer->onetime_timer = 1;
     rwsched_timer->ott.allocator = allocator;
@@ -293,6 +331,7 @@ rwsched_tasklet_CFRunLoopTimerCreate(rwsched_tasklet_ptr_t sched_tasklet,
   rwsched_timer->tmp_context.info = rwsched_timer;
   rwsched_timer->cf_callout = callout;
   rwsched_tasklet_ref(sched_tasklet);
+  ck_pr_inc_32(&sched_tasklet->counters.cf_timers);
   rwsched_timer->callback_context.tasklet_info = sched_tasklet;
   rwsched_instance_ref(instance);
   rwsched_timer->callback_context.instance = instance;
@@ -318,16 +357,14 @@ rwsched_tasklet_CFRunLoopTimerRelease(rwsched_tasklet_ptr_t sched_tasklet,
   rwsched_instance_ptr_t instance = sched_tasklet->instance;
   RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
 
-  rwsched_timer->release_called = 1;
-
-  if (rwsched_timer->index)
-    rwsched_tasklet_CFRunLoopTimerInvalidate(sched_tasklet, rwsched_timer);
+  rwsched_tasklet_CFRunLoopTimerInvalidate(sched_tasklet, rwsched_timer);
 
   // Call the native CFRunLoop function
   CFRelease(rwsched_timer->cf_object);
   
   RW_CF_TYPE_FREE(rwsched_timer, rwsched_CFRunLoopTimerRef);
 
+  ck_pr_dec_32(&sched_tasklet->counters.cf_timers);
   rwsched_tasklet_unref(sched_tasklet);
   rwsched_instance_unref(instance);
 }
@@ -338,24 +375,16 @@ rwsched_tasklet_CFRunLoopTimerInvalidate(rwsched_tasklet_ptr_t sched_tasklet,
 {
   // Validate input paraemters
   RW_CF_TYPE_VALIDATE(sched_tasklet, rwsched_tasklet_ptr_t);
-  rwsched_instance_ptr_t instance = sched_tasklet->instance;
-  RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
   RW_CF_TYPE_VALIDATE(rwsched_timer, rwsched_CFRunLoopTimerRef);
 
-  rwsched_timer->invalidate_called = 1;
-#if 1
-  int i; for (i = 1 ; i < sched_tasklet->cftimer_array->len ; i++) {
+  int i;
+  for (i = 1 ; i < sched_tasklet->cftimer_array->len ; i++) {
     if (g_array_index(sched_tasklet->cftimer_array, rwsched_CFRunLoopTimerRef, i) == rwsched_timer) {
-      g_array_remove_index (sched_tasklet->cftimer_array, i);
+      g_array_remove_index_fast(sched_tasklet->cftimer_array, i);
       break;
     }
   }
-#else
-  RW_ASSERT(rwsched_timer->index != 0);
-  RW_ASSERT(sched_tasklet->cftimer_array->len > rwsched_timer->index);
-  g_array_index(sched_tasklet->cftimer_array, rwsched_CFRunLoopTimerRef, rwsched_timer->index) = NULL;
-  rwsched_timer->index = 0;
-#endif
+  
   // Call the native CFRunLoop function
   CFRunLoopTimerInvalidate(rwsched_timer->cf_object);
 }

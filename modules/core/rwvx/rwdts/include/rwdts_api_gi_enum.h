@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /*!
  * @file rwdts_api_gi_enum.h
  * @brief Introspectable enums for RW.DTS
@@ -69,6 +50,7 @@ typedef enum _RWDtsQueryAction {
   RWDTS_QUERY_DELETE  = 4,
   RWDTS_QUERY_RPC     = 5
 } RWDtsQueryAction;
+
 
 typedef enum _RWDtsXactMainState {
   RWDTS_XACT_INVALID   = 0,
@@ -143,7 +125,8 @@ typedef enum _RWDtsFlag {
   RWDTS_FLAG_DATASTORE      = (1<<10),
   RWDTS_FLAG_CACHE          = (1<<11),
   RWDTS_FLAG_SHARED         = (1<<12),
-  RWDTS_FLAG_SHARDING       = (1<<13)
+  RWDTS_FLAG_SHARDING       = (1<<13),
+  RWDTS_FLAG_REGISTRATION_BOUNCE_OK = (1 << 14), //This flag is used by the router to ignore the bounce from the member 
 } RWDtsFlag;
 
 GType rwdts_query_action_get_type(void);
@@ -339,6 +322,7 @@ typedef enum {
   RWDTS_APPCONF_ACTION_AUDIT,
   RWDTS_APPCONF_ACTION_RECOVER
 } rwdts_appconf_action_t;
+
 GType rwdts_appconf_action_get_type(void);
 
 /**

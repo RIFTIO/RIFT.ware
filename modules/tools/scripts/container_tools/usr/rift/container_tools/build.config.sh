@@ -43,5 +43,3 @@ else
     fi
 fi
 
-
-$PIP3_INSTALLER install lxml

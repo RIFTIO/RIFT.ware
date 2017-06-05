@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -43,8 +29,6 @@ rwsched_dispatch_retain(rwsched_tasklet_ptr_t sched_tasklet,
   RW_CRASH();
 }
 
-void
-rwsched_dispatch_cancel_handler_intercept(void *ud);
 
 void
 rwsched_dispatch_release(rwsched_tasklet_ptr_t sched_tasklet,
@@ -58,11 +42,6 @@ rwsched_dispatch_release(rwsched_tasklet_ptr_t sched_tasklet,
   // If libdispatch is enabled for the entire instance, then call the libdispatch routine
   if (instance->use_libdispatch_only) {
     dispatch_release(object._object->header.libdispatch_object);
-
-    rwsched_tasklet_unref(sched_tasklet);
-    // Free the memory associated with the object
-    RW_MAGIC_FREE((void *) object._object);
-
     return;
   }
 
@@ -127,6 +106,7 @@ rwsched_dispatch_suspend(rwsched_tasklet_ptr_t sched_tasklet,
 
   // If libdispatch is enabled for the entire instance, then call the libdispatch routine
   if (instance->use_libdispatch_only) {
+    g_atomic_int_inc(&object._object->header.suspended);
     dispatch_suspend(object._object->header.libdispatch_object);
     return;
   }
@@ -146,6 +126,10 @@ rwsched_dispatch_resume(rwsched_tasklet_ptr_t sched_tasklet,
 
   // If libdispatch is enabled for the entire instance, then call the libdispatch routine
   if (instance->use_libdispatch_only) {
+    //libdispath does not have an api to check if an object is suspended or resumed..
+    if (g_atomic_int_dec_and_test(&object._object->header.suspended) != 0){
+      RW_ASSERT(0);
+    }
     dispatch_resume(object._object->header.libdispatch_object);
     return;
   }
@@ -188,11 +172,7 @@ rwsched_dispatch_release(rwsched_tasklet_ptr_t sched_tasklet,
   // If libdispatch is enabled for the entire instance, then call the libdispatch routine
   if (instance->use_libdispatch_only) {
     dispatch_release(object._object->header.libdispatch_object);
-
-    rwsched_tasklet_unref(sched_tasklet);
-    // Free the memory associated with the object
-    RW_MAGIC_FREE((void *) object._object);
-
+    
     return;
   }
 
@@ -261,6 +241,7 @@ rwsched_dispatch_suspend(rwsched_tasklet_ptr_t sched_tasklet,
 
   // If libdispatch is enabled for the entire instance, then call the libdispatch routine
   if (instance->use_libdispatch_only) {
+    g_atomic_int_inc(&object._object->header.suspended);
     dispatch_suspend(object._object->header.libdispatch_object);
     return;
   }
@@ -282,6 +263,9 @@ rwsched_dispatch_resume(rwsched_tasklet_ptr_t sched_tasklet,
 
   // If libdispatch is enabled for the entire instance, then call the libdispatch routine
   if (instance->use_libdispatch_only) {
+    if (g_atomic_int_dec_and_test(&object._object->header.suspended) != 0){
+      RW_ASSERT(0);
+    }
     dispatch_resume(object._object->header.libdispatch_object);
     return;
   }

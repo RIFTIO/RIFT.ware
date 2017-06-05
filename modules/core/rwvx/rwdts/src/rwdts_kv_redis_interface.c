@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_kv_redis_interface.c
  * @author Prashanth Bhaskar (Prashanth.Bhaskar@riftio.com)
@@ -968,7 +949,8 @@ rwdts_kv_redis_start_conn_timer(rwdts_kv_db_init_info *init_info)
   init_info->retry_timer = rwsched_dispatch_source_create(init_info->tasklet_info,
                                                           RWSCHED_DISPATCH_SOURCE_TYPE_TIMER,
                                                           0, 0, ((struct rwsched_instance_s *)init_info->sched_instance)->main_rwqueue);
-
+  /*This timer is not using the RWDTS_TIMEOUT_QUANTUM_MULTIPLE since there is no dependency on
+    whether we are running in collapsed mode or not.*/
   rwsched_dispatch_source_set_timer(init_info->tasklet_info,
                                     init_info->retry_timer,
                                     dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * REDIS_RETRY_TIME),
@@ -998,7 +980,7 @@ rwdts_kv_redis_init_retry(void* ud)
   if (init_info->retry_timer &&
       (rwsched_dispatch_get_context(init_info->tasklet_info, init_info->retry_timer) == init_info)) {
     rwsched_dispatch_source_cancel(init_info->tasklet_info, init_info->retry_timer);
-    rwsched_dispatch_release(init_info->tasklet_info, init_info->retry_timer);
+    rwsched_dispatch_source_release(init_info->tasklet_info, init_info->retry_timer);
     init_info->retry_timer = NULL;
   }
 

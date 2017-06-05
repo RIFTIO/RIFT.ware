@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 
 """
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 
 @file harness
 @author Jeremy Mordkoff (Jeremy.Mordkoff@riftio.com)
@@ -246,7 +232,7 @@ class RA_TestSuite(object):
         if cmdargs.openstack:
             cmds = cmds + [
                 '--prepare',
-                '--openstack', cmdargs.openstack,
+                '--openstack', self.openstack,
                 '--image', cmdargs.image,
                 '--task-id', self.task_id
             ]
@@ -312,7 +298,7 @@ class RA_TestSuite(object):
 
     @property
     def test_status(self):
-        ''' the status of the test suite ... development, working, or broken
+        ''' the status of the test suite ... development, working, or broken, disabled
         '''
         try:
             return self.test_config.test_status
@@ -892,7 +878,7 @@ class RA_Harness(object):
                 rift_shell = "%s/rift-shell" % os.environ['RIFT_ROOT']
                 archive_cmd = (
                     "{rift_shell} -e -r -- "
-                    "rwyangutil --archive-mgmt-persist-ws test-name:{test_name} --remove-schema-dir "
+                    "rwyangutil --archive-mgmt-persist-ws --test-name {test_name} --remove-schema-dir "
                 ).format(
                     rift_shell=rift_shell,
                     test_name=test.test_config.test_name
@@ -952,7 +938,6 @@ class RA_Harness(object):
         for test in sorted(todolist, key=lambda x: x.priority, reverse=True ):
             if test.status == 'Q':
                 if self.cmdargs.openstack: # running on openstack
-                    test.openstack = self.cmdargs.openstack
                     try:
                         self.allocate_tenants(test)
                     except Exception as e:
@@ -1067,6 +1052,14 @@ class RA_Harness(object):
                 if test_name_re and not test_name_re.match(test_suite.test_name):
                     logger.debug("excluding %s due to no name match" % test_suite.test_name )
                     continue
+
+                # If a testsuite wanted to use a specific openstack host, then use that host instead of default one
+                # Use that host only if --override-racfg is not passed to harness
+                if self.cmdargs.openstack:
+                    test_suite.openstack = self.cmdargs.openstack
+                    if test_suite.test_config.openstack_host:
+                        if not self.cmdargs.override_racfg:
+                            test_suite.openstack = test_suite.test_config.openstack_host
                 logger.debug("adding %s to queue" % config_file )
                 self.queue.append(test_suite)
 
@@ -1107,7 +1100,7 @@ def main():
     parser.add_argument('-e', '--exclude', dest='exclude', action='append',
                         help='exclude tests that specify these keywords. If repeated, any test that matches any keyword is excluded. if a test is both included and excluded by keywords, exclude wins' ,
                         default=[] )
-    parser.add_argument('--status', dest='test_status', choices=['working', 'broken', 'development', 'any'], default='working', help='select tests by status. Irrelevent when selecting tests by name' )
+    parser.add_argument('--status', dest='test_status', choices=['working', 'broken', 'development', 'disabled', 'any'], default='working', help='select tests by status. Irrelevent when selecting tests by name' )
     parser.add_argument('--name', dest='test_name', type=str, help='select test by name (regular expression match')
 
     #
@@ -1159,6 +1152,7 @@ If no docker controller address is specified the current environment is assumed 
     parser.add_argument('--image', dest='image', action='store', help='image to use to boot prepared resources') 
     parser.add_argument('--rpm', dest='rpm', action='store_true', help='Install rpms from workspace and run system from installed rpms')
     parser.add_argument('--rpms-from', action='store', help='Use rpms from specified workspace rather than current')
+    parser.add_argument('--override-racfg', action='store_true', help='Overrides openstack_host value(in racfg) with IP address of openstack host passed in --openstack')
 
     parser.add_argument('--top', dest='top', default=os.path.join(os.environ['RIFT_INSTALL'],'usr'), type=str, help='portion of RIFT_INSTALL to search for config files (run and submit modes only')
 

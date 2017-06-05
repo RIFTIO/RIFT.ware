@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
 """
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 
 @file scrub_tenant.py
 @author Paul Laidler (Paul.Laidler@riftio.com)
@@ -32,6 +18,11 @@ import sys
 
 import rwlogger
 import rw_peas
+
+from gi import require_version
+require_version('RwCal', '1.0')
+require_version('RwcalYang', '1.0')
+require_version('RwTypes', '1.0')
 
 from gi.repository import (
     RwcalYang,
@@ -121,7 +112,9 @@ if __name__ == '__main__':
 
     if vdu_list:
         for info in vdu_list.vdu_info_list:
-            if sig not in info.name:
+            if 'node_id' not in info:
+                continue
+            if sig not in info.node_id:
                 continue
             vm_names.append(info.name)
             vms_to_delete.add(info.vdu_id)
@@ -202,11 +195,12 @@ if __name__ == '__main__':
                 continue
             ports_to_delete.add(info.port_id)
 
-    with cal._use_driver(account) as drv:
-        unused_floating_ips = [floating_ip for floating_ip in drv.nova_floating_ip_list() if floating_ip.instance_id is None]
-        for floating_ip in unused_floating_ips:
-            logger.info('Deleting unused floating ip address: %s', floating_ip.ip)
-            drv.nova_drv.floating_ip_delete(floating_ip)
+    drv = cal._use_driver(account)
+    unused_floating_ips = [floating_ip for floating_ip in drv.nova_floating_ip_list() if floating_ip.instance_id is None]
+    for floating_ip in unused_floating_ips:
+        logger.info('Deleting unused floating ip address: %s', floating_ip.ip)
+        drv.nova_drv.floating_ip_delete(floating_ip)
+    drv = None
 
     for instance_id in ports_to_delete:
         try:
@@ -233,16 +227,24 @@ if __name__ == '__main__':
 
         sig = sig.replace('_', '-')
 
-        ssh_cmd = 'ssh {docker} -o StrictHostkeyChecking=no -- '.format(docker=args.docker)
-        list_cmd = '{ssh_cmd} /usr/rift/bin/rbc container list'.format(ssh_cmd=ssh_cmd)
-        result = subprocess.check_output(list_cmd, shell=True)
+        def rbc_cleanup():
+            ssh_cmd = 'ssh {docker} -o StrictHostkeyChecking=no -- '.format(docker=args.docker)
+            list_cmd = '{ssh_cmd} /usr/rift/bin/rbc container list'.format(ssh_cmd=ssh_cmd)
+            result = subprocess.check_output(list_cmd, shell=True).decode('ascii')
+            containers_to_delete = re.findall('^\s*({sig}[\S-]*)\s*\S+'.format(sig=sig), result, re.MULTILINE)
+            for container in containers_to_delete:
+                delete_cmd = '{ssh_cmd} /usr/rift/bin/rbc container delete {container}'.format(
+                    ssh_cmd=ssh_cmd,
+                    container=container
+                )
+                subprocess.check_call(delete_cmd, shell=True)
 
-        containers_to_delete = re.findall('^({sig}[\S-]*)\s*\S+$'.format(sig=sig), result.decode('ascii'), re.MULTILINE)
-
-        for container in containers_to_delete:
-            delete_cmd = '{ssh_cmd} /usr/rift/bin/rbc container delete {container}'.format(
-                ssh_cmd=ssh_cmd,
-                container=container
-            )
-            subprocess.check_call(delete_cmd, shell=True)
-
+        attempts = 3
+        for attempt in range(0,attempts):
+            logger.info("Cleaning up rbc resources - attempt %d/%d", attempt, attempts)
+            try:
+                rbc_cleanup()
+                break
+            except Exception as e:
+                logger.error("Exception encountered while cleaning up rbc resources", exc_info=True)
+            time.sleep(5)

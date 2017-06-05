@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file test_rw_var_root.cpp
  * @date 2016/06/06
@@ -40,15 +21,22 @@ namespace fs = boost::filesystem;
 
 static std::string get_defualt_rvn()
 {
-  std::system("hostname -s > test.txt");
+  int rc;
+
+  rc = std::system("hostname -s > test.txt");
+  EXPECT_EQ ( 0,  rc );
+
   char hn[256] = {};
   std::ifstream("test.txt").getline(hn, 256);
 
-  std::system("id -ru > test.txt");
+  rc = std::system("id -ru > test.txt");
+  EXPECT_EQ ( 0,  rc );
+
   char uid[256] = {};
   std::ifstream("test.txt").getline(uid, 256);
 
-  std::system("rm -rf test.txt");
+  rc = std::system("rm -rf test.txt");
+  EXPECT_EQ ( 0,  rc );
 
   return hn;
 }
@@ -68,7 +56,7 @@ TEST(RiftVarRoot, GetRiftVarName)
 
   unsetenv("RIFT_VAR_NAME");
 
-  setenv("RIFT_VAR_ROOT", "/home/rift/.install/var/rift/0-vm-lead", 1);
+  setenv("RIFT_VAR_ROOT", "/usr/rift/var/rift/0-vm-lead", 1);
   s = rw_util_get_rift_var_name("12", "tg", "vm1", rvn, 1024);
   EXPECT_EQ (s, RW_STATUS_SUCCESS);
   EXPECT_STREQ (rvn, "var/rift/0-vm-lead");

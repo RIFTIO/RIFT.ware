@@ -3,7 +3,7 @@
 # Create control files for a debian package repo, making some simplifying assumptions about the repo.
 #
 # Takes two arguments:
-# - the root of a debian repo
+# - the root of a debian repo, must be an absolute path.
 # - distribution name, e.g. xenial-riftware.
 # Generates Packages and InRelease files.
 #
@@ -45,13 +45,13 @@ use warnings;
 
 use v5.10;
 
-use Cwd qw(getcwd);
 use File::Basename qw(dirname);
 use File::Path qw(make_path);
 use Digest::SHA qw(sha256_hex);
 use Digest::MD5 qw(md5_hex);
 
 my $root = shift or die "Must specify debian root directory\n";
+$root =~ m%^/% or die "Debian root directory must be an absolute path\n";
 my $distribution = shift or die "Must specify distribution, e.g. xenial-riftware";
 
 #######################################
@@ -65,27 +65,29 @@ chomp(my @components = `cd $root/pool/$distribution; ls`);
 
 say "Components are: @components";
 
+chdir($root);
+
 #######################################
-# Create component index files that list details of each .deb in the component
+# Create component index files that list details of each .deb in the component.
+# This takes a long time, so write to temporary files and move them all en-masse
+# at the end.
 my @indexFiles;
 
 for my $component (@components) {
 
-    my $indexFileBase = "$component/binary-amd64/Packages";
-    my $indexFile = "$root/dists/$distribution/$indexFileBase";
+    my $indexFile = "$root/dists/$distribution/$component/binary-amd64/Packages";
 
     # Make sure the directory exists
     my $IndexFileDir = dirname($indexFile);
     -d $IndexFileDir or make_path($IndexFileDir) or die "Cannot create $IndexFileDir, $!\n";
 
-    push @indexFiles, $indexFileBase;
+    push @indexFiles, $indexFile;
 
     # Use standard tool to create Packages file
     my @cmd = ( 'apt-ftparchive', 'packages', "pool/$distribution/$component" );
-    my $cwd = getcwd();
-    chdir($root);
+
     open my $packagesStream, '-|',@cmd or die "Cannot run \"@cmd\", $!\n";
-    open my $packagesFile, '>', $indexFile or die "Cannot open $indexFile for writing, $!\n";
+    open my $packagesFile, '>', "$indexFile.new" or die "Cannot open $indexFile.new for writing, $!\n";
 
     while(<$packagesStream>) { print $packagesFile $_ }
     
@@ -94,33 +96,37 @@ for my $component (@components) {
 }
 
 #######################################
+# Move the .new files to overwrite the old files
+for my $indexFile (@indexFiles) {
+    rename "$indexFile.new",$indexFile or die "Cannot rename $indexFile.new to $indexFile, $!\n";
+}
+
+#######################################
 # Create Release file that has general distribution details and lists all index files.
+
+my $aptConf = "$root/dists/$distribution/apt.conf";
+open my $aptConfFile, ">", $aptConf or die "Cannot open $aptConf for writing, $!\n";
+print $aptConfFile "APT::FTPArchive::Release::Suite \"$distribution\";";
+close $aptConfFile;
 
 my $releaseFile = "$root/dists/$distribution/Release";
 my $inReleaseFile = "$root/dists/$distribution/InRelease";
 
-unlink($inReleaseFile) if -f $inReleaseFile;
+my @cmd = ( 'apt-ftparchive','-c',$aptConf,'release',"dists/$distribution" );
+
+open my $releaseStream, '-|', @cmd or die "Cannot run \"@cmd\", $!\n";
 open my $release, ">", $releaseFile or die "Cannot open $releaseFile for writing, $!\n";
 
-say $release "Suite: xenial";
-say $release "Architectures: amd64";
-say $release "Components: @components";
-print $release "Date: ",`date -R -u`;
-say $release "SHA256:";
-
-for my $indexFile (@indexFiles) {
-    my $contents = slurp("$root/dists/$distribution/$indexFile");
-    my $size = length($contents);
-    my $sha256 = sha256_hex($contents);
-
-    say $release " $sha256 $size $indexFile";
-}
+while (<$releaseStream>) { print $release $_ }
 
 close $release;
-
+close $releaseStream;
+unlink $aptConf;
+		   
 #######################################
 # Sign the Release file
 
+unlink($inReleaseFile) if -f $inReleaseFile;
 system("gpg -a -s --clearsign -o $inReleaseFile $releaseFile");
 
 # Clean up the original unsigned Release file

@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -143,7 +129,7 @@ TEST(RwSchedUnittest, DispatchQueueCreateRelease)
     queue = rwsched_dispatch_queue_create(tasklet_info, "test", RWSCHED_DISPATCH_QUEUE_SERIAL);
     EXPECT_TRUE(queue);
 
-    rwsched_dispatch_release(tasklet_info, queue);
+    rwsched_dispatch_queue_release(tasklet_info, queue);
   RWUT_BENCH_END(DispatchSourceCreateRelease);
 
   // Free the tasklet & instance
@@ -192,11 +178,11 @@ TEST(RwSchedUnittest, DispatchSourceCreate1)
 
     // Cancel the dispatch source
     rwsched_dispatch_source_cancel(tasklet_info, source);
-    rwsched_dispatch_release(tasklet_info, source);
-  RWUT_BENCH_END(DispatchSourceCreate1Bench);
+    rwsched_dispatch_source_release(tasklet_info, source);
+    RWUT_BENCH_END(DispatchSourceCreate1Bench);
 
   // Release queue
-  rwsched_dispatch_release(tasklet_info, queue);
+  rwsched_dispatch_queue_release(tasklet_info, queue);
 
   // Free the tasklet & instance
   rwsched_tasklet_free(tasklet_info);
@@ -227,14 +213,14 @@ dispatch_io_callback(void *arg)
   disptch_context_t my_context = (disptch_context_t)arg;
   FPRINTF(stderr, "callback\n");
   FPRINTF(stderr, "thread %lu\n",pthread_self());
-#if 1
+
   // Now read from this pipe
   char buffer[1024];
   FPRINTF(stderr, "callling read\n");
 
   rc = read(g_pipe_fds[0], buffer, 1);
   FPRINTF(stderr, "rc = %d\n", rc);
-#endif
+
   FPRINTF(stderr, "callling cancel source\n");
   // Cancel the dispatch source
   rwsched_dispatch_source_cancel(my_context->tasklet_info, g_source);
@@ -250,50 +236,6 @@ dispatch_cancel_callback(void *arg)
   //dispatch_suspend(g_source->header.libdispatch_object);
 }
 
-TEST(RwSchedUnittest, DispatchAsync)
-{
-#if 0
-  dispatch_queue_t main_q = dispatch_get_main_queue();
-  int i;
-  int argc = 1;
-  char *argv_mem[2];
-  char **argv = argv_mem;
-  argv[1] = (char *) "World";
-
-  for (i = 1; i < argc; i++)
-    {
-      /* Add some work to the main queue. */
-      dispatch_async(main_q, ^{ FPRINTF(stderr, "Hello %s!\n", argv[i]); });
-    }
-
-  /* Add a last item to the main queue. */
-  dispatch_async(main_q, ^{ FPRINTF(stderr, "Goodbye!\n"); });
-
-  /* Start the main queue */
-  // dispatch_main();
-#endif
-}
-
-TEST(RwSchedUnittest, DispatchSourceCreate2)
-{
-#if 0
-  dispatch_queue_t main_q = dispatch_get_main_queue();
-  // test_ptr_notnull("main_q", main_q);
-
-  const char *path = "/dev/urandom";
-
-  int fd = open(path, O_RDONLY);
-
-  FPRINTF(stderr, "foo2b()\n");
-
-  dispatch_source_t source = rwsched_dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, fd, 0, main_q);
-  // test_ptr_notnull("select source", source);
-
-  dispatch_source_set_event_handler(source, ^{ FPRINTF(stderr, "Hello block!\n"); dispatch_suspend(source); });
-
-  dispatch_resume(source);
-#endif
-}
 
 /* Test and tasklet environment */
 class rwsched_tenv_t {
@@ -313,6 +255,17 @@ public:
   ~rwsched_tenv_t() {
     if (rwsched) {
       for (int i=0; i<tasklet_ct; i++) {
+        //let the main queue run to handle cancel events
+        rwsched_dispatch_main_until(tasklet[i], 0.02, NULL);
+        
+        RW_ASSERT(tasklet[i]->counters.cf_sockets == 0);
+        RW_ASSERT(tasklet[i]->counters.cf_sources == 0);
+        RW_ASSERT(tasklet[i]->counters.cf_timers == 0);
+        RW_ASSERT(tasklet[i]->counters.ld_sources == 0);
+        RW_ASSERT(tasklet[i]->counters.ld_queues == 0);
+        RW_ASSERT(tasklet[i]->counters.ld_whats == 0);
+        
+        rwsched_tasklet_release_all_resource(tasklet[i]);
         rwsched_tasklet_free(tasklet[i]);
         tasklet[i] = NULL;
       }
@@ -381,9 +334,9 @@ TEST(RwSchedUnittest, DispatchIo)
   rwsched_dispatch_main_until(tenv.tasklet[0], 0.002, NULL);
 
   // Release the dispatch source
-  //rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
+  rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
   //rwsched_dispatch_resume(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
 
   // Close any open file handles
   close(g_pipe_fds[0]);
@@ -446,9 +399,9 @@ TEST(RwSchedUnittest, DISABLED_SignalSource)
   rwsched_dispatch_main_until(tenv.tasklet[0], 1, NULL);
 
   // Cancel the dispatch source
-  //rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
+  rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
   rwsched_dispatch_resume(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
 }
 
 TEST(RwSchedUnittest, DISABLED_NativeSignalSource)
@@ -490,12 +443,6 @@ TEST(RwSchedUnittest, DISABLED_NativeSignalSource)
   //  while (1) { dispatch_main(); }
   //rwsched_dispatch_main_until(tenv.tasklet[0], 0.002, NULL);
   //rwsched_dispatch_main_until(tenv.tasklet[0], 20, NULL);
-#if 0
-  while(1) {
-    dispatch_main_queue_drain_np();
-    usleep(200);
-  }
-#endif
 
   // Cancel the dispatch source
   //rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
@@ -599,18 +546,19 @@ TEST(RwSchedUnittest, DispatchIoWithCFRunLoop)
   double timerLimit = 1.000;
 
   RWUT_BENCH_MS(DispatchIoWithCFRunLoop, 1000);
-  for (int i=0; i<100 && !(g_dispatch_io_callback_happened2 && g_rwsched_io_callback_happened); i++)
+  for (int i=0; i<100 && !(g_dispatch_io_callback_happened2 && g_rwsched_io_callback_happened); i++){
     rwsched_instance_CFRunLoopRunInMode(tenv.rwsched, tenv.rwsched->main_cfrunloop_mode, timerLimit/20, false);
+  }
   RWUT_BENCH_END(DispatchIoWithCFRunLoop);
-
+  
   if (!RUNNING_ON_VALGRIND) {
-    ASSERT_GE(g_dispatch_io_callback_happened2, 1);
-    ASSERT_GE(g_rwsched_io_callback_happened, 1);
+    EXPECT_TRUE(g_dispatch_io_callback_happened2 >= 1);
+    EXPECT_TRUE(g_rwsched_io_callback_happened >= 1);
   }
 
   // Cancel the dispatch source
   rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
 
   rwsched_tasklet_CFSocketReleaseRunLoopSource(tenv.tasklet[0], cfsource);
 
@@ -714,11 +662,12 @@ TEST(RwSchedUnittest, DispatchIoWithCFRunLoopBlocking)
   rwsched_tasklet_CFRunLoopAddSource(tenv.tasklet[1], runloop, cfsource, tenv.rwsched->main_cfrunloop_mode);
 
   double secondsToWait = 5;
-  int copy_g_dispatch_io_callback_happened = g_dispatch_io_callback_happened2;
+  uint32_t copy_g_dispatch_io_callback_happened = g_dispatch_io_callback_happened2;
   rwsched_tasklet_CFRunLoopRunTaskletBlock(tenv.tasklet[1],
                                    cfsource,
                                    secondsToWait);
-  ASSERT_GT(g_dispatch_io_callback_happened2, copy_g_dispatch_io_callback_happened);
+  EXPECT_TRUE(g_dispatch_io_callback_happened2 > copy_g_dispatch_io_callback_happened);
+
   fprintf(stderr,"g_dispatch_io_callback_happened2=%d, g_dispatch_io_callback_happened3=%d copy_g_dispatch_io_callback_happened=%d\n",
           g_dispatch_io_callback_happened2, g_dispatch_io_callback_happened3, copy_g_dispatch_io_callback_happened);
 
@@ -730,8 +679,8 @@ TEST(RwSchedUnittest, DispatchIoWithCFRunLoopBlocking)
   // Cancel the dispatch source
   rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
   rwsched_dispatch_source_cancel(tenv.tasklet[1], source2);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[1], source2);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[1], source2);
 
   rwsched_tasklet_CFSocketReleaseRunLoopSource(tenv.tasklet[1], cfsource);
 
@@ -739,12 +688,10 @@ TEST(RwSchedUnittest, DispatchIoWithCFRunLoopBlocking)
 
   rwsched_tasklet_CFSocketRelease(tenv.tasklet[1], cfsocket);
 
-#if 1
   //rwsched_tasklet_CFRunLoopRemoveSource(tenv.rwsched, runloop, cfsource, tenv.rwsched->main_cfrunloop_mode);
-  int last_dispatch_callback_num = g_dispatch_io_callback_happened2;
+  uint32_t last_dispatch_callback_num = g_dispatch_io_callback_happened2;
   rwsched_instance_CFRunLoopRunInMode(tenv.rwsched, tenv.rwsched->main_cfrunloop_mode, timerLimit, false);
-  ASSERT_EQ(last_dispatch_callback_num, g_dispatch_io_callback_happened2);
-#endif
+  EXPECT_TRUE(last_dispatch_callback_num == g_dispatch_io_callback_happened2);
 
   // Close any open file handles
   close(pipe_fds[0]);
@@ -806,8 +753,11 @@ TEST(RwSchedUnittest, ExerciseCFRunLoop)
   // If not in blocking mode, then run for a very short period of time
   double timerLimit = 1.000;
   rwsched_instance_CFRunLoopRunInMode(tenv.rwsched, tenv.rwsched->main_cfrunloop_mode, timerLimit, false);
-
-  ASSERT_GT(g_rwsched_io_callback_happened, RUNNING_ON_VALGRIND?0:5);
+  if (!RUNNING_ON_VALGRIND){
+    EXPECT_TRUE(g_rwsched_io_callback_happened > 5);
+  }else{
+    EXPECT_TRUE(g_rwsched_io_callback_happened > 0);
+  }
 
   //rwsched_tasklet_CFRunLoopRemoveSource(tenv.rwsched, runloop, cfsource, tenv.rwsched->main_cfrunloop_mode);
 
@@ -864,8 +814,7 @@ TEST(RwSchedUnittest, ExerciseCFRunLoopTimer)
   // If not in blocking mode, then run for a very short period of time
   double timerLimit = 1.000;
   rwsched_instance_CFRunLoopRunInMode(tenv.rwsched, tenv.rwsched->main_cfrunloop_mode, timerLimit, false);
-
-  ASSERT_EQ(g_rwsched_io_callback_happened, 1);
+  EXPECT_TRUE(g_rwsched_io_callback_happened == 1);
 
 
   // Invalidate the cftimer
@@ -943,8 +892,7 @@ TEST(RwSchedUnittest, ExerciseCFRunLoopTimerInTimer)
   // If not in blocking mode, then run for a very short period of time
   double timerLimit = 1.000;
   rwsched_instance_CFRunLoopRunInMode(tenv.rwsched, tenv.rwsched->main_cfrunloop_mode, timerLimit, false);
-
-  ASSERT_EQ(g_rwsched_io_callback_happened, 1);
+  EXPECT_TRUE(g_rwsched_io_callback_happened == 1);
 
 
   // Invalidate the cftimer
@@ -993,13 +941,12 @@ TEST(RwSchedUnittest, DispatchTimer)
   rwsched_dispatch_resume(tenv.tasklet[0], timer);
 
   rwsched_dispatch_main_until(tenv.tasklet[0], 0.2, NULL);
-
-  ASSERT_GE(g_dispatch_timer_callback_count, 1);
+  EXPECT_TRUE(g_dispatch_timer_callback_count >= 1);
 
   // Cancel the dispatch source
   rwsched_dispatch_source_cancel(tenv.tasklet[0], timer);
   rwsched_dispatch_resume(tenv.tasklet[0], timer);
-  rwsched_dispatch_release(tenv.tasklet[0], timer);
+  rwsched_dispatch_source_release(tenv.tasklet[0], timer);
 }
 
 TEST(RwSchedUnittest, DispatchQueue)
@@ -1043,25 +990,28 @@ TEST(RwSchedUnittest, DispatchQueue)
 
   usleep(10 * 1000);
 
-
-  ASSERT_GT(g_dispatch_io_callback_happened2, RUNNING_ON_VALGRIND?1:10);
+  if (!RUNNING_ON_VALGRIND){
+    EXPECT_TRUE(g_dispatch_io_callback_happened2 > 10);
+  }else{
+    EXPECT_TRUE(g_dispatch_io_callback_happened2 > 1);
+  }
 
   // Test suspend
   rwsched_dispatch_suspend(tenv.tasklet[0], source);
   usleep(100 * 1000);
-  int current_dispatch_cb = g_dispatch_io_callback_happened2;
+  uint32_t current_dispatch_cb = g_dispatch_io_callback_happened2;
   usleep(200 * 1000);
 
   // After suspension, no new events should have fired.
-  ASSERT_EQ(g_dispatch_io_callback_happened2, current_dispatch_cb);
+  EXPECT_TRUE(g_dispatch_io_callback_happened2 == current_dispatch_cb);
 
   // Cancel the dispatch source
   rwsched_dispatch_resume(tenv.tasklet[0], source);
   rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
 
   // Release queue
-  rwsched_dispatch_release(tenv.tasklet[0], queue);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], queue);
 
   //DISABLED RW_RESOURCE_TRACK_DUMP(g_rwresource_track_handle);
 
@@ -1119,20 +1069,20 @@ TEST(RwSchedUnittest, DispatchQueueExample01)
     rwsched_dispatch_main_until(tenv.tasklet[0], 0.1, &g_dispatch_io_callback_happened2);
 
   if (!RUNNING_ON_VALGRIND)
-    ASSERT_GE(g_dispatch_io_callback_happened2, 1);
+    EXPECT_TRUE(g_dispatch_io_callback_happened2 >= 1);
 
-  int num_callbacks = g_dispatch_io_callback_happened2;
+  uint32_t num_callbacks = g_dispatch_io_callback_happened2;
   dispatch_time_t when = dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC/10); /* 100ms */
   rwsched_dispatch_after_f(tenv.tasklet[0], when, queue, NULL, dispatch_io_callback2);
+  EXPECT_TRUE(g_dispatch_io_callback_happened2 == num_callbacks);
 
-  ASSERT_EQ(g_dispatch_io_callback_happened2, num_callbacks);
 
   // Cancel the dispatch source
   rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
 
   // Release queue
-  rwsched_dispatch_release(tenv.tasklet[0], queue);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], queue);
 
   // Close any open file handles
   close(pipe_fds[0]);
@@ -1189,25 +1139,25 @@ TEST(RwSchedUnittest, DispatchQueueExample02)
     rwsched_dispatch_main_until(tenv.tasklet[0], 0.1, &g_dispatch_io_callback_happened2);
 
   if (!RUNNING_ON_VALGRIND)
-    ASSERT_GE(g_dispatch_io_callback_happened2, 1);
+    EXPECT_TRUE(g_dispatch_io_callback_happened2 >= 1);
 
   g_dispatch_io_callback_happened2 = 0;
 
   rwsched_dispatch_async_f(tenv.tasklet[0], queue, NULL, dispatch_io_callback2);
 
   if (!RUNNING_ON_VALGRIND)
-    ASSERT_GE(g_dispatch_io_callback_happened2, 0);
+    EXPECT_TRUE(g_dispatch_io_callback_happened2 >= 0);
 
   rwsched_dispatch_sync_f(tenv.tasklet[0], queue, NULL, dispatch_io_callback2);
 
   if (!RUNNING_ON_VALGRIND)
-    ASSERT_GT(g_dispatch_io_callback_happened2, 0);
+    EXPECT_TRUE(g_dispatch_io_callback_happened2 > 0);
 
   // Cancel the dispatch source
   rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
 
-  rwsched_dispatch_release(tenv.tasklet[0], queue);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], queue);
 
   // Close any open file handles
   close(pipe_fds[0]);
@@ -1265,21 +1215,21 @@ TEST(RwSchedUnittest, DispatchQueueExample03)
     rwsched_dispatch_main_until(tenv.tasklet[0], 0.1, &g_dispatch_io_callback_happened2);
 
   if (!RUNNING_ON_VALGRIND)
-    ASSERT_GE(g_dispatch_io_callback_happened2, 1);
+    EXPECT_TRUE(g_dispatch_io_callback_happened2 >=1 );
 
   g_dispatch_io_callback_happened2 = 0;
   rwsched_dispatch_async_f(tenv.tasklet[0], queue, NULL, dispatch_io_callback2);
   usleep(10000);
+  EXPECT_TRUE(g_dispatch_io_callback_happened2 >= 1);
 
-  ASSERT_GE(g_dispatch_io_callback_happened2, 1);
   //ASSERT_EQ(g_rwsched_io_callback_happened, 1);
 
   // Cancel the dispatch source
   rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
 
   // Release queue
-  rwsched_dispatch_release(tenv.tasklet[0], queue);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], queue);
 
   // Close any open file handles
   close(pipe_fds[0]);
@@ -1339,7 +1289,7 @@ TEST(RwSchedUnittest, NativeLibDispatchSThreadTest01)
   int  i;
 
   dispatch_queue_t queues[10], queue;
-#if 1
+
   for (i=0; i<10; i++) {
     queues[i] = dispatch_sthread_queue_create("TEST",
                                               DISPATCH_STHREAD_W_SERVICING,
@@ -1347,12 +1297,6 @@ TEST(RwSchedUnittest, NativeLibDispatchSThreadTest01)
     EXPECT_TRUE(queues[i]);
     if (i==6) queue = queues[i];
   }
-#else
-  queue = dispatch_queue_create("test", DISPATCH_QUEUE_SERIAL);
-  //queue = dispatch_queue_create("test", DISPATCH_QUEUE_CONCURRENT);
-  EXPECT_TRUE(queue);
-#endif
-
 
   printf("NativeLibDispatchSThreadTest01() MY thread %lu\n",pthread_self());
 
@@ -1393,7 +1337,6 @@ TEST(RwSchedUnittest, NativeLibDispatchSThreadTest)
   EXPECT_TRUE(rc == 4);
 
   dispatch_queue_t queues[10], queue;
-#if 1
   for (i=0; i<10; i++) {
     queues[i] = dispatch_sthread_queue_create("TEST",
                                               DISPATCH_STHREAD_W_SERVICING,
@@ -1401,11 +1344,6 @@ TEST(RwSchedUnittest, NativeLibDispatchSThreadTest)
     EXPECT_TRUE(queues[i]);
     if (i==6) queue = queues[i];
   }
-#else
-  queue = dispatch_queue_create("test", DISPATCH_QUEUE_SERIAL);
-  //queue = dispatch_queue_create("test", DISPATCH_QUEUE_CONCURRENT);
-  EXPECT_TRUE(queue);
-#endif
 
 
   printf("NativeLibDispatchSThreadTest() MY thread %lu\n",pthread_self());
@@ -1481,10 +1419,10 @@ TEST(RwSchedUnittest, DispatchSThreadCreateFreeTest)
 
   usleep(5/*ms*/*1000);
 
-  rwsched_dispatch_release(tenv.tasklet[0], queue);
+  rwsched_dispatch_sthread_queue_release(tenv.tasklet[0], queue);
   for (i=0; i<10; i++) {
     if (i!=6)
-      rwsched_dispatch_release(tenv.tasklet[0], queues[i]);
+      rwsched_dispatch_sthread_queue_release(tenv.tasklet[0], queues[i]);
   }
   usleep(20*1000);
 }
@@ -1503,7 +1441,7 @@ TEST(RwSchedUnittest, DispatchSThreadTest)
   EXPECT_TRUE(rc == 4);
 
   rwsched_dispatch_queue_t queues[10], queue;
-#if 1
+
   rwsched_dispatch_sthread_initialize(tenv.tasklet[0], 20);
   for (i=0; i<10; i++) {
     queues[i] = rwsched_dispatch_sthread_queue_create(tenv.tasklet[0],
@@ -1511,12 +1449,6 @@ TEST(RwSchedUnittest, DispatchSThreadTest)
     EXPECT_TRUE(queues[i]);
     if (i==6) queue = queues[i];
   }
-#else
-  queue = rwsched_dispatch_queue_create(tenv.tasklet[0], "test", DISPATCH_QUEUE_SERIAL);
-  //queue = rwsched_dispatch_queue_create(tenv.tasklet[0], "test", DISPATCH_QUEUE_CONCURRENT);
-  EXPECT_TRUE(queue);
-#endif
-
 
   printf("DispatchSThreadTest() MY thread %lu\n",pthread_self());
 
@@ -1560,17 +1492,20 @@ TEST(RwSchedUnittest, DispatchSThreadTest)
   usleep(3*1000);
 
   // Cancel & Release the dispatch sources
-  //rwsched_dispatch_source_cancel(tenv.tasklet[0], timer);
-  rwsched_dispatch_release(tenv.tasklet[0], timer);
-  //rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
-  rwsched_dispatch_release(tenv.tasklet[0], source);
-
+  rwsched_dispatch_source_cancel(tenv.tasklet[0], timer);
+  rwsched_dispatch_source_release(tenv.tasklet[0], timer);
+  rwsched_dispatch_source_cancel(tenv.tasklet[0], source);
+  rwsched_dispatch_source_release(tenv.tasklet[0], source);
+  
   usleep(3*1000);
+  
   for (i=0; i<10; i++) {
-    rwsched_dispatch_release(tenv.tasklet[0], queues[i]);
+    rwsched_dispatch_sthread_queue_release(tenv.tasklet[0], queues[i]);
   }
   usleep(200*1000);
 }
+
+
 
 TEST(RwSchedUnittest, DISABLED_DispatchSThreadAffinityTest)
 {
@@ -1586,21 +1521,6 @@ TEST(RwSchedUnittest, DISABLED_DispatchSThreadAffinityTest)
 
   cpu_set_t cpuset;
 
-#if 0
-  CPU_ZERO(&cpuset);
-  for (int j = 0; j < 2; j++)
-    CPU_SET(j, &cpuset);
-
-  rc = pthread_setaffinity_np(pthread_self(),sizeof(cpu_set_t), &cpuset);
-  EXPECT_TRUE(rc == 0);
-
-  CPU_ZERO(&cpuset);
-  rc = pthread_getaffinity_np(pthread_self(),sizeof(cpu_set_t), &cpuset);
-  EXPECT_TRUE(rc == 0);
-  for (int j = 0; j < 2; j++)
-    EXPECT_TRUE(CPU_ISSET(j, &cpuset));
-#endif
-
   CPU_ZERO(&cpuset);
   for (int j = 0; j < 4; j++)
     CPU_SET(j, &cpuset);
@@ -1608,23 +1528,22 @@ TEST(RwSchedUnittest, DISABLED_DispatchSThreadAffinityTest)
   rc = rwsched_dispatch_sthread_setaffinity(tenv.tasklet[0],
                                             queue,
                                             sizeof(cpu_set_t), &cpuset);
-  ASSERT_EQ(rc, 0);
+  EXPECT_TRUE(rc == 0);
 
   CPU_ZERO(&cpuset);
   rc = rwsched_dispatch_sthread_getaffinity(tenv.tasklet[0],
                                             queue,
                                             sizeof(cpu_set_t), &cpuset);
-  ASSERT_EQ(rc, 0);
+  EXPECT_TRUE(rc == 0);
 
   for (int j = 0; j < 4; j++)
     EXPECT_TRUE(CPU_ISSET(j, &cpuset));
 
   usleep(3/*ms*/*1000);
-  rwsched_dispatch_release(tenv.tasklet[0], queue);
+  rwsched_dispatch_sthread_queue_release(tenv.tasklet[0], queue);
   usleep(200*1000);
 }
 
-#if 1
 int _g_dispatch_sthread_my_worker_stop = 0;
 static void*
 rw_dispatch_sthread_my_worker(void* ud)
@@ -1645,10 +1564,7 @@ rw_dispatch_sthread_my_worker(void* ud)
   }
   return NULL;
 }
-#else
-extern void *
-_dispatch_worker_sthread(void *context);
-#endif
+
 
 TEST(RwSchedUnittest, NativeLibDispatchSThreadWOServicingTest)
 {
@@ -1678,7 +1594,6 @@ TEST(RwSchedUnittest, NativeLibDispatchSThreadWOServicingTest)
 
   printf("NativeLibDispatchSThreadWOServicingTest() MY thread %lu\n",pthread_self());
 
-#if 1
   dispatch_source_t source;
   source = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, pipe_fds[0], 0, queue);
   EXPECT_TRUE(source);
@@ -1688,9 +1603,7 @@ TEST(RwSchedUnittest, NativeLibDispatchSThreadWOServicingTest)
   usleep(3*1000*100);
   dispatch_source_cancel(source);
   dispatch_release(source);
-#endif
 
-#if 1
   dispatch_async_f(queue, (void*)"ASYNC-01", rw_sthread_dispatch_func);
   dispatch_async_f(queue, (void*)"ASYNC-02", rw_sthread_dispatch_func_w_sleep1);
   dispatch_async_f(queue, (void*)"ASYNC-03", rw_sthread_dispatch_func);
@@ -1709,26 +1622,6 @@ TEST(RwSchedUnittest, NativeLibDispatchSThreadWOServicingTest)
   dispatch_async_f(queue, (void*)"ASYNC-14", rw_sthread_dispatch_func);
   dispatch_async_f(queue, (void*)"ASYNC-15", rw_sthread_dispatch_func);
   dispatch_sync_f(queue, (void*)"---SYNC---11-15\n", rw_sthread_dispatch_func);
-#endif
-
-#if 0
-  dispatch_source_t timer;
-  timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
-  EXPECT_TRUE(timer);
-  uint64_t ival = 0.1*NSEC_PER_SEC;
-  dispatch_source_set_timer(timer, dispatch_walltime(NULL, ival), ival, ival/2);
-  //dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, ival, ival/2);
-  printf("\n");
-  dispatch_set_context(timer, (void*)"TIMER");
-  dispatch_source_set_event_handler_f(timer, rw_sthread_dispatch_timer_callback);
-  dispatch_resume(timer);
-
-  usleep(3*1000*100);
-
-  dispatch_source_cancel(timer);
-  dispatch_release(timer);
-  //dispatch_release(source);
-#endif
 
   closure->fn = NULL;
   _g_dispatch_sthread_my_worker_stop = 1;
@@ -1769,13 +1662,13 @@ class RwAsyncCb : public ::testing::Test {
     dispatch_callback_happened++;
 
     /* verify that some dummy values are populated */
-    ASSERT_EQ(0xdeadbeef, functor->int_variable);
-    ASSERT_STREQ("0xbadbeef", functor->string_variable);
+    EXPECT_TRUE(0xdeadbeef == functor->int_variable);
+    EXPECT_TRUE(!strcmp("0xbadbeef", functor->string_variable));
     int len;
     gchar **array = async_cb_async_functor_instance_get_string_array(functor, &len);
-    ASSERT_EQ(2, len);
-    ASSERT_STREQ("0xdeadbeef", array[0]);
-    ASSERT_STREQ("0xbadbeef", array[1]);
+    EXPECT_TRUE(len == 2);
+    EXPECT_TRUE(!strcmp("0xdeadbeef", array[0]));
+    EXPECT_TRUE(!strcmp("0xbadbeef", array[1]));
   }
 
   /**
@@ -1801,13 +1694,13 @@ class RwAsyncCb : public ::testing::Test {
     /* Allocate a vx framework, and setup the repository.
      * This step loads the typelibs */
     rw_vxfp = rw_vx_framework_alloc();
-    ASSERT_TRUE(RW_VX_FRAMEWORK_VALID(rw_vxfp));
+    EXPECT_TRUE(RW_VX_FRAMEWORK_VALID(rw_vxfp) != 0);
 
     rw_vx_require_repository("RwTypes", "1.0");
     rw_vx_require_repository("AsyncCb", "1.0");
 
     status = rw_vx_library_open(rw_vxfp, extension, (char *)"", &common);
-    ASSERT_EQ(RW_STATUS_SUCCESS, status);
+    EXPECT_TRUE(status == RW_STATUS_SUCCESS);
 
     /* Allocate functor and get the plugin api and interface */
     functor = (AsyncCbAsyncFunctorInstance *) g_object_new(
@@ -1817,10 +1710,9 @@ class RwAsyncCb : public ::testing::Test {
                                              (void **) &klass,
                                              (void **) &interface,
                                              NULL);
-    ASSERT_EQ(RW_STATUS_SUCCESS, status);
-    ASSERT_TRUE(klass);
-    ASSERT_TRUE(interface);
-
+    EXPECT_TRUE(status == RW_STATUS_SUCCESS);
+    EXPECT_TRUE(klass != 0);
+    EXPECT_TRUE(interface != 0);
   }
 
   virtual void TestAsyncRequest() {
@@ -1850,9 +1742,9 @@ class RwAsyncCb : public ::testing::Test {
     for (i=0; i<200 && dispatch_callback_happened == 0; i++) {
       usleep(10 * 1000);
     }
-    ASSERT_TRUE(dispatch_callback_happened == 1);
-    ASSERT_TRUE(i < 200);		// shouldn't take even remotely 10s of ms, but if we got here it did happen
-    rwsched_dispatch_release(tenv.tasklet[0], tenv.queue);
+    EXPECT_TRUE(dispatch_callback_happened == 1);
+    EXPECT_TRUE(i < 200);// shouldn't take even remotely 10s of ms, but if we got here it did happen
+    rwsched_dispatch_queue_release(tenv.tasklet[0], tenv.queue);
   }
 
   virtual void TearDown() {
@@ -1861,10 +1753,10 @@ class RwAsyncCb : public ::testing::Test {
      */
     rw_status_t status;
     status = rw_vx_library_close(common, FALSE);
-    ASSERT_EQ(RW_STATUS_SUCCESS, status);
+    EXPECT_TRUE(status == RW_STATUS_SUCCESS);
 
     status = rw_vx_framework_free(rw_vxfp);
-    ASSERT_EQ(RW_STATUS_SUCCESS, status);
+    EXPECT_TRUE(status == RW_STATUS_SUCCESS);
   }
 };
 

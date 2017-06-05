@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -47,7 +33,7 @@ static rwdts_member_rsp_code_t on_tasklet_info(
   rw_status_t status;
   struct rwmain_gi * rwmain;
   rwvcs_instance_ptr_t rwvcs;
-  rw_component_info * component;
+  rw_component_info * component = NULL;
   rw_component_info * parent = NULL;
   char * this_instance;
   size_t max_components;
@@ -57,7 +43,8 @@ static rwdts_member_rsp_code_t on_tasklet_info(
   const RWPB_T_PATHSPEC(RwBase_data_Vcs_Info) *key =
       RWPB_G_PATHSPEC_VALUE(RwBase_data_Vcs_Info);
   RWPB_T_MSG(RwBase_data_Vcs_Info_Components) components;
-
+  rwdts_member_rsp_code_t retval = RWDTS_ACTION_OK;
+  
   RW_ASSERT(xact_info);
 
   if (action != RWDTS_QUERY_READ)
@@ -79,15 +66,12 @@ static rwdts_member_rsp_code_t on_tasklet_info(
   status = rwvcs_rwzk_lookup_component(rwvcs, this_instance, component);
   //RW_ASSERT(status == RW_STATUS_SUCCESS);
   if (status != RW_STATUS_SUCCESS) {
-    free(component);
-    component = NULL;
-    goto err;
+    retval = RWDTS_ACTION_NOT_OK;
+    goto ret;
   }
-
+  
   if (!component->vm_info || !component->vm_info->leader) {
-    free(this_instance);
-    protobuf_free(component);
-    return RWDTS_ACTION_OK;
+    goto ret;
   }
 
   parent = (rw_component_info *)malloc(sizeof(rw_component_info));
@@ -95,9 +79,10 @@ static rwdts_member_rsp_code_t on_tasklet_info(
 
   status = rwvcs_rwzk_lookup_component(rwvcs, component->rwcomponent_parent, parent);
   //RW_ASSERT(status == RW_STATUS_SUCCESS);
-  if (status != RW_STATUS_SUCCESS)
-    goto err;
-
+  if (status != RW_STATUS_SUCCESS){
+    retval = RWDTS_ACTION_NOT_OK;
+    goto ret;
+  }
 
   info.components = &components;
 
@@ -119,9 +104,11 @@ static rwdts_member_rsp_code_t on_tasklet_info(
     size_t new_components;
 
     status = rwvcs_rwzk_lookup_component(rwvcs, child, &child_info);
-    if (status != RW_STATUS_SUCCESS)
-      goto err;
-
+    if (status != RW_STATUS_SUCCESS){
+      retval = RWDTS_ACTION_NOT_OK;
+      goto ret;
+    }
+    
     if (child_info.component_type == RWVCS_TYPES_COMPONENT_TYPE_RWCOLLECTION) {
       protobuf_free_stack(child_info);
       continue;
@@ -132,7 +119,8 @@ static rwdts_member_rsp_code_t on_tasklet_info(
 
     status = rwvcs_rwzk_descendents_component(rwvcs, child, &descendents);
     if (status != RW_STATUS_SUCCESS) {
-      goto err;
+      retval = RWDTS_ACTION_NOT_OK;
+      goto ret;
     }
 
     for (new_components = 0; descendents[new_components]; ++new_components) {;}
@@ -150,7 +138,8 @@ static rwdts_member_rsp_code_t on_tasklet_info(
           protobuf_free(descendents[i]);
           free(descendents);
           status = RW_STATUS_FAILURE;
-          goto err;
+          retval = RWDTS_ACTION_NOT_OK;
+          goto ret;
         }
       }
     }
@@ -173,7 +162,8 @@ static rwdts_member_rsp_code_t on_tasklet_info(
     RW_ASSERT(components.component_info);
     if (!components.component_info) {
       status = RW_STATUS_FAILURE;
-      goto err;
+      retval = RWDTS_ACTION_NOT_OK;
+      goto ret;
     }
   }
 
@@ -195,22 +185,20 @@ static rwdts_member_rsp_code_t on_tasklet_info(
 
   status = rwdts_member_send_response(xact_info->xact, xact_info->queryh, &rsp);
   RW_ASSERT(status == RW_STATUS_SUCCESS);
-
-  return RWDTS_ACTION_OK;
-
-
-err:
-  if (component)
+  
+ret:
+  if (component){
     protobuf_free(component);
-
-  if (parent)
-    free(parent);
-
+  }
+  if (parent){
+    protobuf_free(parent);
+  }
+  
   info.components = NULL;
   protobuf_free_stack(info);
   protobuf_free_stack(components);
-
-  return RWDTS_ACTION_NOT_OK;
+  
+  return retval;
 }
 
 static rwdts_member_rsp_code_t on_tasklet_resource(
@@ -283,9 +271,10 @@ static rwdts_member_rsp_code_t on_tasklet_resource(
 
     status = rwvcs_rwzk_lookup_component(rwvcs, self.rwcomponent_children[num_components], &component);
     if (component.component_type != RWVCS_TYPES_COMPONENT_TYPE_RWTASKLET) {
+      protobuf_free_stack(component);
       continue;
     }
-    protobuf_c_message_free_unpacked_usebody(NULL, &component.base);
+    protobuf_free_stack(component);
 
     status = RW_SKLIST_LOOKUP_BY_KEY(&(rwmain->tasklets), &self.rwcomponent_children[num_components], &rt);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
@@ -336,17 +325,17 @@ _fill_info:
     rwsched_tasklet_get_counters(rwmain->tasklet_info->rwsched_tasklet_info, &rwsched_counters);
 
     counters_ptr->has_sources = TRUE;
-    counters_ptr->sources = rwsched_counters.sources;
+    counters_ptr->sources = rwsched_counters.ld_sources;
     counters_ptr->has_queues = TRUE;
-    counters_ptr->queues = rwsched_counters.queues;
+    counters_ptr->queues = rwsched_counters.ld_queues;
     counters_ptr->has_sthread_queues = TRUE;
-    counters_ptr->sthread_queues = rwsched_counters.sthread_queues;
+    counters_ptr->sthread_queues = rwsched_counters.ld_sthreads;
     counters_ptr->has_sockets = TRUE;
-    counters_ptr->sockets = rwsched_counters.sockets;
+    counters_ptr->sockets = rwsched_counters.cf_sockets;
     counters_ptr->has_socket_sources = TRUE;
-    counters_ptr->socket_sources = rwsched_counters.socket_sources;
+    counters_ptr->socket_sources = rwsched_counters.cf_sources;
   }
-  protobuf_c_message_free_unpacked_usebody(NULL, &self.base);
+  protobuf_free_stack(self);
 
   memset (&rsp, 0, sizeof (rsp));
 
@@ -410,10 +399,10 @@ static rwdts_member_rsp_code_t on_tasklet_heap(
 #ifndef DIRECT_PRINT
   // Prepare the output containers
   ProtobufCMessage * msgs[1];
-  RWPB_T_MSG(RwDebug_data_RwDebug_Heap) heap;
+  RWPB_T_MSG(RwDebug_data_RwDebug_Heap) *heap = RW_MALLOC0(sizeof(*heap));
   const RWPB_T_PATHSPEC(RwDebug_data_RwDebug_Heap) *key
       = RWPB_G_PATHSPEC_VALUE(RwDebug_data_RwDebug_Heap);
-  RWPB_F_MSG_INIT(RwDebug_data_RwDebug_Heap, &heap);
+  RWPB_F_MSG_INIT(RwDebug_data_RwDebug_Heap, heap);
 
   RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet) **tasklet_ptr_ptr = NULL;
   RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet) *tasklet_ptr = NULL;
@@ -437,9 +426,10 @@ static rwdts_member_rsp_code_t on_tasklet_heap(
 
     status = rwvcs_rwzk_lookup_component(rwvcs, self.rwcomponent_children[num_components], &component);
     if (component.component_type != RWVCS_TYPES_COMPONENT_TYPE_RWTASKLET) {
+      protobuf_free_stack(component);
       continue;
     }
-    protobuf_c_message_free_unpacked_usebody(NULL, &component.base);
+    protobuf_free_stack(component);
 
     status = RW_SKLIST_LOOKUP_BY_KEY(&(rwmain->tasklets), &self.rwcomponent_children[num_components], &rt);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
@@ -461,13 +451,13 @@ _fill_info:
     }
 
 #ifndef DIRECT_PRINT
-    tasklet_ptr_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet)**)realloc(tasklet_ptr_ptr, (heap.n_tasklet+1)*sizeof(*tasklet_ptr_ptr));
+    tasklet_ptr_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet)**)realloc(tasklet_ptr_ptr, (heap->n_tasklet+1)*sizeof(*tasklet_ptr_ptr));
     tasklet_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet)*)malloc(sizeof(*tasklet_ptr));
     RWPB_F_MSG_INIT(RwDebug_data_RwDebug_Heap_Tasklet, tasklet_ptr);
-    tasklet_ptr_ptr[heap.n_tasklet] = tasklet_ptr;
-    RWPB_F_MSG_INIT(RwDebug_data_RwDebug_Heap_Tasklet, tasklet_ptr);
-    heap.tasklet = tasklet_ptr_ptr;
-    heap.n_tasklet++;
+    tasklet_ptr_ptr[heap->n_tasklet] = tasklet_ptr;
+    
+    heap->tasklet = tasklet_ptr_ptr;
+    heap->n_tasklet++;
     tasklet_ptr->name = this_instance;
     this_instance = NULL;
 #else
@@ -479,68 +469,72 @@ _fill_info:
     unsigned int how_many = (!g_malloc_intercepted ? MAX_PER_SINGLE_TASKLET : !specific_instance ? MAX_PER_TASKLET : MAX_PER_SINGLE_TASKLET);
     RW_RESOURCE_TRACK_HANDLE rwresource_track_handle =  g_rwresource_track_handle;
     //g_rwresource_track_handle = 0;
-    RW_TA_RESOURCE_TRACK_DUMP_SINK s = (RW_TA_RESOURCE_TRACK_DUMP_SINK)RW_MALLOC0(sizeof(*s)*how_many);
-    RW_RESOURCE_TRACK_DUMP_STRUCT(rwsched_tasklet_info->rwresource_track_handle, s, how_many);
-    RW_ASSERT(s[0].sink_used <= how_many);
+    RW_TA_RESOURCE_TRACK_DUMP_SINK sink = (RW_TA_RESOURCE_TRACK_DUMP_SINK)RW_MALLOC0(sizeof(*sink)*how_many);
+    RW_RESOURCE_TRACK_DUMP_STRUCT(rwsched_tasklet_info->rwresource_track_handle, sink,
+                                  how_many);
+    RW_ASSERT(sink[0].sink_used <= how_many);
 
 #ifndef DIRECT_PRINT
     RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation) **allocation_ptr_ptr = NULL;
     RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation) *allocation_ptr = NULL;
 
     RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Memory) *memory_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Memory)*)malloc(sizeof(*memory_ptr));
+    RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller) **caller_ptr_ptr = NULL;
+    RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller) *caller_ptr = NULL;
     RWPB_F_MSG_INIT(RwDebug_data_RwDebug_Heap_Tasklet_Memory, memory_ptr);
     tasklet_ptr->memory = memory_ptr;
+    tasklet_ptr->allocation =                                           \
+        allocation_ptr_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation)**)RW_MALLOC0(sizeof(*allocation_ptr_ptr)*(sink[0].sink_used));
+    RW_ASSERT(allocation_ptr_ptr != NULL);
+    tasklet_ptr->n_allocation = 0;
 #endif
 
-    //fprintf(stderr, "%s RW_RESOURCE_TRACK_%d\n", tasklet_ptr->name, s[0].sink_used);
+    //fprintf(stderr, "%s RW_RESOURCE_TRACK_%d\n", tasklet_ptr->name, sink[0].sink_used);
 
     unsigned int i=0;
     unsigned long memory_allocated;
     memory_allocated = 0;
-    for (i=0; i<s[0].sink_used; i++) {
-      if (s[i].obj_type == RW_RAW_OBJECT || s[i].obj_type == RW_CF_OBJECT || s[i].obj_type == RW_MALLOC_OBJECT) {
-        memory_allocated += s[i].size;
+    
+    for (i=0; i<sink[0].sink_used; i++) {
+      if (sink[i].obj_type == RW_RAW_OBJECT || sink[i].obj_type == RW_CF_OBJECT || sink[i].obj_type == RW_MALLOC_OBJECT) {
+        memory_allocated += sink[i].size;
         if (!g_malloc_intercepted && i>MAX_PER_TASKLET) 
           continue;
 #ifndef DIRECT_PRINT
-        tasklet_ptr->allocation = \
-        allocation_ptr_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation)**)realloc(allocation_ptr_ptr, sizeof(*allocation_ptr_ptr)*(tasklet_ptr->n_allocation+1));
-        RW_ASSERT(allocation_ptr_ptr != NULL);
-        allocation_ptr_ptr[tasklet_ptr->n_allocation] = \
+        allocation_ptr_ptr[tasklet_ptr->n_allocation] =                 \
         allocation_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation)*)malloc(sizeof(*allocation_ptr));
         RW_ASSERT(allocation_ptr != NULL);
         tasklet_ptr->n_allocation++;
         RWPB_F_MSG_INIT(RwDebug_data_RwDebug_Heap_Tasklet_Allocation, allocation_ptr);
         allocation_ptr->has_address = TRUE;
-        allocation_ptr->address = (uint64_t)s[i].sink;
-        //allocation_ptr->type = (char*)s[i].name;
-        allocation_ptr->type = strdup(s[i].name);
+        allocation_ptr->address = (uint64_t)sink[i].sink;
+        //allocation_ptr->type = (char*)sink[i].name;
+        allocation_ptr->type = strdup(sink[i].name);
         allocation_ptr->has_size = TRUE;
-        allocation_ptr->size = s[i].size;
+        allocation_ptr->size = sink[i].size;
+        allocation_ptr->caller =                                        \
+            caller_ptr_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller)**)RW_MALLOC0(sizeof(*caller_ptr_ptr)*(RW_RESOURCE_TRACK_MAX_CALLERS));
+        RW_ASSERT(caller_ptr_ptr != NULL);      
+        allocation_ptr->n_caller  = 0;
 #else
         fprintf(stderr, "  allocation:\n");
-        fprintf(stderr, "    size: %-10u type: %s\n", s[i].size, s[i].name);
+        fprintf(stderr, "    size: %-10u type: %s\n", sink[i].size, sink[i].name);
 #endif
-
-        if (s[i].obj_type == RW_MALLOC_OBJECT) {
-          RW_ASSERT(s[i].obj_type == RW_MALLOC_OBJECT);
+        
+        if (sink[i].obj_type == RW_MALLOC_OBJECT) {
+          RW_ASSERT(sink[i].obj_type == RW_MALLOC_OBJECT);
+          int j;
+          for (j=0; j<RW_RESOURCE_TRACK_MAX_CALLERS && sink[i].callers[j]; j++) {
 #ifndef DIRECT_PRINT
-          RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller) **caller_ptr_ptr = NULL;
-          RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller) *caller_ptr = NULL;
-#endif
-          int j; for (j=0; j<RW_RESOURCE_TRACK_MAX_CALLERS && s[i].callers[j]; j++) {
-#ifndef DIRECT_PRINT
-            allocation_ptr->caller = \
-            caller_ptr_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller)**)realloc(caller_ptr_ptr, sizeof(*caller_ptr_ptr)*(allocation_ptr->n_caller+1));
-            RW_ASSERT(caller_ptr_ptr != NULL);
-            caller_ptr_ptr[allocation_ptr->n_caller] = \
-            caller_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller)*)malloc(sizeof(*caller_ptr));
+            caller_ptr_ptr[allocation_ptr->n_caller] =                  \
+                caller_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller)*)malloc(sizeof(*caller_ptr));
             RW_ASSERT(caller_ptr != NULL);
+            
             RWPB_F_MSG_INIT(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller, caller_ptr);
             if (g_heap_decode_using == RW_DEBUG_DECODE_TYPE_BTRACE) {
-              caller_ptr->info = rw_btrace_get_proc_name(s[i].callers[j]);
+              caller_ptr->info = rw_btrace_get_proc_name(sink[i].callers[j]);
             } else if (g_heap_decode_using == RW_DEBUG_DECODE_TYPE_UNWIND) {
-              caller_ptr->info = rw_unw_get_proc_name(s[i].callers[j]);
+              caller_ptr->info = rw_unw_get_proc_name(sink[i].callers[j]);
             } else {
               RW_CRASH();
             }
@@ -548,9 +542,9 @@ _fill_info:
 #else
             char *str;
             if (g_heap_decode_using == RW_DEBUG_DECODE_TYPE_BTRACE) {
-              str = rw_btrace_get_proc_name(s[i].callers[j]);
+              str = rw_btrace_get_proc_name(sink[i].callers[j]);
             } else if (g_heap_decode_using == RW_DEBUG_DECODE_TYPE_UNWIND) {
-              str = rw_unw_get_proc_name(s[i].callers[j]);
+              str = rw_unw_get_proc_name(sink[i].callers[j]);
             } else {
               RW_CRASH();
             }
@@ -558,23 +552,18 @@ _fill_info:
             free(str);
 #endif
           }
-        } else if (s[i].loc && (s[i].obj_type == RW_RAW_OBJECT || s[i].obj_type == RW_CF_OBJECT)) {
-          RW_ASSERT(s[i].obj_type == RW_RAW_OBJECT ||
-                    s[i].obj_type == RW_CF_OBJECT);
+        } else if (sink[i].loc && (sink[i].obj_type == RW_RAW_OBJECT || sink[i].obj_type == RW_CF_OBJECT)) {
+          RW_ASSERT(sink[i].obj_type == RW_RAW_OBJECT ||
+                    sink[i].obj_type == RW_CF_OBJECT);
 #ifndef DIRECT_PRINT
-          RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller) **caller_ptr_ptr = NULL;
-          RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller) *caller_ptr = NULL;
-          allocation_ptr->caller = \
-          caller_ptr_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller)**)realloc(caller_ptr_ptr, sizeof(*caller_ptr_ptr)*(allocation_ptr->n_caller+1));
-          RW_ASSERT(caller_ptr_ptr != NULL);
-          caller_ptr_ptr[allocation_ptr->n_caller] = \
+          caller_ptr_ptr[allocation_ptr->n_caller] =                    \
           caller_ptr = (RWPB_T_MSG(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller)*)malloc(sizeof(*caller_ptr));
           RW_ASSERT(caller_ptr != NULL);
           RWPB_F_MSG_INIT(RwDebug_data_RwDebug_Heap_Tasklet_Allocation_Caller, caller_ptr);
-          caller_ptr->info = strdup(s[i].loc);
+          caller_ptr->info = strdup(sink[i].loc);
           allocation_ptr->n_caller++;
 #else
-          fprintf(stderr, "    caller0: %s\n", s[i].loc);
+          fprintf(stderr, "    caller0: %s\n", sink[i].loc);
 #endif
         }
       }
@@ -584,13 +573,15 @@ _fill_info:
     memory_ptr->has_allocated = TRUE;
     memory_ptr->allocated = (!g_malloc_intercepted ? memory_allocated : rwsched_tasklet_info->counters.memory_allocated);
     memory_ptr->has_chunks = TRUE;
-    memory_ptr->chunks = (!g_malloc_intercepted ? s[0].sink_used : rwsched_tasklet_info->counters.memory_chunks);
+    memory_ptr->chunks = (!g_malloc_intercepted ? sink[0].sink_used : rwsched_tasklet_info->counters.memory_chunks);
 
 #endif
-    if (s) RW_FREE(s);
+    if (sink)
+      RW_FREE(sink);
     g_rwresource_track_handle = rwresource_track_handle;
   }
-  protobuf_c_message_free_unpacked_usebody(NULL, &self.base);
+  protobuf_free_stack(self);
+
 
   dts_ret = RWDTS_ACTION_OK;
 
@@ -600,15 +591,15 @@ _fill_info:
   if (tasklet_ptr_ptr) {
     // Finally, send the result.
     rsp.msgs = msgs;
-    rsp.msgs[0] = &heap.base;
+    rsp.msgs[0] = &heap->base;
     rsp.n_msgs = 1;
     rsp.ks = (rw_keyspec_path_t*)key;
     rsp.evtrsp = RWDTS_EVTRSP_ACK;
     status = rwdts_member_send_response(xact_info->xact, xact_info->queryh, &rsp);
     RW_ASSERT(status == RW_STATUS_SUCCESS);
 
-    protobuf_free_stack(heap);
   }
+  protobuf_c_message_free_unpacked(NULL, &heap->base);
 #else
   dts_ret = RWDTS_ACTION_OK;
 #endif
@@ -1057,7 +1048,7 @@ done:
   if (instance_name)
     free(instance_name);
 
-  protobuf_c_message_free_unpacked_usebody(NULL, &self.base);
+  protobuf_free_stack(self);
 
   return dts_ret;
 }
@@ -1172,8 +1163,18 @@ static rwdts_member_rsp_code_t on_vcs_proc_heartbeat_sub(
     rwmain->rwvx->rwvcs->heartbeatmon_enabled = req->enabled;
   }
 
+  //delete still not supported
+  if (req->has_lost_vm_timeout) {
+    RW_ASSERT(rwmain->rwvx->rwvcs);
+    rwmain->rwvx->rwvcs->serf_event_timeout = req->lost_vm_timeout;
+  }
+
   return dts_ret;
 }
+
+
+
+
 
 static rwdts_member_rsp_code_t on_version(
     const rwdts_xact_info_t * xact_info,
@@ -1296,35 +1297,12 @@ char * rwvcs_get_publish_xpath(
   char *xpath = NULL;
   RW_ASSERT(child_name);
 
-  rw_component_info component;
   switch (component_type) {
     case RWVCS_TYPES_COMPONENT_TYPE_RWCOLLECTION: {
       break;
-      if (!parent_name) {
-        return NULL;
-      }
-      if (internal) {
-        rs = rwvcs_rwzk_lookup_component_internal(
-            rwvcs,
-            parent_name, 
-            &component);
-      }
-      else {
-        rs = rwvcs_rwzk_lookup_component(
-            rwvcs,
-            parent_name, 
-            &component);
-      }
-      RW_ASSERT(rs == RW_STATUS_SUCCESS);
-      if (component.component_type == RWVCS_TYPES_COMPONENT_TYPE_RWCOLLECTION) {
-        int r = asprintf(&xpath,
-                 VCS_INSTANCE_XPATH_FMT,
-                 parent_name);
-        RW_ASSERT(r != -1);
-      }
     }
-    break;
     case RWVCS_TYPES_COMPONENT_TYPE_RWVM: {
+      rw_component_info component;
       if (strcmp(rwvcs->instance_name, child_name) ||
           !parent_name) {
         return NULL;
@@ -1348,6 +1326,7 @@ char * rwvcs_get_publish_xpath(
                  parent_name);
         RW_ASSERT(r != -1);
       }
+      protobuf_free_stack(component);
     }
     break;
     case RWVCS_TYPES_COMPONENT_TYPE_RWPROC:{
@@ -1439,7 +1418,7 @@ rw_status_t rwvcs_instance_update_child_state(
 
     // Free the protobuf
     if (inst) {
-      protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)inst);
+      protobuf_c_message_free_unpacked(NULL, (ProtobufCMessage*)inst);
     }
   }
 skip_to_done:
@@ -1589,6 +1568,7 @@ static void send2dts_stop_req_done(
       status = rwvcs_instance_delete_instance(cls->rwmain);
       RW_ASSERT(status == RW_STATUS_SUCCESS);
     }
+    protobuf_free_stack(self);
   }
 
   free(cls->instance_name);
@@ -1660,7 +1640,7 @@ rw_status_t send2dts_start_req(
 
   // Free the protobuf
   if (inst) {
-    protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)inst);
+    protobuf_c_message_free_unpacked(NULL, (ProtobufCMessage*)inst);
   }
 
   return RW_STATUS_SUCCESS;
@@ -1747,10 +1727,7 @@ rw_status_t send2dts_stop_req(
 
   // Free the protobuf
   if (inst) {
-    protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)inst);
-  }
-  if (child_n) {
-    protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)child_n);
+    protobuf_c_message_free_unpacked(NULL, (ProtobufCMessage*)inst);
   }
   
   return RW_STATUS_SUCCESS;
@@ -1788,7 +1765,6 @@ static void rwmain_dts_vcs_instance_reg_ready(
     RWPB_F_MSG_INIT(RwBase_VcsInstance_Instance_ChildN, child_n);
     child_n->has_component_type = TRUE;
     child_n->component_type = component.component_type;
-    protobuf_c_message_free_unpacked_usebody(NULL, &component.base);
     child_n->instance_name = strdup(self.rwcomponent_children[num_components]);
     inst->child_n = (RWPB_T_MSG(RwBase_VcsInstance_Instance_ChildN)**)realloc(inst->child_n, sizeof(*inst->child_n)*(inst->n_child_n+1));
     inst->child_n[inst->n_child_n] = child_n;
@@ -1797,6 +1773,7 @@ static void rwmain_dts_vcs_instance_reg_ready(
             self_instance,
             (int)inst->n_child_n,
             self.rwcomponent_children[num_components]);
+    protobuf_free_stack(component);
   }
   rs = rwdts_member_reg_handle_update_element_xpath(
       VCS_GET(rwmain)->vcs_instance_regh,
@@ -1806,9 +1783,10 @@ static void rwmain_dts_vcs_instance_reg_ready(
       NULL);
   RW_ASSERT(rs==RW_STATUS_SUCCESS);
 
+  protobuf_free_stack(self);
   // Free the protobuf
   if (inst) {
-    protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)inst);
+    protobuf_c_message_free_unpacked(NULL, (ProtobufCMessage*)inst);
   }
   
   return;
@@ -1879,7 +1857,7 @@ static rwdts_member_rsp_code_t rwmain_dts_vcs_instance_prepare(
 
         // Free the protobuf
         if (inst) {
-          protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)inst);
+          protobuf_c_message_free_unpacked(NULL, (ProtobufCMessage*)inst);
         }
       }
     }
@@ -2031,7 +2009,7 @@ rw_status_t rwmain_setup_dts_registrations(struct rwmain_gi * rwmain)
         .cb.prepare = &on_vcs_proc_heartbeat_sub,
       }
     },
-
+    
     {
       .keyspec = (rw_keyspec_path_t *)RWPB_G_PATHSPEC_VALUE(RwDebug_data_RwDebug_Settings_Scheduler),
       .desc = RWPB_G_MSG_PBCMD(RwDebug_data_RwDebug_Settings_Scheduler),

@@ -164,10 +164,16 @@ static int rw_get_file_and_line(unw_word_t addr,
   }
 
   // get function name
-  fgets(buf, 256, f);
+  if (fgets(buf, 256, f) == NULL) { 
+    pclose(f);
+    return 0;
+  }
 
   // get file and line
-  fgets(buf, 256, f);
+  if (fgets(buf, 256, f) == NULL) { 
+    pclose(f);
+    return 0;
+  }
 
   if (buf[0] != '?') {
     char *p = buf;

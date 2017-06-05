@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file confd_test.cpp
@@ -198,7 +179,7 @@ TEST(ConfdUtTranslation, DomToConfd)
   ConfdUnittestHarness::sockaddr_t sa;
   harness->make_confd_sockaddr(&sa);
 
-  EXPECT_TRUE(harness->wait_till_phase2(&sa));
+  ASSERT_TRUE(harness->wait_till_phase2(&sa));
 
   {
 
@@ -332,7 +313,7 @@ TEST(ConfdUtTranslation, FindHkeyPath)
   ConfdUnittestHarness::sockaddr_t sa;
   harness->make_confd_sockaddr(&sa);
 
-  EXPECT_TRUE(harness->wait_till_phase2(&sa));
+  ASSERT_TRUE(harness->wait_till_phase2(&sa));
 
   {
 
@@ -537,7 +518,7 @@ TEST(ConfdUtHarness, Connect)
   ConfdUnittestHarness::sockaddr_t sa;
   harness->make_confd_sockaddr(&sa);
 
-  EXPECT_TRUE(harness->wait_till_phase2(&sa));
+  ASSERT_TRUE(harness->wait_till_phase2(&sa));
 
   {
     int cdb_fd = harness->alloc_confd_socket();
@@ -615,7 +596,7 @@ TEST(ConfdUtTranslation, ConfdNewBuilder)
   ConfdUnittestHarness::sockaddr_t sa;
   harness->make_confd_sockaddr(&sa);
 
-  EXPECT_TRUE(harness->wait_till_phase2(&sa));
+  ASSERT_TRUE(harness->wait_till_phase2(&sa));
 
   {
 
@@ -770,7 +751,7 @@ TEST(ConfdUtTranslation, KeylessLists)
   ConfdUnittestHarness::sockaddr_t sa;
   harness->make_confd_sockaddr(&sa);
 
-  EXPECT_TRUE(harness->wait_till_phase2(&sa));
+  ASSERT_TRUE(harness->wait_till_phase2(&sa));
 
   {
 
@@ -919,7 +900,7 @@ TEST(ConfdUtTranslation, DynamicSchema)
   ConfdUnittestHarness::sockaddr_t sa;
   harness->make_confd_sockaddr(&sa);
 
-  EXPECT_TRUE(harness->wait_till_phase2(&sa));
+  ASSERT_TRUE(harness->wait_till_phase2(&sa));
 
   {
     ASSERT_EQ (CONFD_OK, confd_load_schemas ((struct sockaddr *)&sa, sizeof(sa)) );

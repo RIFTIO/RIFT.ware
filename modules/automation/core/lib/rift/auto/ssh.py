@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# STANDARD_RIFT_IO_COPYRIGHT #
 
 # file ssh.py
 # author Karun Ganesharatnam (karun.ganesharatnam@riftio.com)
@@ -38,6 +24,9 @@ class NoPromptError(Exception):
     pass
 
 class SessionError(Exception):
+    pass
+
+class MaxAttemptsExceededException(Exception):
     pass
 
 class Session:
@@ -255,3 +244,137 @@ class RiftRootSession(Session):
         if trim:
             res = '\n'.join(res.splitlines()[1:-1])
         return res
+
+
+class SshSession(object):
+    BUF_SIZE = 64 * 1024
+
+    def __init__(self, remote_host):
+        self.remote_host = remote_host
+        self.remote_conn = paramiko.SSHClient()
+        self.remote_conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.sftp = ''
+
+    def connect(self, username=None, password=None, private_key_file=None, port=22, max_attempts=4):
+        """Establishes SSH session to the remote host with given credentials.
+        """
+        number_of_attempts = 1
+        while number_of_attempts <= max_attempts:
+            logger.info('Establishing ssh session to host {0} with {1} attempt number:{2}'.format(self.remote_host, username, number_of_attempts))
+            try:
+                self.remote_conn.connect(self.remote_host, username=username, password=password,
+                                         key_filename=private_key_file, port=port)
+                return True
+            except paramiko.AuthenticationException as err:
+                logger.error("Authentication failed. Error details: {}".format(str(err)))
+            except paramiko.SSHException as err:
+                logger.error("Error in connecting or establishing ssh session to {0}. Error details: {1}".format(
+                    self.remote_host, str(err)))
+            except Exception as err:
+                logger.error('Not able to connect to {0}. Error details: {1}'.format(self.remote_host, str(err)))
+            time.sleep(30)
+            number_of_attempts += 1
+        #If it ever comes out the while loop, it means number_of_attempts has exceeded the limit and that should raise an exception.
+        raise MaxAttemptsExceededException("Attempts to connect failed.")
+
+    def close(self):
+        try:
+            self.remote_conn.close()
+        except Exception:
+            pass
+
+    def run_command(self, command, max_wait=300, get_pty=False):
+        """Executes command over a new channel in the existing SSH session.
+        Enable get_pty for commands to be run in a tty e.g commands starting with sudo.
+        It accepts timeout value through 'max_wait' argument and its default value is 300 seconds.
+
+        Returns:
+            A tuple carrying exit code of the command execution and the command output (including standard error
+             in case of any error in command execution).
+            exit code None will indicate command timeout (exceeded the max_wait)
+        """
+        self.output = ''
+        self.err = ''
+        self.exit_code = None
+        timeout_flag = True
+
+        if not self.remote_conn.get_transport():
+            logger.error('SSH connection to {} not open. Try establishing ssh session using connect method'.format(
+                self.remote_host))
+            return 1, '', ''
+
+        if not get_pty:
+            if 'sudo ' in command:
+                get_pty = True
+        logger.info("{}   -  {}".format(self.remote_host, command))
+        _, out, err = self.remote_conn.exec_command(command, timeout=max_wait, get_pty=get_pty)
+
+        def _read_stdout():
+            if out.channel.recv_ready():
+                tmp_ = out.channel.recv(self.BUF_SIZE)
+                try:
+                    tmp_ = str(tmp_, 'utf-8')
+                except Exception:
+                    tmp_ = str(tmp_)
+                logger.info(tmp_)
+                self.output += tmp_
+                # recv(<nBytes>) will block if no data available to read; always call recv_ready() before calling recv()
+                # socket.timeout error will come after timeout secs (if timeout is set)
+
+        def _read_stderr():
+            if out.channel.recv_stderr_ready():
+                tmp_ = out.channel.recv_stderr(self.BUF_SIZE)
+                try:
+                    tmp_ = str(tmp_, 'utf-8')
+                except:
+                    tmp_ = str(tmp_)
+                logger.info(tmp_)
+                self.err += tmp_
+
+        start_time = time.time()
+        while time.time() - start_time < max_wait:
+            _read_stdout()
+            _read_stderr()
+            if out.channel.exit_status_ready():
+                self.exit_code = out.channel.exit_status
+                timeout_flag = False
+                break
+            time.sleep(1)
+
+        if timeout_flag:
+            logger.error('TIMEOUT in execution of {}'.format(command))
+            # return None, '', ''
+            # Implement if the running instance of the command needs to be killed because of timeout
+            # self.output.close()
+
+        # Read any remaining bytes from both stdout, stderr of the executed command
+        _read_stdout()
+        _read_stderr()
+
+        return self.exit_code, self.output, self.err
+
+    def get(self, remotepath, localpath):
+        """To get a file from remote machine using existing ssh session"""
+        logger.info("Getting file {} from {}".format(remotepath, self.remote_host))
+        try:
+            if not self.sftp:
+                self.sftp = self.remote_conn.open_sftp()
+            self.sftp.get(remotepath, localpath)
+            if os.path.exists(localpath):
+                return True
+            return False
+        except Exception as ex:
+            logger.error("Failed to get remote file. Error: {}".format(ex))
+            return False
+
+    def put(self, localpath, remotepath):
+        """To transfer a file to remote machine using existing ssh session"""
+        logger.info("Putting file {} to {}".format(localpath, self.remote_host))
+        try:
+            if not self.sftp:
+                self.sftp = self.remote_conn.open_sftp()
+            self.sftp.put(localpath, remotepath)
+            return True
+        except Exception as ex:
+            logger.error("Failed to copy local file to remote machine. Error: {}".format(ex))
+            return False

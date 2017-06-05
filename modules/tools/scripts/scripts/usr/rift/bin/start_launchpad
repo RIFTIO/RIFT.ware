@@ -1,0 +1,67 @@
+#!/bin/bash
+#   Copyright 2017 RIFT.io Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+# startup script for RIFT.ware launchpad
+#
+# 30 Mar 2017 -- Jeremy Mordkoff -- Genesis
+
+
+if [ $EUID != 0 ]; then
+    echo "RIFT.ware launchpad must be run as root"
+    exit 1
+fi
+
+# handle the case where we are invoked from outside a RIFT-shell 
+# in this case, assume we are on a system that was installed from packages
+
+if [ -z "$RIFT_ROOT" ]; then
+    if [ ! -f /usr/rift/rift-shell ]; then
+        echo "Please run this script in a container that was installed from packages OR from inside a RIFT-shell"
+        exit 1
+    fi
+    exec /usr/rift/rift-shell -i /usr/rift -a /usr/rift/.artifacts -r -- $0 $@
+    echo "exec of rift-shell failed"
+    exit 1
+else
+    cd $RIFT_ROOT
+fi
+
+# RIFT-15828 -- make sure root's ssh keys are useable
+mkdir -p /root/.ssh
+if [ ! -f /root/.ssh/id_rsa ]; then
+    ssh-keygen -f /root/.ssh/id_rsa -N ""
+fi
+if ! grep -q -F -x -f /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys; then
+    cat /root/.ssh/id_rsa.pub >>/root/.ssh/authorized_keys
+fi
+if [ ! -f /root/.ssh/config ] || ! grep -q -F -x 'StrictHostKeyChecking no' /root/.ssh/config; then
+    echo StrictHostKeyChecking no >>/root/.ssh/config
+fi
+
+chmod -R 600 /root/.ssh/
+chmod 700 /root/.ssh
+chown -R root:root  /root/.ssh
+
+
+
+
+# we are in a rift-shell
+# start launchpad
+
+if [ "$1" == "/sbin/init" ]; then
+    # we are getting called by tini
+    shift
+fi
+exec ./demos/launchpad.py $@

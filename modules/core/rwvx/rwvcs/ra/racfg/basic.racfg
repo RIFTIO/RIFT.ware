@@ -1,0 +1,17 @@
+{
+  "test_name":"TC_BASIC_0100",
+  "commandline":"./basic_systest --cloud-type 'openstack' --cloud-host={cloud_host} --sysinfo  --user={user} {tenants} --repeat-system 1 --repeat 1 --sysinfo --netconf --restconf",
+  "test_description":"basic: system test",
+  "run_as_root": false,
+  "status":"working",
+  "keywords":["nightly","smoke","MANO","smoke_stable"],
+  "timelimit": 2400,
+  "networks":[],
+  "vms":[
+    {
+      "name": "rift_auto_launchpad",
+      "memory": 4096,
+      "cpus": 2
+    }
+  ]
+}

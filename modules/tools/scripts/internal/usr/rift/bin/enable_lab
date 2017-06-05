@@ -16,7 +16,7 @@
 #
 # 6 July 2016 -- Jeremy Mordkoff -- use apt-get not apt
 
-
+set -x
 function usage()
 {
 cat <<-END >&2
@@ -25,6 +25,7 @@ cat <<-END >&2
                       # mode. Good for running via do_cloud
         -s site       # site options: "blr" or  "eng", default is "eng"
         -d            # debug mode
+        -C            # set up appropriately for a container
         -h            # this help
    
 END
@@ -40,11 +41,12 @@ else
 fi
 
 ### process options
-while getopts s:ch opt
+while getopts s:chnC opt
 do
         case $opt in
         s)      opt_site=1; site=$OPTARG ;;
         c)      opt_circuit_short=1 ;;
+	C)      opt_container=1 ;;
         d)      opt_debug=1 ;;
         h|?)    usage ;;
         esac
@@ -115,7 +117,11 @@ fi
 time ${USR_RIFT}/setup/scripts/ldap $LAB
 
 echo "setting up nfs and autofs...."
-${USR_RIFT}/setup/scripts/nfs
+if [[ $opt_container -eq 1 ]]; then
+    ${USR_RIFT}/setup/scripts/nfs -C
+else
+    ${USR_RIFT}/setup/scripts/nfs
+fi
 echo "...done"
 
 

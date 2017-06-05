@@ -15,7 +15,7 @@ from .pathwalker import (
 
 def get_so_for_module(module):
     library_directory = os.environ["RIFT_INSTALL"] + "/usr"
-    pkg_config_command = "pkg-config --define-variable=prefix=%s --libs %s" % (library_directory, module)
+    pkg_config_command = "pkg-config --define-variable=prefix=%s --libs-only-l %s" % (library_directory, module)
     result = subprocess.check_output(pkg_config_command, shell=True).decode('utf-8')
     so_name = "lib" + result.split("-l")[-1].strip() + ".so"
     return so_name

@@ -1,18 +1,4 @@
-/* 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- * */
+/* STANDARD_RW_IO_COPYRIGHT */
 
 /**
  * @file testycli.hpp
@@ -283,7 +269,7 @@ bool TestBaseCli::exit_config_mode(bool last_mode_was_config)
   ParseLineResult r (*this, std::string("exit"),ParseLineResult::ENTERKEY_MODE);
 
   if (!r.success_) { return false;}
-  if (!r.completions_.size() == 1) { return false;}
+  if (!(r.completions_.size() == 1)) { return false;}
 
   mode_exit ();
 
@@ -2351,26 +2337,26 @@ TEST(YangCLIListMode, Config_KeyKeywordSupress)
 
   ParseLineResult a(tbcli, list_base, ParseLineResult::NO_OPTIONS);
   ASSERT_TRUE(a.success_);
-  ASSERT_EQ(2, a.completions_.size());
+  EXPECT_EQ(2, a.completions_.size());
 
   std::string key1_val("key1val ");
   ParseLineResult b(tbcli, list_base + key1_val, ParseLineResult::NO_OPTIONS);
   ASSERT_TRUE(b.success_);
-  ASSERT_EQ(2, b.completions_.size());
+  EXPECT_EQ(2, b.completions_.size());
 
   std::string key2_val("key2val ");
   ParseLineResult c(tbcli, list_base + key1_val + key2_val, ParseLineResult::NO_OPTIONS);
   ASSERT_TRUE(c.success_);
-  ASSERT_EQ(2, c.completions_.size());
+  EXPECT_EQ(2, c.completions_.size());
 
   std::string key3_val("3 ");
   ParseLineResult d(tbcli, list_base + key1_val + key2_val + key3_val, ParseLineResult::NO_OPTIONS);
   ASSERT_TRUE(d.success_);
-  ASSERT_EQ(2, d.completions_.size());
+  EXPECT_EQ(2, d.completions_.size());
 
   ParseLineResult e(tbcli, list_base + key1_val + key2_val + key3_val, ParseLineResult::ENTERKEY_MODE);
   ASSERT_TRUE(e.success_);
-  ASSERT_TRUE(e.parse_tree_->is_sentence());
+  EXPECT_TRUE(e.parse_tree_->is_sentence());
 
   ParseLineResult f(tbcli, list_base + key1_val + key2_val + key2_val, ParseLineResult::ENTERKEY_MODE);
   ASSERT_TRUE(!f.success_);
@@ -2379,12 +2365,12 @@ TEST(YangCLIListMode, Config_KeyKeywordSupress)
                     std::string("key2 ") + key2_val + 
                     std::string("key3 ") + key3_val, ParseLineResult::ENTERKEY_MODE);
   ASSERT_TRUE(g.success_);
-  ASSERT_TRUE(g.parse_tree_->is_sentence());
+  EXPECT_TRUE(g.parse_tree_->is_sentence());
 
   ParseLineResult h(tbcli, list_base + std::string("key1 ") + key1_val, 
                     ParseLineResult::ENTERKEY_MODE);
   ASSERT_TRUE(h.success_);
-  ASSERT_TRUE(h.parse_tree_->is_sentence());
+  EXPECT_TRUE(h.parse_tree_->is_sentence());
 
   ASSERT_TRUE(tbcli.exit_config_mode());
 }
@@ -3178,4 +3164,82 @@ TEST(YangCLIAppData, SuppressCommand)
 
   ParseLineResult p2(tbcli, "general-container g-list index 1",  ParseLineResult::ENTERKEY_MODE);
   ASSERT_TRUE(p2.success_);
+}
+
+TEST(YangCLIWildcard, Basic)
+{
+  TEST_DESCRIPTION("Test Wildcard parsing");
+  YangModelNcx* model = YangModelNcx::create_model();
+  YangModel::ptr_t p(model);
+  YangModule* module = nullptr;
+
+  module = model->load_module("yang-cli-test");
+  ASSERT_TRUE(module);
+
+  TestBaseCli tbcli(*model,0);
+  tbcli.set_rwcli_like_params();
+
+  ASSERT_TRUE(tbcli.enter_config_mode());
+
+  tbcli.generate_help("show key-test ");
+  tbcli.generate_help("show key-test * ");
+
+  ParseLineResult p1(tbcli, "show key-test *", ParseLineResult::ENTERKEY_MODE);
+  ASSERT_TRUE(p1.success_);
+  EXPECT_TRUE(p1.completions_[0].node_->is_sentence());
+  {
+    std::string expected_xml =
+"\n<data xmlns=\"http://riftio.com/ns/riftware-1.0/rw-base\">\n\n"
+"  <cli:key-test xmlns:cli=\"http://riftio.com/ns/yangtools/yang-cli-test\">\n"
+"    <cli:key1/>\n"
+"  </cli:key-test>\n\n"
+"</data>";
+
+    XMLDocument::uptr_t cmd_dom = std::move(tbcli.get_command_dom_from_result(
+                                                  p1.result_tree_.get()));
+    XMLNode* root = cmd_dom->get_root_node();
+    EXPECT_EQ(expected_xml, root->to_string_pretty());
+  }
+
+
+  ParseLineResult p2(tbcli, "show key-test * * * non-key1", ParseLineResult::ENTERKEY_MODE);
+  ASSERT_TRUE(p2.success_);
+  EXPECT_TRUE(p2.parse_tree_->is_sentence());
+  {
+    std::string expected_xml =
+"\n<data xmlns=\"http://riftio.com/ns/riftware-1.0/rw-base\">\n\n"
+"  <cli:key-test xmlns:cli=\"http://riftio.com/ns/yangtools/yang-cli-test\">\n"
+"    <cli:key1/>\n"
+"    <cli:key2/>\n"
+"    <cli:key3/>\n"
+"    <cli:non-key1/>\n"
+"  </cli:key-test>\n\n"
+"</data>";
+
+    XMLDocument::uptr_t cmd_dom = std::move(tbcli.get_command_dom_from_result(
+                                                  p2.result_tree_.get()));
+    XMLNode* root = cmd_dom->get_root_node();
+    EXPECT_EQ(expected_xml, root->to_string_pretty());
+  }
+
+  ParseLineResult p3(tbcli, "show key-test * * 16 non-key1", ParseLineResult::ENTERKEY_MODE);
+  ASSERT_TRUE(p3.success_);
+  EXPECT_TRUE(p3.parse_tree_->is_sentence());
+  {
+    std::string expected_xml = 
+"\n<data xmlns=\"http://riftio.com/ns/riftware-1.0/rw-base\">\n\n"
+"  <cli:key-test xmlns:cli=\"http://riftio.com/ns/yangtools/yang-cli-test\">\n"
+"    <cli:key1/>\n"
+"    <cli:key2/>\n"
+"    <cli:key3>16</cli:key3>\n"
+"    <cli:non-key1/>\n"
+"  </cli:key-test>\n\n"
+"</data>";
+    XMLDocument::uptr_t cmd_dom = std::move(tbcli.get_command_dom_from_result(
+                                                  p3.result_tree_.get()));
+    XMLNode* root = cmd_dom->get_root_node();
+    EXPECT_EQ(expected_xml, root->to_string_pretty());
+  }
+
+  EXPECT_TRUE(tbcli.exit_config_mode());
 }

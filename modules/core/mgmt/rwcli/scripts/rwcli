@@ -8,6 +8,7 @@ fi
 
 zsh_bin="/usr/bin/zsh"
 zsh_cmd=${zsh_bin}
+test_name=""
 
 if [ -z "${RIFT_MODULE_PATH}" ]; then
   echo "WARNING: RIFT_MODULE_PATH not found. Setting to a reasonable default."
@@ -18,7 +19,7 @@ while [[ $# > 0 ]]
 do
   arg=$1
   case $arg in
-    --trace_level | --netconf_host | --netconf_port | --username | --passwd | --rift_var_root)
+    --trace_level | --netconf_host | --netconf_port | --username | --passwd)
       zsh_cmd="${zsh_cmd} $1 $2"
       shift 2
     ;;
@@ -47,6 +48,19 @@ do
       quoted_cmd=$2
       shift 2
     ;;
+    --test-name)
+      test_name=$2
+      shift 2
+    ;;
+    --rift_var_root)
+      if [ ! -d "$2" ]; then 
+         echo "RIFT_VAR_ROOT '$2' not found"
+         exit 1
+      fi
+      export RIFT_VAR_ROOT="$2"
+      shift 2
+    ;;
+
     *)
      echo "Error Unknown option $arg to rwcli"
      exit 1
@@ -55,7 +69,26 @@ done
 
 if [ -n "${show_help}" ]; then
    zsh_cmd="${zsh_bin} --help"
-   exec ${zsh_cmd}
+   ${zsh_cmd}
+   echo "  --test-name      NAME	Test Name with which Riftware was launched"
+   exit 0
+fi
+
+if [ -z "${RIFT_VAR_ROOT}" ]; then
+  # Get the rift-var-root
+  if [ -z ${test_name} ]
+  then
+    rift_var_root=$(rwyangutil --get-rift-var-root)
+  else
+    rift_var_root=$(rwyangutil --get-rift-var-root test-name:$test_name)
+  fi
+  rc=$?
+  if [ $rc -ne 0 ]; then
+    # Unable to set rift_var_root
+    exit 1
+  else
+    export RIFT_VAR_ROOT=${rift_var_root}
+  fi
 fi
 
 if [ -z "${quoted_cmd}" ]; then

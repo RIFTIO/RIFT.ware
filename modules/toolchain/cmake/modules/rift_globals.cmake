@@ -1,25 +1,20 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Anil Gunturu
 # Creation Date: 8/29/2013
-# 
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
 
 #minimum required cmake path
 cmake_minimum_required(VERSION 2.8)
+
 cmake_policy(VERSION 2.8)
+
+if(POLICY CMP0026)
+  cmake_policy(SET CMP0026 OLD)
+endif(POLICY CMP0026)
+
+if(POLICY CMP0046)
+  cmake_policy(SET CMP0046 OLD)
+endif(POLICY CMP0046)
 
 if(NOT DEFINED ENV{RIFT_BUILD})
     message(FATAL_ERROR "RIFT_BUILD must be set")
@@ -129,3 +124,20 @@ else()
   set(BUILD_CACHE_TYPE ${CMAKE_BUILD_TYPE}_${RIFT_AGENT_BUILD})
 endif()
 message("Build Cache Type: ${BUILD_CACHE_TYPE}")
+
+# Variable and Macro to conditionalize FPATH
+# dependent code
+
+# Flag indicate FPATH is available
+set(FPATH_AVAILABLE 0)
+if ($ENV{RIFT_PLATFORM} MATCHES "fc20")
+  set(FPATH_AVAILABLE 1)
+endif()
+
+# Macro to exclude FPATH dependent directory
+macro(FPATH_REQUIRED)
+  if (NOT FPATH_AVAILABLE)
+    message("FPATH is not available.  Excluding ${CMAKE_CURRENT_LIST_FILE}")
+    return()
+  endif()
+endmacro()

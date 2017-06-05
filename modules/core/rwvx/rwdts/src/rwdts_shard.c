@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_shard.c
  * @date Wed Aug 19 2015
@@ -69,17 +50,19 @@ rwdts_shard_deinit(rwdts_shard_t* shard_ptr)
   /* Delete the appdata related data */
   rwdts_shard_handle_appdata_delete(s);
 
-  RW_FREE_TYPE(s, rwdts_shard_t);
+  DTS_APIH_FREE_TYPE(s->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD, s, rwdts_shard_t);
 }
 
 void
 rwdts_chunk_deinit(rwdts_shard_chunk_info_t* s)
 {
+  rwdts_api_t *apih = s->parent->apih;
   RW_ASSERT_TYPE(s, rwdts_shard_chunk_info_t);
   // remove this chunk from parent shard's skip list
   HASH_DELETE(hh_chunk, s->parent->shard_chunks, s);
   rwdts_shard_handle_unref(s->parent,__PRETTY_FUNCTION__, __LINE__);
-  RW_FREE_TYPE(s, rwdts_shard_chunk_info_t);
+  DTS_APIH_FREE_TYPE(apih,
+                     RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK, s, rwdts_shard_chunk_info_t);
 }
 
 //
@@ -215,14 +198,14 @@ G_DEFINE_BOXED_TYPE(rwdts_shard_handle_t,
  *  two children b-shard and c-shard.
  */
 rwdts_shard_handle_t *
-rwdts_shard_init_keyspec(rw_keyspec_path_t *keyspec,
-                             int idx,
-                             rwdts_shard_t **parent,
-                             rwdts_shard_flavor flavor,
-                             union rwdts_shard_flavor_params_u *flavor_params,
-                             enum rwdts_shard_keyfunc_e hashfunc,
-                             union rwdts_shard_keyfunc_params_u *keyfunc_params,
-                             enum rwdts_shard_anycast_policy_e anypolicy)
+rwdts_shard_init_keyspec(rwdts_api_t *apih, rw_keyspec_path_t *keyspec,
+                         int idx,
+                         rwdts_shard_t **parent,
+                         rwdts_shard_flavor flavor,
+                         union rwdts_shard_flavor_params_u *flavor_params,
+                         enum rwdts_shard_keyfunc_e hashfunc,
+                         union rwdts_shard_keyfunc_params_u *keyfunc_params,
+                         enum rwdts_shard_anycast_policy_e anypolicy)
 {
   int i, depth, num_keys, key_index; 
   size_t length;
@@ -247,7 +230,8 @@ rwdts_shard_init_keyspec(rw_keyspec_path_t *keyspec,
   }
 
   if (*parent == NULL) {
-    *parent = RW_MALLOC0_TYPE(sizeof(rwdts_shard_t), rwdts_shard_t);
+    *parent = DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_SHARD,
+                                    sizeof(rwdts_shard_t), rwdts_shard_t);
 
     RW_ASSERT(*parent);
     if (!*parent) { return NULL; } 
@@ -281,7 +265,8 @@ rwdts_shard_init_keyspec(rw_keyspec_path_t *keyspec,
     // create if not present
     if (!shard_tab) {
       // alloc shard
-      shard_tab = (rwdts_shard_t*) RW_MALLOC0_TYPE(sizeof(rwdts_shard_t), rwdts_shard_t);
+      shard_tab = (rwdts_shard_t*) DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_SHARD,
+                                                         sizeof(rwdts_shard_t), rwdts_shard_t);
       RW_ASSERT(shard_tab);
       if (!shard_tab) {return NULL; }
 
@@ -317,7 +302,8 @@ rwdts_shard_init_keyspec(rw_keyspec_path_t *keyspec,
         HASH_FIND(hh_shard, parent_shard->children, keyptr, 
               length, shard_tab);
         if (!shard_tab) {
-          shard_tab = RW_MALLOC0_TYPE(sizeof(rwdts_shard_t), rwdts_shard_t);
+          shard_tab = DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_SHARD,
+                                            sizeof(rwdts_shard_t), rwdts_shard_t);
           RW_ASSERT(shard_tab);
           if (!shard_tab) { return NULL; } // TBD go to undo what we did so far
           shard_tab->key = keyptr; 
@@ -342,7 +328,8 @@ rwdts_shard_init_keyspec(rw_keyspec_path_t *keyspec,
       else {// key is null - wildcard key
         shard_tab = parent_shard->wildcard_shard;
         if (!shard_tab) { // allocate if not already present
-          shard_tab = RW_MALLOC0_TYPE(sizeof(rwdts_shard_t), rwdts_shard_t);
+          shard_tab = DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_SHARD,
+                                            sizeof(rwdts_shard_t), rwdts_shard_t);
           RW_ASSERT(shard_tab);
           if (!shard_tab) { return NULL; } // TBD go to undo what we did so far
           parent_shard->wildcard_shard = shard_tab;
@@ -364,7 +351,7 @@ rwdts_shard_init_keyspec(rw_keyspec_path_t *keyspec,
           shard_tab->pe_index = i;
           if (shard_tab->flavor == RW_DTS_SHARD_FLAVOR_NULL) {
             rwdts_shard_chunk_info_t *chunk = 
-              rwdts_shard_add_chunk(shard_tab, NULL);
+                rwdts_shard_add_chunk(shard_tab, NULL);
             RW_ASSERT(chunk);
           }
         }
@@ -422,9 +409,10 @@ rwdts_shard_key_init(rwdts_member_reg_handle_t reg,
   rwdts_member_registration_t* r = (rwdts_member_registration_t *)reg;
   rwdts_api_t* apih = r->apih;
   RW_ASSERT_TYPE(apih, rwdts_api_t);
-  rwdts_shard_t *shard = rwdts_shard_init_keyspec(((rwdts_member_registration_t*)reg)->keyspec,
+  rwdts_shard_t *shard = rwdts_shard_init_keyspec(r->apih,
+                                                  ((rwdts_member_registration_t*)reg)->keyspec,
                                                   idx, parent, flavor, flavor_params,
-                                                 hashfunc, keyfunc_params, anypolicy);
+                                                  hashfunc, keyfunc_params, anypolicy);
   RW_ASSERT(shard);
 
 #if 0
@@ -495,7 +483,8 @@ rwdts_shard_add_chunk_ident(rwdts_shard_handle_t *shard,
   // IDENT flavor key for the chunk will be just minikey 
   HASH_FIND(hh_chunk, shard_tab->shard_chunks, keyin, (size_t)keylen, shard_chunk);
   if (!shard_chunk) {
-    shard_chunk = RW_MALLOC0_TYPE(sizeof(rwdts_shard_chunk_info_t), rwdts_shard_chunk_info_t);
+    shard_chunk = DTS_APIH_MALLOC0_TYPE(shard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK,
+                                        sizeof(rwdts_shard_chunk_info_t), rwdts_shard_chunk_info_t);
     RW_ASSERT(shard_chunk);
     if (!shard_chunk) {
       return NULL;
@@ -529,7 +518,8 @@ rwdts_shard_add_chunk_null(rwdts_shard_handle_t *shard)
   chunk_id = shard->next_chunk_id; 
   shard->next_chunk_id++;
 
-  shard_chunk = RW_MALLOC0_TYPE(sizeof(rwdts_shard_chunk_info_t), rwdts_shard_chunk_info_t);
+  shard_chunk = DTS_APIH_MALLOC0_TYPE(shard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK,
+                                      sizeof(rwdts_shard_chunk_info_t), rwdts_shard_chunk_info_t);
   RW_ASSERT(shard_chunk);
   if (!shard_chunk) {
     return NULL;
@@ -558,7 +548,8 @@ rwdts_shard_add_chunk_range(rwdts_shard_handle_t *shard, int64_t start, int64_t 
   chunk_id = shard->next_chunk_id; 
   shard->next_chunk_id++;
 
-  shard_chunk = RW_MALLOC0_TYPE(sizeof(rwdts_shard_chunk_info_t), rwdts_shard_chunk_info_t);
+  shard_chunk = DTS_APIH_MALLOC0_TYPE(shard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK,
+                                      sizeof(rwdts_shard_chunk_info_t), rwdts_shard_chunk_info_t);
   RW_ASSERT(shard_chunk);
   if (!shard_chunk) {
     return NULL;
@@ -707,33 +698,38 @@ rwdts_shard_delete_chunk_range(rwdts_shard_handle_t *shard,  union rwdts_shard_f
 rwdts_shard_chunk_info_t *
 rwdts_shard_add_chunk(rwdts_shard_handle_t *shard, union rwdts_shard_flavor_params_u *params) 
 {
+  rwdts_shard_chunk_info_t *info = NULL;
+  
   RW_ASSERT(shard);
   if (!shard) { return NULL; }
 
   switch (shard->flavor) {
     case RW_DTS_SHARD_FLAVOR_IDENT:
      if (params->identparams.keylen) {
-       return(rwdts_shard_add_chunk_ident(shard, 
-            (uint8_t*)&params->identparams.keyin[0], params->identparams.keylen));
+       info = rwdts_shard_add_chunk_ident(shard, 
+                                          (uint8_t*)&params->identparams.keyin[0], params->identparams.keylen);
      }
      break;
     case RW_DTS_SHARD_FLAVOR_NULL:
-      return(rwdts_shard_add_chunk_null(shard));
-
+      info = rwdts_shard_add_chunk_null(shard);
+      if (info
+          && params){
+        params->nullparams.chunk_id = info->chunk_id;
+      }
+      break;
     case RW_DTS_SHARD_FLAVOR_RANGE:
-      return(rwdts_shard_add_chunk_range(shard, params->range.start_range, params->range.end_range));
-   
+      info = rwdts_shard_add_chunk_range(shard, params->range.start_range, params->range.end_range);
+      break;
     default:
       RW_ASSERT_MESSAGE(0, "flavor %d not implemented\n", shard->flavor); 
   }
-  return NULL;
+  return info;
 }
 
 rw_status_t
 rwdts_shard_delete_chunk(rwdts_shard_handle_t *shard,
                           union rwdts_shard_flavor_params_u *params)
 {
-  RW_ASSERT(shard);
   if (!shard) { return RW_STATUS_FAILURE;}
 
   switch (shard->flavor) {
@@ -1063,32 +1059,38 @@ match_failed:
 }
 
 rw_status_t
-rwdts_shard_member_delete_member_null(rwdts_shard_t *shard, char*member, bool pub) 
+rwdts_shard_member_delete_member_null(rwdts_shard_t *shard,
+                                      bool publisher, rwdts_chunk_id_t chunk_id,
+                                      char *msgpath)
 {
-  rwdts_shard_chunk_info_t *chunk=NULL, *tmp_chunk;
+  rwdts_shard_chunk_info_t *chunk;
   rwdts_chunk_member_info_t *mbr_elem = NULL;
 
-  HASH_ITER(hh_chunk, shard->shard_chunks, chunk, tmp_chunk) {
-    mbr_elem = NULL;
-    if (pub) {
-      HASH_FIND(hh_mbr_record, chunk->elems.member_info.pub_mbr_info, member, strlen(member), mbr_elem);
-      if (mbr_elem) {
-        HASH_DELETE(hh_mbr_record, chunk->elems.member_info.pub_mbr_info, mbr_elem);
-        RW_FREE(mbr_elem);
-        RW_ASSERT(chunk->elems.member_info.n_pub_reg);
-        chunk->elems.member_info.n_pub_reg--;
-      }
+  RW_ASSERT_TYPE(shard, rwdts_shard_t);
+
+  HASH_FIND(hh_chunk, shard->shard_chunks, &chunk_id, sizeof(chunk_id), chunk);
+  if (!chunk) { // kick the bucket
+    return RW_STATUS_FAILURE;
+  }
+  
+  if (publisher) {
+    HASH_FIND(hh_mbr_record, chunk->elems.member_info.pub_mbr_info, msgpath, strlen(msgpath), mbr_elem);
+    if (mbr_elem) {
+      HASH_DELETE(hh_mbr_record, chunk->elems.member_info.pub_mbr_info, mbr_elem);
+      RW_FREE(mbr_elem);
+      RW_ASSERT(chunk->elems.member_info.n_pub_reg);
+      chunk->elems.member_info.n_pub_reg--;
     }
-    else {
-      HASH_FIND(hh_mbr_record, chunk->elems.member_info.sub_mbr_info, member, strlen(member), mbr_elem);
-      if (mbr_elem) {
-        HASH_DELETE(hh_mbr_record, chunk->elems.member_info.sub_mbr_info, mbr_elem);
-        RW_FREE(mbr_elem);
-        RW_ASSERT(chunk->elems.member_info.n_sub_reg);
-        chunk->elems.member_info.n_sub_reg--;
-      }
+  } else {
+    HASH_FIND(hh_mbr_record, chunk->elems.member_info.sub_mbr_info, msgpath, strlen(msgpath), mbr_elem);
+    if (mbr_elem) {
+      HASH_DELETE(hh_mbr_record, chunk->elems.member_info.sub_mbr_info, mbr_elem);
+      RW_FREE(mbr_elem);
+      RW_ASSERT(chunk->elems.member_info.n_sub_reg);
+      chunk->elems.member_info.n_sub_reg--;
     }
   }
+  
   return RW_STATUS_SUCCESS;
 }
 
@@ -1124,20 +1126,23 @@ rwdts_shard_rtr_delete_member_null(rwdts_shard_t *shard, char*member, bool pub)
 }
 
 rw_status_t
-rwdts_shard_member_delete_element(rwdts_shard_t *shard, char *member, bool pub)
+rwdts_shard_member_delete_element(rwdts_shard_t *shard,
+                                  bool publisher, rwdts_chunk_id_t chunk_id, char *msgpath)
 {
   if (!shard) {
     return RW_STATUS_FAILURE;
   }
-  RW_ASSERT(member);
+  RW_ASSERT(msgpath);
   switch(shard->flavor) {
     case RW_DTS_SHARD_FLAVOR_NULL:
     case RW_DTS_SHARD_FLAVOR_IDENT:
     case RW_DTS_SHARD_FLAVOR_RANGE: // TBD make more efficient delete function for other flavors
-     return(rwdts_shard_member_delete_member_null(shard, member,pub));
-    break;
+      return(rwdts_shard_member_delete_member_null(shard, publisher,
+                                                   chunk_id,
+                                                   msgpath));
+      break;
     default:
-    RW_ASSERT_MESSAGE(0,"delete element not implemented for flavor = %d\n", shard->flavor);
+      RW_ASSERT_MESSAGE(0,"delete element not implemented for flavor = %d\n", shard->flavor);
   }
   return RW_STATUS_FAILURE;
 }
@@ -1202,13 +1207,13 @@ rwdts_shard_deinit_keyspec(rw_keyspec_path_t *keyspec,
   return RW_STATUS_SUCCESS;
 }
 
-rw_status_t
-rwdts_member_shard_create_element_ident(rwdts_shard_t *shard, 
-                                     rwdts_shard_chunk_info_t *shard_chunk, 
-                                     rwdts_chunk_member_info_t *mbr_info,
-                                     bool publisher, 
-                                     rwdts_chunk_id_t *chunkid, 
-                                     char *msgpath)
+static rw_status_t
+rwdts_shard_member_create_element_ident(rwdts_shard_t *shard, 
+                                        rwdts_shard_chunk_info_t *shard_chunk, 
+                                        rwdts_chunk_member_info_t *mbr_info,
+                                        bool publisher, 
+                                        rwdts_chunk_id_t *chunkid, 
+                                        char *msgpath)
 {
   rwdts_chunk_member_info_t *mbr_record;
   RW_ASSERT(mbr_info);
@@ -1232,6 +1237,9 @@ rwdts_member_shard_create_element_ident(rwdts_shard_t *shard,
   } 
 
   *chunkid = shard_chunk->chunk_id; 
+  //Memory leak below.. if there is an app which does multiple registrations to the same path then we
+  //would be adding elements to the hash below without looking up. We need reference counting for number
+  //adds..
 
   mbr_record = RW_MALLOC0(sizeof(rwdts_chunk_member_info_t));
   RW_ASSERT(mbr_info);
@@ -1265,7 +1273,7 @@ rwdts_member_shard_create_element_ident(rwdts_shard_t *shard,
 // 
 
 rw_status_t
-rwdts_rts_shard_create_element_ident(rwdts_shard_t *shard, 
+rwdts_shard_rts_create_element_ident(rwdts_shard_t *shard, 
                                      rwdts_shard_chunk_info_t *shard_chunk, 
                                      rwdts_chunk_rtr_info_t *rtr_info,
                                      bool publisher, 
@@ -1290,7 +1298,9 @@ rwdts_rts_shard_create_element_ident(rwdts_shard_t *shard,
   } 
 
   *chunkid = shard_chunk->chunk_id; 
-
+  //Memory leak below.. if there is an app which does multiple registrations to the same path then we
+  //would be adding elements to the hash below without looking up. We need reference counting for number
+  //adds..
   rtr_record = RW_MALLOC0(sizeof(rwdts_chunk_rtr_info_t));
   RW_ASSERT(rtr_info);
   if (rtr_info == NULL) { 
@@ -1319,9 +1329,9 @@ rwdts_rts_shard_create_element_ident(rwdts_shard_t *shard,
   return RW_STATUS_SUCCESS; 
 }
 
-rw_status_t
-rwdts_member_shard_create_element_null(rwdts_shard_t *shard, rwdts_chunk_member_info_t *mbr_info,
-                    bool publisher, rwdts_chunk_id_t *chunkid, char *msgpath)
+static rw_status_t
+rwdts_shard_member_create_element_null(rwdts_shard_t *shard, rwdts_chunk_member_info_t *mbr_info,
+                                              bool publisher, rwdts_chunk_id_t *chunkid, char *msgpath)
 {
   rwdts_shard_chunk_info_t *shard_chunk;
 
@@ -1355,7 +1365,9 @@ rwdts_member_shard_create_element_null(rwdts_shard_t *shard, rwdts_chunk_member_
 
   *chunkid = chunk_id;
 
-
+  //Memory leak below.. if there is an app which does multiple registrations to the same path then we
+  //would be adding elements to the hash below without looking up. We need reference counting for number
+  //adds..AKKI tbd
   rwdts_chunk_member_info_t *mbr_record = RW_MALLOC0(sizeof(rwdts_chunk_member_info_t));
   RW_ASSERT(mbr_record);
   if (mbr_record == NULL) {
@@ -1390,9 +1402,9 @@ rwdts_member_shard_create_element_null(rwdts_shard_t *shard, rwdts_chunk_member_
 // accepts shard in which we are adding (not root shard)
 // and the rtr record struct
 //
-rw_status_t
-rwdts_rts_shard_create_element_null(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
-                    bool publisher, rwdts_chunk_id_t *chunkid, uint32_t *membid, char *msgpath)
+static rw_status_t
+rwdts_shard_rts_create_element_null(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
+                                    bool publisher, rwdts_chunk_id_t *chunkid, uint32_t *membid, char *msgpath)
 {
   rwdts_shard_chunk_info_t *shard_chunk;
 
@@ -1425,8 +1437,9 @@ rwdts_rts_shard_create_element_null(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t
   } 
 
   *chunkid = chunk_id;
-
-
+  //Memory leak below.. if there is an app which does multiple registrations to the same path then we
+  //would be adding elements to the hash below without looking up. We need reference counting for number
+  //adds..
   rwdts_chunk_rtr_info_t *rtr_record = RW_MALLOC0(sizeof(rwdts_chunk_rtr_info_t));
   RW_ASSERT(rtr_record);
   if (rtr_record == NULL) {
@@ -1459,8 +1472,8 @@ rwdts_rts_shard_create_element_null(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t
 
 
 rw_status_t
-rwdts_member_shard_update_element_null(rwdts_shard_t *shard, rwdts_chunk_member_info_t *mbr_info,
-                               bool publisher, rwdts_chunk_id_t chunk_id, char *msgpath)
+rwdts_shard_member_update_element_null(rwdts_shard_t *shard, rwdts_chunk_member_info_t *mbr_info,
+                                       bool publisher, rwdts_chunk_id_t chunk_id, char *msgpath)
 {
   rwdts_shard_chunk_info_t *shard_chunk;
   rwdts_chunk_member_info_t *mbr_record = NULL; 
@@ -1498,7 +1511,7 @@ rwdts_member_shard_update_element_null(rwdts_shard_t *shard, rwdts_chunk_member_
 // and the rtr record struct
 //
 rw_status_t
-rwdts_rts_shard_update_element_null(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
+rwdts_shard_rts_update_element_null(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
                                bool publisher, rwdts_chunk_id_t chunk_id, uint32_t membid, char *msgpath)
 {
   rwdts_shard_chunk_info_t *shard_chunk;
@@ -1533,9 +1546,9 @@ rwdts_rts_shard_update_element_null(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t
   return RW_STATUS_SUCCESS;
 }
 
-rw_status_t
-rwdts_rts_shard_create_element_range(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
-                 bool publisher, rwdts_chunk_id_t *chunkid, uint32_t *membid, char *msgpath)
+static rw_status_t
+rwdts_shard_rts_create_element_range(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
+                                     bool publisher, rwdts_chunk_id_t *chunkid, uint32_t *membid, char *msgpath)
 {
   rwdts_shard_chunk_info_t *shard_chunk;
 
@@ -1602,9 +1615,9 @@ rwdts_rts_shard_create_element_range(rwdts_shard_t *shard, rwdts_chunk_rtr_info_
 }
 
 
-rw_status_t
-rwdts_member_shard_create_element_range(rwdts_shard_t *shard, rwdts_chunk_member_info_t *mbr_info,
-                 bool publisher, rwdts_chunk_id_t *chunkid, char *msgpath)
+static rw_status_t
+rwdts_shard_member_create_element_range(rwdts_shard_t *shard, rwdts_chunk_member_info_t *mbr_info,
+                                        bool publisher, rwdts_chunk_id_t *chunkid, char *msgpath)
 {
   rwdts_shard_chunk_info_t *shard_chunk;
 
@@ -1673,12 +1686,12 @@ rwdts_member_shard_create_element_range(rwdts_shard_t *shard, rwdts_chunk_member
 }
 
 rw_status_t
-rwdts_rts_shard_update_element(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
-               bool publisher, rwdts_chunk_id_t chunk_id, uint32_t membid, char *msgpath)
+rwdts_shard_rts_update_element(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr_info,
+                               bool publisher, rwdts_chunk_id_t chunk_id, uint32_t membid, char *msgpath)
 {
   switch(shard->flavor) {
     case RW_DTS_SHARD_FLAVOR_NULL:
-      return(rwdts_rts_shard_update_element_null(shard, rtr_info, publisher, chunk_id, membid, msgpath)); 
+      return(rwdts_shard_rts_update_element_null(shard, rtr_info, publisher, chunk_id, membid, msgpath)); 
     break;
     default:
     RW_CRASH();
@@ -1689,23 +1702,23 @@ rwdts_rts_shard_update_element(rwdts_shard_t *shard, rwdts_chunk_rtr_info_t *rtr
 // create a router record element in the chunk.
 // 
 rw_status_t
-rwdts_rts_shard_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *chunk, 
-                     rwdts_chunk_rtr_info_t *rtr_info, bool publisher, 
-                     rwdts_chunk_id_t *chunk_id, uint32_t *membid, char *msgpath)
+rwdts_shard_rts_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *chunk, 
+                               rwdts_chunk_rtr_info_t *rtr_info, bool publisher, 
+                               rwdts_chunk_id_t *chunk_id, uint32_t *membid, char *msgpath)
 {
   RW_ASSERT_TYPE(shard, rwdts_shard_t);
 
   switch (shard->flavor) {
     case RW_DTS_SHARD_FLAVOR_NULL:
-      return(rwdts_rts_shard_create_element_null(shard, rtr_info, publisher, chunk_id, membid, msgpath));
+      return(rwdts_shard_rts_create_element_null(shard, rtr_info, publisher, chunk_id, membid, msgpath));
       break;
 
     case RW_DTS_SHARD_FLAVOR_IDENT:
-      return(rwdts_rts_shard_create_element_ident(shard, chunk, rtr_info, publisher, chunk_id, membid, msgpath));
+      return(rwdts_shard_rts_create_element_ident(shard, chunk, rtr_info, publisher, chunk_id, membid, msgpath));
       break;
 
     case RW_DTS_SHARD_FLAVOR_RANGE:
-      return(rwdts_rts_shard_create_element_range(shard, rtr_info, publisher, chunk_id, membid, msgpath));
+      return(rwdts_shard_rts_create_element_range(shard, rtr_info, publisher, chunk_id, membid, msgpath));
       break;
 
    default:
@@ -1715,23 +1728,23 @@ rwdts_rts_shard_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *c
 } 
   
 rw_status_t
-rwdts_member_shard_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *chunk, 
-                     rwdts_chunk_member_info_t *mbr_info, bool publisher, 
-                     rwdts_chunk_id_t *chunk_id, char *msgpath)
+rwdts_shard_member_create_element(rwdts_shard_t *shard, rwdts_shard_chunk_info_t *chunk, 
+                                  rwdts_chunk_member_info_t *mbr_info, bool publisher, 
+                                  rwdts_chunk_id_t *chunk_id, char *msgpath)
 {
   RW_ASSERT_TYPE(shard, rwdts_shard_t);
 
   switch (shard->flavor) {
     case RW_DTS_SHARD_FLAVOR_NULL:
-      return(rwdts_member_shard_create_element_null(shard, mbr_info, publisher, chunk_id, msgpath));
+      return(rwdts_shard_member_create_element_null(shard, mbr_info, publisher, chunk_id, msgpath));
       break;
 
     case RW_DTS_SHARD_FLAVOR_IDENT:
-      return(rwdts_member_shard_create_element_ident(shard, chunk, mbr_info, publisher, chunk_id,  msgpath));
+      return(rwdts_shard_member_create_element_ident(shard, chunk, mbr_info, publisher, chunk_id,  msgpath));
       break;
 
     case RW_DTS_SHARD_FLAVOR_RANGE:
-      return(rwdts_member_shard_create_element_range(shard, mbr_info, publisher, chunk_id,  msgpath));
+      return(rwdts_shard_member_create_element_range(shard, mbr_info, publisher, chunk_id,  msgpath));
       break;
 
    default:
@@ -1749,7 +1762,9 @@ rwdts_shard_chunk_iter_create(rwdts_shard_t *shard, rw_keyspec_path_t *keyspec)
   uint8_t *keyptr;
   size_t length;
 
-  iter = RW_MALLOC0_TYPE(sizeof(rwdts_shard_chunk_iter_t), rwdts_shard_chunk_iter_t);
+  iter = DTS_APIH_MALLOC0_TYPE(shard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                               sizeof(rwdts_shard_chunk_iter_t),
+                               rwdts_shard_chunk_iter_t);
   RW_ASSERT(iter);
   if (!iter) { return NULL; }
  
@@ -1767,14 +1782,16 @@ rwdts_shard_chunk_iter_create(rwdts_shard_t *shard, rw_keyspec_path_t *keyspec)
       if (!pe) { 
         iter->shard = NULL;
         rwdts_shard_handle_unref(shard, __PRETTY_FUNCTION__, __LINE__);
-        RW_FREE_TYPE(iter, rwdts_shard_chunk_iter_t);
+        DTS_APIH_FREE_TYPE(shard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                           iter, rwdts_shard_chunk_iter_t);
         return NULL; 
       }
       keyptr = rw_keyspec_entry_get_key_packed(pe, NULL, shard->pe_index, &length);
       if (keyptr == NULL) {
         iter->shard = NULL;
         rwdts_shard_handle_unref(shard, __PRETTY_FUNCTION__, __LINE__);
-        RW_FREE_TYPE(iter, rwdts_shard_chunk_iter_t);
+        DTS_APIH_FREE_TYPE(shard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                           iter, rwdts_shard_chunk_iter_t);
         return NULL; 
       }
       HASH_FIND(hh_chunk, shard->shard_chunks, 
@@ -1784,7 +1801,8 @@ rwdts_shard_chunk_iter_create(rwdts_shard_t *shard, rw_keyspec_path_t *keyspec)
       if (iter->chunk == NULL) {
         iter->shard = NULL;
         rwdts_shard_handle_unref(shard, __PRETTY_FUNCTION__, __LINE__);
-        RW_FREE_TYPE(iter, rwdts_shard_chunk_iter_t);
+        DTS_APIH_FREE_TYPE(shard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                           iter, rwdts_shard_chunk_iter_t);
         return NULL; 
       }
       break;
@@ -1814,7 +1832,8 @@ rwdts_shard_chunk_iter_create_keyspec(rwdts_shard_t *rootshard, rw_keyspec_path_
 
   if (!shard || !chunk) { return NULL; }
   
-  iter = RW_MALLOC0_TYPE(sizeof(rwdts_shard_chunk_iter_t), rwdts_shard_chunk_iter_t);
+  iter = DTS_APIH_MALLOC0_TYPE(shard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                               sizeof(rwdts_shard_chunk_iter_t), rwdts_shard_chunk_iter_t);
   RW_ASSERT(iter);
   if (!iter) { return NULL; }
  
@@ -1834,6 +1853,8 @@ bool rwdts_rtr_shard_chunk_iter_next(rwdts_shard_chunk_iter_t *iter,
             rwdts_chunk_rtr_info_t **records_out, int32_t *n_records_out)
 {
   rwdts_shard_chunk_info_t *shard_chunk = NULL;
+  rwdts_api_t *apih = iter->shard->apih;
+  
   RW_ASSERT_TYPE(iter, rwdts_shard_chunk_iter_t);
   RW_ASSERT(records_out);
   RW_ASSERT(n_records_out);
@@ -1845,7 +1866,8 @@ bool rwdts_rtr_shard_chunk_iter_next(rwdts_shard_chunk_iter_t *iter,
     if (iter->shard) {
       rwdts_shard_handle_unref(iter->shard, __PRETTY_FUNCTION__, __LINE__);
     }
-    RW_FREE_TYPE(iter, rwdts_shard_chunk_iter_t);
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                       iter, rwdts_shard_chunk_iter_t);
     return FALSE;
   } 
   switch (iter->shard->flavor) {
@@ -1858,7 +1880,8 @@ bool rwdts_rtr_shard_chunk_iter_next(rwdts_shard_chunk_iter_t *iter,
       }
       else {
          rwdts_shard_handle_unref(iter->shard, __PRETTY_FUNCTION__, __LINE__);
-         RW_FREE_TYPE(iter, rwdts_shard_chunk_iter_t);
+         DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                            iter, rwdts_shard_chunk_iter_t);
          return FALSE;
       }
       break;
@@ -1873,7 +1896,8 @@ bool rwdts_rtr_shard_chunk_iter_next(rwdts_shard_chunk_iter_t *iter,
 
        if (!shard_chunk) { // last chunk end of iteration
          rwdts_shard_handle_unref(iter->shard, __PRETTY_FUNCTION__, __LINE__);
-         RW_FREE_TYPE(iter, rwdts_shard_chunk_iter_t);
+         DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                            iter, rwdts_shard_chunk_iter_t);
          return FALSE;
        }
 
@@ -1885,9 +1909,10 @@ bool rwdts_rtr_shard_chunk_iter_next(rwdts_shard_chunk_iter_t *iter,
       RW_ASSERT_MESSAGE(0, "iter for shard flavor %d not implemented", iter->shard->flavor);
   }
   if (!shard_chunk) {
-     rwdts_shard_handle_unref(iter->shard, __PRETTY_FUNCTION__, __LINE__);
-     RW_FREE_TYPE(iter, rwdts_shard_chunk_iter_t);
-   }
+    rwdts_shard_handle_unref(iter->shard, __PRETTY_FUNCTION__, __LINE__);
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK_ITER,
+                       iter, rwdts_shard_chunk_iter_t);
+  }
   return FALSE;
 }
 
@@ -1896,18 +1921,21 @@ bool rwdts_rtr_shard_chunk_iter_next(rwdts_shard_chunk_iter_t *iter,
 // retrive the data
 //
 rwdts_shard_iter_t *
-rwdts_shard_iter_create(rwdts_shard_t *rootshard, rw_keyspec_path_t *keyspec, union rwdts_shard_flavor_params_u *params)
+rwdts_shard_iter_create(rwdts_shard_t *rootshard, rw_keyspec_path_t *keyspec,
+                        union rwdts_shard_flavor_params_u *params)
 {
   rwdts_shard_iter_t *iter;
   rw_status_t status;
 
-  iter = RW_MALLOC0_TYPE(sizeof(rwdts_shard_iter_t), rwdts_shard_iter_t);
+  iter = DTS_APIH_MALLOC0_TYPE(rootshard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_ITER,
+                               sizeof(rwdts_shard_iter_t), rwdts_shard_iter_t);
   RW_ASSERT(iter);
   if (!iter) { return NULL; }
  
   iter->chunk_iter = rwdts_shard_chunk_iter_create_keyspec(rootshard, keyspec, params);
   if (iter->chunk_iter == NULL) {
-    RW_FREE_TYPE(iter, rwdts_shard_iter_t);
+    DTS_APIH_FREE_TYPE(rootshard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_ITER,
+                       iter, rwdts_shard_iter_t);
     return NULL;
   }
   iter->shard = iter->chunk_iter->shard; // store the current active shard
@@ -1915,7 +1943,8 @@ rwdts_shard_iter_create(rwdts_shard_t *rootshard, rw_keyspec_path_t *keyspec, un
   status = rw_keyspec_path_create_dup(keyspec, NULL , &iter->keyspec); 
   RW_ASSERT(status == RW_STATUS_SUCCESS);
   if (status != RW_STATUS_SUCCESS) {
-    RW_FREE_TYPE(iter, rwdts_shard_iter_t);
+    DTS_APIH_FREE_TYPE(rootshard->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_ITER,
+                       iter, rwdts_shard_iter_t);
     return NULL;
   }
 
@@ -1934,7 +1963,8 @@ bool rwdts_rtr_shard_iter_next(rwdts_shard_iter_t *iter,
   rwdts_shard_chunk_info_t *chunk;
   rwdts_chunk_id_t chunk_id;
   bool match;
-
+  rwdts_api_t *apih;
+  
   RW_ASSERT_TYPE(iter, rwdts_shard_iter_t);
   RW_ASSERT(records_out);
   RW_ASSERT(n_records_out);
@@ -1958,11 +1988,14 @@ bool rwdts_rtr_shard_iter_next(rwdts_shard_iter_t *iter,
   iter->shard = shard;
 
   if (!shard) {
+    apih = NULL;
     // done with matching all records
-    RW_FREE_TYPE(iter, rwdts_shard_iter_t);
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_ITER,
+                       iter, rwdts_shard_iter_t);
     return FALSE;
   }
- 
+  apih = shard->apih;
+  
   rwdts_shard_handle_ref(iter->shard, __PRETTY_FUNCTION__, __LINE__);
 
   iter->chunk_iter = rwdts_shard_chunk_iter_create_keyspec(iter->shard, 
@@ -1971,7 +2004,8 @@ bool rwdts_rtr_shard_iter_next(rwdts_shard_iter_t *iter,
     if (iter->shard) {
       rwdts_shard_handle_unref(iter->shard, __PRETTY_FUNCTION__, __LINE__);
     }
-    RW_FREE_TYPE(iter, rwdts_shard_iter_t);
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_ITER,
+                       iter, rwdts_shard_iter_t);
     return FALSE;
   }
   
@@ -1983,7 +2017,7 @@ bool rwdts_rtr_shard_iter_next(rwdts_shard_iter_t *iter,
   if (iter->shard) {
     rwdts_shard_handle_unref(iter->shard, __PRETTY_FUNCTION__, __LINE__);
   }
-  RW_FREE_TYPE(iter, rwdts_shard_iter_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_ITER,iter, rwdts_shard_iter_t);
   return FALSE;
  
 }
@@ -2274,7 +2308,8 @@ rwdts_member_api_shard_key_update(const rw_keyspec_path_t*      keyspec,
   shard_detail.shard_flavor = flavor;
   shard_detail.params = *flavor_params;
   reg_handle = 
-    rwdts_member_update_registration_int(NULL, apih, regh, keyspec, cb, RWDTS_FLAG_SHARDING, desc, &shard_detail);
+      rwdts_member_register_int(NULL, apih, regh, NULL,
+                                keyspec, cb, desc, RWDTS_FLAG_SHARDING, &shard_detail);
   status = reg_handle?RW_STATUS_SUCCESS:RW_STATUS_FAILURE;
   return(status);
 }
@@ -2457,7 +2492,8 @@ rwdts_shard_del(rwdts_shard_t** parent)
 
     if (!(chunk->elems.rtr_info.n_subrecords || chunk->elems.rtr_info.n_pubrecords)) {
       HASH_DELETE(hh_chunk, (*parent)->shard_chunks, chunk);
-      RW_FREE_TYPE(chunk, rwdts_shard_chunk_info_t);
+      DTS_APIH_FREE_TYPE((*parent)->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD_CHUNK,
+                         chunk, rwdts_shard_chunk_info_t);
     }
   }
   if (!HASH_CNT(hh_chunk, (*parent)->shard_chunks)) {
@@ -2467,14 +2503,17 @@ rwdts_shard_del(rwdts_shard_t** parent)
         if ((*parent)->key) {
           RW_FREE((*parent)->key);
         }
-        RW_FREE_TYPE(*parent, rwdts_shard_t);
+        DTS_APIH_FREE_TYPE((*parent)->apih, RW_DTS_DTS_MEMORY_TYPE_SHARD,
+                           *parent, rwdts_shard_t);
         *parent = NULL;
       } else {
         rwdts_shard_t* tmp_wd_par = (*parent)->parent;
         if ((*parent)->key) {
           RW_FREE((*parent)->key);
         }
-        RW_FREE_TYPE(*parent, rwdts_shard_t);
+        DTS_APIH_FREE_TYPE((*parent)->apih,
+                           RW_DTS_DTS_MEMORY_TYPE_SHARD,
+                           *parent, rwdts_shard_t);
         tmp_wd_par->wildcard_shard = NULL;
         *parent = NULL;
       }
@@ -2483,13 +2522,19 @@ rwdts_shard_del(rwdts_shard_t** parent)
 }
 
 rw_status_t
-rwdts_member_shard_promote_to_publisher(rwdts_shard_handle_t *shard, char* member)
+rwdts_shard_promote_to_publisher(rwdts_member_reg_handle_t regh)
 {
-  RW_ASSERT(shard);
+  RW_ASSERT(regh);
   rwdts_shard_chunk_info_t *chunk=NULL, *tmp_chunk;
   rwdts_chunk_member_info_t *mbr_elem = NULL;
 
-  HASH_ITER(hh_chunk, shard->shard_chunks, chunk, tmp_chunk) {
+  rwdts_member_registration_t *reg = (rwdts_member_registration_t *)regh;
+  RW_ASSERT (reg && reg->shard);
+
+  const char* member = reg->apih->client_path;
+  RW_ASSERT (member);
+
+  HASH_ITER(hh_chunk, reg->shard->shard_chunks, chunk, tmp_chunk) {
     mbr_elem = NULL;
     HASH_FIND(hh_mbr_record, chunk->elems.member_info.sub_mbr_info, member, strlen(member), mbr_elem);
     if (mbr_elem) {
@@ -2506,11 +2551,13 @@ rwdts_member_shard_promote_to_publisher(rwdts_shard_handle_t *shard, char* membe
       chunk->elems.member_info.n_pub_reg++;
     }
   }
+
   return RW_STATUS_SUCCESS;
 }
 
+
 rw_status_t
-rwdts_rts_shard_promote_element(rwdts_shard_t *shard, rwdts_chunk_id_t chunk_id, 
+rwdts_shard_rts_promote_element(rwdts_shard_t *shard, rwdts_chunk_id_t chunk_id, 
                                 uint32_t membid, char *msgpath)
 {
   rwdts_shard_chunk_info_t *shard_chunk;

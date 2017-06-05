@@ -161,15 +161,6 @@ ub16: libunwind-dev
 fc20: libuuid-devel
 ub16: libuuid1
 
-fc20: libxml-devel
-ub16: 
-
-fc20: libxml2-devel
-ub16: libxml2-dev
-
-fc20: libxslt-devel
-ub16: libxslt1-dev
-
 fc20: lua-devel
 ub16: libtolua-dev
 
@@ -214,6 +205,9 @@ ub16: python3-cairo-dev
 fc20: qemu-img
 ub16: qemu-utils
 
+# Needed to use the build cache
+rpm
+
 ruby
 
 fc20: rubygem-asciidoctor-0.1.4-1.fc20.noarch
@@ -257,6 +251,7 @@ xmlto
 fc20: rpm-build 
 fc20: rpmlint
 fc20: patchelf
+ub16: rpm
 
 ub16: libkqueue-dev
 ub16: libpthread-workqueue-dev

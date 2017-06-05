@@ -14,6 +14,13 @@ fc20: boost-thread-1.54.0-9.fc20.x86_64
 ub16: libboost-thread1.58.0
 fc20: i40evf-1.5.14
 
+python
+fc20: python3-devel
+ub16: python3-dev
+
+fc20: libffi-devel
+ub16: libffi-dev
+
 npm
 pciutils
 
@@ -23,3 +30,5 @@ fc20: icu
 ub16: icu-devtools
 
 fc20: vconfig
+
+ub16: python3-crypto

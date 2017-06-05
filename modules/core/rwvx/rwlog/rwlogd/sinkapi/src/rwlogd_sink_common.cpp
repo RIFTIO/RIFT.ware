@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -482,6 +468,22 @@ extern "C"
     return status;
   }
 
+  rw_status_t rwlogd_sink_filter_remove_all_attribute(rwlogd_instance_ptr_t instance, 
+                                           char *category,
+                                           char *name)
+  {
+    rwlogd_sink_data *obj = rwlogd_get_sink_obj (instance);
+    rwlogd_sink *sink = obj->lookup_sink(name);
+    if (!sink)
+    {
+      RWLOG_DEBUG_PRINT("Sink not found %s\n", name);
+      return RW_STATUS_FAILURE;
+    }
+    rw_status_t status = sink->remove_all_attribute_filter(category);
+
+    return status;
+  }
+
   rw_status_t rwlogd_sink_apply_failed_call_filter(rwlogd_instance_ptr_t instance, 
                                                    char *sink_name,
                                                    RwLog__YangEnum__OnOffType__E next_failed_call_flag,
@@ -913,7 +915,13 @@ void rwlogd_sink_data::rwlogd_filter_init(char *filter_shm_name)
     return;
   }
 
-  ftruncate(filter_shm_fd_, RWLOG_FILTER_SHM_SIZE);
+  int r = ftruncate(filter_shm_fd_, RWLOG_FILTER_SHM_SIZE);
+  if (r < 0)
+  {
+    RWLOG_FILTER_DEBUG_PRINT ("Error truncate %s for SHM:%s\n", strerror(errno), rwlog_shm_name_);
+    return;
+  }
+  
   rwlogd_shm_ctrl_ =
       (rwlogd_shm_ctrl_t *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd_, 0);
   if (MAP_FAILED == rwlogd_shm_ctrl_)
@@ -1714,7 +1722,7 @@ void rwlogd_sink_data::dynamic_schema_end(void * context)
     fprintf(stderr, "Failed to update category list \n");
   }
 
-  rwsched_dispatch_release(instance->tasklet_info_, instance->dynamic_queue_);
+  rwsched_dispatch_queue_release(instance->tasklet_info_, instance->dynamic_queue_);
   if(instance->rwlogd_info_->rwlogd_instance && ((rwlogd_instance_ptr_t)instance->rwlogd_info_->rwlogd_instance)->dts_h) {
     rwdts_api_set_state((rwdts_api_t*)((rwlogd_instance_ptr_t)instance->rwlogd_info_->rwlogd_instance)->dts_h, RW_DTS_STATE_RUN);
   }
@@ -2534,6 +2542,14 @@ rw_status_t rwlogd_sink::remove_filter(char *category_str,
   remove_exact_match_filter_string(&sink_filter_.filter_info,category_str, attr,value);
   return RW_STATUS_SUCCESS;
 }
+
+rw_status_t rwlogd_sink::remove_all_attribute_filter(char *category_str)
+{
+  RWLOG_FILTER_DEBUG_PRINT("sink %s: Removing All Attribute filters ******\n", sink_name_);
+  remove_all_attribute_cat_filter(&sink_filter_.filter_info,category_str);
+  return RW_STATUS_SUCCESS;
+}
+
 
 rw_status_t rwlogd_sink::deny_evid_filter(char* attr, char *value)
 {

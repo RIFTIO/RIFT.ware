@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# install the launchpad systemd service
+# these files should work on both ub16 and fc20
+#
+#   Copyright 2017 RIFT.io Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+# 26 April 2017 -- Jeremy Mordkoff -- migrated from the MANP repo to scripts where it can be used by BUILD.sh and INSTALL.sh
+
+
+if [ $(whoami) != "root" ]; then
+    echo must be root
+    exit 1
+fi
+
+
+cat <<EOF >/etc/systemd/system/launchpad.service
+[Unit]
+Description=RIFT.ware Launchpad
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'nohup sudo -b -H /usr/rift/rift-shell -r -i /usr/rift -a /usr/rift/.artifacts -- ./demos/launchpad.py --use-xml-mode'
+ExecStop=/bin/sh -c 'killall rwmain'
+
+[Install]
+WantedBy=default.target
+EOF
+
+chmod 664 /etc/systemd/system/launchpad.service
+
+if ! systemctl daemon-reload; then
+    echo "WARNING: Not able to reload daemons: this must be run in a privileged container: sudo systemctl daemon-reload ; sudo systemctl enable launchpad.service"
+else
+    # enable launchpad at boot - should always succeed in a privileged container
+    systemctl enable launchpad.service
+fi
+
+# start launchpad?
+#sudo systemctl start launchpad.service
+
+echo
+echo "Launchpad service created and enabled. Run 'sudo systemctl start launchpad.service' to start the service."
+echo

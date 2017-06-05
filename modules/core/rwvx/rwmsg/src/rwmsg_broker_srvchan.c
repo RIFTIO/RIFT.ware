@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwmsg_broker_srvchan.c
  * @author Grant Taylor <grant.taylor@riftio.com>
@@ -318,7 +299,7 @@ static void rwmsg_broker_srvchan_halt_f(void *ctx) {
   {
     rwsched_dispatch_source_cancel(bro->ep->taskletinfo, sc->ackwheel_timer);
     //NEW-CODE
-    rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, sc->ackwheel_timer, bro->ep->rwsched, bro->ep->taskletinfo);
+    rwmsg_garbage(&bro->ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, sc->ackwheel_timer, bro->ep->rwsched, bro->ep->taskletinfo);
     sc->ackwheel_timer = NULL;
   }
 

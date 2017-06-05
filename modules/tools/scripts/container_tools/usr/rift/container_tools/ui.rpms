@@ -218,8 +218,18 @@ fc20,fc24: libvirt-daemon-driver-xen-1.1.3.3-2.fc20.x86_64
 fc20,fc24: libvirt-daemon-lxc-1.1.3.3-2.fc20.x86_64
 fc20,fc24: libwebp-0.3.1-2.fc20.x86_64
 fc20,fc24: libwsman1-2.3.6-8.fc20.x86_64
+
 fc20,fc24: libxml2-2.9.1-2.fc20.x86_64
+
+fc20: libxml-devel
+
+fc20: libxml2-devel
+ub16: libxml2-dev
+
 fc20,fc24: libxslt-1.1.28-5.fc20.x86_64
+fc20: libxslt-devel
+ub16: libxslt1-dev
+
 fc20,fc24: libyaml-0.1.4-5.fc20.x86_64
 fc20,fc24: linux-atm-libs-2.5.1-8.fc20.x86_64
 fc20,fc24: logrotate-3.8.7-1.fc20.x86_64
@@ -399,7 +409,7 @@ fc20,fc24: pyliblzma-0.5.3-10.fc20.x86_64
 fc20,fc24: python-2.7.5-9.fc20.x86_64
 fc20,fc24: python3-3.3.2-8.fc20.x86_64
 fc20,fc24: python3-libs-3.3.2-8.fc20.x86_64
-fc20,fc24: python3-magic
+python3-magic
 fc20,fc24: python3-lxc-0.9.0-2.fc20.x86_64
 fc20,fc24: python-babel-1.3-2.fc20.noarch
 fc20,fc24: python-backports-1.0-3.fc20.x86_64
@@ -493,7 +503,6 @@ fc20,fc24: zookeeper-java.noarch
 fc20,fc24: pcs
 fc24: python3-devel
 fc20: python-glance
-fc20: python-glanceclient
 fc20: openstack-glance
 ub16: glance
 
@@ -513,7 +522,11 @@ ub16: python3-dev
 ub16: python3-gi
 ub16: graphviz
 ub16: libpeas-dev
+
+# not sure if both of these are required
+ub16: libhiredis0.13
 ub16: libhiredis-dev
+
 ub16: python3-magic
 
 ub16: apache2 
@@ -523,3 +536,14 @@ ub16: php7*
 ub16: libapache2-mod-php7*
 ub16: tcl
 ub16: expect
+ub16: serf
+
+ub16: python3-crypto
+
+python-ceilometerclient
+python-novaclient
+python-neutronclient
+python-glanceclient
+python-cinderclient
+
+python3-pexpect

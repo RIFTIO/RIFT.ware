@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -59,9 +45,9 @@ class RwSchedSource : public ::testing::Test {
       this->stop_test();
 
       if (this->source)
-        rwsched_dispatch_release(this->tasklet, this->source);
+        rwsched_dispatch_source_release(this->tasklet, this->source);
       this->source = NULL;
-
+      rwsched_tasklet_release_all_resource(this->tasklet);
       rwsched_tasklet_free(this->tasklet);
       rwsched_instance_free(this->rwsched);
 
@@ -113,7 +99,7 @@ class RwSchedIOSourceRead : public RwSchedSource {
     void destroy_source()
     {
       if (this->source)
-        rwsched_dispatch_release(this->tasklet, this->source);
+        rwsched_dispatch_source_release(this->tasklet, this->source);
       this->source = NULL;
 
       // Close any open file handles
@@ -217,14 +203,14 @@ TEST_F(RwSchedIOSourceRead, ReadContinuousCallback)
 
   // Benchmark how many times we can get a read callback & cancel and get a cancel callback.
   RWUT_BENCH_MS(ReadContinuousCallbackBench, 1000);
-    rwsched_dispatch_main_until(this->tasklet, .100, NULL);
+  rwsched_dispatch_main_until(this->tasklet, .100, NULL);
   RWUT_BENCH_END(ReadContinuousCallbackBench);
   RWUT_BENCH_RECORD_PROPERTY(ReadContinuousCallbackBench, callbacks_triggered, this->callbacks_triggered);
 
-  this->destroy_source();
-
+  
   ASSERT_GT(this->callbacks_triggered, 5);
 }
+
 
 // Ensure that the IO callback and cancel happen at least a single time.
 TEST_F(RwSchedIOSourceRead, ReadSingleCallbackCancel)
@@ -288,7 +274,7 @@ class RwSchedIOSourceWrite : public RwSchedSource {
       rwsched_dispatch_source_t source = this->source;
       this->source = NULL;
       if (source)
-        rwsched_dispatch_release(this->tasklet, source);
+        rwsched_dispatch_source_release(this->tasklet, source);
 
       // Close any open file handles
       close(this->pipe_fds[0]);
@@ -415,7 +401,7 @@ TEST_F(RwSchedIOSourceWrite, WriteContinuousCallback)
   rwsched_dispatch_source_set_event_handler_f(this->tasklet, this->source, this->io_callback);
 
   RWUT_BENCH_MS(WriteContinuousCallbackBench, 1000);
-    rwsched_dispatch_main_until(this->tasklet, .100, NULL);
+  rwsched_dispatch_main_until(this->tasklet, .100, NULL);
   RWUT_BENCH_END(WriteContinuousCallbackBench);
   RWUT_BENCH_RECORD_PROPERTY(WriteContinuousCallbackBench, callbacks_triggered, this->callbacks_triggered);
 
@@ -453,16 +439,13 @@ class RwSchedTimerSource : public RwSchedSource {
                                                     this->main_q);
       ASSERT_TRUE(this->source);
 
-      // Enable the timer source
-      rwsched_dispatch_resume(this->tasklet, this->source);
-
       // Set the object context so we can access this instance inside of the static callback
       rwsched_dispatch_set_context(this->tasklet, this->source, (void *)this);
     }
 
     void destroy_source() {
       if (this->source)
-        rwsched_dispatch_release(this->tasklet, this->source);
+        rwsched_dispatch_source_release(this->tasklet, this->source);
       this->source = NULL;
     }
 
@@ -482,7 +465,7 @@ class RwSchedTimerSource : public RwSchedSource {
       myObj->callbacks_triggered++;
       //myObj->timer_callback(context);
 
-      int timer_count = rwsched_dispatch_source_get_data(myObj->tasklet, myObj->source);
+      unsigned long timer_count = rwsched_dispatch_source_get_data(myObj->tasklet, myObj->source);
       EXPECT_GT(timer_count, 1);
 
 
@@ -504,9 +487,12 @@ class RwSchedTimerSource : public RwSchedSource {
       if (! myObj->stopped)
       {
         myObj->create_source();
-        rwsched_dispatch_source_set_timer(myObj->tasklet, myObj->source, DISPATCH_TIME_NOW, 0, 0);
+        rwsched_dispatch_source_set_timer(myObj->tasklet, myObj->source, DISPATCH_TIME_NOW, 100, 10);
         rwsched_dispatch_source_set_event_handler_f(myObj->tasklet, myObj->source, myObj->single_timer_callback);
         rwsched_dispatch_source_set_cancel_handler_f(myObj->tasklet, myObj->source, myObj->cancel_recreate_callback);
+        
+        // Enable the timer source
+        rwsched_dispatch_resume(myObj->tasklet, myObj->source);
       }
     }
 
@@ -516,9 +502,11 @@ class RwSchedTimerSource : public RwSchedSource {
 
 TEST_F(RwSchedTimerSource, TimerSingleFire)
 {
-  rwsched_dispatch_source_set_timer(this->tasklet, this->source, DISPATCH_TIME_NOW, 0, 0);
+  rwsched_dispatch_source_set_timer(this->tasklet, this->source, DISPATCH_TIME_NOW, 100, 10);
   rwsched_dispatch_source_set_event_handler_f(this->tasklet, this->source, this->single_timer_callback);
-
+  // Enable the timer source
+  rwsched_dispatch_resume(this->tasklet, this->source);
+  
   rwsched_dispatch_main_until(this->tasklet, .100, NULL);
 
   ASSERT_EQ(this->callbacks_triggered, 1);
@@ -526,11 +514,13 @@ TEST_F(RwSchedTimerSource, TimerSingleFire)
 
 TEST_F(RwSchedTimerSource, TimerContinuousFire)
 {
-  rwsched_dispatch_source_set_timer(this->tasklet, this->source, DISPATCH_TIME_NOW, 1, 0);
+  rwsched_dispatch_source_set_timer(this->tasklet, this->source, DISPATCH_TIME_NOW, 100, 10);
   rwsched_dispatch_source_set_event_handler_f(this->tasklet, this->source, this->timer_callback);
-
+  // Enable the timer source
+  rwsched_dispatch_resume(this->tasklet, this->source);
+  
   RWUT_BENCH_MS(TimerCallbackBench, 1000);
-    rwsched_dispatch_main_until(this->tasklet, .100, NULL);
+  rwsched_dispatch_main_until(this->tasklet, .100, NULL);
   RWUT_BENCH_END(TimerCallbackBench);
   RWUT_BENCH_RECORD_PROPERTY(TimerCallbackBench, callbacks_triggered, this->callbacks_triggered);
 
@@ -539,10 +529,12 @@ TEST_F(RwSchedTimerSource, TimerContinuousFire)
 
 TEST_F(RwSchedTimerSource, TimerSingleCancel)
 {
-  rwsched_dispatch_source_set_timer(this->tasklet, this->source, DISPATCH_TIME_NOW, 0, 0);
+  rwsched_dispatch_source_set_timer(this->tasklet, this->source, DISPATCH_TIME_NOW, 100, 10);
   rwsched_dispatch_source_set_event_handler_f(this->tasklet, this->source, this->single_timer_callback);
   rwsched_dispatch_source_set_cancel_handler_f(this->tasklet, this->source, this->cancel_callback);
-
+  // Enable the timer source
+  rwsched_dispatch_resume(this->tasklet, this->source);
+  
   rwsched_dispatch_main_until(this->tasklet, .100, NULL);
 
   ASSERT_EQ(this->callbacks_triggered, 1);
@@ -551,12 +543,15 @@ TEST_F(RwSchedTimerSource, TimerSingleCancel)
 
 TEST_F(RwSchedTimerSource, TimerContinuousCancel)
 {
-  rwsched_dispatch_source_set_timer(this->tasklet, this->source, DISPATCH_TIME_NOW, 0, 0);
+  rwsched_dispatch_source_set_timer(this->tasklet, this->source, DISPATCH_TIME_NOW, 100, 10);
   rwsched_dispatch_source_set_event_handler_f(this->tasklet, this->source, this->single_timer_callback);
   rwsched_dispatch_source_set_cancel_handler_f(this->tasklet, this->source, this->cancel_recreate_callback);
+  // Enable the timer source
+  rwsched_dispatch_resume(this->tasklet, this->source);
 
+  
   RWUT_BENCH_MS(TimerContinuousCancelBench, 1000);
-    rwsched_dispatch_main_until(this->tasklet, .100, NULL);
+  rwsched_dispatch_main_until(this->tasklet, .100, NULL);
   RWUT_BENCH_END(TimerContinuousCancelBench);
   RWUT_BENCH_RECORD_PROPERTY(TimerContinuousCancelBench, callbacks_triggered, this->callbacks_triggered);
 
@@ -578,7 +573,7 @@ class RwSchedSignalSource : public RwSchedSource {
 
       this->allocated = true;
 
-      // Enable the timer source
+      // Enable the signal handler source
       rwsched_dispatch_resume(this->tasklet, this->source);
 
       // Set the object context so we can access this instance inside of the static callback
@@ -592,7 +587,7 @@ class RwSchedSignalSource : public RwSchedSource {
           rwsched_dispatch_source_cancel(this->tasklet, this->source);
 
           if (this->source)
-            rwsched_dispatch_release(this->tasklet, this->source);
+            rwsched_dispatch_source_release(this->tasklet, this->source);
           this->source = NULL;
     }
 
@@ -619,7 +614,7 @@ class RwSchedSignalSource : public RwSchedSource {
       myObj->cancels_triggered++;
 
       if (myObj->source)
-        rwsched_dispatch_release(myObj->tasklet, myObj->source);
+        rwsched_dispatch_source_release(myObj->tasklet, myObj->source);
       myObj->source = NULL;
     }
 

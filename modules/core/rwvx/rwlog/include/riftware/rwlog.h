@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwlog.h
  * @author Anil Gunturu (anil.gunturu@riftio.com)
@@ -451,7 +432,10 @@ typedef struct {
  *                   doing L1/L2 filtering and calling C-API  to log the event
  */
 #define RWLOG_EVENT(ctx_, path_,...) \
-    RWLOG_EVENT_INTERNAL(ctx_,path_,((rw_call_id_t *)NULL),NULL,__VA_ARGS__);
+  RWLOG_EVENT_INTERNAL(ctx_,path_,((rw_call_id_t *)NULL),NULL,(/* code_before_event_ */),(/* code_after_event_ */),__VA_ARGS__);
+
+#define RWLOG_EVENT_CODE(ctx_, path_, code_before_event_, code_after_event_,...) \
+  RWLOG_EVENT_INTERNAL(ctx_,path_,((rw_call_id_t *)NULL),NULL,code_before_event_,code_after_event_,__VA_ARGS__);
 
 /*!
  * Top level event log macro to be invoked by application for logs with callid.
@@ -465,7 +449,7 @@ typedef struct {
  *                   doing L1/L2 filtering and calling C-API  to log the event
  */
 #define RWLOG_EVENT_CALLID(ctx_, path_, callid_,...) \
-    RWLOG_EVENT_INTERNAL(ctx_,path_,callid_,NULL,__VA_ARGS__)
+  RWLOG_EVENT_INTERNAL(ctx_,path_,callid_,NULL,(/* code_before_event */),(/* code_after_event */),__VA_ARGS__)
 
 /*!
  * Top level event log macro to be invoked by application for logs with session
@@ -485,9 +469,9 @@ typedef struct {
  *                   doing L1/L2 filtering and calling C-API  to log the event
  */
 #define RWLOG_EVENT_SESSION_PARAMS_WITH_CALLID(ctx_, path_, callid_,session_params_,...) \
-    RWLOG_EVENT_INTERNAL(ctx_,path_,callid_,session_params_,__VA_ARGS__);
+    RWLOG_EVENT_INTERNAL(ctx_,path_,callid_,session_params_,(/* code_before_event */),(/* code_after_event */),__VA_ARGS__);
 
-#define RWLOG_EVENT_INTERNAL(ctx_, path_,callid_,session_params_,...) \
+#define RWLOG_EVENT_INTERNAL(ctx_, path_,callid_,session_params_,code_before_event_,code_after_event_,...) \
 do { \
   static uint32_t local_log_serial_no = 0; \
   filter_memory_header *mem_hdr = (filter_memory_header *)(ctx_)->filter_memory; \
@@ -500,13 +484,15 @@ do { \
         deny_ev_=rwlog_l2_exact_denyId_match(ctx_,event_id_);\
       }\
       if (RW_LIKELY(!deny_ev_)) {\
-          const char *_category_str_ =  ((RWPB_G_PATHSPEC_YPBCD(path_))->module)->module_name;\
+          RWLog_impl_remove_paren(code_before_event_); \
+          const char *_category_str_ =  ((RWPB_G_PATHSPEC_YPBCD(path_))->module)->module_name; \
           RWPB_i_message_mmd_pbc(path_, t_pbcm) proto_; \
           RWPB_i_message_mmd_pbc(path_, f_pbc_init)(&proto_); \
           bool packet_info_present = false; \
           RWLog_impl_assign_all_flds_event1((ctx_), path_, proto_, __VA_ARGS__); \
           (proto_).has_template_params = 1; \
           rwlog_proto_send_c(ctx_, _category_str_,(ProtobufCMessage *)&proto_,callid_,(common_params_t *)(&proto_.template_params), __LINE__, (char *) __FILE__, session_params_,FALSE, packet_info_present, &local_log_serial_no); \
+          RWLog_impl_remove_paren(code_after_event_); \
         }\
       } \
 }while (0)

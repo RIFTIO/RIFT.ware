@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -103,7 +89,39 @@ rwsched_instance_set_latency_check(rwsched_instance_t *instance, int threshold_m
   RW_CF_TYPE_VALIDATE(instance, rwsched_instance_ptr_t);
   RW_ASSERT(threshold_ms >= 0);
 
-  instance->latency.check_threshold_ms = threshold_ms;
+  /* Update precomputed ms divisor from clock speed... */
+  char line[256];
+  FILE *f;
+  double mhz;
+  uint64_t freq;
+  int found = FALSE;
+  f = fopen("/proc/cpuinfo", "r");
+  if (f) {
+    while (fgets(line, sizeof(line), f)) {
+      if (sscanf(line, "cpu MHz\t: %lf", &mhz) == 1) {
+	freq = (uint64_t)(mhz * 1000000UL);
+	instance->latency.clock_per_ms = freq / 1000UL;
+	found = TRUE;
+	break;
+      }
+    }
+    fclose(f);
+    f = NULL;
+  }
+  if (!found) {
+    instance->latency.clock_per_ms = 0;
+    instance->latency.check_threshold_ms = 0;
+  } else {
+    /* ...also the actual setting */
+    instance->latency.check_threshold_ms = threshold_ms;
+  }
+
+  if (0) {
+    fprintf(stderr, "rwsched_instance_set_latency_check(threshold_ms=%d) cm_per_ms %d mhz %f\n",
+	    threshold_ms,
+	    (int)instance->latency.clock_per_ms,
+	    mhz);
+  }
 }
 
 int
@@ -168,13 +186,15 @@ rwsched_instance_new(void)
   instance->default_rwqueue = (rwsched_dispatch_queue_t) RW_MALLOC0_TYPE(sizeof(*instance->default_rwqueue), rwsched_dispatch_queue_t);
   RW_ASSERT_TYPE(instance->default_rwqueue, rwsched_dispatch_queue_t);
   instance->default_rwqueue->header.libdispatch_object._dq = DISPATCH_TARGET_QUEUE_DEFAULT;
-
+  
+  //instance->default_rwqueue->header.tasklet = ;
+  
   // Fake up a rwqueue placeholder object to use as DISPATCH_TARGET_QUEUE_MAIN
   RW_ASSERT(instance->use_libdispatch_only);
   instance->main_rwqueue = (rwsched_dispatch_queue_t) RW_MALLOC0_TYPE(sizeof(*instance->main_rwqueue), rwsched_dispatch_queue_t);
   RW_ASSERT_TYPE(instance->main_rwqueue, rwsched_dispatch_queue_t);
   instance->main_rwqueue->header.libdispatch_object._dq = dispatch_get_main_queue();
-
+  
   // Fake up rwqueue placeholder objects for the usual four global
   // queues.  The pri values are not 0,1,2,3 or similar, they are
   // -MAX, -2, 0, 2.  We do not support arbitrary pri values, although
@@ -232,7 +252,7 @@ rwsched_instance_free_int(rwsched_instance_t *instance)
   if (!g_atomic_int_dec_and_test(&instance->ref_cnt)) {
     return;
   }
-#if 1
+
   RW_FREE_TYPE(instance->default_rwqueue, rwsched_dispatch_queue_t);
   RW_FREE_TYPE(instance->main_rwqueue, rwsched_dispatch_queue_t);
   long i;
@@ -248,7 +268,6 @@ rwsched_instance_free_int(rwsched_instance_t *instance)
   }
   //NO-FREE
   RW_CF_TYPE_FREE(instance, rwsched_instance_ptr_t);
-#endif
 }
 
 rwsched_tasklet_t *
@@ -268,6 +287,10 @@ rwsched_tasklet_new(rwsched_instance_t *instance)
   sched_tasklet->instance = instance;
   sched_tasklet->rwresource_track_handle = RW_RESOURCE_TRACK_CREATE_CONTEXT("Tasklet Context");
 
+  /* The assumption here is that the rwsched_tasklet_new will get called from the main
+     thread and it is in this thread that the cfrunloop will run*/
+  sched_tasklet->cfrunloop_tid = RWSCHED_GETTID();
+  
   // Look for an unused entry in tasklet_array (start the indexes at 1 for now)
   int i; for (i = 1 ; i < instance->tasklet_array->len ; i++) {
     if (g_array_index(instance->tasklet_array, rwsched_tasklet_ptr_t, i) == NULL) {
@@ -310,6 +333,38 @@ rwsched_tasklet_new(rwsched_instance_t *instance)
   return sched_tasklet;
 }
 
+
+/*This api is to be used mostly by the unittest code*/
+void
+rwsched_tasklet_release_all_resource(rwsched_tasklet_t *sched_tasklet)
+{
+  rwsched_CFRunLoopTimerRef rw_timer;
+  while ((rw_timer = g_array_index(sched_tasklet->cftimer_array, rwsched_CFRunLoopTimerRef, 1)) != NULL) {
+    RW_CF_TYPE_VALIDATE(rw_timer, rwsched_CFRunLoopTimerRef);
+    rwsched_tasklet_CFRunLoopTimerRelease(sched_tasklet, rw_timer);
+  }
+  
+  rwsched_CFSocketRef rw_socket;
+  while ((rw_socket = g_array_index(sched_tasklet->cfsocket_array, rwsched_CFSocketRef, 1)) != NULL) {
+    RW_CF_TYPE_VALIDATE(rw_socket, rwsched_CFSocketRef);
+    rwsched_tasklet_CFSocketRelease(sched_tasklet, rw_socket);
+  }
+  
+  rwsched_CFRunLoopSourceRef rw_source;
+  while ((rw_source = g_array_index(sched_tasklet->cfsource_array, rwsched_CFRunLoopSourceRef, 1)) != NULL) {
+    RW_CF_TYPE_VALIDATE(rw_source, rwsched_CFRunLoopSourceRef);
+    rwsched_tasklet_CFSocketReleaseRunLoopSource(sched_tasklet, rw_source);
+  }
+
+  /*It is ok to do this since the what is added to the garray only in the blocking case and in
+    the unblocking case, the tasklet ref from the what has to be released to free the tasklet*/
+  rwsched_dispatch_what_ptr_t what;
+  while ((what = g_array_index(sched_tasklet->dispatch_what_array, rwsched_dispatch_what_ptr_t, 1)) != NULL) {
+    RW_FREE_TYPE(what, rwsched_dispatch_what_ptr_t);
+    g_array_remove_index(sched_tasklet->dispatch_what_array, 1);
+  }
+}
+
 void
 rwsched_tasklet_free(rwsched_tasklet_t *sched_tasklet)
 {
@@ -342,36 +397,47 @@ rwsched_tasklet_free_int(rwsched_tasklet_t *sched_tasklet)
       break;
     }
   }
-
-  rwsched_CFRunLoopTimerRef rw_timer;
-  while ((rw_timer = g_array_index(sched_tasklet->cftimer_array, rwsched_CFRunLoopTimerRef, 1)) != NULL) {
-    RW_CF_TYPE_VALIDATE(rw_timer, rwsched_CFRunLoopTimerRef);
-    rwsched_tasklet_CFRunLoopTimerInvalidate(sched_tasklet, rw_timer);
-    g_array_remove_index (sched_tasklet->cftimer_array, 1);
+#if 0
+  {
+    rwsched_CFRunLoopTimerRef rw_timer;
+    while ((rw_timer = g_array_index(sched_tasklet->cftimer_array, rwsched_CFRunLoopTimerRef, 1)) != NULL) {
+      RW_CF_TYPE_VALIDATE(rw_timer, rwsched_CFRunLoopTimerRef);
+      rwsched_tasklet_CFRunLoopTimerInvalidate(sched_tasklet, rw_timer);
+      g_array_remove_index (sched_tasklet->cftimer_array, 1);
+    }
+    rwsched_CFSocketRef rw_socket;
+    while ((rw_socket = g_array_index(sched_tasklet->cfsocket_array, rwsched_CFSocketRef, 1)) != NULL) {
+      RW_CF_TYPE_VALIDATE(rw_socket, rwsched_CFSocketRef);
+      rwsched_tasklet_CFSocketInvalidate(sched_tasklet, rw_socket);
+      g_array_remove_index (sched_tasklet->cfsocket_array, 1);
+    }
+    rwsched_CFRunLoopSourceRef rw_source;
+    while ((rw_source = g_array_index(sched_tasklet->cfsource_array, rwsched_CFRunLoopSourceRef, 1)) != NULL) {
+      RW_CF_TYPE_VALIDATE(rw_source, rwsched_CFRunLoopSourceRef);
+      rwsched_tasklet_CFRunLoopSourceInvalidate(sched_tasklet, rw_source);
+      g_array_remove_index (sched_tasklet->cfsource_array, 1);
+    }
+    rwsched_dispatch_what_ptr_t what;
+    while ((what = g_array_index(sched_tasklet->dispatch_what_array, rwsched_dispatch_what_ptr_t, 1)) != NULL) {
+      RW_FREE_TYPE(what, rwsched_dispatch_what_ptr_t);
+      g_array_remove_index (sched_tasklet->dispatch_what_array, 1);
+    }
   }
+#endif
+  /*Only the first element must be there and that must be NULL. All the other resources must be released
+    before removing the tasklet*/
+  RW_ASSERT(sched_tasklet->cftimer_array->len == 1);
+  RW_ASSERT(sched_tasklet->cfsocket_array->len == 1);
+  RW_ASSERT(sched_tasklet->cfsource_array->len == 1);
+  RW_ASSERT(sched_tasklet->dispatch_what_array->len == 1);
+
   g_array_free(sched_tasklet->cftimer_array, TRUE);
-
-  rwsched_CFSocketRef rw_socket;
-  while ((rw_socket = g_array_index(sched_tasklet->cfsocket_array, rwsched_CFSocketRef, 1)) != NULL) {
-    RW_CF_TYPE_VALIDATE(rw_socket, rwsched_CFSocketRef);
-    rwsched_tasklet_CFSocketRelease(sched_tasklet, rw_socket);
-    //g_array_remove_index (sched_tasklet->cfsocket_array, 1);
-  }
+  
   g_array_free(sched_tasklet->cfsocket_array, TRUE);
 
-  rwsched_CFRunLoopSourceRef rw_source;
-  while ((rw_source = g_array_index(sched_tasklet->cfsource_array, rwsched_CFRunLoopSourceRef, 1)) != NULL) {
-    RW_CF_TYPE_VALIDATE(rw_source, rwsched_CFRunLoopSourceRef);
-    rwsched_tasklet_CFSocketReleaseRunLoopSource(sched_tasklet, rw_source);
-    g_array_remove_index (sched_tasklet->cfsource_array, 1);
-  }
   g_array_free(sched_tasklet->cfsource_array, TRUE);
 
-  rwsched_dispatch_what_ptr_t what;
-  while ((what = g_array_index(sched_tasklet->dispatch_what_array, rwsched_dispatch_what_ptr_t, 1)) != NULL) {
-    RW_FREE_TYPE(what, rwsched_dispatch_what_ptr_t);
-    g_array_remove_index (sched_tasklet->dispatch_what_array, 1);
-  }
+
   g_array_free(sched_tasklet->dispatch_what_array, TRUE);
 
   ck_pr_dec_32(&g_rwsched_tasklet_count);

@@ -1,21 +1,7 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Anil Gunturu
 # Creation Date: 8/29/2013
-# 
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
 
 ##
 # DEPENDENCY ALERT
@@ -34,7 +20,7 @@ set(INSTALL_COMPONENT "util")
 # DO NOT add any code before this and DO NOT
 # include this file anywhere else
 ##
-include(rift_submodule)
+include(rift_submodule NO_POLICY_SCOPE)
 
 ##
 # Submodule specific includes will go here, 
@@ -63,10 +49,17 @@ set(subdirs
 rift_add_subdirs(SUBDIR_LIST ${subdirs})
 
 ##
+# Set up package details
+##
+
+rift_set_component_package_fields(
+  "${INSTALL_COMPONENT}"
+  DESCRIPTION "RIFT.ware Core Util Package"
+  )
+
+##
 # This macro adds targets for documentaion, unittests, code coverage and packaging
 ##
 rift_add_submodule_targets(
   SUBMODULE_PACKAGE_NAME "rw.core.util"
-  DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/package-description.txt"
-  DESCRIPTION_SUMMARY "RIFTware Core Util Package"
   )

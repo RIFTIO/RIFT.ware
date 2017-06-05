@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rwtrace_gtest.cc
@@ -96,11 +77,16 @@ static void rwlog_gtest_reset_bootstrap_filters(char *shm_file_name)
   if (filter_shm_fd < 0)
   {
     RWLOG_FILTER_DEBUG_PRINT ("Error Open %s for  SHM:%s\n", strerror(errno), rwlog_shm);
-    RWLOG_FILTER_DEBUG_PRINT ("Error Open %s for  SHM:%s\n", strerror(errno), rwlog_shm);
     RWLOG_ASSERT(0);
     return;
   }
-  ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  int size = ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  if (size < 0) {
+    RWLOG_FILTER_DEBUG_PRINT ("Error truncate %s for  SHM:%s\n", strerror(errno), rwlog_shm);
+    RWLOG_ASSERT(0);
+    return;
+  }
+  
   rwlogd_shm_ctrl =
       (rwlogd_shm_ctrl_t *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd, 0);
   if (MAP_FAILED == rwlogd_shm_ctrl)
@@ -211,10 +197,11 @@ TEST(RWLogSource, LogInitSimple)
   EXPECT_TRUE(status == RW_STATUS_SUCCESS);
 
   char *rwlog_shm_name = NULL;
-  asprintf (&rwlog_shm_name,
+  int r = asprintf (&rwlog_shm_name,
                     "%s-%d",
                     RWLOG_FILTER_SHM_PATH,
                     rwlog_get_systemId());
+  RW_ASSERT(r > 0);
   shm_unlink(rwlog_shm_name);
   free(rwlog_shm_name);
 }
@@ -426,7 +413,12 @@ static void rwlog_test_filter_set(uint32_t cat,
     ASSERT_TRUE(0);
     return;
   }
-  ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  int size = ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  if (size < 0) {
+    RWLOG_FILTER_DEBUG_PRINT ("Error truncate %s for  SHM:%s\n", strerror(errno), rwlog_shm);
+    ASSERT_TRUE(0);
+    return;
+  }
   filter_memory_header *_rwlogd_filter_memory =
       (filter_memory_header *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd, 0);
   if (MAP_FAILED == _rwlogd_filter_memory)
@@ -486,7 +478,12 @@ static void rwlog_gtest_serialno_set(rw_call_id_t *callid)
     ASSERT_TRUE(0);
     return;
   }
-  ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  int size = ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  if (size < 0) {
+    RWLOG_FILTER_DEBUG_PRINT ("Error truncate %s for  SHM:%s\n", strerror(errno), rwlog_shm);
+    ASSERT_TRUE(0);
+    return;
+  }
   filter_memory_header *_rwlogd_filter_memory =
       (filter_memory_header *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd, 0);
   if (MAP_FAILED == _rwlogd_filter_memory)
@@ -525,8 +522,13 @@ static void rwlog_test_callid_filter(uint64_t value )
     ASSERT_TRUE(0);
     return;
   }
-  ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
-  filter_memory_header *_rwlogd_filter_memory =
+  int size = ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  if (size < 0) {
+    RWLOG_FILTER_DEBUG_PRINT ("Error truncate %s for  SHM:%s\n", strerror(errno), rwlog_shm);
+    ASSERT_TRUE(0);
+    return;
+  }
+ filter_memory_header *_rwlogd_filter_memory =
       (filter_memory_header *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd, 0);
   if (MAP_FAILED == _rwlogd_filter_memory)
   {
@@ -578,7 +580,12 @@ static void rwlog_test_callid_filter_reset(uint64_t value )
     ASSERT_TRUE(0);
     return;
   }
-  ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  int size = ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  if (size < 0) {
+    RWLOG_FILTER_DEBUG_PRINT ("Error truncate %s for  SHM:%s\n", strerror(errno), rwlog_shm);
+    ASSERT_TRUE(0);
+    return;
+  }
   filter_memory_header *_rwlogd_filter_memory =
       (filter_memory_header *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd, 0);
   if (MAP_FAILED == _rwlogd_filter_memory)
@@ -788,7 +795,12 @@ TEST(RWLogSrcFilter, FilterBootStrapLog)
 
   int filter_shm_fd =  shm_open(ctxt->rwlog_shm,oflags,perms);
   EXPECT_FALSE(filter_shm_fd < 0);
-  ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  int size = ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  if (size < 0) {
+    RWLOG_FILTER_DEBUG_PRINT ("Error truncate %s for  SHM:%s\n", strerror(errno), rwlog_shm);
+    ASSERT_TRUE(0);
+    return;
+  }
   filter_memory_header *_rwlogd_filter_memory =
       (filter_memory_header *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd, 0);
 
@@ -1082,7 +1094,12 @@ static void rwlog_test_get_shm_filter(filter_memory_header **filter_memory)
     ASSERT_TRUE(0);
     return;
   }
-  ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  int size = ftruncate(filter_shm_fd, RWLOG_FILTER_SHM_SIZE);
+  if (size < 0) {
+    RWLOG_FILTER_DEBUG_PRINT ("Error truncate %s for  SHM:%s\n", strerror(errno), rwlog_shm);
+    ASSERT_TRUE(0);
+    return;
+  }
   rwlogd_shm_ctrl =
       (rwlogd_shm_ctrl_t *) mmap(NULL, RWLOG_FILTER_SHM_SIZE, mprot, mflags, filter_shm_fd, 0);
   if (MAP_FAILED == rwlogd_shm_ctrl)

@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwmsg_endpoint.c
  * @author Grant Taylor <grant.taylor@riftio.com>
@@ -402,13 +383,13 @@ static void rwmsg_endpoint_nn_rwsched_event_file(rwmsg_endpoint_t *ep, int reven
   if (ep->nn.rwsource_fd_read) {
     rwsched_dispatch_source_cancel(ep->taskletinfo, ep->nn.rwsource_fd_read);
     //NEW-CODE
-    rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ep->nn.rwsource_fd_read, ep->rwsched, ep->taskletinfo);
+    rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ep->nn.rwsource_fd_read, ep->rwsched, ep->taskletinfo);
     ep->nn.rwsource_fd_read = NULL;
   }
   if (ep->nn.rwsource_fd_write) {
     rwsched_dispatch_source_cancel(ep->taskletinfo, ep->nn.rwsource_fd_write);
     //NEW-CODE
-    rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ep->nn.rwsource_fd_write, ep->rwsched, ep->taskletinfo);
+    rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ep->nn.rwsource_fd_write, ep->rwsched, ep->taskletinfo);
     ep->nn.rwsource_fd_write = NULL;
   }
   if (ep->nn.fd > -1 && (POLLIN&ep->nn.events)) {
@@ -435,7 +416,7 @@ static void rwmsg_endpoint_nn_rwsched_event_file(rwmsg_endpoint_t *ep, int reven
   if (ep->nn.rwsource_timer) {
     rwsched_dispatch_source_cancel(ep->taskletinfo, ep->nn.rwsource_timer);
     //NEW-CODE
-    rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ep->nn.rwsource_timer, ep->rwsched, ep->taskletinfo);
+    rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ep->nn.rwsource_timer, ep->rwsched, ep->taskletinfo);
     ep->nn.rwsource_timer = NULL;
   }
   if (ep->nn.timeout > -1) {
@@ -463,7 +444,7 @@ static void rwmsg_endpoint_nn_rwsched_event_timer(void *ud) {
   if (ep->nn.rwsource_timer) {
     rwsched_dispatch_source_cancel(ep->taskletinfo, ep->nn.rwsource_timer);
     //NEW-CODE
-    rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ep->nn.rwsource_timer, ep->rwsched, ep->taskletinfo);
+    rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ep->nn.rwsource_timer, ep->rwsched, ep->taskletinfo);
     ep->nn.rwsource_timer = NULL;
   }
   if (ep->nn.timeout > -1) {
@@ -562,7 +543,7 @@ rwmsg_bool_t rwmsg_endpoint_release(rwmsg_endpoint_t *ep) {
     if (ep->gc.rws_timer) {
       rwsched_dispatch_source_cancel(ep->taskletinfo, ep->gc.rws_timer);
       //NEW-CODE
-      rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_OBJREL, ep->gc.rws_timer, ep->rwsched, ep->taskletinfo);
+      rwmsg_garbage(&ep->gc, RWMSG_OBJTYPE_RWSCHED_SRCREL, ep->gc.rws_timer, ep->rwsched, ep->taskletinfo);
       ep->gc.rws_timer = NULL;
     }
 
@@ -1331,7 +1312,8 @@ static const char *rwmsg_objdesc[] = {
   "destination",
   "srvchan",
   "clichan",
-  "rwsobj",
+  "rwsched_q",
+  "rwsched_src",
   "sockset",
   "generic"
 };
@@ -1353,9 +1335,13 @@ static void rwmsg_garbage_truck_free(rwmsg_garbage_truck_t *gc,
   case RWMSG_OBJTYPE_SRVCHAN:
     rwmsg_srvchan_destroy((rwmsg_srvchan_t*)g->objptr);
     break;
-  case RWMSG_OBJTYPE_RWSCHED_OBJREL:
-    rwsched_dispatch_release((rwsched_tasklet_ptr_t)g->tinfo,
-                             (rwsched_dispatch_object_t)(rwsched_dispatch_source_t)g->objptr);
+  case RWMSG_OBJTYPE_RWSCHED_SRCREL:
+    rwsched_dispatch_source_release((rwsched_tasklet_ptr_t)g->tinfo,
+                                    (rwsched_dispatch_source_t)g->objptr);
+    break;
+  case RWMSG_OBJTYPE_RWSCHED_QREL:
+    rwsched_dispatch_queue_release((rwsched_tasklet_ptr_t)g->tinfo,
+                                   (rwsched_dispatch_queue_t)g->objptr);
     break;
   case RWMSG_OBJTYPE_METHOD:
     rwmsg_method_destroy(gc->ep, (rwmsg_method_t*)g->objptr);

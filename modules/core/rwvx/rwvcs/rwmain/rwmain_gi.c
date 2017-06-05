@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -101,7 +87,7 @@ static int rwmain_gi_function(int argc, char ** argv, char ** envp)
 {
   rwpb_gi_RwManifest_Manifest manifest_box;
 
-  memset(&manifest_box, sizeof(manifest_box), 0);
+  memset(&manifest_box, 0, sizeof(manifest_box));
   manifest_box.box.message = (struct ProtobufCMessage*)g_pb_rwmanifest;
   if (g_pb_rwmanifest->init_phase 
       && g_pb_rwmanifest->init_phase->environment) {

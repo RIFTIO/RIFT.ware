@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -356,7 +342,10 @@ void restart_process(
       free(cls->max_timer_cls);
       cls->max_timer_cls = NULL;
     }
-    rwsched_tasklet_CFRunLoopTimerRelease(cls->rwmain->rwvx->rwsched_tasklet, cls->timer);
+    if (cls->timer){
+      rwsched_tasklet_CFRunLoopTimerRelease(cls->rwmain->rwvx->rwsched_tasklet, cls->timer);
+      cls->timer = NULL;
+    }
     mq_close(cls->mqd);
     free(cls->instance_name);
     free(cls);
@@ -387,8 +376,11 @@ static void on_subscriber_timeout(rwsched_CFRunLoopTimerRef timer, void * ctx)
       cls->rwmain,
       "Timeout waiting for subscriver to flush the message queue.  Exiting.");
 
-  rwsched_tasklet_CFRunLoopTimerRelease(cls->rwmain->rwvx->rwsched_tasklet, cls->timer);
-
+  if (cls->timer) {
+    rwsched_tasklet_CFRunLoopTimerRelease(cls->rwmain->rwvx->rwsched_tasklet, cls->timer);
+    cls->timer = NULL;
+  }
+  
   instance_name = to_instance_name(cls->rwmain->component_name, cls->rwmain->instance_id);
 
   status = rwvcs_rwzk_update_state(cls->rwmain->rwvx->rwvcs, instance_name, RW_BASE_STATE_TYPE_CRASHED);
@@ -442,9 +434,13 @@ static void on_subscriber_delay_timeout(rwsched_CFRunLoopTimerRef timer, void * 
       "Timeout waiting for first heartbeat from %s, assuming dead",
       cls->sub_cls->instance_name);
 
-  rwsched_tasklet_CFRunLoopTimerRelease(
-      cls->sub_cls->rwmain->rwvx->rwsched_tasklet,
-      cls->sub_cls->timer);
+  if (cls->sub_cls->timer) {
+    rwsched_tasklet_CFRunLoopTimerRelease(
+        cls->sub_cls->rwmain->rwvx->rwsched_tasklet,
+        cls->sub_cls->timer);
+    cls->sub_cls->timer = NULL;
+  }
+  
   rw_component_info ci;
   kill_component(cls->sub_cls->rwmain, cls->sub_cls->instance_name, &ci);
 
@@ -728,17 +724,22 @@ void rwproc_heartbeat_free(struct rwproc_heartbeat * rwproc_heartbeat)
     struct subscriber_cls * cls = rwproc_heartbeat->subs[i];
 
     if (cls->max_timer_cls) {
-     rwsched_tasklet_CFRunLoopTimerRelease(
-          cls->rwmain->rwvx->rwsched_tasklet,
-          cls->max_timer_cls->timer);
-     free(cls->max_timer_cls);
+      if (cls->max_timer_cls->timer){
+        rwsched_tasklet_CFRunLoopTimerRelease(
+            cls->rwmain->rwvx->rwsched_tasklet,
+            cls->max_timer_cls->timer);
+        cls->max_timer_cls->timer = NULL;
+      }
+      free(cls->max_timer_cls);
     }
 
-    if (cls->timer)
+    if (cls->timer) {
       rwsched_tasklet_CFRunLoopTimerRelease(
           cls->rwmain->rwvx->rwsched_tasklet,
           cls->timer);
-
+      cls->timer = NULL;
+    }
+    
     r = asprintf(&path, "/%s", cls->instance_name);
     if (r != -1) {
       mq_unlink(path);
@@ -755,11 +756,12 @@ void rwproc_heartbeat_free(struct rwproc_heartbeat * rwproc_heartbeat)
   for (size_t i = 0; rwproc_heartbeat->pubs[i]; ++i) {
     struct publisher_cls * cls = rwproc_heartbeat->pubs[i];
 
-    if (cls->timer)
+    if (cls->timer){
       rwsched_tasklet_CFRunLoopTimerRelease(
           cls->rwmain->rwvx->rwsched_tasklet,
           cls->timer);
-
+      cls->timer = NULL;
+    }
     mq_close(cls->mqd);
     free(cls);
   }
@@ -948,7 +950,7 @@ rw_status_t rwproc_heartbeat_publish(
   }
   bzero(cls, sizeof(struct publisher_cls));
 
-  mqd = mq_open(path, O_WRONLY|O_NONBLOCK, NULL);
+  mqd = mq_open(path, O_WRONLY|O_NONBLOCK);
   if (mqd == -1) {
     int e = errno;
 
@@ -1045,9 +1047,12 @@ rw_status_t rwproc_heartbeat_reset(
 
     if (!enabled) {
       if (cls->max_timer_cls) {
-        rwsched_tasklet_CFRunLoopTimerRelease(
-            cls->rwmain->rwvx->rwsched_tasklet,
-            cls->max_timer_cls->timer);
+        if (cls->max_timer_cls->timer){
+          rwsched_tasklet_CFRunLoopTimerRelease(
+              cls->rwmain->rwvx->rwsched_tasklet,
+              cls->max_timer_cls->timer);
+          cls->max_timer_cls->timer = NULL;
+        }
         cls->max_timer_cls = NULL;
       }
       continue;

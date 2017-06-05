@@ -33,7 +33,8 @@
             "enum":[
                 "working",
                 "broken",
-                "development"
+                "development",
+                "disabled"
             ]
         },
         "keywords":{
@@ -43,6 +44,10 @@
                 "type": "string"
             },
             "uniqueItems":true
+        },
+        "openstack_host":{
+            "description":"Which openstack host to use to run test case",
+            "type":"string"
         },
         "networks":{
             "description":"List of networks",

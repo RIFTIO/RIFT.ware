@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rw-dts.yang
  * @author Grant Taylor
@@ -102,6 +83,57 @@ module rw-dts
     }
   }
 
+  typedef dts-memory-type{
+    type enumeration{
+      enum generic;
+      enum member_reg;
+      enum registration;
+      enum group_registration;
+      enum pub_serial_list;
+      enum reg_sent_list;
+      enum reg_info_send;
+      enum dereg_path_info;
+      enum advise_arg;
+      enum data_object;
+      enum data_record;
+      enum member_advise_cb;
+      enum xpath_pcb;
+      enum xact_result;
+      enum xact_status;
+      enum xact_result_track;
+      enum appconf_xact;
+      enum appconf;
+      enum appconf_reg;
+      enum match_info;
+      enum member_cursor;
+      enum shard_detail_info;
+      enum appdata_cursor;
+      enum member_data_audit;
+      enum shard_chunk;
+      enum shard_chunk_iter;
+      enum shard;
+      enum shard_iter;
+      enum xquery;
+      enum dts_group;
+      enum group_xact;
+      enum commit_record;
+      enum commit_record_int;
+      enum audit_result;
+      enum query_error;
+      enum xact_info;
+      enum xact_event_cb;
+      enum xact;
+      enum config_ready;
+      enum config_ready_handle;
+      enum update_elem_async;
+      enum query_journal;
+      enum journal_element;
+      enum journal_entry;
+      enum journal;
+      enum max;
+    }
+  }
+  
   typedef audit-evt {
     type enumeration {
       enum null;
@@ -476,6 +508,9 @@ module rw-dts
         type uint64;
       }
       leaf xact-ct {
+        type uint64;
+      }
+      leaf stale-xact-ct{
         type uint64;
       }
     }
@@ -1146,6 +1181,20 @@ module rw-dts
             }
           }
         }
+        list memory-stats{
+          key "type";
+          
+          leaf type{
+            type dts-memory-type;
+          }
+          leaf num-allocs{
+            type uint32;
+          }
+          leaf num-frees{
+            type uint32;
+          }
+        }
+        
         list registration {
           rwpb:msg-new MemberRegn;
           description "DTS Member registration related state";
@@ -1401,6 +1450,22 @@ module rw-dts
     }
     uses tracert;
     uses audit-summary;
+
+    container router{
+      config true;
+      description "Configuration for all the routers";
+      container transaction-timer{
+        description "Transaction timer configuration";
+        leaf enabled{
+          description "Aborts a transaction if the transaction-timer fires";
+          type boolean;
+        }
+        leaf interval{
+          description "Configures the interval in seconds for each transaction on all the DTS routers";
+          type uint32;
+        }
+      }
+    }
   }
 
   grouping rtr-ret-values {
@@ -1492,6 +1557,9 @@ module rw-dts
          length "1..32";
        }
      }
+     leaf promote-sub {
+       type empty;
+     }
   }
 
   grouping regist-reg-id {
@@ -1502,16 +1570,16 @@ module rw-dts
 
        uses regist;
        uses memb-reg-store;
-     }
+    }
   }
-
+  
   grouping regist-keyspec {
     list registration {
-       rwpb:msg-new RouterInitRegnkey;
-       description "DTS Router registration related state";
-       key "keystr flags";
-
-       uses regist;
+      rwpb:msg-new RouterInitRegnkey;
+      description "DTS Router registration related state";
+      key "keystr flags";
+      
+      uses regist;
     }
   }
 
@@ -1580,10 +1648,6 @@ module rw-dts
 
       uses regist-keyspec;
       uses memb-reg-store;
-
-      leaf promote-sub {
-        type empty;
-      }
     }
   }
 

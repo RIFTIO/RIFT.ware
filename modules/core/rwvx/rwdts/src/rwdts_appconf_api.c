@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file   rwdts_appconf_api.c
  * @author RIFT.io <info@riftio.com>
@@ -70,7 +51,8 @@ static void *rwdts_appconf_xact_init(rwdts_group_t *grp,
 
   rwdts_appconf_xact_t *appx = NULL;
 
-  appx = RW_MALLOC0_TYPE(sizeof(*appx), rwdts_appconf_xact_t);
+  appx = DTS_APIH_MALLOC0_TYPE(xact->apih, RW_DTS_DTS_MEMORY_TYPE_APPCONF_XACT,
+                               sizeof(*appx), rwdts_appconf_xact_t);
   appx->ac = ac;
   if (ac->cb.xact_init) {
     if (ac->cb.xact_init_dtor) {
@@ -123,7 +105,8 @@ static void rwdts_appconf_xact_deinit(rwdts_group_t *grp,
   free(appx->errs);
   appx->errs = NULL;
   appx->errs_ct = 0;
-  RW_FREE_TYPE(appx, rwdts_appconf_xact_t);
+  DTS_APIH_FREE_TYPE(xact->apih, RW_DTS_DTS_MEMORY_TYPE_APPCONF_XACT,
+                     appx, rwdts_appconf_xact_t);
   appx = NULL;
 }
 static rwdts_member_rsp_code_t rwdts_appconf_xact_event(rwdts_api_t *apih,
@@ -164,11 +147,11 @@ static rwdts_member_rsp_code_t rwdts_appconf_xact_event(rwdts_api_t *apih,
       }
       if (appx->errs_ct) {
         // Whoops, now we're doomed
-        RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_AppconfInstallFailed,
+        RWDTS_API_LOG_XACT_EVENT(apih, xact, AppconfInstallFailed,
                                  "Appconf INSTALL failure", appx->errs_ct, rwdts_get_app_addr_res(apih, ac->cb.config_apply), apih->client_path);
         int i;
         for (i=0; i<appx->errs_ct; i++) {
-          RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_AppconfInstallErrors,
+          RWDTS_API_LOG_XACT_EVENT(apih, xact, AppconfInstallErrors,
                                    i, appx->errs[i].rs, appx->errs[i].str);
         }
         RW_CRASH();
@@ -252,8 +235,8 @@ static void rwdts_appconf_regn_check_timer(void *ctx)
 
   rwsched_dispatch_source_cancel(apih->tasklet,
                                  ac->regn_timer);
-  rwsched_dispatch_release(apih->tasklet,
-                           ac->regn_timer);
+  rwsched_dispatch_source_release(apih->tasklet,
+                                  ac->regn_timer);
   ac->regn_timer = NULL;
 
   return;
@@ -268,18 +251,19 @@ rwdts_appconf_t *rwdts_appconf_group_create(rwdts_api_t *apih,
   RW_ASSERT(cbset->config_apply);
 
   if (cbset == NULL) {
-    RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_AppconfError,
+    RWDTS_API_LOG_XACT_EVENT(apih, xact, AppconfError,
                              "AppconfGroup Create invalid callback param",
                               apih->client_path);
     return NULL;
   }
   if (!cbset->config_apply) {
-    RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_AppconfError,
+    RWDTS_API_LOG_XACT_EVENT(apih, xact, AppconfError,
                              "AppconfGroup Create invalid config apply param",
                               apih->client_path);
     return NULL;
   }
-  rwdts_appconf_t *ac = RW_MALLOC0_TYPE(sizeof(rwdts_appconf_t), rwdts_appconf_t);
+  rwdts_appconf_t *ac = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_APPCONF,
+                                              sizeof(rwdts_appconf_t), rwdts_appconf_t);
   ac->apih = apih;
   memcpy(&ac->cb, cbset, sizeof(ac->cb));
   rs = rwdts_api_group_create(ac->apih, rwdts_appconf_xact_init,
@@ -289,7 +273,7 @@ rwdts_appconf_t *rwdts_appconf_group_create(rwdts_api_t *apih,
   RW_ASSERT(ac->group);
 
   if ((rs != RW_STATUS_SUCCESS) || !ac->group) {
-    RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_AppconfError,
+    RWDTS_API_LOG_XACT_EVENT(apih, xact, AppconfError,
                              "AppconfGroup API Create failure",
                               apih->client_path);
     return NULL;
@@ -315,7 +299,8 @@ rwdts_appconf_t *rwdts_appconf_group_create(rwdts_api_t *apih,
   rwsched_dispatch_set_context(apih->tasklet,
                                ac->regn_timer,
                                ac);
-
+  /*This timer is not using the RWDTS_TIMEOUT_QUANTUM_MULTIPLE since there is no dependency on
+    whether we are running in collapsed mode or not.*/
   rwsched_dispatch_source_set_timer(apih->tasklet,
                                     ac->regn_timer,
                                     dispatch_time(DISPATCH_TIME_NOW, 1*NSEC_PER_SEC),
@@ -340,14 +325,14 @@ void rwdts_appconf_group_destroy(rwdts_appconf_t *ac) {
   if (ac->regn_timer) {
     rwsched_dispatch_source_cancel(ac->apih->tasklet,
                                    ac->regn_timer);
-    rwsched_dispatch_release(ac->apih->tasklet,
-                             ac->regn_timer);
+    rwsched_dispatch_source_release(ac->apih->tasklet,
+                                    ac->regn_timer);
     ac->regn_timer = NULL;
   }
 
   memset(&ac->cb, 0, sizeof(ac->cb));
   rwdts_group_destroy(ac->group);
-  RW_FREE_TYPE(ac, rwdts_appconf_t);
+  DTS_APIH_FREE_TYPE(ac->apih, RW_DTS_DTS_MEMORY_TYPE_APPCONF, ac, rwdts_appconf_t);
 }
 
 static void
@@ -587,7 +572,8 @@ void rwdts_appconf_register_deinit(rwdts_member_registration_t *reg) {
     }
     RW_ASSERT_TYPE(reg->appconf, rwdts_appconf_reg_t);
     RW_ASSERT_TYPE(reg->appconf->ac, rwdts_appconf_t);
-    RW_FREE_TYPE(reg->appconf, rwdts_appconf_reg_t);
+    DTS_APIH_FREE_TYPE(reg->apih,
+                       RW_DTS_DTS_MEMORY_TYPE_APPCONF_REG, reg->appconf, rwdts_appconf_reg_t);
     reg->appconf = NULL;
   }
 }
@@ -624,7 +610,9 @@ static rwdts_member_reg_handle_t rwdts_appconf_register_int(rwdts_appconf_t *ac,
   if (regh) {
     rwdts_member_registration_t *reg = (rwdts_member_registration_t*)regh;
 
-    rwdts_appconf_reg_t *appr = RW_MALLOC0_TYPE(sizeof(*appr), rwdts_appconf_reg_t);
+    rwdts_appconf_reg_t *appr = DTS_APIH_MALLOC0_TYPE(reg->apih,
+                                                      RW_DTS_DTS_MEMORY_TYPE_APPCONF_REG,
+                                                      sizeof(*appr), rwdts_appconf_reg_t);
     reg->appconf = appr;
     appr->ac = ac;
     appr->cb.prepare = prepare_cb; /* may be NULL! */
@@ -713,8 +701,8 @@ void rwdts_appconf_phase_complete(rwdts_appconf_t *ac, enum rwdts_appconf_phase_
       if (ac->regn_timer) {
         rwsched_dispatch_source_cancel(ac->apih->tasklet,
                                        ac->regn_timer);
-        rwsched_dispatch_release(ac->apih->tasklet,
-                                 ac->regn_timer);
+        rwsched_dispatch_source_release(ac->apih->tasklet,
+                                        ac->regn_timer);
         ac->regn_timer = NULL;
       }
 

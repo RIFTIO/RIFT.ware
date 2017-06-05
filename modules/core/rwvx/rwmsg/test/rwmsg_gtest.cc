@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /**
  * @file rwmsg_gtest.cc
@@ -728,7 +709,7 @@ TEST(RWMsgAPI, QueueRWSchedEvent) {
   rwmsg_queue_deinit(ep, &ctx->q);
   RW_FREE_TYPE(ctx, qtest1_context);
 
-  rwsched_dispatch_release(tenv.tasklet[0], serq);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], serq);
 
   rwmsg_bool_t rb = rwmsg_endpoint_halt(ep);
   ASSERT_TRUE(rb);
@@ -989,7 +970,7 @@ TEST(RWMsgAPI, SrvchanBindingRWSched) {
   r = rwmsg_endpoint_halt(ep);
   ASSERT_TRUE(r);
 
-  rwsched_dispatch_release(tenv.tasklet[0], serq);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], serq);
 
   RW_FREE_TYPE(ctx, sctest1_context);
 
@@ -1096,8 +1077,8 @@ TEST(RWMsgAPI, BothchanBindingRWSched) {
   r = rwmsg_endpoint_halt(ep);
   ASSERT_TRUE(r);
 
-  rwsched_dispatch_release(tenv.tasklet[0], serq1);
-  rwsched_dispatch_release(tenv.tasklet[0], serq2);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], serq1);
+  rwsched_dispatch_queue_release(tenv.tasklet[0], serq2);
 
   RW_FREE_TYPE(ctx, sctest1_context);
 

@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -37,10 +23,13 @@ __BEGIN_DECLS
 
 #define RWMSG_TOYFD_MAX (128)
 #define RWMSG_TOYTIMER_MAX (256)
+//forward declarations
+struct rwmsg_toyfd_s;
+struct rwmsg_toytimer_s;
 
-typedef void (*toyfd_cb_t)(uint64_t id, int fd, int revents, void *ud);
+typedef void (*toyfd_cb_t)(struct rwmsg_toyfd_s *, int fd, int revents, void *ud);
 
-typedef void (*toytimer_cb_t)(uint64_t id, void *ud);
+typedef void (*toytimer_cb_t)(struct rwmsg_toytimer_s *, void *ud);
 
 struct rwmsg_toysched_s {
   rwsched_instance_ptr_t rwsched_instance;
@@ -75,7 +64,6 @@ struct rwmsg_toyfd_context_s {
 
 struct rwmsg_toyfd_s {
   CFRuntimeBase _base;
-  uint64_t id;
   int fd;
   toyfd_cb_t cb;
   void *ud;
@@ -96,7 +84,6 @@ RW_CF_TYPE_EXTERN(rwmsg_toyfd_ptr_t);
 
 struct rwmsg_toytimer_s {
   CFRuntimeBase _base;
-  uint64_t id;
   toytimer_cb_t cb;
   void *ud;
   struct rwmsg_event_context_s context;
@@ -152,22 +139,22 @@ rwmsg_toytask_create(rwmsg_toysched_t *ts);
 void
 rwmsg_toytask_destroy(rwmsg_toytask_t *toy);
 
-extern uint64_t
+extern struct rwmsg_toyfd_s*
 rwmsg_toyfd_add(rwmsg_toytask_t *toy, int fd, int pollbits, toyfd_cb_t cb, void *ud);
 
-extern uint64_t
-rwmsg_toyfd_del(rwmsg_toytask_t *toy, uint64_t id);
+extern void
+rwmsg_toyfd_del(rwmsg_toytask_t *toy, struct rwmsg_toyfd_s*);
 
-extern uint64_t
+extern  struct rwmsg_toytimer_s*
 rwmsg_toytimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud);
 
-extern uint64_t
-rwmsg_toytimer_del(rwmsg_toytask_t *toy, uint64_t id);
+extern void
+rwmsg_toytimer_del(rwmsg_toytask_t *toy, struct rwmsg_toytimer_s*);
 
-extern uint64_t
+extern struct rwmsg_toytimer_s*
 rwmsg_toyRtimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud);
 
-extern uint64_t
+extern struct rwmsg_toytimer_s*
 rwmsg_toy1Ttimer_add(rwmsg_toytask_t *toy, int ms, toytimer_cb_t cb, void *ud);
 
 extern void
@@ -177,7 +164,8 @@ extern void
 rwmsg_toysched_runloop(rwmsg_toysched_t *ts, rwmsg_toytask_t *tt_blk, int max_events, double max_time);
 
 extern int
-rwmsg_toytask_block(rwmsg_toytask_t *toy, uint64_t id, int timeout_ms);
+rwmsg_toytask_block(rwmsg_toytask_t *toy, struct rwmsg_toyfd_s  *id,
+                    int timeout_ms);
 
 __END_DECLS
 

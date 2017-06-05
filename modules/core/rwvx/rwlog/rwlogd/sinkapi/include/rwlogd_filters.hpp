@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -57,6 +43,9 @@ rw_status_t remove_exact_match_filter_string(filter_attribute **filter_info,
                                              char *category_str,
                                              char *field_name,
                                              char *value);
+
+rw_status_t remove_all_attribute_cat_filter(filter_attribute **filter_info,
+                                        char *category_str);
 
 extern "C" rw_status_t add_exact_match_deny_filter_string(filter_attribute **deny_filter_info,
                                     char *field_name,

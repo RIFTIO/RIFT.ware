@@ -1,21 +1,7 @@
-# 
-#   Copyright 2016 RIFT.IO Inc
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
 # Author(s): Anil Gunturu
 # Creation Date: 2014/02/18
-# 
+# RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
 
 include(CMakeParseArguments)
 
@@ -27,9 +13,9 @@ include(CMakeParseArguments)
 macro(install) 
   # Parse the function arguments
   set(parse_options ARCHIVE LIBRARY RUNTIME FRAMEWORK BUNDLE PRIVATE_HEADER
-    PUBLIC_HEADER RESOURCE OPTIONAL)
+    PUBLIC_HEADER RESOURCE OPTIONAL USE_SOURCE_PERMISSIONS)
   set(parse_onevalargs DESTINATION EXPORT COMPONENT)
-  set(parse_multivalueargs FILES PROGRAMS TARGETS PERMISSIONS)
+  set(parse_multivalueargs FILES PROGRAMS TARGETS PERMISSIONS DIRECTORY)
   cmake_parse_arguments(ARGS "${parse_options}" "${parse_onevalargs}" "${parse_multivalueargs}" ${ARGN})
 
   # If component is specified capture this into a global variable
@@ -95,7 +81,12 @@ macro(install)
       list(APPEND ex_args PERMISSIONS ${ARGS_PERMISSIONS})
     endif()
 
+    if(ARGS_USE_SOURCE_PERMISSIONS)
+      list(APPEND ex_args USE_SOURCE_PERMISSIONS)
+    endif()
+
     if(ARGS_FILES)
+
       foreach(fpath ${ARGS_FILES})
         get_filename_component(fname ${fpath} NAME)
         if(IS_ABSOLUTE ${fpath})
@@ -113,7 +104,9 @@ macro(install)
             ${RIFT_SUBMODULE_INSTALL_PREFIX}/install-symlink-workaround/${CMAKE_INSTALL_PREFIX}/${ARGS_DESTINATION}
           ${ex_args})
       endforeach(fpath)
+
     elseif(ARGS_PROGRAMS)
+
       foreach(fpath ${ARGS_PROGRAMS})
         get_filename_component(fname ${fpath} NAME)
         if(IS_ABSOLUTE ${fpath})
@@ -131,7 +124,9 @@ macro(install)
             ${RIFT_SUBMODULE_INSTALL_PREFIX}/install-symlink-workaround/${CMAKE_INSTALL_PREFIX}/${ARGS_DESTINATION}
           ${ex_args})
       endforeach(fpath)
+
     elseif(ARGS_TARGETS)
+
       foreach(t ${ARGS_TARGETS})
         get_property(tpath TARGET ${t} PROPERTY "LOCATION")
         get_filename_component(tname ${tpath} NAME)
@@ -144,6 +139,40 @@ macro(install)
         DESTINATION
           ${RIFT_SUBMODULE_INSTALL_PREFIX}/install-symlink-workaround/${CMAKE_INSTALL_PREFIX}/${ARGS_DESTINATION}
         ${ex_args})
+
+    elseif(ARGS_DIRECTORY)
+
+      _install(CODE "execute_process(COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/${ARGS_DESTINATION})")
+      foreach(d ${ARGS_DIRECTORY})
+        get_filename_component(dname ${d} NAME)
+        if(dname)
+          # Trailing directory name - create the source directory by name in the destination
+          if(IS_ABSOLUTE ${d})
+            set(absolute_dpath ${d})
+          else()
+            set(absolute_dpath ${CMAKE_CURRENT_SOURCE_DIR}/${d})
+          endif()
+
+          _install(CODE "execute_process(COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/${ARGS_DESTINATION}/${dname})")
+          _install(CODE "execute_process(COMMAND cp -fPrs ${absolute_dpath}/. ${CMAKE_INSTALL_PREFIX}/${ARGS_DESTINATION}/${dname}/.)")
+        else()
+          # Trailing slash - copy the contents of the source directory into the destination
+          if(IS_ABSOLUTE ${d})
+            set(absolute_dpath ${d})
+          else()
+            set(absolute_dpath ${CMAKE_CURRENT_SOURCE_DIR}/${d})
+          endif()
+
+          _install(CODE "execute_process(COMMAND cp -fPrs ${absolute_dpath}. ${CMAKE_INSTALL_PREFIX}/${ARGS_DESTINATION}/)")
+        endif()
+      endforeach()
+
+      _install(
+        DIRECTORY ${ARGS_DIRECTORY}
+        DESTINATION
+          ${RIFT_SUBMODULE_INSTALL_PREFIX}/install-symlink-workaround/${CMAKE_INSTALL_PREFIX}/${ARGS_DESTINATION}
+        ${ex_args})
+
     else()
      _install(${ARGN})
     endif()

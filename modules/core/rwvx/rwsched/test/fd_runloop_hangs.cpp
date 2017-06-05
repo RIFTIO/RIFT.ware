@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -34,7 +20,7 @@ typedef struct {
 } toysched_callback_context_t;
 
 static void
-toyfd_callback(uint64_t id, int fd, int revents, void *ud)
+toyfd_callback(struct rwmsg_toyfd_s * id, int fd, int revents, void *ud)
 {
   UNUSED(id);
   toysched_callback_context_t *context = (toysched_callback_context_t *) ud;
@@ -67,7 +53,7 @@ TEST(ToyFdIoTest, ToyFdIoCallbackPerfTest)
     rwmsg_toysched_t tsched;
     rwmsg_toytask_t *task;
     toysched_callback_context_t *context;
-    uint64_t callback_id[2];
+    struct rwmsg_toyfd_s *callback_id[2];
     int pipe_rc, pipe_fds[2];
 
     // Create an instance of the toy scheduler
@@ -110,13 +96,10 @@ TEST(ToyFdIoTest, ToyFdIoCallbackPerfTest)
     EXPECT_EQ(context->read_byte_count, pipe_rc);
     //
     // Delete the toytask file descriptor read and write callbacks
-    uint64_t rc;
-    rc = rwmsg_toyfd_del(task, callback_id[0]);
-    EXPECT_TRUE(rc);
-    EXPECT_EQ(rc, callback_id[0]);
-    rc = rwmsg_toyfd_del(task, callback_id[1]);
-    EXPECT_TRUE(rc);
-    EXPECT_EQ(rc, callback_id[1]);
+    rwmsg_toyfd_del(task, callback_id[0]);
+    
+    rwmsg_toyfd_del(task, callback_id[1]);
+    
 
     // Free the callback context structure
     RW_FREE_TYPE(context, toysched_callback_context_t);

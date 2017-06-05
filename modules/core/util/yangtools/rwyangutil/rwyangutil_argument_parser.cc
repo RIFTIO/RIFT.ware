@@ -1,21 +1,7 @@
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
  * Creation Date: 1/22/16
- * 
+ * RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
  */
 
 #include <algorithm>
@@ -71,13 +57,13 @@ void ArgumentParser::print_help() const
   std::cout << "  --remove-schema-dir         Remove Schema Directory\n";
   std::cout << "  --prune-schema-dir          Prune Schema Directories\n";
   std::cout << "  --rm-unique-mgmt-ws         Remove unique Mgmt workspace."
-               " Requires additional argument \"test-name:<test-name>\"\n";
+               " Optional additional argument \"test-name:<test-name>\"\n";
   std::cout << "  --rm-persist-mgmt-ws        Remove persist Mgmt workspaces."
-               " Requires additional argument \"test-name:<test-name>\"\n";
+               " Optional additional argument \"test-name:<test-name>\"\n";
   std::cout << "  --archive-mgmt-persist-ws   Archive persist Mgmt workspace."
-               " Requires additional argument \"test-name:<test-name>\"\n";
+               " Optional additional argument \"test-name:<test-name>\"\n";
   std::cout << "  --get-rift-var-root         Obtain the Rift workspace path."
-               " Requires additional argument \"test-name:<test-name>\"\n";
+               " Optional additional argument \"test-name:<test-name>\"\n";
   std::cout << std::endl;
 }
 

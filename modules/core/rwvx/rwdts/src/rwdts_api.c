@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_api.c
  * @author RIFT.io (info@riftio.com)
@@ -56,16 +37,14 @@ rwdts_log_handler (const gchar   *log_domain,
            gpointer       unused_data)
 {
   gint64 fd = (gint64)unused_data;
-  write(fd, message, strlen(message));
+  int _ignore __attribute((unused));  /* FIXME should handle better than this */
+  _ignore = write(fd, message, strlen(message));
 }
 
 /********************************************************************
  *  static prototypes                                               *
  ********************************************************************/
-static inline void rwdts_query_result_list_deinit(rw_dl_t *list);
-static inline void rwdts_xact_result_list_deinit(rw_dl_t *list);
 static inline rw_status_t rwdts_xact_block_deinit(struct rwdts_xact_block_s *block);
-static inline void rwdts_xact_result_list_deinit(rw_dl_t *list);
 static void rwdts_member_remove_kv_handle(rwdts_api_t *apih,
                                           rwdts_kv_table_handle_t *kv_tab_handle);
 
@@ -73,7 +52,7 @@ static int rwdts_reg_ct_ext_state(rwdts_api_t *apih, reg_state_t ct_state);
 static int rwdts_reg_ct_ext(rwdts_api_t *apih);
 
 static void rwdts_bcast_state_change(rwdts_api_t *apih);
-static rw_status_t rwdts_query_error_deinit(rwdts_query_error_t *err);
+static rw_status_t rwdts_query_error_deinit(rwdts_api_t *apih, rwdts_query_error_t *err);
 #define RWDTS_PROTO_MSG_STR_MAX_SIZE 1024
 
 static uint64_t rwdts_api_get_router_id(rwtasklet_info_ptr_t tasklet_info);
@@ -88,12 +67,6 @@ static void rwdts_xact_deinit_cursor(rwdts_xact_t *xact);
 static rwdts_api_t *rwdts_api_ref(rwdts_api_t *api, const char *file, int line)
 {
   RW_ASSERT_TYPE(api, rwdts_api_t);
-
-#if 0
-  printf("rwdts_api_ref:apih=%p ref_cnt=%d+1, from=%s:%d\n",
-          api, api->ref_cnt, file?file:"(nil)", line);
-#endif
-
   g_atomic_int_inc(&api->ref_cnt);
   return api;
 }
@@ -132,7 +105,7 @@ rwdts_xact_keyspec_err_cb(rw_keyspec_instance_t *ksi,
   if (xact)
   {
     xact->ksi_errstr = strdup(msg);
-    RWDTS_API_LOG_XACT_EVENT(xact->apih,xact,RwDtsApiLog_notif_XactKeyspecError,
+    RWDTS_API_LOG_XACT_EVENT(xact->apih,xact,XactKeyspecError,
                              xact->ksi_errstr);
     if (xact->apih && xact->apih->rwtrace_instance) {
       RWTRACE_ERROR(xact->apih->rwtrace_instance,
@@ -733,7 +706,8 @@ G_DEFINE_BOXED_TYPE(rwdts_appconf_t,
 rwdts_xact_info_t*
 rwdts_xact_info_ref(const rwdts_xact_info_t *boxed)
 {
-  rwdts_xact_info_t* new_boxed = RW_MALLOC0_TYPE(sizeof(rwdts_xact_info_t), rwdts_xact_info_t);
+  rwdts_xact_info_t* new_boxed = DTS_APIH_MALLOC0_TYPE(boxed->apih, RW_DTS_DTS_MEMORY_TYPE_XACT_INFO,
+                                                       sizeof(rwdts_xact_info_t), rwdts_xact_info_t);
   RWDTS_API_LOG_XACT_DEBUG_EVENT(boxed->apih, boxed->xact, XactinfoRefIncr,
                                  RWLOG_ATTR_SPRINTF("XACTINFO ref (copy %p -> %p)", boxed, new_boxed));
   memcpy(new_boxed, boxed, sizeof(*new_boxed));
@@ -746,7 +720,8 @@ rwdts_xact_info_unref(rwdts_xact_info_t *boxed)
   RW_ASSERT_TYPE(boxed, rwdts_xact_info_t);
   RWDTS_API_LOG_XACT_DEBUG_EVENT(boxed->apih, boxed->xact, XactinfoRefDecr,
                                  RWLOG_ATTR_SPRINTF("XACTINFO unref %p (free)", boxed));
-  RW_FREE_TYPE(boxed, rwdts_xact_info_t);
+  DTS_APIH_FREE_TYPE(boxed->apih, RW_DTS_DTS_MEMORY_TYPE_XACT_INFO,
+                     boxed, rwdts_xact_info_t);
 }
 
 /* Registers the Boxed struct resulting in a GType,
@@ -944,6 +919,7 @@ static const GEnumValue  _rwdts_flag_values[] =  {
   { RWDTS_FLAG_NO_PREP_READ,  "NO_PREP_READ","NO_PREP_READ" },
   { RWDTS_FLAG_SHARDING,      "SHARDING",    "SHARDING" },
   { RWDTS_FLAG_DELTA_READY,   "DELTA_READY", "DELTA_READY" },
+  { RWDTS_FLAG_REGISTRATION_BOUNCE_OK, "BOUNCE_OK", "BOUNCE_OK"},
   { 0, NULL, NULL}
 };
 
@@ -1157,16 +1133,17 @@ GType rwdts_audit_status_get_type(void)
  * rwdts_audit_result_t GI registration                      *
  *************************************************************/
 rwdts_audit_result_t *
-rwdts_audit_result_new ()
+rwdts_audit_result_new (rwdts_api_t *apih)
 {
   rwdts_audit_result_t *res =
-    RW_MALLOC0_TYPE(sizeof(rwdts_audit_result_t), rwdts_audit_result_t);
+      DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_AUDIT_RESULT,
+                            sizeof(rwdts_audit_result_t), rwdts_audit_result_t);
   g_atomic_int_set(&res->ref_cnt, 1);
   return res;
 }
 
 static rw_status_t
-rwdts_audit_result_deinit(rwdts_audit_result_t *res)
+rwdts_audit_result_deinit(rwdts_api_t *apih, rwdts_audit_result_t *res)
 {
   if (res == NULL) {
     return RW_STATUS_SUCCESS;
@@ -1180,7 +1157,8 @@ rwdts_audit_result_deinit(rwdts_audit_result_t *res)
     RW_FREE(res->audit_msg);
     res->audit_msg = NULL;
   }
-  RW_FREE_TYPE(res, rwdts_audit_result_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_AUDIT_RESULT,
+                     res, rwdts_audit_result_t);
   return RW_STATUS_SUCCESS;
 }
 
@@ -1197,7 +1175,7 @@ rwdts_audit_result_unref(rwdts_audit_result_t *boxed)
   if (!g_atomic_int_dec_and_test(&boxed->ref_cnt)) {
     return;
   }
-  rwdts_audit_result_deinit(boxed);
+  rwdts_audit_result_deinit(NULL, boxed);
 }
 
 /* Registers the Boxed struct resulting in a GType,
@@ -1245,16 +1223,17 @@ G_DEFINE_BOXED_TYPE(rwdts_query_result_t,
  * rwdts_query_error_t GI registration                      *
  *************************************************************/
 rwdts_query_error_t *
-rwdts_query_error_new ()
+rwdts_query_error_new (rwdts_api_t *apih)
 {
   rwdts_query_error_t *err =
-    RW_MALLOC0_TYPE(sizeof(rwdts_query_error_t), rwdts_query_error_t);
+      DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_QUERY_ERROR,
+                            sizeof(rwdts_query_error_t), rwdts_query_error_t);
   g_atomic_int_set(&err->ref_cnt, 1);
   return err;
 }
 
 static rw_status_t
-rwdts_query_error_deinit(rwdts_query_error_t *err)
+rwdts_query_error_deinit(rwdts_api_t *apih, rwdts_query_error_t *err)
 {
   if (err == NULL) {
     return RW_STATUS_SUCCESS;
@@ -1284,7 +1263,7 @@ rwdts_query_error_deinit(rwdts_query_error_t *err)
     RW_FREE(err->errstr);
     err->errstr = NULL;
   }
-  RW_FREE_TYPE(err, rwdts_query_error_t);
+  DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_QUERY_ERROR, err, rwdts_query_error_t);
   return RW_STATUS_SUCCESS;
 }
 
@@ -1301,7 +1280,7 @@ rwdts_query_error_unref(rwdts_query_error_t *boxed)
   if (!g_atomic_int_dec_and_test(&boxed->ref_cnt)) {
     return;
   }
-  rwdts_query_error_deinit(boxed);
+  rwdts_query_error_deinit(NULL, boxed);
 }
 
 /* Registers the Boxed struct resulting in a GType,
@@ -1346,12 +1325,10 @@ rwdts_xact_id_str(const RWDtsXactID* id,
   return str;
 }
 
-
 char*
 rwdts_xact_get_id(const rwdts_xact_t *xact)
 {
-  char id_str[999];
-  return strdup(rwdts_xact_id_str(&xact->id, id_str, sizeof(id_str)-1));
+  return strdup(xact->xact_id_str);
 }
 
 /*
@@ -1936,6 +1913,10 @@ rwdts_member_handle_mgmt_req(const rwdts_xact_info_t* xact_info,
   data_member.dts_state = apih->dts_state;
   data_member.has_dts_state = 1;
 
+  //show the memory stats
+  mbr_state_p->n_memory_stats = RW_DTS_DTS_MEMORY_TYPE_MAX;
+  mbr_state_p->memory_stats = &apih->memory_stats[0];
+
   RWPB_M_MSG_DECL_INIT(RwDts_data_Dts_Member_Stats,mbr_stats);
   RWPB_T_MSG(RwDts_data_Dts_Member_Stats) *mbr_stats_p = &mbr_stats;
 
@@ -2283,7 +2264,6 @@ rwdts_member_handle_mgmt_req(const rwdts_xact_info_t* xact_info,
   if (!inp || (inp && !inp->state) || (inp && inp->state && inp->state->transaction) ||
       (inp && inp->state && !inp->state->n_registration && !inp->state->n_transaction)) {
     int i = 0;
-    char xact_id_str[64];
 
     mbr_state.n_transaction = HASH_CNT(hh, apih->xacts);
     mbr_state.transaction = (RWPB_T_MSG(RwDts_data_Dts_Member_State_Transaction)**)
@@ -2296,7 +2276,7 @@ rwdts_member_handle_mgmt_req(const rwdts_xact_info_t* xact_info,
                                  RW_MALLOC0(sizeof(RWPB_T_MSG(RwDts_data_Dts_Member_State_Transaction)));
       RWPB_F_MSG_INIT(RwDts_data_Dts_Member_State_Transaction,mbr_state.transaction[i]);
       strncpy(mbr_state.transaction[i]->id,
-              rwdts_xact_id_str(&xact_entry->id, xact_id_str, sizeof(xact_id_str)),
+              xact_entry->xact_id_str,
               sizeof(mbr_state.transaction[i]->id) - 1);
       mbr_state.transaction[i]->has_id = 1;
       mbr_state.transaction[i]->state = strdup(rwdts_get_xact_state_string(xact_entry->mbr_state));
@@ -2344,9 +2324,9 @@ rwdts_member_handle_mgmt_req(const rwdts_xact_info_t* xact_info,
     rwdts_xact_t *xact_entry = NULL, *tmp_xact_entry = NULL;
 
     int i = 0;
-    char xact_id_str[64];
+
     HASH_ITER(hh, apih->xacts, xact_entry, tmp_xact_entry) {
-      if (!strcmp(inp->xact_trace[0]->xact_id, rwdts_xact_id_str(&xact_entry->id, xact_id_str, sizeof(xact_id_str)))) {
+      if (!strcmp(inp->xact_trace[0]->xact_id, xact_entry->xact_id_str)) {
         xact_trace.n_trace_result = xact_entry->curr_trace_index;
         xact_trace.trace_result = (RWPB_T_MSG(RwDts_data_Dts_Member_XactTrace_TraceResult)**)
                                   RW_MALLOC0(xact_trace.n_trace_result * sizeof(RWPB_T_MSG(RwDts_data_Dts_Member_XactTrace_TraceResult)*));
@@ -2376,6 +2356,9 @@ rwdts_member_handle_mgmt_req(const rwdts_xact_info_t* xact_info,
   if(RW_STATUS_SUCCESS != rs)
   {
     RWDTS_XACT_ABORT(xact, rs, RWDTS_ERRSTR_KEY_DUP);
+    mbr_state_p->n_memory_stats = 0;
+    mbr_state_p->memory_stats = NULL;
+    
     protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)mbr_state_p);
     rw_keyspec_path_free((rw_keyspec_path_t*)dts_mbr, NULL);
     return RWDTS_ACTION_NOT_OK;
@@ -2396,12 +2379,16 @@ rwdts_member_handle_mgmt_req(const rwdts_xact_info_t* xact_info,
   if (rs != RW_STATUS_SUCCESS) {
     RWDTS_MEMBER_SEND_ERROR(xact, key, NULL, apih, NULL, 
              RWDTS_ACTION_NOT_OK, "send respnse failed");
+    mbr_state_p->n_memory_stats = 0;
+    mbr_state_p->memory_stats = NULL;
     protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)mbr_state_p);
     rw_keyspec_path_free((rw_keyspec_path_t*)dts_mbr, NULL);
     return RWDTS_ACTION_NOT_OK;
   }
 
   // Free the protobuf
+  mbr_state_p->n_memory_stats = 0;
+  mbr_state_p->memory_stats = NULL;
   protobuf_c_message_free_unpacked_usebody(NULL, (ProtobufCMessage*)mbr_state_p);
   rw_keyspec_path_free((rw_keyspec_path_t*)dts_mbr, NULL);
 
@@ -2919,6 +2906,24 @@ static void rwdts_register_keyspecs(rwdts_api_t *apih)
   return;
 }
 
+static void rwdts_apih_memory_stats_init(rwdts_api_t *apih)
+{
+  int i;
+  /*Allocate the memory needed to get the stats. It is an array of type
+    with max-elements equal to the number of mem-types*/
+  for (i = 0; i < RW_DTS_DTS_MEMORY_TYPE_MAX; i++){
+    apih->memory_stats[i] = RW_MALLOC0(sizeof(RWPB_T_MSG(RwDts_data_Dts_Member_State_MemoryStats)));
+    RWPB_F_MSG_INIT(RwDts_data_Dts_Member_State_MemoryStats, apih->memory_stats[i]);
+    apih->memory_stats[i]->has_num_allocs= 1;
+    apih->memory_stats[i]->has_num_frees= 1;
+    apih->memory_stats[i]->has_type =  1;
+    apih->memory_stats[i]->type = i;
+  }
+  
+  return;
+}
+
+
 rwdts_api_t*
 rwdts_api_init_internal(rwtasklet_info_ptr_t           rw_tasklet_info,
                         rwsched_dispatch_queue_t       q,
@@ -2948,6 +2953,8 @@ rwdts_api_init_internal(rwtasklet_info_ptr_t           rw_tasklet_info,
   apih->router_idx = router_idx;
   RW_ASSERT(apih->router_idx);
 
+  rwdts_apih_memory_stats_init(apih);
+  
   apih->rwmemlog = rwmemlog_instance_alloc("DTS API", 0, 0);
 
   if (rw_tasklet_info && rw_tasklet_info->rwtrace_instance) {
@@ -2970,8 +2977,16 @@ rwdts_api_init_internal(rwtasklet_info_ptr_t           rw_tasklet_info,
     if (!rw_tasklet_info->apih) {
       rw_tasklet_info->apih = apih;
     }
+    /*Set the timeout base depending on whether we are running in collapsed mode or not*/
+    if (rwtasklet_info_is_collapse_process(rw_tasklet_info)){
+      apih->timeout_base = RWMSG_BOUNCE_TIMEOUT_VAL;
+    }else{
+      apih->timeout_base = RWMSG_BOUNCE_TIMEOUT_VAL;
+    }  
+  }else{
+    apih->timeout_base = RWMSG_BOUNCE_TIMEOUT_VAL;
   }
-
+  
   RWTRACE_INFO(apih->rwtrace_instance,
                RWTRACE_CATEGORY_RWTASKLET,
                "%s: in rwdts_api_init_internal",
@@ -2981,6 +2996,9 @@ rwdts_api_init_internal(rwtasklet_info_ptr_t           rw_tasklet_info,
 
   apih->tasklet = tasklet;
   apih->rwtasklet_info = rw_tasklet_info;
+
+  
+  
   if (rw_tasklet_info && rw_tasklet_info->rwlog_instance) {
     apih->rwlog_instance  = rw_tasklet_info->rwlog_instance;
     rwtasklet_info_ref(rw_tasklet_info);
@@ -3066,10 +3084,6 @@ rwdts_api_init_internal(rwtasklet_info_ptr_t           rw_tasklet_info,
   RW_SKLIST_PARAMS_DECL(sent_reg_list_,rwdts_api_reg_info_t, reg_id,
                         rw_sklist_comp_uint32_t, element);
   RW_SKLIST_INIT(&(apih->sent_reg_list),&sent_reg_list_);
-
-  RW_SKLIST_PARAMS_DECL(sent_reg_update_list_,rwdts_api_reg_info_t, reg_id,
-                        rw_sklist_comp_uint32_t, element);
-  RW_SKLIST_INIT(&(apih->sent_reg_update_list),&sent_reg_update_list_);
 
   RW_SKLIST_PARAMS_DECL(sent_dereg_list_,rwdts_api_reg_info_t, reg_id,
                         rw_sklist_comp_uint32_t, element);
@@ -3217,6 +3231,7 @@ rw_status_t rwdts_api_deinit(rwdts_api_t *apih)
   if (apih == NULL) {
     return RW_STATUS_SUCCESS;
   }
+
   RWDTS_API_LOG_EVENT(apih, DtsapiDeinited, "DTS API deinit invoked");
   if (apih->rwmemlog) {
     rwmemlog_instance_dts_deregister(apih->rwmemlog, true/*dts_internal, RIFT-8791*/);
@@ -3272,32 +3287,16 @@ rw_status_t rwdts_api_deinit(rwdts_api_t *apih)
     apih->server.sc = NULL;
   }
 
-  if (apih->timer) {
-    struct rwdts_tmp_reg_data_s* tmp_reg = rwsched_dispatch_get_context(apih->tasklet, apih->timer);
-    rwsched_dispatch_source_cancel(apih->tasklet, apih->timer);
-    rwsched_dispatch_release(apih->tasklet, apih->timer);
-    apih->timer = NULL;
-    RW_FREE(tmp_reg);
-  }
-
-  if (apih->update_timer) {
-    struct rwdts_tmp_reg_data_s* tmp_reg = rwsched_dispatch_get_context(apih->tasklet, apih->update_timer);
-    rwsched_dispatch_source_cancel(apih->tasklet, apih->update_timer);
-    rwsched_dispatch_release(apih->tasklet, apih->update_timer);
-    apih->update_timer = NULL;
-    RW_FREE(tmp_reg);
+  if (apih->reg_timer) {
+    rwsched_dispatch_source_cancel(apih->tasklet, apih->reg_timer);
+    rwsched_dispatch_source_release(apih->tasklet, apih->reg_timer);
+    apih->reg_timer = NULL;
   }
 
   if (apih->dereg_timer) {
     rwsched_dispatch_source_cancel(apih->tasklet, apih->dereg_timer);
-    rwsched_dispatch_release(apih->tasklet, apih->dereg_timer);
+    rwsched_dispatch_source_release(apih->tasklet, apih->dereg_timer);
     apih->dereg_timer = NULL;
-  }
-
-  if (apih->xact_timer) {
-    rwsched_dispatch_source_cancel(apih->tasklet, apih->xact_timer);
-    rwsched_dispatch_release(apih->tasklet, apih->xact_timer);
-    apih->xact_timer = NULL;
   }
 
   /* Deinit the sevice */
@@ -3314,13 +3313,7 @@ rw_status_t rwdts_api_deinit(rwdts_api_t *apih)
     entry = RW_SKLIST_HEAD(&(apih->reg_list), rwdts_member_registration_t);
   }
 
-  /* Deinit member data */
-  rwdts_member_data_t *mbr = NULL, *tmp=NULL;
-  HASH_ITER(hh, apih->mbr_data, mbr, tmp) {
-    HASH_DELETE(hh, apih->mbr_data, mbr);
-    RW_FREE_TYPE(mbr, rwdts_member_data_t);
-  }
-
+  
   rwdts_member_delete_shard_db_info(apih);
 
   rwdts_shard_tab_t *shard_tab = NULL, *tmp1 = NULL;
@@ -3329,7 +3322,8 @@ rw_status_t rwdts_api_deinit(rwdts_api_t *apih)
     if (shard_tab->hh_shard.key) {
       RW_FREE(shard_tab->hh_shard.key);
     }
-    RW_FREE_TYPE(shard_tab, rwdts_shard_tab_t);
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_SHARD,
+                       shard_tab, rwdts_shard_tab_t);
   }
 
   kv_tab_handle = RW_SKLIST_HEAD(&(apih->kv_table_handle_list), rwdts_kv_table_handle_t);
@@ -3398,7 +3392,8 @@ rw_status_t rwdts_api_deinit(rwdts_api_t *apih)
     int i;
     for (i=0; i < apih->group_len; i++) {
       if (apih->group[i]) {
-        RW_FREE_TYPE(apih->group[i], rwdts_group_t);
+        DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_DTS_GROUP,
+                           apih->group[i], rwdts_group_t);
       }
     }
     free(apih->group);
@@ -3432,6 +3427,17 @@ rw_status_t rwdts_api_deinit(rwdts_api_t *apih)
     apih->conf1.tracert.filters_ct = 0;
   }
 
+  {
+    int i;
+
+    for (i = 0; i < RW_DTS_DTS_MEMORY_TYPE_MAX; i++){
+      if (apih->memory_stats[i]){
+        RW_FREE(apih->memory_stats[i]);
+        apih->memory_stats[i] = NULL;
+      }
+    }
+  }
+  
   RW_FREE_TYPE(apih, rwdts_api_t);
   
   return RW_STATUS_SUCCESS;
@@ -3455,7 +3461,8 @@ rwdts_xact_t *rwdts_api_xact_create_internal(rwdts_api_t *apih,
   struct timeval time_val;
 
   RW_ASSERT(apih);
-  rwdts_xact_t *xact = RW_MALLOC0_TYPE(sizeof(rwdts_xact_t), rwdts_xact_t);
+  rwdts_xact_t *xact = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_XACT,
+                                             sizeof(rwdts_xact_t), rwdts_xact_t);
 
   RW_ASSERT(xact);
 
@@ -3467,7 +3474,8 @@ rwdts_xact_t *rwdts_api_xact_create_internal(rwdts_api_t *apih,
   // If callback is present allocate and copy
   if (callback) {
     // FIXME why malloc
-    xact->cb = RW_MALLOC0_TYPE(sizeof(rwdts_event_cb_t), rwdts_event_cb_t);
+    xact->cb = DTS_APIH_MALLOC0_TYPE(xact->apih, RW_DTS_DTS_MEMORY_TYPE_XACT_EVENT_CB,
+                                     sizeof(rwdts_event_cb_t), rwdts_event_cb_t);
     RW_ASSERT(xact->cb);
     xact->cb->cb = callback;
     xact->cb->ud = user_data;
@@ -3491,13 +3499,12 @@ rwdts_xact_t *rwdts_api_xact_create_internal(rwdts_api_t *apih,
   }
   rwdts_xact_ref(xact, __PRETTY_FUNCTION__, __LINE__);
 
+  rwdts_xact_id_str(&xact->id, xact->xact_id_str, sizeof(xact->xact_id_str));
   {
-    char xact_id_str[128];
-    rwdts_xact_id_str(&xact->id, xact_id_str, sizeof(xact_id_str));
     RWMEMLOG(&xact->rwml_buffer, 
 	     RWMEMLOG_MEM0, 
 	     "Xact create",
-	     RWMEMLOG_ARG_STRNCPY(sizeof(xact_id_str), xact_id_str));
+	     RWMEMLOG_ARG_STRNCPY(sizeof(xact->xact_id_str), xact->xact_id_str));
   }
 
   /* FIXME collapse the stuff below and the rwdts_member_xact_init() logic */
@@ -3514,10 +3521,9 @@ rwdts_xact_t *rwdts_api_xact_create_internal(rwdts_api_t *apih,
   RW_SKLIST_INIT(&(xact->reg_cc_list),&tab_list_);
 
   xact->status = RWDTS_XACT_INIT;
-  // Add this transaction to the API hash
-  RWDTS_ADD_PBKEY_TO_HASH(hh, apih->xacts, (&xact->id), router_idx, xact);
 
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, XACT_INITED, "Initialized transaction");
+  RWDTS_ADD_PBKEY_TO_HASH(hh, apih->xacts, (&xact->id), router_idx, xact);
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, XactInited, "Initialized transaction");
 
   if (
 //      TRUE || 
@@ -3583,7 +3589,6 @@ rwdts_xact_t *rwdts_lookup_xact_by_id(const rwdts_api_t* apih,
 rwdts_xact_t *rwdts_member_xact_init(rwdts_api_t*     apih,
                                      const RWDtsXact* xact) {
   rwdts_xact_t *rw_xact = NULL;
-  char tmp_log_xact_id_str[128];
 
   RW_ASSERT(apih);
 
@@ -3611,7 +3616,8 @@ rwdts_xact_t *rwdts_member_xact_init(rwdts_api_t*     apih,
 
     return rw_xact;
   }
-  rw_xact = RW_MALLOC0_TYPE(sizeof(rwdts_xact_t), rwdts_xact_t);
+  rw_xact = DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_XACT,
+                                  sizeof(rwdts_xact_t), rwdts_xact_t);
 
   rw_xact->apih = apih;
 
@@ -3626,7 +3632,9 @@ rwdts_xact_t *rwdts_member_xact_init(rwdts_api_t*     apih,
 
   rwdts_xact_id__init(&rw_xact->id);
   protobuf_c_message_memcpy(&rw_xact->id.base, &xact->id.base);
-
+  //copy the initial xact flags. these are not updated for any further blocks or queries..
+  rw_xact->flags = xact->flags;
+  rwdts_xact_id_str(&rw_xact->id, rw_xact->xact_id_str, sizeof(rw_xact->xact_id_str));
   rwdts_xact_ref(rw_xact, __PRETTY_FUNCTION__, __LINE__);
 
   RW_DL_INIT(&rw_xact->track.pending);
@@ -3639,26 +3647,27 @@ rwdts_xact_t *rwdts_member_xact_init(rwdts_api_t*     apih,
 
   // Add this transaction to the API hash
   RWDTS_ADD_PBKEY_TO_HASH(hh, apih->xacts, (&rw_xact->id), router_idx, rw_xact);
-  RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_XactInited, RWLOG_ATTR_SPRINTF("Xact inited for member %s", apih->client_path));
+  RWDTS_API_LOG_XACT_EVENT(apih, xact, XactInited, RWLOG_ATTR_SPRINTF("Xact inited for member %s", apih->client_path));
 
   RWMEMLOG(&rw_xact->rwml_buffer,
 	   RWMEMLOG_MEM0,
 	   "Xact created, id",
-	   RWMEMLOG_ARG_STRNCPY(sizeof(tmp_log_xact_id_str), rwdts_xact_id_str(&(rw_xact)->id, tmp_log_xact_id_str, sizeof(tmp_log_xact_id_str))));
+	   RWMEMLOG_ARG_STRNCPY(sizeof((rw_xact)->xact_id_str), (rw_xact)->xact_id_str));
 
   return rw_xact;
 }
 
-static inline void rwdts_query_result_list_deinit(rw_dl_t *list)  {
+static inline void rwdts_query_result_list_deinit(rwdts_api_t *apih, rw_dl_t *list)  {
 
   while (RW_DL_LENGTH(list)) {
     rwdts_xact_result_t *res = RW_DL_POP(list, rwdts_xact_result_t, elem);
-    RW_FREE_TYPE(res, rwdts_xact_result_t);
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_XACT_RESULT,
+                       res, rwdts_xact_result_t);
   }
   return;
 }
 
-static inline void rwdts_xact_result_list_deinit(rw_dl_t *list)  {
+static inline void rwdts_xact_result_list_deinit(rwdts_api_t *apih, rw_dl_t *list)  {
 
   while (RW_DL_LENGTH(list)) {
     rwdts_xact_result_track_t *res;
@@ -3669,7 +3678,8 @@ static inline void rwdts_xact_result_list_deinit(rw_dl_t *list)  {
     RW_ASSERT(result);
     rwdts_xact_result__free_unpacked(NULL, result);
     res->result = NULL;
-    RW_FREE_TYPE(res, rwdts_xact_result_track_t);
+    DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_XACT_RESULT_TRACK,
+                       res, rwdts_xact_result_track_t);
   }
   return;
 }
@@ -3687,7 +3697,7 @@ rwdts_xact_block_deinit(struct rwdts_xact_block_s *block_p)
   if (block == NULL) {
     return RW_STATUS_FAILURE;
   }
-  RWDTS_API_LOG_XACT_EVENT(block_p->xact->apih, block_p->xact, RwDtsApiLog_notif_XactDeinited,
+  RWDTS_API_LOG_XACT_EVENT(block_p->xact->apih, block_p->xact, XactDeinited,
                            RWLOG_ATTR_SPRINTF("Called rwdts_xact_block_deinit (block_p = 0x%p\n", block_p)); 
 
   if (block_p->gdestroynotify) {
@@ -3759,10 +3769,8 @@ rw_status_t rwdts_xact_deinit(rwdts_xact_t *xact)
   RW_ASSERT_TYPE(xact, rwdts_xact_t);
   rwdts_api_t *apih = xact->apih;
   //xact->status = RWDTS_XACT_DONE;
-
+  
   /* Is this a xact pending delete , then we will not have the API handle */
-
-
   if (xact->member_new_blocks) {
     rwdts_xact_block_t *member_new_blocks;
     int rem_blocks = 0;
@@ -3776,12 +3784,13 @@ rw_status_t rwdts_xact_deinit(rwdts_xact_t *xact)
   }
   if (apih == NULL) {
     RW_ASSERT_TYPE(xact, rwdts_xact_t);
-    RW_FREE_TYPE(xact, rwdts_xact_t);
+    DTS_APIH_FREE_TYPE(xact->apih, RW_DTS_DTS_MEMORY_TYPE_XACT,
+                       xact, rwdts_xact_t);
     return RW_STATUS_SUCCESS;
   }
 
   RWDTS_XACT_LOG_STATE(xact, RWDTS_MEMB_XACT_ST_END, RWDTS_MEMB_XACT_EVT_END);
-  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, XACT_DEINITED, "Deinitializing transaction");
+  RWDTS_API_LOG_XACT_DEBUG_EVENT(apih, xact, XactDeinited, "Deinitializing transaction");
 
   if (xact->err_report != NULL)
   {
@@ -3816,7 +3825,7 @@ rw_status_t rwdts_xact_deinit(rwdts_xact_t *xact)
   rwmemlog_buffer_return_all(xact->rwml_buffer);
   xact->rwml_buffer = NULL;
 
-  RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_XactDeinited,
+  RWDTS_API_LOG_XACT_EVENT(apih, xact, XactDeinited,
                            RWLOG_ATTR_SPRINTF("Xact deinited for member %s", apih->client_path));
   HASH_DELETE(hh, apih->xacts, xact);
   if (xact->blocks) {
@@ -3840,22 +3849,16 @@ rw_status_t rwdts_xact_deinit(rwdts_xact_t *xact)
 
 
 
-  rwdts_query_result_list_deinit(&(xact->track.pending));
+  rwdts_query_result_list_deinit(xact->apih, &(xact->track.pending));
 
-  rwdts_query_result_list_deinit(&(xact->track.returned));
+  rwdts_query_result_list_deinit(xact->apih, &(xact->track.returned));
 
-  rwdts_xact_result_list_deinit(&(xact->track.results));
+  rwdts_xact_result_list_deinit(xact->apih, &(xact->track.results));
 
   rwdts_xact_query_result_list_deinit(xact);
 
 
   // ATTN -- There should be none -- Commit should move these into API
-  rwdts_member_data_t *mbr=NULL, *tmp=NULL;
-  HASH_ITER(hh, xact->mbr_data, mbr, tmp) {
-    HASH_DELETE(hh, xact->mbr_data, mbr);
-    RW_FREE_TYPE(mbr, rwdts_member_data_t);
-  }
-
   // Iterate through the queries and clean them
   rwdts_xact_query_t *query=NULL, *qtmp=NULL;
   HASH_ITER(hh, xact->queries, query, qtmp) {
@@ -3864,18 +3867,12 @@ rw_status_t rwdts_xact_deinit(rwdts_xact_t *xact)
   // Check if the hashlist is empy
   RW_ASSERT(HASH_COUNT(xact->queries) == 0);
 
-
-  if (apih->xact_timer) {
-    rwsched_dispatch_source_cancel(apih->tasklet, apih->xact_timer);
-    rwsched_dispatch_release(apih->tasklet, apih->xact_timer);
-    apih->xact_timer = NULL;
-  }
   if (xact->getnext_timer)
   {
-    RWDTS_API_LOG_XACT_EVENT(apih, xact, RwDtsApiLog_notif_XactDeinited,
+    RWDTS_API_LOG_XACT_EVENT(apih, xact, XactDeinited,
                              RWLOG_ATTR_SPRINTF("Stop timer during xact deinit for member %s", apih->client_path));
     rwsched_dispatch_source_cancel(apih->tasklet, xact->getnext_timer);
-    rwsched_dispatch_release(apih->tasklet, xact->getnext_timer);
+    rwsched_dispatch_source_release(apih->tasklet, xact->getnext_timer);
     xact->getnext_timer = NULL; // Restart?
   }
 
@@ -3888,7 +3885,7 @@ rw_status_t rwdts_xact_deinit(rwdts_xact_t *xact)
   while(reg_commit != NULL) {
     RW_ASSERT(reg_commit->xact);
     RW_ASSERT(reg_commit->xact == xact);
-    rw_status_t rs = rwdts_member_reg_commit_record_deinit(reg_commit);
+    rw_status_t rs = rwdts_member_reg_commit_record_deinit(xact->apih, reg_commit);
     RW_ASSERT(rs == RW_STATUS_SUCCESS);
     reg_commit = RW_SKLIST_HEAD(&(xact->reg_cc_list), rwdts_reg_commit_record_t);
   }
@@ -3908,7 +3905,8 @@ rw_status_t rwdts_xact_deinit(rwdts_xact_t *xact)
   }
   if (xact->cb) {
     RW_ASSERT_TYPE(xact->cb, rwdts_event_cb_t);
-    RW_FREE_TYPE(xact->cb, rwdts_event_cb_t);
+    DTS_APIH_FREE_TYPE(xact->apih, RW_DTS_DTS_MEMORY_TYPE_XACT_EVENT_CB,
+                       xact->cb, rwdts_event_cb_t);
     xact->cb = NULL;
   }
 
@@ -3921,7 +3919,9 @@ rw_status_t rwdts_xact_deinit(rwdts_xact_t *xact)
   /* Now free the xact */
 
   RW_ASSERT_TYPE(xact, rwdts_xact_t);
-  RW_FREE_TYPE(xact, rwdts_xact_t);
+  
+  DTS_APIH_FREE_TYPE(xact->apih, RW_DTS_DTS_MEMORY_TYPE_XACT,
+                     xact, rwdts_xact_t);
 
   return RW_STATUS_SUCCESS;
 }
@@ -3948,7 +3948,8 @@ rwdts_xact_deinit_cursor(rwdts_xact_t *xact)
   if (xact && xact->n_cursor) {
     for(count = 0; count < xact->n_cursor; count++) {
       RW_ASSERT_TYPE(xact->cursor[count], rwdts_member_cursor_impl_t);
-      RW_FREE_TYPE(xact->cursor[count], rwdts_member_cursor_impl_t);
+      DTS_APIH_FREE_TYPE(xact->apih,RW_DTS_DTS_MEMORY_TYPE_MEMBER_CURSOR,
+                         xact->cursor[count], rwdts_member_cursor_impl_t);
     }
     free(xact->cursor);
     xact->cursor = NULL;
@@ -4006,7 +4007,7 @@ rwdts_api_new(const rwtasklet_info_t*      tasklet,
    r = asprintf(&path, "/R/%s/%d",
           tasklet->identity.rwtasklet_name,
           tasklet->identity.rwtasklet_instance_id);
-   RW_ASSERT(r != -1);
+   RW_ASSERT(r > 0);
 
    rwdts_api_t *apih = NULL;
    RWVCS_LATENCY_CHK_PRE(tasklet->rwsched_instance);
@@ -4720,7 +4721,6 @@ typedef struct rwdts_api_config_ready_s {
   RWPB_E(RwBase_StateType) state;
 } rwdts_api_config_ready_t;
 
-#define CONFIG_MONITOR_WARN_PERIOD (15/*s*/)
 
 static void rwdts_api_config_ready_warn(void *ud) {
   RW_ASSERT_TYPE(ud, rwdts_api_config_ready_handle_t);
@@ -4831,7 +4831,8 @@ static void rwdts_api_config_ready_update(
           &rwdts_api_config_ready);
       if (rwdts_api_config_ready) {
         RW_FREE(rwdts_api_config_ready->instance_name);
-        RW_FREE_TYPE(rwdts_api_config_ready, rwdts_api_config_ready_t);
+        DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_CONFIG_READY,
+                           rwdts_api_config_ready, rwdts_api_config_ready_t);
       }
     }
   }
@@ -4847,8 +4848,10 @@ static void rwdts_api_config_ready_update(
         &keyspec_entry->dompath.path003.key00.instance_name,
         &rwdts_api_config_ready);
     if (!rwdts_api_config_ready) {
-      rwdts_api_config_ready = RW_MALLOC0_TYPE(sizeof(*rwdts_api_config_ready), 
-                                               rwdts_api_config_ready_t);
+      rwdts_api_config_ready = DTS_APIH_MALLOC0_TYPE(apih,
+                                                     RW_DTS_DTS_MEMORY_TYPE_CONFIG_READY,
+                                                     sizeof(*rwdts_api_config_ready), 
+                                                     rwdts_api_config_ready_t);
       rwdts_api_config_ready->state = RW_BASE_STATE_TYPE_STARTING;
       rwdts_api_config_ready->instance_name = RW_STRDUP(keyspec_entry->dompath.path003.key00.instance_name);
       RW_SKLIST_INSERT(&rwdts_api_config_ready_handle->components,
@@ -4901,12 +4904,13 @@ static void rwdts_api_config_ready_update(
             &r_rwdts_api_config_ready);
         RW_ASSERT((unsigned long)r_rwdts_api_config_ready == (unsigned long)rwdts_api_config_ready);
         RW_FREE(rwdts_api_config_ready->instance_name);
-        RW_FREE_TYPE(rwdts_api_config_ready, rwdts_api_config_ready_t);
+        DTS_APIH_FREE_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_CONFIG_READY,
+                           rwdts_api_config_ready, rwdts_api_config_ready_t);
         rwdts_api_config_ready = RW_SKLIST_HEAD(&rwdts_api_config_ready_handle->components, rwdts_api_config_ready_t);
       }
       if (rwdts_api_config_ready_handle->warning_timer) {
 	rwsched_dispatch_source_cancel(apih->tasklet, rwdts_api_config_ready_handle->warning_timer);
-	rwsched_dispatch_release(apih->tasklet, rwdts_api_config_ready_handle->warning_timer);
+	rwsched_dispatch_source_release(apih->tasklet, rwdts_api_config_ready_handle->warning_timer);
 	rwdts_api_config_ready_handle->warning_timer = NULL;
       }
     }
@@ -5002,7 +5006,9 @@ rwdts_api_config_ready_register(
     return NULL;
   }
   rwdts_api_config_ready_handle_t *rwdts_api_config_ready_handle =
-      RW_MALLOC0_TYPE(sizeof(*rwdts_api_config_ready_handle), rwdts_api_config_ready_handle_t);
+      DTS_APIH_MALLOC0_TYPE(apih,RW_DTS_DTS_MEMORY_TYPE_CONFIG_READY_HANDLE,
+                            sizeof(*rwdts_api_config_ready_handle),
+                            rwdts_api_config_ready_handle_t);
 
   RW_ASSERT_TYPE(rwdts_api_config_ready_handle, rwdts_api_config_ready_handle_t);
   rwdts_api_config_ready_handle->config_ready_cb = config_ready_cb;
@@ -5012,19 +5018,9 @@ rwdts_api_config_ready_register(
                RWTRACE_CATEGORY_RWTASKLET,
                "%s registering for components running state",
                apih->client_path);
-#if 0
-  NEW_DBG_PRINTS("%s attemtpting critical readiness \n", apih->client_path);
-  
-  rwsched_dispatch_async_f(
-      apih->tasklet,
-      apih->client.rwq,
-      rwdts_api_config_ready_handle,
-      rwdts_api_config_ready_handle_async_f);
-  if (1)
-  return rwdts_api_config_ready_handle;
-#endif
+
   rwdts_api_config_ready_handle->warning_timer = rwdts_member_timer_create(apih,
-									   (CONFIG_MONITOR_WARN_PERIOD * NSEC_PER_SEC),
+									   RWDTS_TIMEOUT_QUANTUM_MULTIPLE(apih, RWDTS_CONFIG_MONITOR_WARN_PERIOD_SCALE),
 									   rwdts_api_config_ready_warn,
 									   rwdts_api_config_ready_handle,
 									   TRUE);
@@ -5125,7 +5121,9 @@ static void rwdts_api_update_element_async_f(void *ctx)
       NULL);
   RW_FREE(update_element_async_p->xpath);
   protobuf_c_message_free_unpacked(NULL, update_element_async_p->msg);
-  RW_FREE_TYPE(update_element_async_p, rwdts_api_update_element_async_t);
+  DTS_APIH_FREE_TYPE(update_element_async_p->apih,
+                     RW_DTS_DTS_MEMORY_TYPE_UPDATE_ELEM_ASYNC,
+                     update_element_async_p, rwdts_api_update_element_async_t);
   return;
 }
 
@@ -5154,7 +5152,8 @@ rwdts_config_ready_publish(rwdts_api_config_ready_data_t *config_ready_data)
   publish_state->state = state;
 
   rwdts_api_update_element_async_t *update_element_async_p = 
-      RW_MALLOC0_TYPE(sizeof(*update_element_async_p), rwdts_api_update_element_async_t);
+      DTS_APIH_MALLOC0_TYPE(apih, RW_DTS_DTS_MEMORY_TYPE_UPDATE_ELEM_ASYNC,
+                            sizeof(*update_element_async_p), rwdts_api_update_element_async_t);
   RW_ASSERT_TYPE(update_element_async_p, rwdts_api_update_element_async_t);
   update_element_async_p->apih = apih;
   update_element_async_p->regh_p = (rwdts_member_reg_handle_t *)(config_ready_data->regh_p);

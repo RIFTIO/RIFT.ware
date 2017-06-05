@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 
 /*!
  * @file rwmemlog_output.cpp
@@ -468,7 +449,8 @@ static char* rwmemlog_output_instance_return_string(
 
   auto rs = rwmemlog_output_instance_to_string( output );
   if (rs == RW_STATUS_SUCCESS) {
-    asprintf( &ret, "%s\n", output->args_output.arg_string );
+    int r = asprintf( &ret, "%s\n", output->args_output.arg_string );
+    RW_ASSERT(r > 0);
   }
 
   auto instance_msg = output->instance_msg;
@@ -491,7 +473,8 @@ static char* rwmemlog_output_instance_return_string(
     }
     currstr = rwmemlog_output_buffer_contents_to_string(output);
     if (currstr) {
-      asprintf(&ret, "%s %s", (tmpstr==NULL)?"":tmpstr, currstr);
+      int r = asprintf(&ret, "%s %s", (tmpstr==NULL)?"":tmpstr, currstr);
+      RW_ASSERT(r > 0);
       free(currstr);
       currstr = NULL;
     }
@@ -705,8 +688,9 @@ static char *rwmemlog_output_buffer_contents_to_string(
   output->args_output.arg_left = output->args_output.arg_size;
 
   auto rs = rwmemlog_output_buffer_to_string( output );
-  asprintf( &ret, "  %s\n", output->args_output.arg_string );
-
+  int r = asprintf( &ret, "  %s\n", output->args_output.arg_string );
+  RW_ASSERT(r > 0);
+  
   auto buffer_msg = output->buffer_msg;
   for (unsigned i = 0; RW_STATUS_FAILURE != rs; ++i) {
     ProtobufCFieldInfo finfo = {};
@@ -727,7 +711,8 @@ static char *rwmemlog_output_buffer_contents_to_string(
     }
     currstr = rwmemlog_output_entry_return_string(output);
     if (currstr) {
-      asprintf(&ret, "%s %s", (tmpstr==NULL)?"":tmpstr, currstr);
+      int r = asprintf(&ret, "%s %s", (tmpstr==NULL)?"":tmpstr, currstr);
+      RW_ASSERT(r > 0);
       free(currstr);
       currstr = NULL;
     }
@@ -818,7 +803,8 @@ static char * rwmemlog_output_entry_return_string(
 
   auto rs = rwmemlog_output_entry_to_string( output );
   if (rs == RW_STATUS_SUCCESS) {
-    asprintf(&ret, "    %s\n", output->args_output.arg_string );
+    int r = asprintf(&ret, "    %s\n", output->args_output.arg_string );
+    RW_ASSERT(r > 0);
     RW_ASSERT(ret);
   }
   return ret;

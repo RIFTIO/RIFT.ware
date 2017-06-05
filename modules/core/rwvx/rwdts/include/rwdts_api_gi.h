@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /*!
  * @file rwdts_api_gi.h
  * @brief Introspectable API for RW.DTS
@@ -6237,6 +6218,21 @@ rwdts_shard_key_init(rwdts_member_reg_handle_t reg,
                      enum rwdts_shard_anycast_policy_e anypolicy,
                      rwdts_member_getnext_cb prepare);
 
+/*!
+ *  Promote the registration from SUBSCRIBER to PUBLISHER
+ *  This API will promote the registration from SUBSCRIBER
+ *  to PUBLISHER
+ *
+ *  @param ud              registration handle
+ */
+/// @cond GI_SCANNER
+/**
+ * rwdts_registration_subscriber_promotion
+ * @regh:
+ */
+/// @endcond
+void
+rwdts_registration_subscriber_promotion(rwdts_member_reg_handle_t regh);
 
 /*!
  * This API provides the rootshared from the API handle

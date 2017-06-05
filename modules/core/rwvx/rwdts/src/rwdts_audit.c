@@ -1,23 +1,4 @@
-
-/*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
- */
-
-
+/* STANDARD_RIFT_IO_COPYRIGHT */
 /**
  * @file rwdts_audit.c
  * @author Rajesh Velandy
@@ -222,7 +203,8 @@ rwdts_member_fill_audit_summary(rwdts_api_t*                               apih,
 
 
 static void
-rwdts_member_reg_audit_deinit_fetched_data(rwdts_audit_t *audit);
+rwdts_member_reg_audit_deinit_fetched_data(rwdts_member_registration_t *reg,
+                                           rwdts_audit_t *audit);
 
 
 #if RWDTS_ENABLE_AUDIT_DEBUG
@@ -245,6 +227,12 @@ rwdts_member_reg_handle_audit(rwdts_member_reg_handle_t        regh,
   rwdts_audit_t* audit = &reg->audit;
 
   RW_ASSERT_TYPE(apih, rwdts_api_t);
+  
+  if (!rwdts_api_in_correct_queue(apih)){
+    RW_ASSERT_MESSAGE(0, "API %s called in wrong thread for registration %s\n",
+                      __FUNCTION__, reg->keystr);
+  }
+
 
   // Do some asserts to make sure data structure consistency
   //
@@ -289,7 +277,8 @@ rwdts_member_reg_audit_fetch(rwdts_member_registration_t *reg)
                                                       0,
                                                       0,
                                                       apih->client.rwq);
-
+    /*This timer is not using the RWDTS_TIMEOUT_QUANTUM_MULTIPLE since there is no dependency on
+      whether we are running in collapsed mode or not.*/
     rwsched_dispatch_source_set_timer(apih->tasklet,
                                       reg->audit.timer,
                                       dispatch_time(DISPATCH_TIME_NOW, delay),
@@ -335,7 +324,7 @@ rwdts_member_reg_audit_fetch_f(rwdts_member_registration_t *reg)
   /* if running a audit fecth timer - stop this */
   if (reg->audit.timer) {
     rwsched_dispatch_source_cancel(apih->tasklet, reg->audit.timer);
-    rwsched_dispatch_release(apih->tasklet, reg->audit.timer);
+    rwsched_dispatch_source_release(apih->tasklet, reg->audit.timer);
     reg->audit.timer = NULL;
   }
 
@@ -367,7 +356,7 @@ rwdts_member_reg_audit_fetch_f(rwdts_member_registration_t *reg)
   reg->audit.fetch_attempts++;
 
   // Deinit all the fecthed data for this registration's audit
-  rwdts_member_reg_audit_deinit_fetched_data(&reg->audit);
+  rwdts_member_reg_audit_deinit_fetched_data(reg, &reg->audit);
 
   reg->outstanding_requests++;
 
@@ -583,7 +572,8 @@ rwdts_member_reg_audit_compare_datasets(rwdts_member_registration_t *reg)
   HASH_ITER(hh_data, reg->obj_list, data, tmpdata) {
     // Allocate a data audit record ...
     if (!data->audit) {
-      data->audit = RW_MALLOC0_TYPE(sizeof(data->audit[0]), rwdts_member_data_object_audit_t);
+      data->audit = DTS_APIH_MALLOC0_TYPE(reg->apih,RW_DTS_DTS_MEMORY_TYPE_MEMBER_DATA_AUDIT,
+                                          sizeof(data->audit[0]), rwdts_member_data_object_audit_t);
     }
     data->audit->missing_in_dts       = 1;
     data->audit->missing_in_cache     = 0;
@@ -623,7 +613,9 @@ rwdts_member_reg_audit_compare_datasets(rwdts_member_registration_t *reg)
         reg->audit.audit_status = RW_DTS_AUDIT_STATUS_FAILURE;
         reg->audit.objs_mis_matched_contents++;
         if (dts_obj->audit == NULL) {
-          dts_obj->audit = RW_MALLOC0_TYPE(sizeof(data->audit[0]), rwdts_member_data_object_audit_t);
+          dts_obj->audit = DTS_APIH_MALLOC0_TYPE(apih,
+                                                 RW_DTS_DTS_MEMORY_TYPE_MEMBER_DATA_AUDIT,
+                                                 sizeof(data->audit[0]), rwdts_member_data_object_audit_t);
         }
         dts_obj->audit->mis_matched_contents =  mobj->audit->mis_matched_contents = 1;
         reg->stats.audit.mismatched_count++;
@@ -643,7 +635,9 @@ rwdts_member_reg_audit_compare_datasets(rwdts_member_registration_t *reg)
       comp_failed = 1;
 
       if (dts_obj->audit == NULL) {
-        dts_obj->audit = RW_MALLOC0_TYPE(sizeof(data->audit[0]), rwdts_member_data_object_audit_t);
+        dts_obj->audit = DTS_APIH_MALLOC0_TYPE(apih,
+                                               RW_DTS_DTS_MEMORY_TYPE_MEMBER_DATA_AUDIT,
+                                               sizeof(data->audit[0]), rwdts_member_data_object_audit_t);
       }
       dts_obj->audit->missing_in_cache = 1;
       reg->audit.audit_status = RW_DTS_AUDIT_STATUS_FAILURE;
@@ -935,64 +929,35 @@ rwdts_member_reg_reconcile_cache(rwdts_member_registration_t *reg)
     rwdts_member_data_object_t *dts_obj = reg->audit.dts_data[i];
     rwdts_member_data_object_t *in_cache_obj  = NULL;
 
-
-    if (dts_obj->audit) {
-      if (dts_obj->audit->missing_in_cache) {
-        rwdts_shard_handle_t* shard = reg->shard;
-        if (shard && shard->appdata) {
-          ProtobufCMessage* msg = protobuf_c_message_duplicate(NULL, dts_obj->msg, dts_obj->msg->descriptor);
-          rw_keyspec_path_t* keyspec = NULL;
-          rw_status_t rs = RW_KEYSPEC_PATH_CREATE_DUP(dts_obj->keyspec, NULL , &keyspec, NULL);
-          RW_ASSERT(rs == RW_STATUS_SUCCESS);
-          rwdts_shard_handle_appdata_create_element(shard, keyspec, msg);
-        } else {
-          // Create the object in cache
-          mobj = rwdts_member_data_init(reg, dts_obj->msg, dts_obj->keyspec, false, false);
-          mobj->created_by_audit = 1;
-          RW_ASSERT(dts_obj->key);
-          RW_ASSERT(dts_obj->key_len > 0);
-          HASH_FIND(hh_data, reg->obj_list,  mobj->key, mobj->key_len, in_cache_obj);
-          RW_ASSERT(in_cache_obj == NULL);
-          // ATTN -- How can we find this now in cache ? Need to investigate
-          HASH_ADD_KEYPTR(hh_data, reg->obj_list, mobj->key, mobj->key_len, mobj);
-          reg->stats.audit.num_objs_created++;
-          reg->audit.objs_updated_by_audit++;
-          /* Add an audit trail that this record is created */
-          rwdts_member_data_object_add_audit_trail(mobj,
-                                                   RW_DTS_AUDIT_TRAIL_EVENT_RECOVERY,
-                                                   RW_DTS_AUDIT_TRAIL_ACTION_OBJ_CREATE);
-        }
-      }
-      if (dts_obj->audit->mis_matched_contents) {
-        // Create the object in cache
-        RW_ASSERT(dts_obj->audit->missing_in_dts == 0);
-        RW_ASSERT(dts_obj->key);
-        RW_ASSERT(dts_obj->key_len > 0);
-        mobj = NULL;
-        HASH_FIND(hh_data, reg->obj_list, dts_obj->key, dts_obj->key_len, mobj);
-        RW_ASSERT(mobj);
-        //RW_ASSERT(mobj->audit->mis_matched_contents);
-        if (mobj->audit) {
-          mobj->audit->mis_matched_contents = 0;
-        }
-        mobj->updated_by_audit = 1;
-        oldmsg = mobj->msg;
-        mobj->msg = protobuf_c_message_duplicate(&protobuf_c_default_instance,
-                                                 dts_obj->msg,
-                                                 dts_obj->msg->descriptor);
-        RW_ASSERT(mobj->msg);
-
-        protobuf_c_message_free_unpacked_usebody(&protobuf_c_default_instance, oldmsg);
-          RW_ASSERT(rw_keyspec_path_is_equal(&reg->apih->ksi, mobj->keyspec,dts_obj->keyspec));
-        reg->audit.objs_updated_by_audit++;
-        /* Add an audit trail that this record is created */
-        rwdts_member_data_object_add_audit_trail(mobj,
-                                                 RW_DTS_AUDIT_TRAIL_EVENT_RECOVERY,
-                                                 RW_DTS_AUDIT_TRAIL_ACTION_OBJ_UPDATE);
-      }
+    RW_ASSERT((dts_obj->audit == NULL) ||
+              (dts_obj->audit->missing_in_dts == 0));
+    if (dts_obj->audit && (dts_obj->audit->mis_matched_contents)){
+      // Create the object in cache
       RW_ASSERT(dts_obj->audit->missing_in_dts == 0);
-    } else {
-      rwdts_shard_handle_t* shard = reg->shard;
+      RW_ASSERT(dts_obj->key);
+      RW_ASSERT(dts_obj->key_len > 0);
+      mobj = NULL;
+      HASH_FIND(hh_data, reg->obj_list, dts_obj->key, dts_obj->key_len, mobj);
+      RW_ASSERT(mobj);
+      RW_ASSERT(mobj->audit);
+      RW_ASSERT(mobj->audit->mis_matched_contents);
+      mobj->audit->mis_matched_contents = 0;
+      mobj->updated_by_audit = 1;
+      oldmsg = mobj->msg;
+      mobj->msg = protobuf_c_message_duplicate(&protobuf_c_default_instance,
+                                               dts_obj->msg,
+                                               dts_obj->msg->descriptor);
+      RW_ASSERT(mobj->msg);
+      
+      protobuf_c_message_free_unpacked_usebody(&protobuf_c_default_instance, oldmsg);
+      RW_ASSERT(rw_keyspec_path_is_equal(&reg->apih->ksi, mobj->keyspec,dts_obj->keyspec));
+      reg->audit.objs_updated_by_audit++;
+      /* Add an audit trail that this record is created */
+      rwdts_member_data_object_add_audit_trail(mobj,
+                                               RW_DTS_AUDIT_TRAIL_EVENT_RECOVERY,
+                                               RW_DTS_AUDIT_TRAIL_ACTION_OBJ_UPDATE);
+    }else if (!dts_obj->audit || (dts_obj->audit->missing_in_cache)){
+            rwdts_shard_handle_t* shard = reg->shard;
       if (shard && shard->appdata) {
         ProtobufCMessage* msg = protobuf_c_message_duplicate(NULL, dts_obj->msg, dts_obj->msg->descriptor);
         rw_keyspec_path_t* keyspec = NULL;
@@ -1036,7 +1001,7 @@ rwdts_member_reg_reconcile_cache(rwdts_member_registration_t *reg)
       if (data->audit->missing_in_dts) {
         // ATTN - No audit trail for deleted elements since they immediately go away
         HASH_DELETE(hh_data, reg->obj_list, data);
-        rs = rwdts_member_data_deinit(data);
+        rs = rwdts_member_data_deinit(reg->apih, data);
         RW_ASSERT(rs == RW_STATUS_SUCCESS);
         reg->stats.audit.num_objs_deleted++;
       }
@@ -1079,7 +1044,7 @@ rwdts_member_reg_audit_finish(rwdts_member_registration_t *reg)
 
   // Invoke the audit done callback
   if (reg->audit.audit_done) {
-    rwdts_audit_result_t *audit_result = rwdts_audit_result_new();
+    rwdts_audit_result_t *audit_result = rwdts_audit_result_new(reg->apih);
     audit_result->audit_status = reg->audit.audit_status;
     audit_result->audit_msg = strdup(reg->audit.audit_status_message);
     if (reg->reg_state != RWDTS_REG_DEL_PENDING){
@@ -1728,7 +1693,7 @@ rwdts_reg_audit_cb(rwdts_api_t*                apih,
 
   if (audit_track->num_pending_audit == 0) {
     if (apih->audit.audit_done) {
-      rwdts_audit_result_t *audit_result = rwdts_audit_result_new();
+      rwdts_audit_result_t *audit_result = rwdts_audit_result_new(reg->apih);
       audit_result->audit_status = reg->audit.audit_status;
       audit_result->audit_msg = strdup(reg->audit.audit_status_message);
       (apih->audit.audit_done)(reg->apih,
@@ -1777,19 +1742,21 @@ rwdts_api_audit(rwdts_api_t*                    apih,
 
 
 static void
-rwdts_member_reg_audit_deinit_fetched_data(rwdts_audit_t *audit)
+rwdts_member_reg_audit_deinit_fetched_data(rwdts_member_registration_t *reg,
+                                           rwdts_audit_t *audit)
 {
   int i = 0;
 
   for (i = 0; i < audit->n_dts_data ; i++) {
     rwdts_member_data_object_t *dts_obj = audit->dts_data[i];
-    rw_status_t rs = rwdts_member_data_deinit(dts_obj);
+    rw_status_t rs = rwdts_member_data_deinit(reg->apih, dts_obj);
     RW_ASSERT(rs == RW_STATUS_SUCCESS);
   }
 
   // Free the audit fetched data array
   if (audit->dts_data) {
-    RW_FREE_TYPE(audit->dts_data, rwdts_member_data_object_t*);
+    DTS_APIH_FREE_TYPE(reg->apih, RW_DTS_DTS_MEMORY_TYPE_DATA_OBJECT,
+                       audit->dts_data, rwdts_member_data_object_t*);
     audit->dts_data = NULL;
   }
   audit->n_dts_data = 0;

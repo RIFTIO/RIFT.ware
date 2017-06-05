@@ -1,21 +1,7 @@
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(BEGIN)
  * Creation Date: 1/22/16
- * 
+ * RIFT_IO_STANDARD_CMAKE_COPYRIGHT_HEADER(END)
  */
 
 #include <fstream>
@@ -38,7 +24,7 @@ namespace rwyangutil {
 std::string get_rift_artifacts()
 {
   auto rift_artifacts = getenv("RIFT_ARTIFACTS");
-  if (!rift_artifacts) return "/home/rift/.artifacts";
+  if (!rift_artifacts) return "/usr/rift/.artifacts";
   return rift_artifacts;
 }
 
@@ -226,8 +212,8 @@ bool is_rooted_path()
   auto rift_prod_mode = getenv("RIFT_PRODUCTION_MODE");
   if (rift_prod_mode) return true;
 
-  static std::array<const char*, 5> probable_vals {
-     "/", "/home/rift", "/home/rift/.install", "/usr/rift/build/fc20_debug/install/usr/rift", "/usr/rift"
+  static std::array<const char*, 4> probable_vals {
+     "/usr/rift", "/usr/rift/build/ub16_debug/install/usr/rift", "/usr/rift/build/fc20_debug/install/usr/rift", "/"
   };
   auto it = std::find(probable_vals.begin(), probable_vals.end(), get_rift_install());
 
@@ -237,7 +223,7 @@ bool is_rooted_path()
 std::string get_rift_install()
 {
   auto rift_install = getenv("RIFT_INSTALL");
-  if (!rift_install) return "/home/rift/.install";
+  if (!rift_install) return "/usr/rift";
   return rift_install;
 }
 
@@ -245,7 +231,7 @@ std::string get_rift_var_root()
 {
   auto rift_var_root = getenv("RIFT_VAR_ROOT");
   if (!rift_var_root) {
-    return get_rift_install();
+    return get_rift_install() + "/var/rift";
   }
   return rift_var_root;
 }

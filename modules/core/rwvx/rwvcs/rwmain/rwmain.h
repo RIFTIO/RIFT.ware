@@ -1,20 +1,6 @@
 
 /*
- * 
- *   Copyright 2016 RIFT.IO Inc
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * STANDARD_RIFT_IO_COPYRIGHT
  *
  */
 
@@ -149,8 +135,15 @@ struct rwmain_proc {
 
 struct rwmain_multivm {
   rw_sklist_element_t _sklist;
-
-  char key[99];
+  rwsched_CFRunLoopTimerRef retry_timer;
+  uint32_t             retry_attempts;
+#define RWMAIN_MULTIVM_MAX_RETRY_ATTEMPTS 10
+  uint32_t             start_id; /*random every time*/
+  char                 key[99];
+  char *collection_name;
+  char *vm_name;
+  char *vm_ip_addr;
+  struct rwmain_gi *rwmain;
 };
 
 
